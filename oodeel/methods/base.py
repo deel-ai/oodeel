@@ -16,7 +16,6 @@ class OODModel(ABC):
     def __init__(self, model, threshold=None):
         self.threshold = threshold
         self.model = model
-        self.feature_extractor = None
         self.scores = None
 
 
@@ -64,7 +63,7 @@ class OODModel(ABC):
         """
         Convenience wrapper for isood once the threshold is set
         """
-        return self.isood(inputs)
+        return self.isood(self.threshold, inputs)
             
 
 class OODModelWithId(OODModel):
