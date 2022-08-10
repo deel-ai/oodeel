@@ -1,3 +1,7 @@
+##############################################################
+# Taken from https://keras.io/examples/vision/mnist_convnet/ #
+##############################################################
+
 import numpy as np
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -23,6 +27,7 @@ print(x_test.shape[0], "test samples")
 y_train = keras.utils.to_categorical(y_train, num_classes)
 y_test = keras.utils.to_categorical(y_test, num_classes)
 
+# build model
 model = keras.Sequential(
     [
         keras.Input(shape=input_shape),
@@ -36,17 +41,16 @@ model = keras.Sequential(
     ]
 )
 
-model.summary()
 
 batch_size = 128
-epochs = 150
+epochs = 15
 
+# compile and fit
 model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-
 model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1)    
 
 score = model.evaluate(x_test, y_test, verbose=0)
 print("Test loss:", score[0])
 print("Test accuracy:", score[1])
 
-model.save("models/save/mnist_model_long")
+model.save("models/save/mnist_model")
