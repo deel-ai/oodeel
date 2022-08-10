@@ -1,0 +1,6 @@
+models/save/*
+!models/save/.gitkeep
+__pycache__
+*/__pycache__
+*/*/__pycache__
+.vscode
