@@ -64,7 +64,7 @@ class OODModel(ABC):
         """
         Convenience wrapper for isood once the threshold is set
         """
-        return self.isood(inputs)
+        return self.isood(self.threshold, inputs)
             
 
 class OODModelWithId(OODModel):

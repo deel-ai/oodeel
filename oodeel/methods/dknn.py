@@ -1,7 +1,7 @@
 import tensorflow as tf
 from .base import OODModel, OODModelWithId
 import numpy as np
-from ..utils.feature_extractor import FeatureExtractor
+from .feature_extractor import FeatureExtractor
 import faiss
 
 class DKNN(OODModelWithId):
