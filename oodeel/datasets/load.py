@@ -19,6 +19,4 @@ def dataset_load(dataset_name):
 
 
     # convert class vectors to binary class matrices
-    y_train = tf.keras.utils.to_categorical(y_train, np.max(y_train) + 1)
-    y_test = tf.keras.utils.to_categorical(y_test, np.max(y_test) + 1)
     return (x_train, y_train), (x_test, y_test)
