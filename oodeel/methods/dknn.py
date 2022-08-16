@@ -20,7 +20,7 @@ class DKNN(OODModelWithId):
         """
         super().__init__(model)
         self.index = None
-        self.feature_extractor = FeatureExtractor(model, indices=[-1])
+        self.feature_extractor = FeatureExtractor(model, indices=[-3])
 
     def fit(self, id_dataset):
         """

@@ -8,7 +8,7 @@ def bench_metrics(scores, labels, step = 4):
     tpr = np.concatenate([[1.], tpc/(tpc + fnc), [0.]])
     fpr = np.concatenate([[1.], fpc/(fpc + tnc), [0.]])
     auroc = -np.trapz(1.-fpr, tpr)
-    return auroc
+    return auroc, (tpc, fpc, tnc, fnc)
 
 
 def curve(scores, labels, step = 4):
