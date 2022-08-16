@@ -8,6 +8,7 @@ class DKNN(OODModelWithId):
     """
     "Out-of-Distribution Detection with Deep Nearest Neighbors"
     https://arxiv.org/abs/2204.06507
+    Simplified version adapted to convnet as built in ./models/train/train_mnist.py
 
     Parameters
     ----------
@@ -52,8 +53,8 @@ class DKNN(OODModelWithId):
             scores
         """
         inp_proj = self.project_id(inputs)
-        scores, _ = self.index.search(inp_proj[0], nn)
-        self.scores = scores[:,-1]
+        scores, _ = self.index.search(inp_proj[0], 1)
+        self.scores = scores[:,0]
         return self.scores
 
         
