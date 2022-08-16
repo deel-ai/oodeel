@@ -9,7 +9,16 @@ import tensorflow as tf
 
 
 class SingleDSExperiment(Experiment):
+    """
+    Experiment where for a given dataset, k classes are considered ID
+    and n-k are considered OOD (where n is the total number of classes).
 
+    Args:
+        training_func: function used for training a model (no pretrained models 
+            for such a benchmark). The signature must start with "x_train, y_train".
+        dataset_name: name of the dataset to split
+        config: additional arguments for training_func. Defaults to None.
+    """
     def __init__(self, training_func, dataset_name, config=None):
         super().__init__()
         self.dataset_name = dataset_name
@@ -22,17 +31,18 @@ class SingleDSExperiment(Experiment):
 
     def run(self, oodmodel, splits, fit_dataset=None, step=4):
         """
-        _summary_
+        Runs the benchmark
 
-        Parameters
-        ----------
-        oodmodel : _type_
-            _description_
-        splits : list or a list of list (for different spliting to be tested at once)
-        fit_dataset : _type_, optional
-            _description_, by default None
-        step : int, optional
-            _description_, by default 4
+        Args:
+            oodmodel: OOD method to test
+            splits: different splits to test
+            fit_dataset: if the OOD method needs to be fit to ID data. Defaults to None.
+            step: integration step (wrt percentile).. Defaults to 4.
+
+        Returns:
+            A dictionary whose keys are str(splits[i]) and values are the output 
+            of the function bench_metrics for the experiment performed with the dataset
+            split according to splits[i].
         """
         self.oodmodel = oodmodel
 
@@ -70,7 +80,14 @@ class SingleDSExperiment(Experiment):
 
 
 class TwoDSExperiment(Experiment):
+    """
+    Experiments where id_dataset is considered as ID and ood_dataset 
+    is considered OOD.
 
+    Args:
+        id_dataset_name: name of the ID dataset
+        ood_dataset_name: name of the OOD dataset
+    """
     def __init__(self, id_dataset_name, ood_dataset_name):
         super().__init__()
         self.id_dataset_name = id_dataset_name
@@ -79,7 +96,19 @@ class TwoDSExperiment(Experiment):
         _, self.ood_dataset = dataset_load(ood_dataset_name)
 
     def run(self, oodmodel, fit_dataset=None, step=4):
+        """
+        Runs the benchmark
 
+        Args:
+            oodmodel: OOD method to test
+            fit_dataset: if the OOD method needs to be fit to ID data. Defaults to None.
+            step: integration step (wrt percentile).. Defaults to 4.
+
+
+        Returns:
+            the output of the function bench_metrics. 
+            (matric1, metric2,...), (true positive curve, false positive curve,...)
+        """
         if fit_dataset is not None:
             oodmodel.fit(fit_dataset)
         id_scores = oodmodel.score(self.id_dataset[0]) ### Careful with that, have to think how to properly implement this
