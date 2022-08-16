@@ -61,8 +61,9 @@ class SingleDSExperiment(Experiment):
             y_train = self.y_train[np.where(id_indices_train)]
 
             if self.model is None:
-                y_train = tf.keras.utils.to_categorical(y_train, len(split))
-                ### Pb with to_categorical, tries to create an array of size (y.shape[0], np.max(y))
+                y_train = tf.keras.utils.to_categorical(y_train)
+                y_train = y_train[:,split]
+                ### todo: Pb with to_categorical, apparently tries to create an array of size (y.shape[0], np.max(y))
                 self.model = self.training_func(x_train, y_train, self.config)
 
             x_id = self.x_test[np.where(id_indices_test)]
