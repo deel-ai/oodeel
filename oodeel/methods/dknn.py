@@ -1,7 +1,7 @@
 import tensorflow as tf
 from .base import OODModel, OODModelWithId
 import numpy as np
-from ..utils.feature_extractor import FeatureExtractor
+from .feature_extractor import FeatureExtractor
 import faiss
 
 class DKNN(OODModelWithId):
@@ -20,7 +20,7 @@ class DKNN(OODModelWithId):
         """
         super().__init__(model)
         self.index = None
-        self.feature_extractor = FeatureExtractor(model, indices=[-1])
+        self.feature_extractor = FeatureExtractor(model, indices=[-2])
 
     def fit(self, id_dataset):
         """
@@ -36,7 +36,7 @@ class DKNN(OODModelWithId):
         self.index = faiss.IndexFlatL2(self.id_projected[0].shape[1])
         self.index.add(self.id_projected[0])
 
-    def score(self, inputs, nn):
+    def score(self, inputs, nn=30):
         """
         Computes an OOD score for input samples "inputs" based on 
         the distance to nearest neighbors in the feature space of self.model
@@ -53,7 +53,7 @@ class DKNN(OODModelWithId):
         """
         inp_proj = self.project_id(inputs)
         scores, _ = self.index.search(inp_proj[0], nn)
-        self.scores = -scores[:,-1]
+        self.scores = scores[:,-1]
         return self.scores
 
         

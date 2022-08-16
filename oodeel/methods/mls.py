@@ -40,7 +40,7 @@ class MLS(OODModel):
         """
         pred = self.feature_extractor.predict(inputs)
         scores = np.max(pred, axis=1)
-        self.scores = scores
-        return scores
+        self.scores = -scores
+        return self.scores
 
         

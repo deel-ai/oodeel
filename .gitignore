@@ -1,5 +1,5 @@
-models/save/*
-!models/save/.gitkeep
+saved_models/*
+!saved_models/.gitkeep
 __pycache__
 */__pycache__
 */*/__pycache__
