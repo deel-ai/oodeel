@@ -18,20 +18,21 @@ The features are tested on the notebooks.
 
 ### On the core library
 
-* Think thoroughtly about the structure of abstract classes and the current functions. Think about the workflow. Is it ok like this ?
-* How / should we include post hoc methods that use extra data ? (e.g. outlier exposure that uses some OOD data.)
+* Think thoroughly about the structure of abstract classes and the current functions. Think about the workflow. Is it ok like this?
+* How / should we include post hoc methods that use extra data? (e.g. outlier exposure that uses some OOD data.)
 * Include unit tests
 * Add type on function signatures
-* Check for memory optimization : currently some keras model are dynamically created which is prone to memory leak I think.
-* Use tf dataset for managing datasets
+* Tensorflow ? Pytorch ? (Jax ?) Use Eagerpy ?(seems difficult since methods are applied on models, and datasets will probably be managed by a data loader from tf or pytorch.) 
+* Check for memory optimization: currently some keras model are dynamically created, which is prone to memory leaks, I think.
+* Use tf dataset or torchvision for managing datasets
 * Manage checkpointing for Single dataset expe, to avoid having to retrain a model from scratch when possible.
 
-### Further developement
+### Further development
 
 * Add new baselines
 * Add new metrics
 * Add new datasets
 * Add new training scripts (for other backbones like Resnet)
-* Weights storage system ? 
-* Automatic threshold selection ? (exploratory)
+* Weights storage system? 
+* Automatic threshold selection? (exploratory)
 
