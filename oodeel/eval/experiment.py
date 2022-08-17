@@ -19,12 +19,12 @@ class SingleDSExperiment(Experiment):
         dataset_name: name of the dataset to split
         config: additional arguments for training_func. Defaults to None.
     """
-    def __init__(self, dataset_name, splits):
+    def __init__(self, dataset_name, splits, model=None):
         super().__init__()
         self.dataset_name = dataset_name
         (self.x_train, self.y_train), (self.x_test, self.y_test) = dataset_load(dataset_name)
         self.results = {}
-        self.model = None
+        self.model = model
         self.oodmodel = None
         if len(np.array(splits).shape) == 1:
             splits = [splits]
@@ -70,7 +70,7 @@ class SingleDSExperiment(Experiment):
             x_ood = self.x_test[np.where(ood_indices_test)]
             self.oodmodel = oodmodel(self.model) # todo change that
             if fit_dataset is not None:
-                self.oodmodel.fit(fit_dataset)
+                self.oodmodel.fit(x_train[:20000])
             
             id_scores = self.oodmodel.score(x_id) 
             ood_scores = self.oodmodel.score(x_ood)

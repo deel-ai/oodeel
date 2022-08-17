@@ -15,13 +15,14 @@ class DKNN(OODModelWithId):
     model : tf.keras model 
         keras models saved as pb files e.g. with model.save()
     """
-    def __init__(self, model):
+    def __init__(self, model, depth=-2, nearest=1):
         """
         Initializes the feature extractor 
         """
         super().__init__(model)
         self.index = None
-        self.feature_extractor = FeatureExtractor(model, indices=[-2])
+        self.feature_extractor = FeatureExtractor(model, indices=[depth])
+        self.nearest = nearest
 
     def fit(self, id_dataset):
         """
@@ -37,7 +38,7 @@ class DKNN(OODModelWithId):
         self.index = faiss.IndexFlatL2(self.id_projected[0].shape[1])
         self.index.add(self.id_projected[0])
 
-    def score(self, inputs, nn=30):
+    def score(self, inputs):
         """
         Computes an OOD score for input samples "inputs" based on 
         the distance to nearest neighbors in the feature space of self.model
@@ -53,7 +54,7 @@ class DKNN(OODModelWithId):
             scores
         """
         inp_proj = self.project_id(inputs)
-        scores, _ = self.index.search(inp_proj[0], 1)
+        scores, _ = self.index.search(inp_proj[0], self.nearest)
         self.scores = scores[:,0]
         return self.scores
 
