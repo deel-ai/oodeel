@@ -1,10 +1,9 @@
 import tensorflow as tf
-from .base import OODModel, OODModelWithId
+from .base import OODModel
 import numpy as np
-from .feature_extractor import FeatureExtractor
 import faiss
 
-class DKNN(OODModelWithId):
+class DKNN(OODModel):
     """
     "Out-of-Distribution Detection with Deep Nearest Neighbors"
     https://arxiv.org/abs/2204.06507
@@ -15,26 +14,26 @@ class DKNN(OODModelWithId):
     model : tf.keras model 
         keras models saved as pb files e.g. with model.save()
     """
-    def __init__(self, model, depth=-2, nearest=1):
+    def __init__(self, model, nearest=1, output_layers=[-2], output_activations=["base"],
+                 flatten=True, threshold=None):
         """
         Initializes the feature extractor 
         """
-        super().__init__(model)
+        super().__init__(model, output_layers, output_activations, threshold, flatten)
         self.index = None
-        self.feature_extractor = FeatureExtractor(model, indices=[depth])
         self.nearest = nearest
 
-    def fit(self, id_dataset):
+    def fit(self, fit_dataset):
         """
-        Constructs the index from ID data "id_dataset", which will be used for
+        Constructs the index from ID data "fit_dataset", which will be used for
         nearest neighbor search.
 
         Parameters
         ----------
-        id_dataset : np.array
+        fit_dataset : np.array
             input dataset (ID) to construct the index with.
         """
-        self.id_projected = self.project_id(id_dataset)
+        self.id_projected = self.feature_extractor(fit_dataset)
         self.index = faiss.IndexFlatL2(self.id_projected[0].shape[1])
         self.index.add(self.id_projected[0])
 
@@ -53,9 +52,8 @@ class DKNN(OODModelWithId):
         np.array
             scores
         """
-        inp_proj = self.project_id(inputs)
+        inp_proj = self.feature_extractor(inputs)
         scores, _ = self.index.search(inp_proj[0], self.nearest)
-        self.scores = scores[:,0]
-        return self.scores
+        return scores[:,0]
 
         

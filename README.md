@@ -29,6 +29,7 @@ The features are tested on the notebooks.
 
 ### Further development
 
+* Viz module
 * Add new baselines
 * Add new metrics
 * Add new datasets

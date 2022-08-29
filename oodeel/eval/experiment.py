@@ -120,7 +120,7 @@ class TwoDSExperiment(Experiment):
         self.oodmodel = oodmodel(model)
         if fit_dataset is not None:
             self.oodmodel.fit(fit_dataset)
-        id_scores = self.oodmodel.score(self.id_dataset[0]) ### Careful with that, have to think how to properly implement it
+        id_scores = self.oodmodel.score(self.id_dataset[0]) ### TODO Careful with that, have to think how to properly implement it
         ood_scores = self.oodmodel.score(self.ood_dataset[0])
         scores = np.concatenate([id_scores, ood_scores]) #ood has to be higher
         labels = np.concatenate([np.zeros(id_scores.shape), np.ones(ood_scores.shape)])

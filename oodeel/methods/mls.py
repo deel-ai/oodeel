@@ -13,15 +13,13 @@ class MLS(OODModel):
     model : tf.keras model 
         keras models saved as pb files e.g. with model.save()
     """
-    def __init__(self, model):
+    def __init__(self, model, output_activations=["linear"], threshold=None):
         """
         Initializes the feature extractor 
         """
-        super().__init__(model)
-        feature_extractor = tf.keras.models.clone_model(model)
-        feature_extractor.set_weights(model.get_weights())
-        feature_extractor.layers[-1].activation = tf.keras.activations.linear
-        self.feature_extractor = feature_extractor
+        super().__init__(model=model, 
+                         output_activations=output_activations, 
+                         threshold=threshold)
 
     def score(self, inputs):
         """
@@ -38,7 +36,7 @@ class MLS(OODModel):
         np.array
             scores
         """
-        pred = self.feature_extractor.predict(inputs)
+        pred = self.feature_extractor(inputs)[0]
         scores = np.max(pred, axis=1)
         self.scores = -scores
         return self.scores
