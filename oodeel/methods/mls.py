@@ -28,7 +28,7 @@ class MLS(OODModel):
                          batch_size=batch_size,
                          threshold=threshold)
 
-    def score(self, inputs):
+    def score_tensor(self, inputs):
         """
         Computes an OOD score for input samples "inputs" based on 
         maximum logits value.

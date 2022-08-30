@@ -52,7 +52,7 @@ class DKNN(OODModel):
         self.index = faiss.IndexFlatL2(fit_projected.shape[1])
         self.index.add(fit_projected)
 
-    def score(self, inputs):
+    def score_tensor(self, inputs):
         """
         Computes an OOD score for input samples "inputs" based on 
         the distance to nearest neighbors in the feature space of self.model

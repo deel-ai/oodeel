@@ -34,7 +34,7 @@ class OODModel(ABC):
 
 
     @abstractmethod
-    def score(self, inputs):
+    def score_tensor(self, inputs):
         """
         Computes an OOD score for input samples "inputs"
 
@@ -49,6 +49,7 @@ class OODModel(ABC):
             _description_
         """
         raise NotImplementedError()
+
 
     def fit(self, fit_dataset):
         """
@@ -82,7 +83,29 @@ class OODModel(ABC):
         """
         raise NotImplementedError()
 
+    def score(self, inputs):
+        """
+        Computes an OOD score for input samples "inputs"
 
+        Parameters
+        ----------
+        inputs : np.array
+            input samples to score
+
+        Raises
+        ------
+        NotImplementedError
+            _description_
+        """
+        if type(inputs) is not list:
+            scores = self.score_tensor(inputs)
+            return scores
+        else:
+            scores_list = []
+            for input in inputs:
+                scores = self.score_tensor(input)
+                scores_list.append(scores)
+            return scores_list
 
     def isood(self, inputs):
         """
