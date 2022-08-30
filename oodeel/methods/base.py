@@ -1,7 +1,7 @@
 from typing import Type, Union, Iterable, Callable
 import tensorflow as tf
 from abc import ABC, abstractmethod
-from .feature_extractor import FeatureExtractor
+from ..utils.tf_feature_extractor import FeatureExtractor
 
 class OODModel(ABC):
     """
@@ -14,10 +14,23 @@ class OODModel(ABC):
     threshold : float, optional
             threshold to use for distinguishing between OOD and ID, by default None
     """
-    def __init__(self, model, output_layers=[-1], output_activations=["same"], flatten=True, threshold=None):
+    def __init__(
+        self, model, 
+        output_layers=[-1], 
+        output_activations=["same"], 
+        flatten=True, 
+        batch_size=256,
+        threshold=None
+    ):
+
+        self.batch_size = batch_size
         self.threshold = threshold
         self.model = model
-        self.feature_extractor =  FeatureExtractor(model, output_layers=output_layers, output_activations=output_activations, flatten=flatten)
+        self.feature_extractor =  FeatureExtractor(model, 
+                                                   output_layers=output_layers, 
+                                                   output_activations=output_activations, 
+                                                   flatten=flatten,
+                                                   batch_size=batch_size)
 
 
     @abstractmethod
@@ -53,7 +66,7 @@ class OODModel(ABC):
         """
         raise NotImplementedError()
 
-    def calibrate_threshold(self, fit_dataset):
+    def calibrate_threshold(self, fit_dataset, scores):
         """
         Calibrates the model on ID data "id_dataset".
 
@@ -71,7 +84,7 @@ class OODModel(ABC):
 
 
 
-    def isood(self, inputs=None):
+    def isood(self, inputs):
         """
         Returns whether the input samples "inputs" are OOD or not, given a threshold
 

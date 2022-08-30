@@ -14,12 +14,27 @@ class DKNN(OODModel):
     model : tf.keras model 
         keras models saved as pb files e.g. with model.save()
     """
-    def __init__(self, model, nearest=1, output_layers=[-2], output_activations=["base"],
-                 flatten=True, threshold=None):
+    def __init__(
+        self, 
+        model, 
+        nearest=1, 
+        output_layers=[-2], 
+        output_activations=["base"],
+        flatten=True, 
+        batch_size=256, 
+        threshold=None
+    ):
+
         """
         Initializes the feature extractor 
         """
-        super().__init__(model, output_layers, output_activations, threshold, flatten)
+        super().__init__(model=model, 
+                         output_layers=output_layers,
+                         output_activations=output_activations, 
+                         flatten=flatten,
+                         batch_size=batch_size,
+                         threshold=threshold)
+
         self.index = None
         self.nearest = nearest
 
@@ -33,9 +48,9 @@ class DKNN(OODModel):
         fit_dataset : np.array
             input dataset (ID) to construct the index with.
         """
-        self.id_projected = self.feature_extractor(fit_dataset)
-        self.index = faiss.IndexFlatL2(self.id_projected[0].shape[1])
-        self.index.add(self.id_projected[0])
+        fit_projected = self.feature_extractor(fit_dataset)
+        self.index = faiss.IndexFlatL2(fit_projected.shape[1])
+        self.index.add(fit_projected)
 
     def score(self, inputs):
         """
@@ -52,8 +67,8 @@ class DKNN(OODModel):
         np.array
             scores
         """
-        inp_proj = self.feature_extractor(inputs)
-        scores, _ = self.index.search(inp_proj[0], self.nearest)
+        input_projected = self.feature_extractor(inputs)
+        scores, _ = self.index.search(input_projected, self.nearest)
         return scores[:,0]
 
         
