@@ -16,7 +16,6 @@ class DKNN(OODModel):
     """
     def __init__(
         self, 
-        model, 
         nearest=1, 
         output_layers=[-2], 
         output_activations=["base"],
@@ -28,8 +27,7 @@ class DKNN(OODModel):
         """
         Initializes the feature extractor 
         """
-        super().__init__(model=model, 
-                         output_layers=output_layers,
+        super().__init__(output_layers=output_layers,
                          output_activations=output_activations, 
                          flatten=flatten,
                          batch_size=batch_size,
@@ -38,7 +36,7 @@ class DKNN(OODModel):
         self.index = None
         self.nearest = nearest
 
-    def fit(self, fit_dataset):
+    def _fit_to_dataset(self, fit_dataset):
         """
         Constructs the index from ID data "fit_dataset", which will be used for
         nearest neighbor search.
@@ -52,7 +50,7 @@ class DKNN(OODModel):
         self.index = faiss.IndexFlatL2(fit_projected.shape[1])
         self.index.add(fit_projected)
 
-    def score_tensor(self, inputs):
+    def _score_tensor(self, inputs):
         """
         Computes an OOD score for input samples "inputs" based on 
         the distance to nearest neighbors in the feature space of self.model
@@ -67,6 +65,8 @@ class DKNN(OODModel):
         np.array
             scores
         """
+        assert self.feature_extractor is not None, "Call .load() before .score()"
+
         input_projected = self.feature_extractor(inputs)
         scores, _ = self.index.search(input_projected, self.nearest)
         return scores[:,0]

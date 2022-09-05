@@ -15,7 +15,6 @@ class MLS(OODModel):
     """
     def __init__(
         self, 
-        model, 
         output_activations=["linear"], 
         batch_size=256, 
         threshold=None
@@ -23,12 +22,11 @@ class MLS(OODModel):
         """
         Initializes the feature extractor 
         """
-        super().__init__(model=model, 
-                         output_activations=output_activations, 
+        super().__init__(output_activations=output_activations, 
                          batch_size=batch_size,
                          threshold=threshold)
 
-    def score_tensor(self, inputs):
+    def _score_tensor(self, inputs):
         """
         Computes an OOD score for input samples "inputs" based on 
         maximum logits value.
@@ -43,6 +41,8 @@ class MLS(OODModel):
         np.array
             scores
         """
+        assert self.feature_extractor is not None, "Call .load() before .score()"
+
         pred = self.feature_extractor(inputs)
         scores = np.max(pred, axis=1)
         self.scores = -scores

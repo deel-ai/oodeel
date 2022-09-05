@@ -15,7 +15,7 @@ class OODModel(ABC):
             threshold to use for distinguishing between OOD and ID, by default None
     """
     def __init__(
-        self, model, 
+        self,
         output_layers=[-1], 
         output_activations=["same"], 
         flatten=True, 
@@ -25,16 +25,14 @@ class OODModel(ABC):
 
         self.batch_size = batch_size
         self.threshold = threshold
-        self.model = model
-        self.feature_extractor =  FeatureExtractor(model, 
-                                                   output_layers=output_layers, 
-                                                   output_activations=output_activations, 
-                                                   flatten=flatten,
-                                                   batch_size=batch_size)
+        self.feature_extractor = None 
+        self.output_layers = output_layers
+        self.output_activations = output_activations
+        self.flatten = flatten
 
 
     @abstractmethod
-    def score_tensor(self, inputs):
+    def _score_tensor(self, inputs):
         """
         Computes an OOD score for input samples "inputs"
 
@@ -51,9 +49,11 @@ class OODModel(ABC):
         raise NotImplementedError()
 
 
-    def fit(self, fit_dataset):
+    def load(self, model, fit_dataset=None):
         """
-        Calibrates the model on ID data "id_dataset".
+        Prepare oodmodel for scoring:
+        * Load the feature extractor
+        * Calibrates the model on ID data "id_dataset".
 
         Parameters
         ----------
@@ -64,6 +64,34 @@ class OODModel(ABC):
         ------
         NotImplementedError
             _description_
+        """
+        self.feature_extractor = self._load_feature_extractor(model)
+        if fit_dataset is not None:
+            self._fit_to_dataset(fit_dataset)
+
+
+    def _load_feature_extractor(self, model):
+        """
+        Loads feature extractor
+
+        Args:
+            model : tf.keras model 
+                keras models saved as pb files e.g. with model.save()
+        """
+        feature_extractor = FeatureExtractor(model, 
+                                                    output_layers=self.output_layers, 
+                                                    output_activations=self.output_activations, 
+                                                    flatten=self.flatten,
+                                                    batch_size=self.batch_size)
+        return feature_extractor
+
+    def _fit_to_dataset(self, fit_dataset):
+        """
+        Loads feature extractor
+
+        Args:
+            model : tf.keras model 
+                keras models saved as pb files e.g. with model.save()
         """
         raise NotImplementedError()
 
@@ -98,12 +126,12 @@ class OODModel(ABC):
             _description_
         """
         if type(inputs) is not list:
-            scores = self.score_tensor(inputs)
+            scores = self._score_tensor(inputs)
             return scores
         else:
             scores_list = []
             for input in inputs:
-                scores = self.score_tensor(input)
+                scores = self._score_tensor(input)
                 scores_list.append(scores)
             return scores_list
 
