@@ -1,6 +1,6 @@
 import numpy as np
 
-def bench_metrics(scores, labels, step = 4):
+def bench_metrics(curves, metrics=None):
     """
     Compute various common metrics from OODmodel scores.
     Only AUROC for now. Also returns the 
@@ -15,14 +15,12 @@ def bench_metrics(scores, labels, step = 4):
         _description_
     """
 
-    tpc, fpc, tnc, fnc = curve(scores, labels, step)
-    tpr = np.concatenate([[1.], tpc/(tpc + fnc), [0.]])
-    fpr = np.concatenate([[1.], fpc/(fpc + tnc), [0.]])
+    _, (tpr, fpr) = curves
     auroc = -np.trapz(1.-fpr, tpr)
-    return (auroc), (tpc, fpc, tnc, fnc)
+    return (auroc)
 
 
-def curve(scores, labels, step = 4):
+def get_curve(scores, labels, step = 4):
     """
     Computes the number of
         * true positives,
@@ -51,7 +49,9 @@ def curve(scores, labels, step = 4):
         fpc = np.append(fpc, fp)
         tnc = np.append(tnc, tn)
         fnc = np.append(fnc, fn)
-    return tpc, fpc, tnc, fnc
+    tpr = np.concatenate([[1.], tpc/(tpc + fnc), [0.]])
+    fpr = np.concatenate([[1.], fpc/(fpc + tnc), [0.]])
+    return (tpc, fpc, tnc, fnc), (tpr, fpr)
 
 
 

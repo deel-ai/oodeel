@@ -1,6 +1,5 @@
 from ..datasets.load import dataset_load
 from ..datasets.preprocess import split #Didn't use it. Is it worth keeping ?
-from .metrics import bench_metrics
 ## preprocess might be useful to construct artificial OOD
 from .base import Experiment
 import oodeel 
@@ -19,68 +18,45 @@ class SingleDSExperiment(Experiment):
         dataset_name: name of the dataset to split
         config: additional arguments for training_func. Defaults to None.
     """
-    def __init__(self, dataset_name, splits, model=None):
+    def __init__(self, dataset_name, id_labels=None, ood_labels=None, lim=None):
         super().__init__()
         self.dataset_name = dataset_name
         (self.x_train, self.y_train), (self.x_test, self.y_test) = dataset_load(dataset_name)
-        self.results = {}
-        self.model = model
-        self.oodmodel = None
-        if len(np.array(splits).shape) == 1:
-            splits = [splits]
-        self.splits = splits
 
-    def run(self, oodmodel, training_func=None, config=None, fit_dataset=None, step=4):
-        """
-        Runs the benchmark
+        ### Construct splitting labels
+        labels = np.unique(self.y_train)
+        split = []
+        for l in labels:
+            if (id_labels is None) and (l not in ood_labels):
+                split.append(l)
+            elif (ood_labels is None) and (l in id_labels):
+                split.append(l)
+        self.split = split
 
-        Args:
-            oodmodel: OOD method to test
-            splits: different splits to test
-            training_func: function for training backbone models. 
-                Not used if self.model is not None. Defaults to None
-            config: parameters for training_func
-            fit_dataset: if the OOD method needs to be fit to ID data. Defaults to None.
-            step: integration step (wrt percentile). Defaults to 4.
+        ### Construct split dataset
+        id_indices_train = [1 if y in split else 0 for y in self.y_train]
+        id_indices_test = [1 if y in split else 0 for y in self.y_test]
+        ood_indices_test = [0 if y in split else 1 for y in self.y_test]
+        self.x_train = self.x_train[np.where(id_indices_train)]
+        self.y_train = self.y_train[np.where(id_indices_train)]
+        self.id_dataset = self.x_test[np.where(id_indices_test)]
+        self.ood_dataset = self.x_test[np.where(ood_indices_test)]
+        self.y_test = self.y_test[np.where(id_indices_test)]
 
-        Returns:
-            A dictionary whose keys are str(splits[i]) and values are the output 
-            of the function bench_metrics for the experiment performed with the dataset
-            split according to splits[i].
-        """
+    def get_split_data(self):
+        return (self.x_train, self.y_train), (self.x_test, self.y_test)
 
-        self.training_func = training_func
-        self.config = config
-
-
-        for split in self.splits:
-            id_indices_train = [1 if y in split else 0 for y in self.y_train]
-            id_indices_test = [1 if y in split else 0 for y in self.y_test]
-            ood_indices_test = [0 if y in split else 1 for y in self.y_test]
-            x_train = self.x_train[np.where(id_indices_train)]
-            y_train = self.y_train[np.where(id_indices_train)]
-
-            if self.model is None:
-                y_train = tf.keras.utils.to_categorical(y_train)
-                y_train = y_train[:,split]
-                ### todo: Pb with to_categorical, apparently tries to create an array of size (y.shape[0], np.max(y))
-                self.model = self.training_func(x_train, y_train, self.config)
-
-            x_id = self.x_test[np.where(id_indices_test)]
-            x_ood = self.x_test[np.where(ood_indices_test)]
-            self.oodmodel = oodmodel(self.model) # todo change that
-            if fit_dataset is not None:
-                self.oodmodel.fit(x_train[:20000])
-            
-            id_scores = self.oodmodel.score(x_id) 
-            ood_scores = self.oodmodel.score(x_ood)
-            scores = np.concatenate([id_scores, ood_scores]) #ood has to be higher
-            labels = np.concatenate([np.zeros(id_scores.shape), np.ones(ood_scores.shape)])
-
-            self.results[str(split)] = bench_metrics(scores, labels, step)
-
-        return self.results
-
+    def _train_model(self, training_fun, train_config):
+        if train_config["test_data"]:
+            train_config.pop("test_data")
+            model = training_fun(train_data = (self.x_train, self.y_train),
+                                test_data = (self.id_dataset, self.y_test),
+                                **train_config)
+        else:
+            train_config.pop("test_data")
+            model = training_fun(train_data = (self.x_train, self.y_train),
+                                **train_config)
+        return model
 
 
 
@@ -95,38 +71,18 @@ class TwoDSExperiment(Experiment):
         ood_dataset_name: name of the OOD dataset
         oodmodel: the oodmodel to test. 
     """
-    def __init__(self, id_dataset_name, ood_dataset_name):
+    def __init__(self, id_dataset_name, ood_dataset_name, lim=None):
         super().__init__()
         self.id_dataset_name = id_dataset_name
         self.ood_dataset_name = ood_dataset_name
-        _, self.id_dataset = dataset_load(id_dataset_name)
-        _, self.ood_dataset = dataset_load(ood_dataset_name)
-        self.oodmodel = None
+        _, (id_dataset, _ ) = dataset_load(id_dataset_name)
+        _, (ood_dataset, _ ) = dataset_load(ood_dataset_name)
+        if lim is None:
+            lim = id_dataset.shape[0]
+        self.id_dataset = id_dataset[:lim]
+        self.ood_dataset = ood_dataset[:lim]
 
-    def run(self, model, oodmodel, fit_dataset=None, step=4):
-        """
-        Runs the benchmark
 
-        Args:
-            model: model to initialize oodmodel with
-            oodmodel: OOD method to test
-            fit_dataset: if the OOD method needs to be fit to ID data. Defaults to None.
-            step: integration step (wrt percentile).. Defaults to 4.
-
-        Returns:
-            the output of the function bench_metrics. 
-            (matric1, metric2,...), (true positive curve, false positive curve,...)
-        """
-        self.oodmodel = oodmodel(model)
-        if fit_dataset is not None:
-            self.oodmodel.fit(fit_dataset)
-        id_scores = self.oodmodel.score(self.id_dataset[0]) ### TODO Careful with that, have to think how to properly implement it
-        ood_scores = self.oodmodel.score(self.ood_dataset[0])
-        scores = np.concatenate([id_scores, ood_scores]) #ood has to be higher
-        labels = np.concatenate([np.zeros(id_scores.shape), np.ones(ood_scores.shape)])
-
-        self.results = bench_metrics(scores, labels, step)
-        return self.results
         
     ## todo some visus
 

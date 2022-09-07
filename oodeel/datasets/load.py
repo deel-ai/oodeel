@@ -17,6 +17,7 @@ def dataset_load(dataset_name):
     x_train = np.expand_dims(x_train, -1)
     x_test = np.expand_dims(x_test, -1)
 
+    
 
     # convert class vectors to binary class matrices
     return (x_train, y_train), (x_test, y_test)
