@@ -41,7 +41,7 @@ class MLS(OODModel):
         np.array
             scores
         """
-        assert self.feature_extractor is not None, "Call .load() before .score()"
+        assert self.feature_extractor is not None, "Call .fit() before .score()"
 
         pred = self.feature_extractor(inputs)
         scores = np.max(pred, axis=1)

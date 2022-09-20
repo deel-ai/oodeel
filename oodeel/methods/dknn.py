@@ -65,7 +65,7 @@ class DKNN(OODModel):
         np.array
             scores
         """
-        assert self.feature_extractor is not None, "Call .load() before .score()"
+        assert self.feature_extractor is not None, "Call .fit() before .score()"
 
         input_projected = self.feature_extractor(inputs)
         scores, _ = self.index.search(input_projected, self.nearest)

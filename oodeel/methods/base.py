@@ -49,7 +49,7 @@ class OODModel(ABC):
         raise NotImplementedError()
 
 
-    def load(self, model, fit_dataset=None):
+    def fit(self, model, fit_dataset=None):
         """
         Prepare oodmodel for scoring:
         * Load the feature extractor

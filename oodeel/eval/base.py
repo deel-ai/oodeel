@@ -31,10 +31,10 @@ class Experiment(ABC):
         """
     
         if model is not None:
-            oodmodel.load(model, fit_dataset)
+            oodmodel.fit(model, fit_dataset)
         else:
             model = self._train_model(training_fun, train_config)
-            oodmodel.load(model, fit_dataset)
+            oodmodel.fit(model, fit_dataset)
 
         id_scores = oodmodel.score(self.id_dataset) 
         ood_scores = oodmodel.score(self.ood_dataset)

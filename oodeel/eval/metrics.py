@@ -49,8 +49,10 @@ def get_curve(scores, labels, step = 4):
         fpc = np.append(fpc, fp)
         tnc = np.append(tnc, tn)
         fnc = np.append(fnc, fn)
+
     tpr = np.concatenate([[1.], tpc/(tpc + fnc), [0.]])
     fpr = np.concatenate([[1.], fpc/(fpc + tnc), [0.]])
+
     return (tpc, fpc, tnc, fnc), (tpr, fpr)
 
 
