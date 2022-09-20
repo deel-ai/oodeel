@@ -1,7 +1,7 @@
 from typing import Type, Union, Iterable, Callable
 import tensorflow as tf
 from abc import ABC, abstractmethod
-from ..utils.tf_feature_extractor import FeatureExtractor
+from ..models.feature_extractor import KerasFeatureExtractor, TorchFeatureExtractor
 
 class OODModel(ABC):
     """
@@ -78,6 +78,11 @@ class OODModel(ABC):
             model : tf.keras model 
                 keras models saved as pb files e.g. with model.save()
         """
+        if isinstance(model, tf.keras.Sequential):
+            FeatureExtractor = KerasFeatureExtractor
+        else:
+            raise NotImplementedError()
+
         feature_extractor = FeatureExtractor(model, 
                                                     output_layers=self.output_layers, 
                                                     output_activations=self.output_activations, 

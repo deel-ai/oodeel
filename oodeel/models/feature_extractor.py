@@ -1,10 +1,8 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Flatten
 from ..utils.tf_operations import batch_tensor
 
-class FeatureExtractor(object):
+class KerasFeatureExtractor(object):
     """
     Feature extractor based on "model" to construct a feature space 
     on which OOD detection is performed. The features are the output
@@ -83,7 +81,64 @@ class FeatureExtractor(object):
             features = features_batch if features is None else tf.concat(
                         [features, features_batch], axis=0
             )
-        return np.array(features)
+        return features
+
+    def __call__(self, inputs):
+        """
+        Convenience wrapper for predict
+        """
+        return self.predict(inputs)
+
+class TorchFeatureExtractor(object):
+    """
+    Feature extractor based on "model" to construct a feature space 
+    on which OOD detection is performed. The features are the output
+    activation values of internal model layers. 
+
+    Parameters
+    ----------
+    model : keras model
+        model used to build the feature space
+    indices : list of int
+        indices of the internal layers to get the activation values from
+    """
+    def __init__(
+        self, 
+        model, 
+        output_layers=[-1], 
+        output_activations=["base"], 
+        flatten=True, 
+        batch_size=256
+    ):
+
+        self.model = model
+        if type(output_layers) is not list:
+            output_layers = [output_layers]
+        self.output_layers = output_layers
+        if type(output_activations) is not list:
+            output_activations = [output_activations]
+        self.output_activations = output_activations
+        self.flatten=flatten
+        self.batch_size=batch_size
+        
+
+    def predict(self, inputs):
+        """
+        Projects input samples "inputs" into the constructed feature space
+
+        Parameters
+        ----------
+        inputs : np.array
+            input samples to project 
+        flatten : bool, optional
+            whether to flatten the activation outputs or not, by default True
+
+        Returns
+        -------
+        list
+            list of outputs of selected output layers
+        """
+        raise NotImplementedError()
 
     def __call__(self, inputs):
         """
