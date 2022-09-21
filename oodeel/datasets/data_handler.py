@@ -11,13 +11,12 @@ class DataHandler(object):
         x: inputs
         y: labels
     """
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    def __init__(self, data_dir=None):
+        self.data_dir=data_dir
         
-    def filter(self, inc_labels=None, excl_labels=None):
+    def filter(self, x, y, inc_labels=None, excl_labels=None, merge=False):
         """
-        filter dataset by labels
+        Filters dataset by labels.
 
         Args:
             inc_labels: labels to include. Defaults to None.
@@ -27,14 +26,33 @@ class DataHandler(object):
             filtered dataset
         """
         assert (inc_labels is not None) or (excl_labels is not None), "specify labels to filter with"
-        labels = np.unique(self.y)
+        labels = np.unique(y)
         split = []
         for l in labels:
             if (inc_labels is None) and (l not in excl_labels):
                 split.append(l)
             elif (excl_labels is None) and (l in inc_labels):
                 split.append(l)
-        inc_indices = [1 if y in split else 0 for y in self.y]
-        x_filter = self.x[np.where(inc_indices)]
-        y_filter = self.y[np.where(inc_indices)]
-        return x_filter, y_filter
+        labels = np.array([1 if y in split else 0 for y in y])
+        x_id = x[np.where(labels)]
+        y_id = y[np.where(labels)]
+
+        x_ood = x[np.where(1 - labels)]
+        y_ood = y[np.where(1 - labels)]
+
+        return  (x_id, y_id), (x_ood, y_ood)
+
+    def merge(self, x_id, x_ood):
+        """
+        Merges two datasets
+
+        Args:
+            x_id: ID inputs
+            x_ood: OOD inputs (often not used in )
+
+        Returns:
+            _description_
+        """
+        x = np.concatenate([x_id, x_ood])
+        labels = np.concatenate([np.zeros(x_id.shape[0]), np.ones(x_ood.shape[0])])
+        return x, labels
