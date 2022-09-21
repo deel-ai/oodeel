@@ -44,17 +44,17 @@ def get_curve(scores, labels, step = 4, return_raw=False):
     fnc = np.array([])
     thresholds = np.sort(scores)
     for i in range(1, len(scores), step):
-        tp, fp, tn, fn = ftpn(scores, labels, thresholds[i])
+        fp, tp, fn, tn = ftpn(scores, labels, thresholds[i])
         tpc = np.append(tpc, tp)
         fpc = np.append(fpc, fp)
         tnc = np.append(tnc, tn)
         fnc = np.append(fnc, fn)
 
-    tpr = np.concatenate([[1.], tpc/(tpc + fnc), [0.]])
     fpr = np.concatenate([[1.], fpc/(fpc + tnc), [0.]])
+    tpr = np.concatenate([[1.], tpc/(tpc + fnc), [0.]])
 
     if return_raw:
-        return (tpc, fpc, tnc, fnc), (fpr, tpr)
+        return (fpc, tpc, fnc, tnc), (fpr, tpr)
     else:
         return fpr, tpr
 
@@ -87,6 +87,6 @@ def ftpn(scores, labels, threshold):
     fn = np.sum(labels[neg])
     tn = n_neg - fn
 
-    return tp, fp, tn, fn
+    return fp, tp, fn, tn
     
     
