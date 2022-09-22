@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from oodeel.datasets.load_utils import keras_dataset_load
+from typing import Union, Tuple, List, Callable, Dict, Optional, Any
 
 class DataHandler(object):
     """
@@ -15,7 +16,13 @@ class DataHandler(object):
         pass
         
     
-    def filter(self, x, y, inc_labels=None, excl_labels=None, merge=False):
+    def filter(
+        self, 
+        x: Union[tf.Tensor, np.ndarray], 
+        y: Union[tf.Tensor, np.ndarray], 
+        inc_labels: Optional[Union[np.ndarray, list]] = None, 
+        excl_labels: Optional[Union[np.ndarray, list]] = None, 
+    ) -> Tuple[Tuple[Union[tf.Tensor, np.ndarray]]]:
         """
         Filters dataset by labels.
 
@@ -24,7 +31,7 @@ class DataHandler(object):
             excl_labels: labels to exclude. Defaults to None.
 
         Returns:
-            filtered dataset
+            filtered datasets
         """
         assert (inc_labels is not None) or (excl_labels is not None), "specify labels to filter with"
         labels = np.unique(y)
@@ -44,7 +51,12 @@ class DataHandler(object):
         return  (x_id, y_id), (x_ood, y_ood)
 
 
-    def merge(self, x_id, x_ood, shuffle=False):
+    def merge(
+        self, 
+        x_id: Union[tf.Tensor, np.ndarray], 
+        x_ood: Union[tf.Tensor, np.ndarray], 
+        shuffle: Optional[bool] = False
+    )-> Tuple[Union[tf.Tensor, np.ndarray], Union[tf.Tensor, np.ndarray]]:
         """
         Merges two datasets
 
@@ -53,22 +65,29 @@ class DataHandler(object):
             x_ood: OOD inputs (often not used in )
 
         Returns:
-            _description_
+            x: merge dataset
+            labels: 1 if ood else 0
         """
 
         x = np.concatenate([x_id, x_ood])
         labels = np.concatenate([np.zeros(x_id.shape[0]), np.ones(x_ood.shape[0])])
 
-        if self.shuffle:
+        if shuffle:
             shuffled_inds = np.random.shuffle([i for i in range(x.shape[0])])
             x = x[shuffled_inds]
             labels = labels[shuffled_inds]
         return x, labels
 
     @staticmethod
-    def load(key):
-        if key in ["mnist", "fashion_mnist"]:
-            (x_train, y_train), (x_test, y_test) = keras_dataset_load(key)
-        else:
-            raise NotImplementedError()
+    def load(
+        key: str
+    ) -> Tuple[Tuple[Union[tf.Tensor, np.ndarray]]]:
+        """
+        _summary_
+
+        Args:
+            key: _description_
+        """
+        assert hasattr(tf.keras.datasets, key), f"{key} not available with keras.datasets"
+        (x_train, y_train), (x_test, y_test) = keras_dataset_load(key)
         return (x_train, y_train), (x_test, y_test)

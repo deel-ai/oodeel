@@ -2,6 +2,7 @@ import tensorflow as tf
 from .base import OODModel
 import numpy as np
 import faiss
+from typing import Union, Tuple, List, Callable, Dict, Optional, Any
 
 class DKNN(OODModel):
     """
@@ -16,12 +17,12 @@ class DKNN(OODModel):
     """
     def __init__(
         self, 
-        nearest=1, 
-        output_layers=[-2], 
-        output_activations=["base"],
-        flatten=True, 
-        batch_size=256, 
-        threshold=None
+        nearest: int = 1, 
+        output_layers: List[int] = [-2], 
+        output_activations: List[str] = ["base"],
+        flatten: bool = True, 
+        batch_size: int = 256,
+        threshold: Optional[float] = None
     ):
 
         """
@@ -36,7 +37,10 @@ class DKNN(OODModel):
         self.index = None
         self.nearest = nearest
 
-    def _fit_to_dataset(self, fit_dataset):
+    def _fit_to_dataset(
+        self, 
+        fit_dataset: Union[tf.data.Dataset, tf.Tensor, np.ndarray] 
+    ):
         """
         Constructs the index from ID data "fit_dataset", which will be used for
         nearest neighbor search.
@@ -51,7 +55,10 @@ class DKNN(OODModel):
         self.index = faiss.IndexFlatL2(fit_projected.shape[1])
         self.index.add(fit_projected)
 
-    def _score_tensor(self, inputs):
+    def _score_tensor(
+        self, 
+        inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
+    ) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on 
         the distance to nearest neighbors in the feature space of self.model

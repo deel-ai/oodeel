@@ -2,7 +2,10 @@ import numpy as np
 import sys
 import tensorflow as tf
 
-def get_model(model_name, id_dataset=None):
+def get_model(
+    model_name: str, 
+    id_dataset: Optional[str] = None
+):
     """
     Loads a model trained on ID dataset denoted "id_dataset". 
 

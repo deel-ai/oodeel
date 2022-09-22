@@ -1,6 +1,8 @@
 import numpy as np
 import tensorflow as tf
 from ..utils.tf_operations import batch_tensor
+from typing import Union, Tuple, List, Callable, Dict, Optional, Any
+
 
 class KerasFeatureExtractor(object):
     """
@@ -17,11 +19,11 @@ class KerasFeatureExtractor(object):
     """
     def __init__(
         self, 
-        model, 
-        output_layers=[-1], 
-        output_activations=["base"], 
-        flatten=True, 
-        batch_size=256
+        model: Callable, 
+        output_layers: List[int] =[-1], 
+        output_activations: List[str] = ["base"], 
+        flatten: bool = True, 
+        batch_size: int = 256,
     ):
 
         self.model = model
@@ -35,7 +37,10 @@ class KerasFeatureExtractor(object):
         self.batch_size=batch_size
         
 
-    def predict(self, inputs):
+    def predict(
+        self, 
+        inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
+    ) -> tf.Tensor:
         """
         Projects input samples "inputs" into the constructed feature space
 
@@ -83,11 +88,15 @@ class KerasFeatureExtractor(object):
             )
         return features
 
-    def __call__(self, inputs):
+    def __call__(
+        self, 
+        inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
+    ) -> tf.Tensor:
         """
         Convenience wrapper for predict
         """
         return self.predict(inputs)
+
 
 class TorchFeatureExtractor(object):
     """

@@ -1,9 +1,11 @@
 import tensorflow as tf
 import numpy as np
-
+from typing import Union, Tuple, List, Callable, Dict, Optional, Any
         
 
-def keras_dataset_load(dataset_name):
+def keras_dataset_load(
+    dataset_name: str
+) -> Tuple[Tuple[Union[tf.data.Dataset, tf.Tensor, np.ndarray]]]:
     """
     Loads a dataset
 

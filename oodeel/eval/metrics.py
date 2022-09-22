@@ -1,6 +1,12 @@
 import numpy as np
+from typing import Union, Tuple, List, Callable, Dict, Optional, Any
 
-def bench_metrics(scores, labels, metrics=None, step=4):
+def bench_metrics(
+    scores: np.ndarray, 
+    labels: np.ndarray, 
+    metrics: Optional[List[str]] = ["auroc"], 
+    step: Optional[int] = 4
+) -> dict:
     """
     Compute various common metrics from OODmodel scores.
     Only AUROC for now. Also returns the 
@@ -14,13 +20,27 @@ def bench_metrics(scores, labels, metrics=None, step=4):
     Returns:
         _description_
     """
-
+    metrics_dict = {}
     fpr, tpr = get_curve(scores, labels, step)
-    auroc = -np.trapz(1.-fpr, tpr)
-    return (auroc)
+
+    if "auroc" in metrics:
+        auroc = -np.trapz(1.-fpr, tpr)
+        metrics_dict["auroc"] = auroc
+    return metrics_dict
 
 
-def get_curve(scores, labels, step = 4, return_raw=False):
+def get_curve(
+    scores: np.ndarray, 
+    labels: np.ndarray, 
+    step: Optional[int] = 4, 
+    return_raw: Optional[bool] = False
+) -> Union[
+        Tuple[
+            Tuple[np.ndarray],
+            Tuple[np.ndarray]
+        ],
+        Tuple[np.ndarray]
+    ]:
     """
     Computes the number of
         * true positives,
@@ -60,7 +80,11 @@ def get_curve(scores, labels, step = 4, return_raw=False):
 
 
 
-def ftpn(scores, labels, threshold):
+def ftpn(
+    scores: np.ndarray, 
+    labels: np.ndarray, 
+    threshold: float
+) -> Tuple[float]:
     """
     Computes the number of
         * true positives,
