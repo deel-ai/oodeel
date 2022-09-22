@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-
+from oodeel.datasets.load_utils import keras_dataset_load
 
 class DataHandler(object):
     """
@@ -11,9 +11,10 @@ class DataHandler(object):
         x: inputs
         y: labels
     """
-    def __init__(self, data_dir=None):
-        self.data_dir=data_dir
+    def __init__(self):
+        pass
         
+    
     def filter(self, x, y, inc_labels=None, excl_labels=None, merge=False):
         """
         Filters dataset by labels.
@@ -42,7 +43,8 @@ class DataHandler(object):
 
         return  (x_id, y_id), (x_ood, y_ood)
 
-    def merge(self, x_id, x_ood):
+
+    def merge(self, x_id, x_ood, shuffle=False):
         """
         Merges two datasets
 
@@ -53,6 +55,20 @@ class DataHandler(object):
         Returns:
             _description_
         """
+
         x = np.concatenate([x_id, x_ood])
         labels = np.concatenate([np.zeros(x_id.shape[0]), np.ones(x_ood.shape[0])])
+
+        if self.shuffle:
+            shuffled_inds = np.random.shuffle([i for i in range(x.shape[0])])
+            x = x[shuffled_inds]
+            labels = labels[shuffled_inds]
         return x, labels
+
+    @staticmethod
+    def load(key):
+        if key in ["mnist", "fashion_mnist"]:
+            (x_train, y_train), (x_test, y_test) = keras_dataset_load(key)
+        else:
+            raise NotImplementedError()
+        return (x_train, y_train), (x_test, y_test)
