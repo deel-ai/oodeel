@@ -1,6 +1,12 @@
 import numpy as np
+from typing import Union, Tuple, List, Callable, Dict, Optional, Any
 
-def bench_metrics(curves, metrics=None):
+def bench_metrics(
+    scores: np.ndarray, 
+    labels: np.ndarray, 
+    metrics: Optional[List[str]] = ["auroc"], 
+    step: Optional[int] = 4
+) -> dict:
     """
     Compute various common metrics from OODmodel scores.
     Only AUROC for now. Also returns the 
@@ -14,13 +20,27 @@ def bench_metrics(curves, metrics=None):
     Returns:
         _description_
     """
+    metrics_dict = {}
+    fpr, tpr = get_curve(scores, labels, step)
 
-    _, (tpr, fpr) = curves
-    auroc = -np.trapz(1.-fpr, tpr)
-    return (auroc)
+    if "auroc" in metrics:
+        auroc = -np.trapz(1.-fpr, tpr)
+        metrics_dict["auroc"] = auroc
+    return metrics_dict
 
 
-def get_curve(scores, labels, step = 4):
+def get_curve(
+    scores: np.ndarray, 
+    labels: np.ndarray, 
+    step: Optional[int] = 4, 
+    return_raw: Optional[bool] = False
+) -> Union[
+        Tuple[
+            Tuple[np.ndarray],
+            Tuple[np.ndarray]
+        ],
+        Tuple[np.ndarray]
+    ]:
     """
     Computes the number of
         * true positives,
@@ -44,20 +64,27 @@ def get_curve(scores, labels, step = 4):
     fnc = np.array([])
     thresholds = np.sort(scores)
     for i in range(1, len(scores), step):
-        tp, fp, tn, fn = ftpn(scores, labels, thresholds[i])
+        fp, tp, fn, tn = ftpn(scores, labels, thresholds[i])
         tpc = np.append(tpc, tp)
         fpc = np.append(fpc, fp)
         tnc = np.append(tnc, tn)
         fnc = np.append(fnc, fn)
 
-    tpr = np.concatenate([[1.], tpc/(tpc + fnc), [0.]])
     fpr = np.concatenate([[1.], fpc/(fpc + tnc), [0.]])
+    tpr = np.concatenate([[1.], tpc/(tpc + fnc), [0.]])
 
-    return (tpc, fpc, tnc, fnc), (tpr, fpr)
+    if return_raw:
+        return (fpc, tpc, fnc, tnc), (fpr, tpr)
+    else:
+        return fpr, tpr
 
 
 
-def ftpn(scores, labels, threshold):
+def ftpn(
+    scores: np.ndarray, 
+    labels: np.ndarray, 
+    threshold: float
+) -> Tuple[float]:
     """
     Computes the number of
         * true positives,
@@ -84,6 +111,6 @@ def ftpn(scores, labels, threshold):
     fn = np.sum(labels[neg])
     tn = n_neg - fn
 
-    return tp, fp, tn, fn
+    return fp, tp, fn, tn
     
     

@@ -1,7 +1,9 @@
 from typing import Type, Union, Iterable, Callable
+import numpy as np
 import tensorflow as tf
 from abc import ABC, abstractmethod
-from ..utils.tf_feature_extractor import FeatureExtractor
+from ..models.feature_extractor import KerasFeatureExtractor, TorchFeatureExtractor
+from typing import Union, Tuple, List, Callable, Dict, Optional, Any
 
 class OODModel(ABC):
     """
@@ -16,11 +18,11 @@ class OODModel(ABC):
     """
     def __init__(
         self,
-        output_layers=[-1], 
-        output_activations=["same"], 
-        flatten=True, 
-        batch_size=256,
-        threshold=None
+        output_layers: List[int] =[-1], 
+        output_activations: List[str] = ["base"], 
+        flatten: bool = True, 
+        batch_size: int = 256,
+        threshold: Optional[float] = None
     ):
 
         self.batch_size = batch_size
@@ -32,7 +34,10 @@ class OODModel(ABC):
 
 
     @abstractmethod
-    def _score_tensor(self, inputs):
+    def _score_tensor(
+        self, 
+        inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
+    ):
         """
         Computes an OOD score for input samples "inputs"
 
@@ -49,7 +54,11 @@ class OODModel(ABC):
         raise NotImplementedError()
 
 
-    def fit(self, model, fit_dataset=None):
+    def fit(
+        self, 
+        model: Callable, 
+        fit_dataset: Optional[Union[tf.data.Dataset, tf.Tensor, np.ndarray]] = None
+    ):
         """
         Prepare oodmodel for scoring:
         * Load the feature extractor
@@ -70,7 +79,10 @@ class OODModel(ABC):
             self._fit_to_dataset(fit_dataset)
 
 
-    def _load_feature_extractor(self, model):
+    def _load_feature_extractor(
+        self, 
+        model: Callable,
+    ) -> Callable:
         """
         Loads feature extractor
 
@@ -78,6 +90,11 @@ class OODModel(ABC):
             model : tf.keras model 
                 keras models saved as pb files e.g. with model.save()
         """
+        if isinstance(model, tf.keras.Sequential):
+            FeatureExtractor = KerasFeatureExtractor
+        else:
+            raise NotImplementedError()
+
         feature_extractor = FeatureExtractor(model, 
                                                     output_layers=self.output_layers, 
                                                     output_activations=self.output_activations, 
@@ -85,7 +102,10 @@ class OODModel(ABC):
                                                     batch_size=self.batch_size)
         return feature_extractor
 
-    def _fit_to_dataset(self, fit_dataset):
+    def _fit_to_dataset(
+        self, 
+        fit_dataset: Union[tf.data.Dataset, tf.Tensor, np.ndarray] 
+    ):
         """
         Loads feature extractor
 
@@ -95,7 +115,11 @@ class OODModel(ABC):
         """
         raise NotImplementedError()
 
-    def calibrate_threshold(self, fit_dataset, scores):
+    def calibrate_threshold(
+        self, 
+        fit_dataset: Union[tf.data.Dataset, tf.Tensor, np.ndarray], 
+        scores: np.ndarray
+    ):
         """
         Calibrates the model on ID data "id_dataset".
 
@@ -111,7 +135,13 @@ class OODModel(ABC):
         """
         raise NotImplementedError()
 
-    def score(self, inputs):
+    def score(
+        self, 
+        inputs: Union[
+            List[Union[tf.data.Dataset, tf.Tensor, np.ndarray]],
+            Union[tf.data.Dataset, tf.Tensor, np.ndarray],
+            ]
+    ) -> Union[List[np.ndarray], np.ndarray]:
         """
         Computes an OOD score for input samples "inputs"
 
@@ -135,7 +165,10 @@ class OODModel(ABC):
                 scores_list.append(scores)
             return scores_list
 
-    def isood(self, inputs):
+    def isood(
+        self, 
+        inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
+    ) -> np.ndarray:
         """
         Returns whether the input samples "inputs" are OOD or not, given a threshold
 
@@ -158,7 +191,10 @@ class OODModel(ABC):
 
         return OODness
 
-    def __call__(self, inputs):
+    def __call__(
+        self, 
+        inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
+    ) -> np.ndarray:
         """
         Convenience wrapper for isood once the threshold is set
         """

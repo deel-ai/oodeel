@@ -1,6 +1,7 @@
 import tensorflow as tf
 from .base import OODModel
 import numpy as np
+from typing import Union, Tuple, List, Callable, Dict, Optional, Any
 
 class MLS(OODModel):
     """
@@ -16,8 +17,8 @@ class MLS(OODModel):
     def __init__(
         self, 
         output_activations=["linear"], 
-        batch_size=256, 
-        threshold=None
+        batch_size: int = 256,
+        threshold: Optional[float] = None
     ):
         """
         Initializes the feature extractor 
@@ -26,7 +27,10 @@ class MLS(OODModel):
                          batch_size=batch_size,
                          threshold=threshold)
 
-    def _score_tensor(self, inputs):
+    def _score_tensor(
+        self, 
+        inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
+    ) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on 
         maximum logits value.
