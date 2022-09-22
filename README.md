@@ -2,11 +2,11 @@
 
 ## Current features:
 
-* 2 classes, OODModel and OODModelWID 
-* methods:
+* 1 class OODModel 
+* 2 methods (child classes of OODModel):
     *   Post-hoc without ID data: Maximum Logit Score
     *   Post-hoc with ID data: Deep KNN
-* Feature extractor of an arbitrary number of internal activations
+* class Feature extractor of an arbitrary number of internal activations 
 * dataset handler to merge ID and OOD datasets, or two filter a dataset based on its labels
 * training script for a convnet on mnist
 * Demo notebook on MNIST vs Fashion MNIST
@@ -19,10 +19,8 @@ The features are tested on the notebooks.
 
 ### On the core library
 
-* Think about the workflow. Is it ok like this?
 * How / should we include post hoc methods that use extra data? (e.g. outlier exposure that uses some OOD data.)
 * Include unit tests
-* Add type on function signatures
 * Tensorflow ? Pytorch ? Both ? Idea: model conversion with ONNX to be able to handle both types of models while only using one of the two lib for dev.
 * Use tf dataset or torchvision for managing datasets
 * Manage checkpointing for Single dataset expe, to avoid having to retrain a model from scratch when possible.
