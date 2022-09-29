@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from oodeel.datasets.load_utils import keras_dataset_load
-from typing import Union, Tuple, List, Callable, Dict, Optional, Any
+from ..types import *
 import tensorflow_datasets as tfds
 
 class DataHandler(object):
@@ -177,9 +177,11 @@ class DataHandler(object):
         labels = list(labels.as_numpy_iterator())
         return np.array(labels)
 
-    @staticmethod
     def load_tfds(
-        dataset_name: str
+        self,
+        dataset_name: Union[str, Tuple],
+        preprocess: bool = True,
+        as_numpy: bool = False
     ) -> tf.data.Dataset:
         """
         _summary_
@@ -190,7 +192,37 @@ class DataHandler(object):
         Returns:
             _description_
         """
+
         dataset = tfds.load(dataset_name, as_supervised=True)
-        dataset["train"] = dataset["train"].map(lambda x, y: (x/255, y))
-        dataset["test"] = dataset["test"].map(lambda x, y: (x/255, y))
-        return dataset
+        if preprocess:
+            dataset["train"] = dataset["train"].map(lambda x, y: (x/255, y))
+            dataset["test"] = dataset["test"].map(lambda x, y: (x/255, y))
+        
+        if as_numpy:
+            (x_train, y_train) = self.convert_to_numpy(dataset["train"])
+            (x_test, y_test) = self.convert_to_numpy(dataset["test"])
+            return (x_train, y_train),  (x_test, y_test)
+        else:
+            return dataset
+
+    @staticmethod
+    def convert_to_numpy(
+        dataset: tf.data.Dataset
+    ) -> Tuple[np.ndarray]:
+        """
+        _summary_
+
+        Args:
+            dataset: _description_
+
+        Returns:
+            _description_
+        """
+
+        x = dataset.map(lambda x, y: x) 
+        y = dataset.map(lambda x, y: y) 
+        x = np.array(list(x.as_numpy_iterator()))
+        y = np.array(list(y.as_numpy_iterator()))
+        return x, y
+        
+

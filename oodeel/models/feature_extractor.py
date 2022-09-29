@@ -1,8 +1,10 @@
 import numpy as np
 import tensorflow as tf
-from ..utils.tf_operations import batch_tensor
-from typing import Union, Tuple, List, Callable, Dict, Optional, Any
+from ..utils.tf_operations import batch_tensor, find_layer, gradient
+from ..types import *
 
+
+#class ThomasFeatureExtractor(object):
 
 class KerasFeatureExtractor(object):
     """
@@ -27,11 +29,14 @@ class KerasFeatureExtractor(object):
     ):
 
         self.model = model
+
         if type(output_layers) is not list:
             output_layers = [output_layers]
         self.output_layers = output_layers
+        
         if type(output_activations) is not list:
             output_activations = [output_activations]
+        
         self.output_activations = output_activations
         self.flatten=flatten
         self.batch_size=batch_size
@@ -57,8 +62,10 @@ class KerasFeatureExtractor(object):
             list of outputs of selected output layers
         """
         features = None
+        assert not isinstance(inputs, tuple), "Inputs must be tf.data.Dataset, tensor or arrays (not tuples)"
+
         for inputs_batched in batch_tensor(inputs, self.batch_size):
-            inputs_b = tf.cast(inputs_batched[0], tf.float32)
+            inputs_b = tf.cast(inputs_batched, tf.float32)
             features_batch = None
             ind_output=0
             for i, layer in enumerate(self.model.layers):

@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from abc import ABC, abstractmethod
 from ..models.feature_extractor import KerasFeatureExtractor, TorchFeatureExtractor
-from typing import Union, Tuple, List, Callable, Dict, Optional, Any
+from ..types import *
 
 class OODModel(ABC):
     """

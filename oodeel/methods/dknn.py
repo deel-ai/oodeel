@@ -2,7 +2,7 @@ import tensorflow as tf
 from .base import OODModel
 import numpy as np
 import faiss
-from typing import Union, Tuple, List, Callable, Dict, Optional, Any
+from ..types import *
 
 class DKNN(OODModel):
     """

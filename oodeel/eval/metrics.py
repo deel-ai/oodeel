@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Union, Tuple, List, Callable, Dict, Optional, Any
+from ..types import *
 
 def bench_metrics(
     scores: np.ndarray, 

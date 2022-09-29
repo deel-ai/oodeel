@@ -1,7 +1,7 @@
 import tensorflow as tf
 from .base import OODModel
 import numpy as np
-from typing import Union, Tuple, List, Callable, Dict, Optional, Any
+from ..types import *
 
 class MLS(OODModel):
     """
