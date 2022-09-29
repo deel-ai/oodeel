@@ -57,7 +57,8 @@ class KerasFeatureExtractor(object):
             list of outputs of selected output layers
         """
         features = None
-        for inputs_b in batch_tensor(inputs, self.batch_size):
+        for inputs_batched in batch_tensor(inputs, self.batch_size):
+            inputs_b = tf.cast(inputs_batched[0], tf.float32)
             features_batch = None
             ind_output=0
             for i, layer in enumerate(self.model.layers):
@@ -67,7 +68,7 @@ class KerasFeatureExtractor(object):
 
                 inputs_b = layer(inputs_b)
 
-                if i -len(self.model.layers) in self.output_layers:
+                if i - len(self.model.layers) in self.output_layers:
 
                     if self.output_activations[ind_output] != "base":        
                         activation = getattr(tf.keras.activations, self.output_activations[ind_output])

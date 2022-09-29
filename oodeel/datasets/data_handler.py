@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 from oodeel.datasets.load_utils import keras_dataset_load
 from typing import Union, Tuple, List, Callable, Dict, Optional, Any
+import tensorflow_datasets as tfds
 
 class DataHandler(object):
     """
@@ -91,3 +92,105 @@ class DataHandler(object):
         assert hasattr(tf.keras.datasets, key), f"{key} not available with keras.datasets"
         (x_train, y_train), (x_test, y_test) = keras_dataset_load(key)
         return (x_train, y_train), (x_test, y_test)
+
+    def filter_tfds(
+        self, 
+        x: Union[tf.Tensor, np.ndarray], 
+        inc_labels: Optional[Union[np.ndarray, list]] = None, 
+        excl_labels: Optional[Union[np.ndarray, list]] = None, 
+    ) -> Tuple[Tuple[Union[tf.Tensor, np.ndarray]]]:
+        """
+        Filters dataset by labels.
+
+        Args:
+            inc_labels: labels to include. Defaults to None.
+            excl_labels: labels to exclude. Defaults to None.
+
+        Returns:
+            filtered datasets
+        """
+        assert (inc_labels is not None) or (excl_labels is not None), "specify labels to filter with"
+        labels = x.map(lambda x, y: y).unique()
+        labels = list(labels.as_numpy_iterator())
+        split = []
+        for l in labels:
+            if (inc_labels is None) and (l not in excl_labels):
+                split.append(l)
+            elif (excl_labels is None) and (l in inc_labels):
+                split.append(l)
+
+        x_id = x.filter(lambda x, y: tf.reduce_any(tf.equal(y, split)))
+        x_ood = x.filter(lambda x, y: not tf.reduce_any(tf.equal(y, split)))
+
+        return  x_id, x_ood
+
+
+    def merge_tfds(
+        self, 
+        x_id: Union[tf.Tensor, np.ndarray], 
+        x_ood: Union[tf.Tensor, np.ndarray], 
+        shape: Optional[Tuple[int]] = None,
+        shuffle: Optional[bool] = False,
+    )-> Tuple[Union[tf.Tensor, np.ndarray], Union[tf.Tensor, np.ndarray]]:
+        """
+        Merges two datasets
+
+        Args:
+            x_id: ID inputs
+            x_ood: OOD inputs (often not used in )
+
+        Returns:
+            x: merge dataset
+            labels: 1 if ood else 0
+        """
+
+        if shape is None:
+            for x0, y in x_id.take(1):
+                shape = x0.shape[:-1]
+
+        def reshape_im(x, y, shape):
+            x = tf.image.resize(x, shape)
+            return x, y
+
+        x_id = x_id.map(lambda x, y: reshape_im(x, y, shape))
+        x_ood = x_ood.map(lambda x, y: reshape_im(x, y, shape))
+
+        def add_label(x, y, label):
+            #x.update({'label_ood': label})
+            return x, y, label
+
+        x_id = x_id.map(lambda x, y: add_label(x, y, 0))
+        x_ood = x_ood.map(lambda x, y: add_label(x, y, 1))
+        x = x_id.concatenate(x_ood)
+
+        if shuffle:
+            x = x.shuffle(buffer_size = x.cardinality())
+        return x
+
+
+    def get_ood_labels(
+        self,
+        dataset: Union[tf.Tensor, np.ndarray],
+    ):
+        
+        labels = dataset.map(lambda x, y, z: z)
+        labels = list(labels.as_numpy_iterator())
+        return np.array(labels)
+
+    @staticmethod
+    def load_tfds(
+        dataset_name: str
+    ) -> tf.data.Dataset:
+        """
+        _summary_
+
+        Args:
+            key: _description_
+
+        Returns:
+            _description_
+        """
+        dataset = tfds.load(dataset_name, as_supervised=True)
+        dataset["train"] = dataset["train"].map(lambda x, y: (x/255, y))
+        dataset["test"] = dataset["test"].map(lambda x, y: (x/255, y))
+        return dataset

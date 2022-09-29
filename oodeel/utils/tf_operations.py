@@ -19,7 +19,10 @@ def batch_tensor(tensors: Union[Tuple, tf.Tensor],
     dataset
         Tensorflow dataset batched.
     """
-    dataset = tf.data.Dataset.from_tensor_slices(tensors)
+    if not isinstance(tensors, tf.data.Dataset):
+        dataset = tf.data.Dataset.from_tensor_slices(tensors)
+    else:
+        dataset = tensors
     if batch_size is not None:
         dataset = dataset.batch(batch_size)
 
