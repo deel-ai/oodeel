@@ -1,10 +1,13 @@
 import numpy as np
 from ..types import *
+import sklearn
+
 
 def bench_metrics(
     scores: np.ndarray, 
     labels: np.ndarray, 
-    metrics: Optional[List[str]] = ["auroc"], 
+    metrics: Optional[List[str]] = ["auroc", "fpr95tpr"], 
+    threshold: Optional[float] = None,
     step: Optional[int] = 4
 ) -> dict:
     """
@@ -23,9 +26,34 @@ def bench_metrics(
     metrics_dict = {}
     fpr, tpr = get_curve(scores, labels, step)
 
-    if "auroc" in metrics:
-        auroc = -np.trapz(1.-fpr, tpr)
-        metrics_dict["auroc"] = auroc
+    for metric in metrics:
+
+        if metric == "auroc":
+            auroc = -np.trapz(1.-fpr, tpr)
+            metrics_dict["auroc"] = auroc
+
+        elif metric == "fpr95tpr":
+            for i, tp in enumerate(tpr):
+                if tp < 0.95:
+                    ind = i
+                    break
+            metrics_dict["fpr95tpr"] = fpr[ind]
+
+        elif metric.__name__ in sklearn.metrics.__all__:
+            if metric.__name__[:3] == "roc":
+                metrics_dict[metric.__name__] = metric(labels, scores)
+            else:
+                if threshold is None:
+                    print(f"No threshold is specified for metric {metric.__name__}, skipping")
+                else:
+                    oodness = [1 if x > threshold else 0 for x in scores]
+                    metrics_dict[metric.__name__] = metric(labels, oodness)
+
+        else:
+            print(f"Metric {metric.__name__} not implemented, skipping")
+
+
+
     return metrics_dict
 
 
