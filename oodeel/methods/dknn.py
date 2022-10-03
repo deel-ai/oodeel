@@ -18,8 +18,8 @@ class DKNN(OODModel):
     def __init__(
         self, 
         nearest: int = 1, 
-        output_layers: List[int] = [-2], 
-        output_activations: List[str] = ["base"],
+        output_layers_id: List[int] = [-2], 
+        output_activation: str = None,
         flatten: bool = True, 
         batch_size: int = 256,
         threshold: Optional[float] = None
@@ -28,8 +28,8 @@ class DKNN(OODModel):
         """
         Initializes the feature extractor 
         """
-        super().__init__(output_layers=output_layers,
-                         output_activations=output_activations, 
+        super().__init__(output_layers_id=output_layers_id,
+                         output_activation=output_activation, 
                          flatten=flatten,
                          batch_size=batch_size,
                          threshold=threshold)
@@ -50,8 +50,7 @@ class DKNN(OODModel):
         fit_dataset : np.array
             input dataset (ID) to construct the index with.
         """
-        fit_projected = self.feature_extractor(fit_dataset)
-        fit_projected = np.array(fit_projected)
+        fit_projected = self.feature_extractor(fit_dataset)[0]
         self.index = faiss.IndexFlatL2(fit_projected.shape[1])
         self.index.add(fit_projected)
 
@@ -75,7 +74,7 @@ class DKNN(OODModel):
         """
         assert self.feature_extractor is not None, "Call .fit() before .score()"
 
-        input_projected = self.feature_extractor(inputs)
+        input_projected = self.feature_extractor(inputs)[0]
         input_projected = np.array(input_projected)
         scores, _ = self.index.search(input_projected, self.nearest)
         return scores[:,0]

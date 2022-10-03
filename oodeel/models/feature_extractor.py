@@ -4,8 +4,6 @@ from ..utils.tf_operations import batch_tensor, find_layer, gradient
 from ..types import *
 
 
-#class ThomasFeatureExtractor(object):
-
 class KerasFeatureExtractor(object):
     """
     Feature extractor based on "model" to construct a feature space 
@@ -22,25 +20,28 @@ class KerasFeatureExtractor(object):
     def __init__(
         self, 
         model: Callable, 
-        output_layers: List[int] =[-1], 
-        output_activations: List[str] = ["base"], 
+        output_layers_id: List[int] =[], 
+        output_activation: str = None, 
         flatten: bool = True, 
         batch_size: int = 256,
     ):
 
-        self.model = model
 
-        if type(output_layers) is not list:
-            output_layers = [output_layers]
-        self.output_layers = output_layers
-        
-        if type(output_activations) is not list:
-            output_activations = [output_activations]
-        
-        self.output_activations = output_activations
+        if type(output_layers_id) is not list:
+            output_layers_id = [output_layers_id]
+
+        self.output_layers_id = output_layers_id
+        self.output_activation = output_activation
         self.flatten=flatten
         self.batch_size=batch_size
-        
+
+        self.output_layers = [find_layer(model, ol_id).output for ol_id in output_layers_id] 
+        if self.output_activation is not None:
+            model.layers[-1].activation = getattr(tf.keras.activations, self.output_activation)      
+
+        self.output_layers.append(model.output)
+
+        self.model = tf.keras.Model(model.input, [self.output_layers]) 
 
     def predict(
         self, 
@@ -61,39 +62,17 @@ class KerasFeatureExtractor(object):
         list
             list of outputs of selected output layers
         """
-        features = None
+
         assert not isinstance(inputs, tuple), "Inputs must be tf.data.Dataset, tensor or arrays (not tuples)"
 
-        for inputs_batched in batch_tensor(inputs, self.batch_size):
-            inputs_b = tf.cast(inputs_batched, tf.float32)
-            features_batch = None
-            ind_output=0
-            for i, layer in enumerate(self.model.layers):
-                # Store the input if needed (must be done here to avoid duplicating layer)
-                if i -len(self.model.layers) in self.output_layers:
-                    input_out = tf.Variable(inputs_b)
+        inputs = batch_tensor(inputs, self.batch_size)
+        features = self.model.predict(inputs)
 
-                inputs_b = layer(inputs_b)
+        if len(self.output_layers_id) > 0: 
+            features = features[0]
 
-                if i - len(self.model.layers) in self.output_layers:
-
-                    if self.output_activations[ind_output] != "base":        
-                        activation = getattr(tf.keras.activations, self.output_activations[ind_output])
-                        layer.activation = activation
-                    output = layer(input_out)
-
-                    if self.flatten:
-                        dim = tf.reduce_prod(output.shape[1:])
-                        output = tf.reshape(output, [-1, dim])
-
-                    features_batch = output if features_batch is None else tf.concat(
-                        [features_batch, output], axis=1
-                    )
-                    ind_output += 1
-
-            features = features_batch if features is None else tf.concat(
-                        [features, features_batch], axis=0
-            )
+        if self.flatten:
+            features = [feature.reshape(feature.shape[0], -1) for feature in features]
         return features
 
     def __call__(
@@ -104,7 +83,6 @@ class KerasFeatureExtractor(object):
         Convenience wrapper for predict
         """
         return self.predict(inputs)
-
 
 class TorchFeatureExtractor(object):
     """

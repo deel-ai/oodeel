@@ -16,14 +16,14 @@ class MLS(OODModel):
     """
     def __init__(
         self, 
-        output_activations=["linear"], 
+        output_activation: str = "linear", 
         batch_size: int = 256,
         threshold: Optional[float] = None
     ):
         """
         Initializes the feature extractor 
         """
-        super().__init__(output_activations=output_activations, 
+        super().__init__(output_activation=output_activation, 
                          batch_size=batch_size,
                          threshold=threshold)
 
@@ -47,7 +47,7 @@ class MLS(OODModel):
         """
         assert self.feature_extractor is not None, "Call .fit() before .score()"
 
-        pred = self.feature_extractor(inputs)
+        pred = self.feature_extractor(inputs)[0]
         scores = np.max(pred, axis=1)
         self.scores = -scores
         return self.scores

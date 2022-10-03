@@ -18,8 +18,8 @@ class OODModel(ABC):
     """
     def __init__(
         self,
-        output_layers: List[int] =[-1], 
-        output_activations: List[str] = ["base"], 
+        output_layers_id: List[int] =[], 
+        output_activation: str = None, 
         flatten: bool = True, 
         batch_size: int = 256,
         threshold: Optional[float] = None
@@ -28,8 +28,8 @@ class OODModel(ABC):
         self.batch_size = batch_size
         self.threshold = threshold
         self.feature_extractor = None 
-        self.output_layers = output_layers
-        self.output_activations = output_activations
+        self.output_layers_id = output_layers_id
+        self.output_activation = output_activation
         self.flatten = flatten
 
 
@@ -90,14 +90,14 @@ class OODModel(ABC):
             model : tf.keras model 
                 keras models saved as pb files e.g. with model.save()
         """
-        if isinstance(model, tf.keras.Sequential):
+        if isinstance(model, tf.keras.Model):
             FeatureExtractor = KerasFeatureExtractor
         else:
             raise NotImplementedError()
 
         feature_extractor = FeatureExtractor(model, 
-                                                    output_layers=self.output_layers, 
-                                                    output_activations=self.output_activations, 
+                                                    output_layers_id=self.output_layers_id, 
+                                                    output_activation=self.output_activation, 
                                                     flatten=self.flatten,
                                                     batch_size=self.batch_size)
         return feature_extractor
