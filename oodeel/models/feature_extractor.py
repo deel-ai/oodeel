@@ -20,8 +20,9 @@ class KerasFeatureExtractor(object):
     def __init__(
         self, 
         model: Callable, 
-        output_layers_id: List[int] =[], 
+        output_layers_id: List[Union[int, str]] =[], 
         output_activation: str = None, 
+        input_layer_id : Union[int, str] = None,
         flatten: bool = True, 
         batch_size: int = 256,
     ):
@@ -41,7 +42,13 @@ class KerasFeatureExtractor(object):
 
         self.output_layers.append(model.output)
 
-        self.model = tf.keras.Model(model.input, [self.output_layers]) 
+        if input_layer_id is not None:
+            self.input_layer = find_layer(model, input_layer_id).input
+        else:
+            self.input_layer = model.input
+
+
+        self.model = tf.keras.Model(self.input_layer, [self.output_layers]) 
 
     def predict(
         self, 
