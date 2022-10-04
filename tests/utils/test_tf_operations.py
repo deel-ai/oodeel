@@ -1,6 +1,5 @@
 import tensorflow as tf
-from ..types import *
-from .tools import dataset_length
+from oodeel.types import *
 
 
 def batch_tensor(tensors: Union[tf.data.Dataset, tf.Tensor],
@@ -21,8 +20,11 @@ def batch_tensor(tensors: Union[tf.data.Dataset, tf.Tensor],
         Tensorflow dataset batched.
     """
     if isinstance(tensors, tf.data.Dataset):
-        length = dataset_length(tensors)
-
+        for x in tensors.take(1):
+            if isinstance(x, tuple):
+                length = len(x)
+            else:
+                length = 1
         if length == 2: #when image, label
             dataset = tensors.map(lambda x, y: x)
         if length == 3: #when image, label, ood_label
@@ -80,4 +82,3 @@ def gradient(model: Callable,
         tape.watch(inputs)
         score = tf.reduce_sum(tf.multiply(model(inputs), targets), axis=1)
     return tape.gradient(score, inputs)
-

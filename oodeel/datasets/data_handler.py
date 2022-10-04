@@ -1,7 +1,8 @@
 import tensorflow as tf
 import numpy as np
-from oodeel.datasets.load_utils import keras_dataset_load
+from ..utils.load_utils import keras_dataset_load
 from ..types import *
+from ..utils import dataset_length
 import tensorflow_datasets as tfds
 
 class DataHandler(object):
@@ -173,6 +174,15 @@ class DataHandler(object):
         dataset: Union[tf.Tensor, np.ndarray],
     ):
         
+        for x in dataset.take(1):
+            if isinstance(x, tuple):
+                if len(x) != 3:
+                    print("No ood labels to get")
+                    return
+            else:
+                print("No ood labels to get")
+                return
+
         labels = dataset.map(lambda x, y, z: z)
         labels = list(labels.as_numpy_iterator())
         return np.array(labels)
@@ -219,10 +229,26 @@ class DataHandler(object):
             _description_
         """
 
-        x = dataset.map(lambda x, y: x) 
-        y = dataset.map(lambda x, y: y) 
-        x = np.array(list(x.as_numpy_iterator()))
-        y = np.array(list(y.as_numpy_iterator()))
-        return x, y
+        length = dataset_length(dataset)
         
+        if length == 2:
+            x = dataset.map(lambda x, y: x) 
+            y = dataset.map(lambda x, y: y) 
+            x = np.array(list(x.as_numpy_iterator()))
+            y = np.array(list(y.as_numpy_iterator()))
+            return x, y
+
+        elif length == 3:
+            x = dataset.map(lambda x, y, z: x) 
+            y = dataset.map(lambda x, y, z: y) 
+            z = dataset.map(lambda x, y, z: z) 
+            x = np.array(list(x.as_numpy_iterator()))
+            y = np.array(list(y.as_numpy_iterator()))
+            z = np.array(list(z.as_numpy_iterator()))
+            return x, y, z
+
+        else:
+            x = np.array(list(x.as_numpy_iterator()))
+            return x
+
 
