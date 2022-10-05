@@ -2,8 +2,9 @@ import tensorflow as tf
 import numpy as np
 from ..utils.load_utils import keras_dataset_load
 from ..types import *
-from ..utils import dataset_length
+from ..utils import dataset_nb_columns
 import tensorflow_datasets as tfds
+import os
 
 class DataHandler(object):
     """
@@ -82,7 +83,8 @@ class DataHandler(object):
 
     @staticmethod
     def load(
-        key: str
+        key: str,
+        **kwargs
     ) -> Tuple[Tuple[Union[tf.Tensor, np.ndarray]]]:
         """
         _summary_
@@ -91,7 +93,7 @@ class DataHandler(object):
             key: _description_
         """
         assert hasattr(tf.keras.datasets, key), f"{key} not available with keras.datasets"
-        (x_train, y_train), (x_test, y_test) = keras_dataset_load(key)
+        (x_train, y_train), (x_test, y_test) = keras_dataset_load(key, **kwargs)
         return (x_train, y_train), (x_test, y_test)
 
     def filter_tfds(
@@ -190,8 +192,10 @@ class DataHandler(object):
     def load_tfds(
         self,
         dataset_name: Union[str, Tuple],
-        preprocess: bool = True,
-        as_numpy: bool = False
+        preprocess: bool = False,
+        preprocessing_fun: Optional[Callable] = None,
+        as_numpy: bool = False,
+        **kwargs
     ) -> tf.data.Dataset:
         """
         _summary_
@@ -203,15 +207,16 @@ class DataHandler(object):
             _description_
         """
 
-        dataset = tfds.load(dataset_name, as_supervised=True)
+        dataset = tfds.load(dataset_name, as_supervised=True, **kwargs)
         if preprocess:
-            dataset["train"] = dataset["train"].map(lambda x, y: (x/255, y))
-            dataset["test"] = dataset["test"].map(lambda x, y: (x/255, y))
-        
+            assert preprocessing_fun is not None, "Please specify a preprocessing function"
+            for key in dataset.keys():
+                dataset[key] = dataset[key].map(
+                    lambda x, y: (preprocessing_fun(x), y)
+                )
         if as_numpy:
-            (x_train, y_train) = self.convert_to_numpy(dataset["train"])
-            (x_test, y_test) = self.convert_to_numpy(dataset["test"])
-            return (x_train, y_train),  (x_test, y_test)
+            np_datasets = [self.convert_to_numpy(dataset[key]) for key in dataset.keys()]
+            return np_datasets
         else:
             return dataset
 
@@ -229,7 +234,7 @@ class DataHandler(object):
             _description_
         """
 
-        length = dataset_length(dataset)
+        length = dataset_nb_columns(dataset)
         
         if length == 2:
             x = dataset.map(lambda x, y: x) 

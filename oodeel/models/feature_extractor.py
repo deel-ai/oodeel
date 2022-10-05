@@ -23,7 +23,7 @@ class KerasFeatureExtractor(object):
         output_layers_id: List[Union[int, str]] =[], 
         output_activation: str = None, 
         input_layer_id : Union[int, str] = None,
-        flatten: bool = True, 
+        flatten: bool = False, 
         batch_size: int = 256,
     ):
 

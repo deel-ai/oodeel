@@ -1,6 +1,6 @@
 import tensorflow as tf
 from ..types import *
-from .tools import dataset_length
+from .tools import dataset_nb_columns
 
 
 def batch_tensor(tensors: Union[tf.data.Dataset, tf.Tensor],
@@ -21,7 +21,7 @@ def batch_tensor(tensors: Union[tf.data.Dataset, tf.Tensor],
         Tensorflow dataset batched.
     """
     if isinstance(tensors, tf.data.Dataset):
-        length = dataset_length(tensors)
+        length = dataset_nb_columns(tensors)
 
         if length == 2: #when image, label
             dataset = tensors.map(lambda x, y: x)
