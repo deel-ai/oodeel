@@ -25,7 +25,10 @@ def test_load_tfds():
 
 def test_convert_to_numpy():
     data_handler = DataHandler()
-    ds = generate_data_tfds(x_shape=(32, 32, 3), num_labels=10, samples=100)
+    ds = generate_data_tfds(
+        x_shape=(32, 32, 3), num_labels=10, samples=100,
+        one_hot=False
+        )
     x, y = data_handler.convert_to_numpy(ds)
     assert isinstance(x, np.ndarray)
     assert isinstance(y, np.ndarray)
@@ -35,7 +38,10 @@ def test_convert_to_numpy():
 def test_filter_tfds():
     data_handler = DataHandler()
     inc_labels = [0, 1, 2, 3, 4]
-    ds = generate_data_tfds(x_shape=(32, 32, 3), num_labels=10, samples=100)
+    ds = generate_data_tfds(
+        x_shape=(32, 32, 3), num_labels=10, samples=100,
+        one_hot=False
+        )
     data_id, data_ood = data_handler.filter_tfds(ds, inc_labels = inc_labels)
     x_id, y_id = data_handler.convert_to_numpy(data_id)
     x_ood, y_ood = data_handler.convert_to_numpy(data_ood)
