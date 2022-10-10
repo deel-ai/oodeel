@@ -48,7 +48,7 @@ def test_train_keras_app():
 
     train_config = {
         "batch_size": 5,
-        "epochs": 2
+        "epochs": 3
     }
 
     input_shape = (56, 56, 3)

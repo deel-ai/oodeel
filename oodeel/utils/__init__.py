@@ -1,1 +1,1 @@
-from .tools import dataset_nb_columns, dataset_image_shape, dataset_max_pixel
+from .tools import dataset_nb_columns, dataset_image_shape, dataset_max_pixel, dataset_cardinality

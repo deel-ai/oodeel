@@ -24,8 +24,7 @@ class MLS(OODModel):
         Initializes the feature extractor 
         """
         super().__init__(output_activation=output_activation, 
-                         batch_size=batch_size,
-                         threshold=threshold)
+                         batch_size=batch_size)
 
     def _score_tensor(
         self, 

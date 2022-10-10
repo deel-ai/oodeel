@@ -21,12 +21,10 @@ class OODModel(ABC):
         output_layers_id: List[int] =[], 
         output_activation: str = None, 
         flatten: bool = True, 
-        batch_size: int = 256,
-        threshold: Optional[float] = None
+        batch_size: int = 256
     ):
 
         self.batch_size = batch_size
-        self.threshold = threshold
         self.feature_extractor = None 
         self.output_layers_id = output_layers_id
         self.output_activation = output_activation
@@ -167,7 +165,8 @@ class OODModel(ABC):
 
     def isood(
         self, 
-        inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
+        inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray],
+        threshold: float
     ) -> np.ndarray:
         """
         Returns whether the input samples "inputs" are OOD or not, given a threshold
@@ -185,20 +184,20 @@ class OODModel(ABC):
             array filled with 0 for ID samples and 1 for OOD samples
         """
 
-        if (self.scores is None) or (inputs is not None):
-            self.score(inputs)
-        OODness = tf.map_fn(lambda x: 0 if x < self.threshold else 1, self.scores)
+        scores = self.score(inputs)
+        OODness = tf.map_fn(lambda x: 0 if x < threshold else 1, scores)
 
         return OODness
 
     def __call__(
         self, 
-        inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
+        inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray],
+        threshold: float
     ) -> np.ndarray:
         """
         Convenience wrapper for isood once the threshold is set
         """
-        return self.isood(inputs)
+        return self.isood(inputs, threshold)
             
 
 

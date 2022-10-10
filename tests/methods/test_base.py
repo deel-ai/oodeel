@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from oodeel.methods import MLS
 from oodeel.types import *
 from tests import generate_data_tfds, generate_model, almost_equal
-"""
+
 def test_isood():
 
     input_shape = (32, 32, 3)
@@ -24,10 +24,8 @@ def test_isood():
     oodmodel = MLS()
     oodmodel.fit(model)
 
-    oodmodel.threshold = -5
-    isooddata = oodmodel.isood(inputs=data)
-    isooddata2 = oodmodel(data)
+    isooddata = oodmodel.isood(inputs=data, threshold=-5)
+    isooddata2 = oodmodel(data, threshold=-5)
     print(np.sum(isooddata - isooddata2))
 
     assert almost_equal(isooddata, isooddata2)
-"""

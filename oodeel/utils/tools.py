@@ -27,7 +27,7 @@ def dataset_image_shape(
 
 def dataset_max_pixel(
     dataset: tf.data.Dataset
-) -> Tuple[int]:
+) -> float:
 
     length = dataset_nb_columns(dataset)
 
@@ -40,4 +40,11 @@ def dataset_max_pixel(
         0., lambda x, y: float(tf.math.reduce_max(tf.maximum(x, y)))
         )
     return float(max_pixel)
+
+def dataset_cardinality(
+    dataset: tf.data.Dataset
+) -> int:
+
+    cardinality = dataset.reduce(0, lambda x, _: x+1)
+    return int(cardinality)
 

@@ -22,7 +22,6 @@ class DKNN(OODModel):
         output_activation: str = None,
         flatten: bool = True, 
         batch_size: int = 256,
-        threshold: Optional[float] = None
     ):
 
         """
@@ -31,8 +30,7 @@ class DKNN(OODModel):
         super().__init__(output_layers_id=output_layers_id,
                          output_activation=output_activation, 
                          flatten=flatten,
-                         batch_size=batch_size,
-                         threshold=threshold)
+                         batch_size=batch_size)
 
         self.index = None
         self.nearest = nearest

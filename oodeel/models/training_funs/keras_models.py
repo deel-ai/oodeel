@@ -1,8 +1,9 @@
 import tensorflow as tf
 from ...types import *
-from ...utils import dataset_image_shape
+from ...utils import dataset_image_shape, dataset_cardinality
 from tensorflow import keras
 from keras.layers import Dense, Flatten
+import numpy as np
 
 def train_keras_app(
     train_data: tf.data.Dataset,
@@ -11,6 +12,7 @@ def train_keras_app(
     epochs: int = 50,
     loss: str = "categorical_crossentropy",
     optimizer: str = "adam",
+    learning_rate: float = 1e-3,
     metrics: List[str] = ["accuracy"],
     imagenet_pretrained: bool = False,
     validation_data: Optional[tf.data.Dataset] = None
@@ -52,7 +54,7 @@ def train_keras_app(
             features = Flatten()(backbone.layers[-1].output)
             output = Dense(num_classes, activation="softmax")(features)    
             model = tf.keras.Model(backbone.layers[0].input, output)
-            
+
     train_data = train_data.map(
         lambda x, y: (x, tf.one_hot(y, num_classes))
         ).batch(batch_size)
@@ -62,13 +64,30 @@ def train_keras_app(
             lambda x, y: (x, tf.one_hot(y, num_classes))
             ).batch(batch_size)
 
+    n_steps = dataset_cardinality(train_data) * epochs 
+    values = list(learning_rate * np.array([1, 0.1, 0.01]))
+    boundaries = list(np.round(n_steps * np.array([1/3, 2/3])).astype(int))
+    
     #### TODO 
     # Add preprocessing (data augmentation)
-    # Add learning rate schedule
-    # Add early stopping ?
 
-    model.compile(loss=loss, optimizer=optimizer, metrics=metrics)
+    lr_scheduler = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+        boundaries, values)
 
-    model.fit(train_data, validation_data=validation_data, epochs=epochs) 
+    config = {
+        "class_name": optimizer, 
+        "config": {
+            "learning_rate": lr_scheduler
+            }
+        }
+
+    keras_optimizer = tf.keras.optimizers.get(config)
+
+    model.compile(loss=loss, optimizer=keras_optimizer, metrics=metrics)
+
+    model.fit(
+        train_data, 
+        validation_data=validation_data, 
+        epochs=epochs) 
 
     return model  
