@@ -4,7 +4,7 @@ from .tools import dataset_nb_columns
 
 
 def batch_tensor(tensors: Union[tf.data.Dataset, tf.Tensor],
-                 batch_size: Optional[int] = None):
+                 batch_size: int = 256):
     """
     Create a tensorflow dataset of tensors or series of tensors.
 
@@ -30,8 +30,8 @@ def batch_tensor(tensors: Union[tf.data.Dataset, tf.Tensor],
         
     else:
         dataset = tf.data.Dataset.from_tensor_slices(tensors)
-    if batch_size is not None:
-        dataset = dataset.batch(batch_size)
+
+    dataset = dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
     return dataset
 

@@ -8,21 +8,20 @@ import os
 
 class DataHandler(object):
     """
-    Handles datasets (filtering by labels for now).
+    Handles datasets. For now:
+    *   filters by labels
+    *   merges datasets
+    *   loads datasets
     Aims at handling datasets from diverse sources
-
-    Args:
-        x: inputs
-        y: labels
     """
     def __init__(self):
         pass
         
     
-    def filter(
+    def filter_np(
         self, 
-        x: Union[tf.Tensor, np.ndarray], 
-        y: Union[tf.Tensor, np.ndarray], 
+        x: np.ndarray, 
+        y: np.ndarray, 
         inc_labels: Optional[Union[np.ndarray, list]] = None, 
         excl_labels: Optional[Union[np.ndarray, list]] = None, 
     ) -> Tuple[Tuple[Union[tf.Tensor, np.ndarray]]]:
@@ -54,10 +53,10 @@ class DataHandler(object):
         return  (x_id, y_id), (x_ood, y_ood)
 
 
-    def merge(
+    def merge_np(
         self, 
-        x_id: Union[tf.Tensor, np.ndarray], 
-        x_ood: Union[tf.Tensor, np.ndarray], 
+        x_id: np.ndarray, 
+        x_ood: np.ndarray, 
         shuffle: Optional[bool] = False
     )-> Tuple[Union[tf.Tensor, np.ndarray], Union[tf.Tensor, np.ndarray]]:
         """
@@ -65,7 +64,7 @@ class DataHandler(object):
 
         Args:
             x_id: ID inputs
-            x_ood: OOD inputs (often not used in )
+            x_ood: OOD inputs
 
         Returns:
             x: merge dataset
@@ -82,23 +81,24 @@ class DataHandler(object):
         return x, labels
 
     @staticmethod
-    def load(
+    def load_keras(
         key: str,
         **kwargs
     ) -> Tuple[Tuple[Union[tf.Tensor, np.ndarray]]]:
         """
-        _summary_
+        Loads from keras.datasets
 
         Args:
-            key: _description_
+            key: dataset name
         """
         assert hasattr(tf.keras.datasets, key), f"{key} not available with keras.datasets"
         (x_train, y_train), (x_test, y_test) = keras_dataset_load(key, **kwargs)
+
         return (x_train, y_train), (x_test, y_test)
 
     def filter_tfds(
         self, 
-        x: Union[tf.Tensor, np.ndarray], 
+        x: tf.data.Dataset, 
         inc_labels: Optional[Union[np.ndarray, list]] = None, 
         excl_labels: Optional[Union[np.ndarray, list]] = None, 
     ) -> Tuple[Tuple[Union[tf.Tensor, np.ndarray]]]:
@@ -106,6 +106,7 @@ class DataHandler(object):
         Filters dataset by labels.
 
         Args:
+            x: tf.data.Dataset to filter
             inc_labels: labels to include. Defaults to None.
             excl_labels: labels to exclude. Defaults to None.
 
@@ -130,13 +131,13 @@ class DataHandler(object):
 
     def merge_tfds(
         self, 
-        x_id: Union[tf.Tensor, np.ndarray], 
-        x_ood: Union[tf.Tensor, np.ndarray], 
+        x_id: tf.data.Dataset, 
+        x_ood: tf.data.Dataset, 
         shape: Optional[Tuple[int]] = None,
         shuffle: Optional[bool] = False,
-    )-> Tuple[Union[tf.Tensor, np.ndarray], Union[tf.Tensor, np.ndarray]]:
+    )-> tf.data.Dataset:
         """
-        Merges two datasets
+        Merges two tf.data.Datasets
 
         Args:
             x_id: ID inputs
@@ -173,9 +174,17 @@ class DataHandler(object):
 
     def get_ood_labels(
         self,
-        dataset: Union[tf.Tensor, np.ndarray],
-    ):
-        
+        dataset: tf.data.Dataset,
+    ) -> np.ndarray:
+        """
+        Get labels from a merged dataset built with ID and OOD data.
+
+        Args:
+            dataset: tf.data.Dataset to get labels from
+
+        Returns:
+            array of labels
+        """
         for x in dataset.take(1):
             if isinstance(x, tuple):
                 if len(x) != 3:
@@ -198,13 +207,16 @@ class DataHandler(object):
         **kwargs
     ) -> tf.data.Dataset:
         """
-        _summary_
+        Loads dataset from tensorflow-datasets
 
         Args:
-            key: _description_
+            key: dataset name
+            preprocess: preprocess or not
+            preprocessing_fun: function used for preprocessing
+            as_numpy: returns np.ndarray if True, else tf.data.Dataset
 
         Returns:
-            _description_
+            np.ndarray if True, else tf.data.Dataset
         """
 
         dataset = tfds.load(dataset_name, as_supervised=True, **kwargs)
@@ -225,13 +237,13 @@ class DataHandler(object):
         dataset: tf.data.Dataset
     ) -> Tuple[np.ndarray]:
         """
-        _summary_
+        converts tf.data.Dataset to numpy
 
         Args:
-            dataset: _description_
+            dataset: tf.data.Dataset
 
         Returns:
-            _description_
+            np converted dataset
         """
 
         length = dataset_nb_columns(dataset)

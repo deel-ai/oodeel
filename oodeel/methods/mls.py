@@ -9,20 +9,19 @@ class MLS(OODModel):
     "Open-Set Recognition: a Good Closed-Set Classifier is All You Need?"
     https://arxiv.org/abs/2110.06207
 
-    Parameters
-    ----------
-    model : tf.keras model 
-        keras models saved as pb files e.g. with model.save()
+
+    Args:
+        output_activation: activation function for the last layer. 
+            Defaults to "linear".
+        batch_size: batch_size used to compute the features space
+            projection of input data. 
+            Defaults to 256.
     """
     def __init__(
         self, 
         output_activation: str = "linear", 
         batch_size: int = 256,
-        threshold: Optional[float] = None
     ):
-        """
-        Initializes the feature extractor 
-        """
         super().__init__(output_activation=output_activation, 
                          batch_size=batch_size)
 
@@ -32,16 +31,12 @@ class MLS(OODModel):
     ) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on 
-        maximum logits value.
+        the distance to nearest neighbors in the feature space of self.model
 
-        Parameters
-        ----------
-        inputs : np.array
-            input samples to score
+        Args:
+            inputs: input samples to score
 
-        Returns
-        -------
-        np.array
+        Returns:
             scores
         """
         assert self.feature_extractor is not None, "Call .fit() before .score()"

@@ -18,10 +18,13 @@ def bench_metrics(
     Args:
         scores: scores output of oodmodel to evaluate
         labels: 1 if ood else 0
+        metrics: list of metrics to compute. 
+            Can pass any metric name from sklearn.metric
         step: integration step (wrt percentile). Defaults to 4.
+            Only used for auroc and fpr95tpr
 
     Returns:
-        _description_
+        a dictionnary of metrics
     """
     metrics_dict = {}
     fpr, tpr = get_curve(scores, labels, step)

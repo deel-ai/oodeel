@@ -10,10 +10,18 @@ class DKNN(OODModel):
     https://arxiv.org/abs/2204.06507
     Simplified version adapted to convnet as built in ./models/train/train_mnist.py
 
-    Parameters
-    ----------
-    model : tf.keras model 
-        keras models saved as pb files e.g. with model.save()
+        Args:
+            nearest: number of nearest neighbors to consider. 
+                Defaults to 1.
+            output_layers_id: feature space on which to compute nearest neighbors. 
+                Defaults to [-2].
+            output_activation: output activation to use. 
+                Defaults to None.
+            flatten: Flatten the output features or not. 
+                Defaults to True.
+            batch_size: batch_size used to compute the features space
+                projection of input data. 
+                Defaults to 256.
     """
     def __init__(
         self, 
@@ -23,10 +31,6 @@ class DKNN(OODModel):
         flatten: bool = True, 
         batch_size: int = 256,
     ):
-
-        """
-        Initializes the feature extractor 
-        """
         super().__init__(output_layers_id=output_layers_id,
                          output_activation=output_activation, 
                          flatten=flatten,
@@ -43,10 +47,8 @@ class DKNN(OODModel):
         Constructs the index from ID data "fit_dataset", which will be used for
         nearest neighbor search.
 
-        Parameters
-        ----------
-        fit_dataset : np.array
-            input dataset (ID) to construct the index with.
+        Args:
+            fit_dataset: input dataset (ID) to construct the index with.
         """
         fit_projected = self.feature_extractor(fit_dataset)[0]
         self.index = faiss.IndexFlatL2(fit_projected.shape[1])
@@ -60,14 +62,10 @@ class DKNN(OODModel):
         Computes an OOD score for input samples "inputs" based on 
         the distance to nearest neighbors in the feature space of self.model
 
-        Parameters
-        ----------
-        inputs : np.array
-            input samples to score
+        Args:
+            inputs: input samples to score
 
-        Returns
-        -------
-        np.array
+        Returns:
             scores
         """
         assert self.feature_extractor is not None, "Call .fit() before .score()"
