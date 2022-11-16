@@ -54,7 +54,7 @@ class ODIN(OODModel):
         assert self.feature_extractor is not None, "Call .fit() before .score()"
         grads = self.feature_extractor.gradient_max(inputs)
         inputs = inputs[0] - self.noise * np.sign(-grads)
-        pred = self.feature_extractor(inputs)
+        pred = self.feature_extractor(inputs)[0]
         scores = -np.max(pred, axis=1)
         return scores
 

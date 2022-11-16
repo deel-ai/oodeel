@@ -21,6 +21,6 @@ def test_odin():
 
     odin = ODIN(temperature=100, noise=0.1)
     odin.fit(model)
-    odin.score(data)
+    scores = odin.score(data)
 
-    assert True
+    assert scores.shape == (1000,)
