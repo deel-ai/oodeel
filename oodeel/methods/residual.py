@@ -91,6 +91,8 @@ class Residual(OODModel):
             print("You can visualize this elbow by calling the method '.plot_spectrum()' of this class")
         elif isinstance(self.princ_dims, int):
             assert self.princ_dims<self.feature_dim, f"if 'princ_dims'(={self.princ_dims}) is an int, it must be less than feature space dimension ({self.feature_dim})"
+            self.res_dim=self.feature_dim-self.princ_dims
+
         elif isinstance(self.princ_dims, float):
             assert 0<=self.princ_dims and self.princ_dims<1,  f"if 'princ_dims'(={self.princ_dims}) is a float, it must be in [0,1)"   
             explained_variance=np.cumsum(np.flip(eig_vals)/np.sum(eig_vals))
