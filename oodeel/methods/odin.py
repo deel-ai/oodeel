@@ -30,7 +30,7 @@ class ODIN(OODModel):
     def __init__(
         self,
         temperature: float = 1000,
-        noise: float = 0.2,
+        noise: float = 0.014,
         batch_size: int = 256,
     ):
         self.temperature = temperature
@@ -54,7 +54,7 @@ class ODIN(OODModel):
         assert self.feature_extractor is not None, "Call .fit() before .score()"
         grads = self.feature_extractor.gradient_max(inputs)
         inputs = inputs[0] - self.noise * np.sign(-grads)
-        pred = self.feature_extractor(inputs)
+        pred = self.feature_extractor(inputs)[0]
         scores = -np.max(pred, axis=1)
         return scores
 
