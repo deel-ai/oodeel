@@ -3,6 +3,7 @@ from oodeel.methods import ODIN
 import numpy as np
 from oodeel.types import *
 from tests import generate_model, generate_data
+from oodeel.datasets import DataHandler
 
 
 def test_odin():
@@ -23,4 +24,9 @@ def test_odin():
     odin.fit(model)
     scores = odin.score(data)
 
-    assert scores.shape == (1000,)
+    assert scores.shape == (100,)
+
+    data = tf.data.Dataset.from_tensor_slices(data)
+    scores = odin.score(data)
+
+    assert scores.shape == (100,)

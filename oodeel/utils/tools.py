@@ -1,16 +1,13 @@
 import tensorflow as tf
 from oodeel.types import *
+import numpy as np
 
 
 def dataset_nb_columns(dataset: tf.data.Dataset) -> int:
-
-    for x in dataset.take(1):
-        if isinstance(x, tuple):
-            length = len(x)
-        else:
-            length = 1
-
-    return length
+    try:
+        return len(dataset.element_spec)
+    except TypeError:
+        return 1
 
 
 def dataset_image_shape(dataset: tf.data.Dataset) -> Tuple[int]:
@@ -28,6 +25,7 @@ def dataset_image_shape(dataset: tf.data.Dataset) -> Tuple[int]:
         else:
             shape = x.shape
     return shape
+
 
 def dataset_label_shape(dataset: tf.data.Dataset) -> Tuple[int]:
 
@@ -47,10 +45,9 @@ def dataset_max_pixel(dataset: tf.data.Dataset) -> float:
 
 
 def dataset_nb_labels(dataset: tf.data.Dataset) -> int:
-
-    dataset = dataset_get_columns(dataset, 1)
-    max_label = dataset.reduce(0, lambda x, y: int(tf.maximum(x, y)))
-    return int(max_label) + 1
+    ds = dataset_get_columns(dataset, 1)
+    ds = ds.unique()
+    return len(list(ds.as_numpy_iterator()))
 
 
 def dataset_cardinality(dataset: tf.data.Dataset) -> int:
@@ -84,7 +81,7 @@ def dataset_get_columns(
 
         dataset = dataset.map(lambda x, y: return_columns(x, y, columns))
 
-    if length == 3:  # when image, label, ood_label
+    if length == 3:  # when image, label, ood_label or weights
 
         def return_columns(x, y, z, col):
             X = [x, y, z]

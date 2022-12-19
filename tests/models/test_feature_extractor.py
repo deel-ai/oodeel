@@ -17,7 +17,7 @@ def test_predict():
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    feature_extractor = KerasFeatureExtractor(model, output_layers_id=[-3])
+    feature_extractor = KerasFeatureExtractor(model, output_layers_id=[])
 
     model_fe = KerasFeatureExtractor(model, output_layers_id=[])
 
@@ -32,9 +32,9 @@ def test_predict():
     assert almost_equal(pred_model, pred_last_layer)
 
 
-def test_gradient_max():
+def test_gradient_pred():
     """
-    Test gradient_max
+    Test gradient_mpred
     """
     input_shape = (32, 32, 3)
     num_labels = 10
@@ -46,8 +46,48 @@ def test_gradient_max():
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    feature_extractor = KerasFeatureExtractor(model, output_layers_id=[])
+    feature_extractor = KerasFeatureExtractor(model, output_layers_id=[], batch_size=26)
 
-    grad_feature_extractor = feature_extractor.gradient_max(data)
+    grad_feature_extractor = feature_extractor.gradient_pred(data)
+
+    assert list(grad_feature_extractor.shape) == ([samples] + list(input_shape))
+
+def test_gradient_true_pred():
+    """
+    Test gradient_mpred
+    """
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tfds(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    )  # .batch(samples)
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    feature_extractor = KerasFeatureExtractor(model, output_layers_id=[], batch_size=26)
+
+    grad_feature_extractor = feature_extractor.gradient_true_pred(data)
+
+    assert list(grad_feature_extractor.shape) == ([samples] + list(input_shape))
+
+def test_gradient_index():
+    """
+    Test gradient_index
+    """
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tfds(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    )  # .batch(samples)
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    feature_extractor = KerasFeatureExtractor(model, output_layers_id=[], batch_size=26)
+
+    grad_feature_extractor = feature_extractor.gradient_index(data, index=4)
 
     assert list(grad_feature_extractor.shape) == ([samples] + list(input_shape))
