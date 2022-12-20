@@ -52,8 +52,7 @@ class Energy(OODModel):
 
         # compute logits (softmax(logits,axis=1) is the actual softmax output minimized using binary cross entropy)
         logits = self.feature_extractor(inputs)[0]
-        scores = logsumexp(logits, axis=1)
-        self.scores = -scores
-        return self.scores
+        scores = - logsumexp(logits, axis=1)
+        return scores
 
         
