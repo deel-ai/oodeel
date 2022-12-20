@@ -28,7 +28,7 @@ class OODModel(ABC):
         self,
         output_layers_id: List[int] = [],
         output_activation: str = None,
-        flatten: bool = True,
+        flatten: bool = False,
         batch_size: int = 256,
     ):
 
@@ -135,6 +135,12 @@ class OODModel(ABC):
             List[Union[tf.data.Dataset, tf.Tensor, np.ndarray]],
             Union[tf.data.Dataset, tf.Tensor, np.ndarray],
         ],
+        outputs: Optional[
+            Union[
+                List[Union[tf.data.Dataset, tf.Tensor, np.ndarray]],
+                Union[tf.data.Dataset, tf.Tensor, np.ndarray],
+            ]
+        ] = None,
     ) -> Union[List[np.ndarray], np.ndarray]:
         """
         Computes an OOD score for input samples "inputs"
@@ -151,7 +157,11 @@ class OODModel(ABC):
         else:
             scores_list = []
             for input in inputs:
-                scores = self._score_tensor(input)
+                scores = (
+                    self._score_tensor(input)
+                    if outputs is None
+                    else self._score_tensor(input, outputs)
+                )
                 scores_list.append(scores)
             return scores_list
 

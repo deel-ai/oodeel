@@ -1,4 +1,4 @@
 import tensorflow as tf
-from oodeel.methods.base import OODModel
+from oodeel.methods import MLS
 import numpy as np
 from oodeel.types import *
