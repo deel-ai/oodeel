@@ -1,9 +1,8 @@
-from tests import generate_model, generate_data, almost_equal
 import tensorflow as tf
-from oodeel.methods.energy import Energy
+from oodeel.methods import Energy
 import numpy as np
 from oodeel.types import *
-
+from tests import generate_model, generate_data, almost_equal
 
 def test_energy():
     """
