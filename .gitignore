@@ -6,3 +6,22 @@ __pycache__
 .vscode
 ~
 .pytest_cache
+
+# Python files
+.ipynb_checkpoints
+__pycache__
+.mypy_cache
+*.egg-info
+
+# IDE / Tools files
+.vscode
+.tox
+oodeel_dev_env
+
+# Files generated:
+logs
+export-wass
+docs/build
+
+# mkdocs documentation
+/site
