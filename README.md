@@ -8,11 +8,11 @@ A la racine du projet on trouve:
 - deel : répertoire destiné à recevoir le code de la librairie. C'est le premier mot de l'espaces de nommage de
         la librairie. Ce n'est pas un module python, il ne contient donc pas de fichier __init__.py.
         Il contient le module principal de la librairie du nom de cette librairie.
-        
-        Example: 
-        
+
+        Example:
+
         librairie **deel-lip**:
-                    deel/deel-lip       
+                    deel/deel-lip
 
 - docs: répertoire destiné à la documentation de la librairie
 
@@ -28,7 +28,7 @@ A la racine du projet on trouve:
 
 - LICENCE : texte de la licence sous laquelle est publiée la librairie (MIT).
 
-- README.md 
+- README.md
 
 
 # pre-commit : Conventional Commits 1.0.0
@@ -53,7 +53,7 @@ The commit contains the following structural elements, to communicate intent to 
 - BREAKING CHANGE: a commit that has a footer BREAKING CHANGE:, or appends a ! after the type/scope, introduces a breaking API change (correlating with MAJOR in Semantic Versioning). A BREAKING CHANGE can be part of commits of any type.
 
 - types other than fix: and feat: are allowed, for example @commitlint/config-conventional (based on the the Angular convention) recommends *build:, chore:, ci:, docs:, style:, refactor:, perf:, test:*, and [others](https://delicious-insights.com/fr/articles/git-hooks-et-commitlint/).
- 
+
 - footers other than BREAKING CHANGE: <description> may be provided and follow a convention similar to git trailer format.
 
 - Additional types are not mandated by the Conventional Commits specification, and have no implicit effect in Semantic Versioning (unless they include a BREAKING CHANGE). A scope may be provided to a commit’s type, to provide additional contextual information and is contained within parenthesis, e.g., feat(parser): add ability to parse arrays.

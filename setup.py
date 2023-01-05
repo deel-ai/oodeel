@@ -49,7 +49,6 @@ dev_requirements = [
     "mkdocstrings",
     "mknotebooks",
     "bump2version",
-    "faiss",
     "faiss_cpu",
     "keras",
     "numpy",
@@ -57,6 +56,7 @@ dev_requirements = [
     "scipy",
     "tensorflow>=2.4.0",
     "tensorflow_datasets",
+    "matplotlib",
 ]
 
 docs_requirements = [
