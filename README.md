@@ -1,36 +1,3 @@
-# Deel library repository template
-
-Ce dépôt git sert de template pour les librairies DEEL ayant vocation à être rendues publiques sur github.
-Il donne la structure des répertoires d'un projet telle que celle adoptée par les librairies DEEL déjà publiques.
-
-A la racine du projet on trouve:
-
-- deel : répertoire destiné à recevoir le code de la librairie. C'est le premier mot de l'espaces de nommage de
-        la librairie. Ce n'est pas un module python, il ne contient donc pas de fichier __init__.py.
-        Il contient le module principal de la librairie du nom de cette librairie.
-
-        Example:
-
-        librairie **deel-lip**:
-                    deel/deel-lip
-
-- docs: répertoire destiné à la documentation de la librairie
-
-- tests: répertoire des tests unitaires
-
-- .pre-commit-config.yaml : configuration de outil de contrôle avant commit (pre-commit)
-
-- LICENCE/headers/MIT-Clause.txt : entête licence MIT injectée dans les fichiers du projet
-
-- CONTRIBUTING.md: description de la procédure pour apporter une contribution à la librairie.
-
-- GOUVERNANCE.md: description de la manière dont la librairie est gérée.
-
-- LICENCE : texte de la licence sous laquelle est publiée la librairie (MIT).
-
-- README.md
-
-
 # pre-commit : Conventional Commits 1.0.0
 
 The commit message should be structured as follows:
