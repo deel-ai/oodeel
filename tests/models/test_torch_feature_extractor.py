@@ -92,7 +92,9 @@ def named_sequential_model():
             ("fc3", nn.Linear(84, 10))])
     )
 
-
+"""
+There are various ways to define models in Pytorch. The feature extractor is tested on usual ways of defining models. 
+"""
 @pytest.mark.parametrize("kwargs_factory,expected_sz", [
     (lambda: dict(model=Net(), output_layers_id=["fc2"]), 8400),
     (lambda: dict(model=sequential_model(), output_layers_id=[-2]), 8400),

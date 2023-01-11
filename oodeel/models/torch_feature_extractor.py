@@ -44,6 +44,9 @@ class TorchFeatureExtractor(object):
     batch_size: int = None
 
     def __post_init__(self):
+        """
+        Register a hook to store feature values for each considered layer.
+        """
         _layer_store = dict()
         for layer_name, layer in self.model.named_modules():
             if layer_name in self.output_layers_id:
@@ -58,6 +61,9 @@ class TorchFeatureExtractor(object):
                 raise NotImplementedError
 
     def predict_on_batch(self, x: torch.Tensor) -> List[torch.Tensor]:
+        """
+        Get features associated with the input. Works on an in-memory tensor.
+        """
         global FEATURES
         # Empty feature dict
         for key in FEATURES.keys():
@@ -74,6 +80,9 @@ class TorchFeatureExtractor(object):
         return [process_outputs_fn(FEATURES[layer_id][0][0]) for layer_id in self.output_layers_id]
 
     def predict(self, x: torch.Tensor) -> List[torch.Tensor]:
+        """
+        Extract features for a given inputs. If batch_size is specified, the model is called on batches and outputs are concatenated.
+        """
         if self.batch_size:
             batch_bounds = np.arange(0, x.size(0), self.batch_size).tolist() + [x.size(0)]
             _batch_results = list()
