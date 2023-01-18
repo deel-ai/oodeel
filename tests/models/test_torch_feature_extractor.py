@@ -8,6 +8,7 @@ import torch.nn.functional as F
 
 from oodeel.models.torch_feature_extractor import TorchFeatureExtractor
 
+
 # From Pytorch CIFAR-10 example
 class Net(nn.Module):
     def __init__(self):
@@ -92,18 +93,23 @@ def named_sequential_model():
             ("fc3", nn.Linear(84, 10))])
     )
 
+
 """
 There are various ways to define models in Pytorch. The feature extractor is tested on usual ways of defining models. 
 """
+
+
 @pytest.mark.parametrize("kwargs_factory,expected_sz", [
-    (lambda: dict(model=Net(), output_layers_id=["fc2"]), 8400),
-    (lambda: dict(model=sequential_model(), output_layers_id=[-2]), 8400),
-    (lambda: dict(model=named_sequential_model(), output_layers_id=["fc2"]), 8400),
-    (lambda: dict(model=ComplexNet(), output_layers_id=["fcs.fc2"]), 8400),
-    (lambda: dict(model=ComplexNet(), output_layers_id=["fcs.fc2"], batch_size=8), 8400)
+    (lambda: dict(model=Net(), output_layers_id=["fc2"], flatten=True), [100, 84]),
+    (lambda: dict(model=Net(), output_layers_id=["fc2"], flatten=True, output_activation="ReLU"), [100, 84]),
+    (lambda: dict(model=sequential_model(), flatten=True, output_layers_id=[-2]), [100, 84]),
+    (lambda: dict(model=named_sequential_model(), flatten=True, output_layers_id=["fc2"]), [100, 84]),
+    (lambda: dict(model=ComplexNet(), flatten=True, output_layers_id=["fcs.fc2"]), [100, 84]),
+    (lambda: dict(model=ComplexNet(), flatten=True, output_layers_id=["fcs.fc2"], batch_size=8), [100, 84])
 
 ], ids=[
     "Pytorch simple Net",
+    "Pytorch simple Net with activation",
     "Sequential model",
     "Sequential model with names",
     "Complex Pytorch model with layered layers",
@@ -121,4 +127,27 @@ def test_params_torch_feature_extractor(kwargs_factory, expected_sz):
     pred_feature_extractor = feature_extractor.predict(x_tens)
 
     assert len(pred_feature_extractor) == 1
-    assert pred_feature_extractor[0].size == expected_sz
+    assert list(pred_feature_extractor[0].size()) == expected_sz
+
+
+@pytest.mark.parametrize("kwargs_factory,expected_sz", [
+    (lambda: dict(model=sequential_model(), input_layer_id=4, output_layers_id=[-2]), [100, 84]),
+    (lambda: dict(model=named_sequential_model(), input_layer_id="conv2", output_layers_id=["fc2"]), [100, 84]),
+], ids=[
+    "Sequential model",
+    "Sequential model with names"
+])
+def test_pytorch_feature_extractor_with_input_ids(kwargs_factory, expected_sz):
+    n_samples = 100
+    imsize_at_layer = 14
+    n_channels_at_layer = 6
+
+    x = np.random.randn(n_samples, n_channels_at_layer, imsize_at_layer, imsize_at_layer)
+    x_tens = torch.from_numpy(x).float()
+
+    feature_extractor = TorchFeatureExtractor(**kwargs_factory())
+
+    pred_feature_extractor = feature_extractor.predict(x_tens)
+
+    assert len(pred_feature_extractor) == 1
+    assert list(pred_feature_extractor[0].size()) == expected_sz
