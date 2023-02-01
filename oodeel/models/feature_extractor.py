@@ -49,7 +49,7 @@ class KerasFeatureExtractor(object):
             when working on the feature space without finetuning the bottom of the model).
             Defaults to None.
         flatten: Flatten the output features or not.
-            Defaults to True.
+            Defaults to False.
         batch_size: batch_size used to compute the features space
             projection of input data.
             Defaults to 256.
