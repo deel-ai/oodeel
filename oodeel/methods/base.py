@@ -30,7 +30,7 @@ from typing import Union
 import numpy as np
 import tensorflow as tf
 
-from ..models.feature_extractor import KerasFeatureExtractor
+from ..models.keras_feature_extractor import KerasFeatureExtractor
 from ..types import *
 
 

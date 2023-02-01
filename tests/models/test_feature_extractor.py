@@ -23,7 +23,7 @@
 import numpy as np
 import tensorflow as tf
 
-from oodeel.models.feature_extractor import KerasFeatureExtractor
+from oodeel.models.keras_feature_extractor import KerasFeatureExtractor
 from oodeel.types import *
 from tests import almost_equal
 from tests import generate_data_tfds
