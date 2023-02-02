@@ -25,3 +25,4 @@ docs/build
 
 # mkdocs documentation
 /site
+.env

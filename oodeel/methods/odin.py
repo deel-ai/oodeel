@@ -24,7 +24,6 @@ import faiss
 import numpy as np
 import tensorflow as tf
 from keras.layers import Activation
-from keras.utils.generic_utils import get_custom_objects
 
 from ..types import *
 from ..utils.tf_operations import batch_tensor

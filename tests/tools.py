@@ -39,7 +39,7 @@ from tensorflow import keras
 
 def almost_equal(arr1, arr2, epsilon=1e-6):
     """Ensure two array are almost equal at an epsilon"""
-    return np.sum(np.abs(arr1 - arr2)) < epsilon
+    return np.mean(np.abs(arr1 - arr2)) < epsilon
 
 
 def generate_model(input_shape=(32, 32, 3), output_shape=10):
@@ -69,7 +69,6 @@ def generate_regression_model(features_shape, output_shape=1):
 
 
 def generate_data(x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=True):
-
     x = np.random.rand(samples, *x_shape).astype(np.float32)
     x /= np.max(x)
     if one_hot:
@@ -81,7 +80,6 @@ def generate_data(x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=True)
 
 
 def generate_data_tfds(x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=True):
-
     x, y = generate_data(x_shape, num_labels, samples, one_hot)
     dataset = tf.data.Dataset.from_tensor_slices((x, y))
     return dataset

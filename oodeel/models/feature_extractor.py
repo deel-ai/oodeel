@@ -61,19 +61,13 @@ class FeatureExtractor(ABC):
         self,
         model: Callable,
         output_layers_id: List[Union[int, str]] = [],
-        output_activation: str = None,
         input_layer_id: Union[int, str] = None,
-        flatten: bool = False,
-        batch_size: int = 256,
     ):
         if not isinstance(output_layers_id, list):
             output_layers_id = [output_layers_id]
 
         self.output_layers_id = output_layers_id
         self.input_layer_id = input_layer_id
-        self.output_activation = output_activation
-        self.flatten = flatten
-        self.batch_size = batch_size
         self.model = model
         self.extractor = self.prepare_extractor()
 
@@ -101,23 +95,23 @@ class FeatureExtractor(ABC):
         Projects input samples "inputs" into the feature space
 
         Args:
-            inputs: input samples to project in feature space
+            inputs: a tensor
 
         Returns:
-            list of features
+            features
         """
         raise NotImplementedError()
 
     @abstractmethod
     def predict(self, inputs: Any):
         """
-        Projects input samples "inputs" into the feature space
+        Projects input samples "inputs" into the feature space for a batched dataset
 
         Args:
-            inputs: input samples to project in feature space
+            inputs: iterable of tensor batches
 
         Returns:
-            list of features
+            features
         """
         raise NotImplementedError()
 
@@ -125,7 +119,4 @@ class FeatureExtractor(ABC):
         """
         Choose to call predict or predict_tensor depending on the type of inputs
         """
-        if isinstance(inputs, Iterable):
-            return self.predict(inputs)
-
         return self.predict_tensor(inputs)
