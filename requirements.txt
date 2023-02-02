@@ -7,3 +7,6 @@ setuptools
 tensorflow>=2.4.0
 tensorflow_datasets
 matplotlib
+timm,
+torch,
+torchvision

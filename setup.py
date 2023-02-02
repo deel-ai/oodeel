@@ -57,6 +57,9 @@ dev_requirements = [
     "tensorflow>=2.4.0",
     "tensorflow_datasets",
     "matplotlib",
+    "timm",
+    "torch",
+    "torchvision",
 ]
 
 docs_requirements = [
