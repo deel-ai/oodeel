@@ -29,7 +29,7 @@ from .base import OODModel
 
 
 class Energy(OODModel):
-    """
+    r"""
     Energy Score method for OOD detection.
     "Energy-based Out-of-distribution Detection"
     https://arxiv.org/abs/2010.03759
