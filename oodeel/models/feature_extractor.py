@@ -23,12 +23,8 @@
 from abc import ABC
 from abc import abstractmethod
 
-import numpy as np
-import tensorflow as tf
-
 from ..types import Any
 from ..types import Callable
-from ..types import Iterable
 from ..types import List
 from ..types import Union
 
@@ -76,7 +72,8 @@ class FeatureExtractor(ABC):
     @abstractmethod
     def prepare_extractor(self):
         """
-        prepare FeatureExtractor for feature extraction (the way to achieve this depends on the underlying library)
+        prepare FeatureExtractor for feature extraction
+        (the way to achieve this depends on the underlying library)
 
         Returns:
         """

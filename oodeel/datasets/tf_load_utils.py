@@ -21,10 +21,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from typing import Tuple, Union
+
 import numpy as np
 import tensorflow as tf
-
-from ..types import *
 
 
 def keras_dataset_load(

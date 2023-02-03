@@ -35,7 +35,6 @@ from tests import generate_data_tf
 
 
 def test_dataset_nb_columns():
-
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
@@ -49,7 +48,6 @@ def test_dataset_nb_columns():
 
 
 def test_dataset_image_shape():
-
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
@@ -63,7 +61,6 @@ def test_dataset_image_shape():
 
 
 def test_dataset_label_shape():
-
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
@@ -77,7 +74,6 @@ def test_dataset_label_shape():
 
 
 def test_dataset_max_pixel():
-
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
@@ -91,7 +87,6 @@ def test_dataset_max_pixel():
 
 
 def test_dataset_nb_labels():
-
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
@@ -105,7 +100,6 @@ def test_dataset_nb_labels():
 
 
 def test_dataset_cardinality():
-
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
@@ -119,7 +113,6 @@ def test_dataset_cardinality():
 
 
 def test_dataset_get_columns():
-
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100

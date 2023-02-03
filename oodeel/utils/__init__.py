@@ -20,4 +20,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .tf_tools import *
+from .tf_tools import (
+    dataset_cardinality,
+    dataset_get_columns,
+    dataset_image_shape,
+    dataset_label_shape,
+    dataset_max_pixel,
+    dataset_nb_columns,
+    dataset_nb_labels,
+)
