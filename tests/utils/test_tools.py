@@ -134,3 +134,18 @@ def test_dataset_get_columns():
     data_0 = dataset_get_columns(data, [0, 1])
     length = dataset_nb_columns(data_0)
     assert length == 2
+
+
+def test_get_input_from_dataset_elem():
+
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tfds(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )  # .batch(samples)
+
+    for datum in data.take(1):
+        tensor = get_input_from_dataset_elem(datum)
+    assert tensor.shape == (32, 32, 3)

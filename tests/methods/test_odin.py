@@ -27,6 +27,7 @@ from oodeel.datasets import DataHandler
 from oodeel.methods import ODIN
 from oodeel.types import *
 from tests import generate_data
+from tests import generate_data_tfds
 from tests import generate_model
 
 
@@ -50,7 +51,9 @@ def test_odin():
 
     assert scores.shape == (100,)
 
-    data = tf.data.Dataset.from_tensor_slices(data)
+    data = generate_data_tfds(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    ).batch(samples)
     scores = odin.score(data)
 
     assert scores.shape == (100,)

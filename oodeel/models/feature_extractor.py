@@ -60,8 +60,8 @@ class FeatureExtractor(ABC):
     def __init__(
         self,
         model: Callable,
-        output_layers_id: List[Union[int, str]] = [],
-        input_layer_id: Union[int, str] = None,
+        output_layers_id: List[Union[int, str]] = [-1],
+        input_layer_id: Union[int, str] = [0],
     ):
         if not isinstance(output_layers_id, list):
             output_layers_id = [output_layers_id]
@@ -90,7 +90,7 @@ class FeatureExtractor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def predict_tensor(self, inputs: Any):
+    def predict_tensor(self, tensor: Any):
         """
         Projects input samples "inputs" into the feature space
 
@@ -103,7 +103,7 @@ class FeatureExtractor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def predict(self, inputs: Any):
+    def predict(self, dataset: Any):
         """
         Projects input samples "inputs" into the feature space for a batched dataset
 

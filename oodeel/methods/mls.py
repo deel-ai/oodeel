@@ -42,12 +42,10 @@ class MLS(OODModel):
             Defaults to 256.
     """
 
-    def __init__(
-        self,
-        output_activation: str = "linear",
-        batch_size: int = 256,
-    ):
-        super().__init__(output_activation=output_activation, batch_size=batch_size)
+    def __init__(self, output_activation="linear"):
+        # This line is not necessary but improves readability
+        super().__init__(output_layers_id=[-1], input_layers_id=0)
+        self.output_activation = output_activation
 
     def _score_tensor(
         self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
@@ -64,6 +62,9 @@ class MLS(OODModel):
         """
         assert self.feature_extractor is not None, "Call .fit() before .score()"
 
-        pred = self.feature_extractor(inputs)[0]
+        pred = self.feature_extractor(inputs)
+        if hasattr(tf.keras.activations, self.output_activation):
+            activation = getattr(tf.keras.activations, self.output_activation)
+        pred = activation(pred)
         scores = -np.max(pred, axis=1)
         return scores

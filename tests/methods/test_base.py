@@ -45,7 +45,7 @@ def test_isood():
 
     data = generate_data_tfds(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )
+    ).batch(samples // 2)
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
