@@ -93,7 +93,7 @@ def train_keras_app(
     values = list(learning_rate * np.array([1, 0.1, 0.01]))
     boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
 
-    #### TODO
+    # TODO
     # Add preprocessing (data augmentation)
 
     lr_scheduler = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
