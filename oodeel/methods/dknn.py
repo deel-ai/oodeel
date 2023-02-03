@@ -73,9 +73,9 @@ class DKNN(OODModel):
             fit_dataset: input dataset (ID) to construct the index with.
         """
         fit_projected = self.feature_extractor.predict(fit_dataset)
-        fit_projected = np.array(fit_projected)
-        self.index = faiss.IndexFlatL2(fit_projected.shape[1])
-        self.index.add(fit_projected)
+        norm_fit_projected = self._l2_normalization(fit_projected)
+        self.index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
+        self.index.add(norm_fit_projected)
 
     def _score_tensor(
         self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
@@ -92,6 +92,9 @@ class DKNN(OODModel):
         """
 
         input_projected = self.feature_extractor(inputs)
-        input_projected = np.array(input_projected)
-        scores, _ = self.index.search(input_projected, self.nearest)
+        norm_input_projected = self._l2_normalization(input_projected)
+        scores, _ = self.index.search(norm_input_projected, self.nearest)
         return scores[:, 0]
+
+    def _l2_normalization(self, feat: np.ndarray) -> np.ndarray:
+        return feat / (np.linalg.norm(feat, ord=2, axis=-1, keepdims=True) + 1e-10)
