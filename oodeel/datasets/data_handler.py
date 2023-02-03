@@ -64,11 +64,11 @@ class DataHandler(object):
         ), "specify labels to filter with"
         labels = np.unique(y)
         split = []
-        for l in labels:
-            if (inc_labels is None) and (l not in excl_labels):
-                split.append(l)
-            elif (excl_labels is None) and (l in inc_labels):
-                split.append(l)
+        for lbl in labels:
+            if (inc_labels is None) and (lbl not in excl_labels):
+                split.append(lbl)
+            elif (excl_labels is None) and (lbl in inc_labels):
+                split.append(lbl)
         labels = np.array([1 if y in split else 0 for y in y])
         x_id = x[np.where(labels)]
         y_id = y[np.where(labels)]
@@ -140,11 +140,11 @@ class DataHandler(object):
         labels = x.map(lambda x, y: y).unique()
         labels = list(labels.as_numpy_iterator())
         split = []
-        for l in labels:
-            if (inc_labels is None) and (l not in excl_labels):
-                split.append(l)
-            elif (excl_labels is None) and (l in inc_labels):
-                split.append(l)
+        for lbl in labels:
+            if (inc_labels is None) and (lbl not in excl_labels):
+                split.append(lbl)
+            elif (excl_labels is None) and (lbl in inc_labels):
+                split.append(lbl)
 
         x_id = x.filter(lambda x, y: tf.reduce_any(tf.equal(y, split)))
         x_ood = x.filter(lambda x, y: not tf.reduce_any(tf.equal(y, split)))
