@@ -56,3 +56,30 @@ def test_mls():
     scores = energy.score(data_x)
 
     assert scores.shape == (100,)
+
+
+def test_msp():
+    """Test MLS"""
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data_x, _ = generate_data(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    )  # .batch(samples)
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    energy = MLS(output_activation="softmax")
+    energy.fit(model)
+    scores = energy.score(data_x)
+
+    assert scores.shape == (100,)
+
+    data_x = generate_data_tfds(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    ).batch(samples)
+
+    scores = energy.score(data_x)
+
+    assert scores.shape == (100,)
