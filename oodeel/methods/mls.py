@@ -23,7 +23,7 @@
 import numpy as np
 import tensorflow as tf
 
-from ..types import *
+from ..types import Union
 from .base import OODModel
 
 

@@ -23,8 +23,6 @@
 from abc import ABC
 from abc import abstractmethod
 from typing import Callable
-from typing import Iterable
-from typing import Type
 from typing import Union
 
 import numpy as np

@@ -20,13 +20,18 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import tensorflow as tf
 
-from oodeel.types import *
-from oodeel.utils.tf_tools import *
-from tests import almost_equal
+from oodeel.utils.tf_tools import (
+    dataset_nb_columns,
+    dataset_image_shape,
+    dataset_label_shape,
+    dataset_max_pixel,
+    dataset_nb_labels,
+    dataset_get_columns,
+    dataset_cardinality,
+    get_input_from_dataset_elem,
+)
 from tests import generate_data_tf
-from tests import generate_model
 
 
 def test_dataset_nb_columns():

@@ -21,12 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import numpy as np
-import tensorflow as tf
 
 from oodeel.datasets import DataHandler
-from oodeel.utils import dataset_max_pixel
-from oodeel.utils import dataset_nb_columns
-from tests import almost_equal
 from tests import generate_data_tf
 
 

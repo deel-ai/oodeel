@@ -20,12 +20,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import faiss
 import numpy as np
 import tensorflow as tf
-from keras.layers import Activation
 
-from ..types import *
+from ..types import Union
 from ..utils.tf_tools import get_input_from_dataset_elem
 from ..utils.tf_tools import gradient_single
 from .base import OODModel
@@ -33,7 +31,8 @@ from .base import OODModel
 
 class ODIN(OODModel):
     """
-    "Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks"
+    "Enhancing The Reliability of Out-of-distribution Image Detection
+    in Neural Networks"
     http://arxiv.org/abs/1706.02690
 
     Parameters
