@@ -20,18 +20,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from abc import ABC
-from abc import abstractmethod
-from typing import Callable
-from typing import Iterable
-from typing import Type
-from typing import Union
-
 import numpy as np
-import tensorflow as tf
 
 from oodeel.methods import MLS
-from oodeel.types import *
 from tests import almost_equal
 from tests import generate_data_tf
 from tests import generate_model

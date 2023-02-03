@@ -20,13 +20,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import tensorflow as tf
 
 from oodeel.models.training_funs import train_convnet
 from oodeel.models.training_funs import train_keras_app
-from oodeel.types import *
 from tests import generate_data_tf
-from tests import generate_model
 
 
 def test_convnet():
@@ -41,7 +38,7 @@ def test_convnet():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    model = train_convnet(data, **train_config)
+    _ = train_convnet(data, **train_config)
 
 
 def test_train_keras_app_imagenet():
@@ -56,7 +53,7 @@ def test_train_keras_app_imagenet():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    model = train_keras_app(
+    _ = train_keras_app(
         data, model_name="MobileNet", imagenet_pretrained=True, **train_config
     )
 
@@ -77,7 +74,7 @@ def test_train_keras_app():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    model = train_keras_app(
+    _ = train_keras_app(
         data,
         model_name="MobileNet",
         imagenet_pretrained=False,

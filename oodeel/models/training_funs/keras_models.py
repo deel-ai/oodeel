@@ -24,7 +24,6 @@ import numpy as np
 import tensorflow as tf
 from keras.layers import Dense
 from keras.layers import Flatten
-from tensorflow import keras
 
 from ...types import *
 from ...utils import dataset_cardinality
