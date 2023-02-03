@@ -38,7 +38,7 @@ def test_convnet():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    _ = train_convnet(data, **train_config)
+    train_convnet(data, **train_config)
 
 
 def test_train_keras_app_imagenet():
@@ -53,7 +53,7 @@ def test_train_keras_app_imagenet():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    _ = train_keras_app(
+    train_keras_app(
         data, model_name="MobileNet", imagenet_pretrained=True, **train_config
     )
 
@@ -74,7 +74,7 @@ def test_train_keras_app():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    _ = train_keras_app(
+    train_keras_app(
         data,
         model_name="MobileNet",
         imagenet_pretrained=False,
