@@ -21,11 +21,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from typing import Callable, Optional, Tuple, Union
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from ..types import *
 from ..utils import dataset_nb_columns
 from .tf_load_utils import keras_dataset_load
 

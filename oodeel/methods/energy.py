@@ -20,11 +20,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
+from typing import Union
+
 import numpy as np
 import tensorflow as tf
 from scipy.special import logsumexp
 
-from ..types import *
 from .base import OODModel
 
 
@@ -72,7 +74,8 @@ class Energy(OODModel):
         """
         assert self.feature_extractor is not None, "Call .fit() before .score()"
 
-        # compute logits (softmax(logits,axis=1) is the actual softmax output minimized using binary cross entropy)
+        # compute logits (softmax(logits,axis=1) is the actual softmax
+        # output minimized using binary cross entropy)
         logits = self.feature_extractor(inputs)
         scores = -logsumexp(logits, axis=1)
         return scores

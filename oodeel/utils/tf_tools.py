@@ -20,10 +20,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
 import numpy as np
 import tensorflow as tf
 
-from oodeel.types import *
+from oodeel.types import Callable, Optional, Tuple, Union, List
 
 
 def get_input_from_dataset_elem(elem):
@@ -90,7 +91,9 @@ def dataset_get_columns(
     dataset: tf.data.Dataset, columns: Union[int, List[int]]
 ) -> tf.data.Dataset:
     """
-    Construct a dataset out of the columns of the input dataset. The columns are identified by "columns". Here columns means x, y, or ood_labels
+    Construct a dataset out of the columns of the input dataset.
+    The columns are identified by "columns".
+    Here columns means x, y, or ood_labels
 
     Args:
         dataset: input dataset
@@ -105,19 +108,19 @@ def dataset_get_columns(
 
     if length == 2:  # when image, label
 
-        def return_columns(x, y, col):
+        def return_columns_xy(x, y, col):
             X = [x, y]
             return tuple([X[i] for i in col])
 
-        dataset = dataset.map(lambda x, y: return_columns(x, y, columns))
+        dataset = dataset.map(lambda x, y: return_columns_xy(x, y, columns))
 
     if length == 3:  # when image, label, ood_label or weights
 
-        def return_columns(x, y, z, col):
+        def return_columns_xyz(x, y, z, col):
             X = [x, y, z]
             return tuple([X[i] for i in col])
 
-        dataset = dataset.map(lambda x, y, z: return_columns(x, y, z, columns))
+        dataset = dataset.map(lambda x, y, z: return_columns_xyz(x, y, z, columns))
 
     return dataset
 
