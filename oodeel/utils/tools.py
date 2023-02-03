@@ -26,6 +26,16 @@ import tensorflow as tf
 from oodeel.types import *
 
 
+def get_input_from_dataset_elem(elem):
+    if isinstance(elem, tuple):
+        tensor = elem[0]
+    elif isinstance(elem, dict):
+        tensor = elem[elem.keys[0]]
+    else:
+        tensor = elem
+    return tensor
+
+
 def dataset_nb_columns(dataset: tf.data.Dataset) -> int:
     try:
         return len(dataset.element_spec)
@@ -51,7 +61,6 @@ def dataset_image_shape(dataset: tf.data.Dataset) -> Tuple[int]:
 
 
 def dataset_label_shape(dataset: tf.data.Dataset) -> Tuple[int]:
-
     for x in dataset.take(1):
         assert len(x) > 1, "No label to get the shape from"
         shape = x[1].shape
@@ -59,7 +68,6 @@ def dataset_label_shape(dataset: tf.data.Dataset) -> Tuple[int]:
 
 
 def dataset_max_pixel(dataset: tf.data.Dataset) -> float:
-
     dataset = dataset_get_columns(dataset, 0)
     max_pixel = dataset.reduce(
         0.0, lambda x, y: float(tf.math.reduce_max(tf.maximum(x, y)))
@@ -74,7 +82,6 @@ def dataset_nb_labels(dataset: tf.data.Dataset) -> int:
 
 
 def dataset_cardinality(dataset: tf.data.Dataset) -> int:
-
     cardinality = dataset.reduce(0, lambda x, _: x + 1)
     return int(cardinality)
 

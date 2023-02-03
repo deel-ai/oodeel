@@ -32,6 +32,7 @@ import tensorflow as tf
 
 from ..models.keras_feature_extractor import KerasFeatureExtractor
 from ..types import *
+from ..utils.tools import dataset_nb_columns
 
 
 class OODModel(ABC):
@@ -54,17 +55,14 @@ class OODModel(ABC):
 
     def __init__(
         self,
-        output_layers_id: List[int] = [],
-        output_activation: str = None,
-        flatten: bool = False,
-        batch_size: int = 256,
+        output_layers_id: List[int] = [-1],
+        input_layers_id: List[int] = 0,
+        uses_labels: bool = False,
     ):
-
-        self.batch_size = batch_size
         self.feature_extractor = None
         self.output_layers_id = output_layers_id
-        self.output_activation = output_activation
-        self.flatten = flatten
+        self.input_layers_id = input_layers_id
+        self.uses_labels = uses_labels
 
     @abstractmethod
     def _score_tensor(self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]):
@@ -117,10 +115,8 @@ class OODModel(ABC):
 
         feature_extractor = FeatureExtractor(
             model,
+            input_layer_id=self.input_layers_id,
             output_layers_id=self.output_layers_id,
-            output_activation=self.output_activation,
-            flatten=self.flatten,
-            batch_size=self.batch_size,
         )
         return feature_extractor
 
@@ -159,7 +155,7 @@ class OODModel(ABC):
 
     def score(
         self,
-        inputs: Union[
+        dataset: Union[
             List[Union[tf.data.Dataset, tf.Tensor, np.ndarray]],
             Union[tf.data.Dataset, tf.Tensor, np.ndarray],
         ],
@@ -179,19 +175,32 @@ class OODModel(ABC):
         Returns:
             scores or list of scores (depending on the input)
         """
-        if type(inputs) is not list:
-            scores = self._score_tensor(inputs)
-            return scores
+        # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
+        if isinstance(dataset, np.ndarray) or isinstance(dataset, tf.Tensor):
+            return self._score_tensor(dataset)
+        elif isinstance(dataset, tuple):
+            return (
+                self._score_tensor(dataset)
+                if self.uses_labels
+                else self._score_tensor(dataset[0])
+            )
+        # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         else:
-            scores_list = []
-            for input in inputs:
-                scores = (
-                    self._score_tensor(input)
-                    if outputs is None
-                    else self._score_tensor(input, outputs)
-                )
-                scores_list.append(scores)
-            return scores_list
+            scores = np.array([])
+            assert is_batched(
+                dataset
+            ), "Please input a batched dataset. Add .batch(batch_size) to your dataset."
+            for tensor in dataset:
+                if isinstance(tensor, tuple):
+                    score_batch = (
+                        self._score_tensor(tensor)
+                        if self.uses_labels
+                        else self._score_tensor(tensor[0])
+                    )
+                else:
+                    score_batch = self._score_tensor(tensor)
+                scores = np.append(scores, score_batch)
+        return scores
 
     def isood(
         self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray], threshold: float
@@ -218,3 +227,13 @@ class OODModel(ABC):
         Convenience wrapper for isood
         """
         return self.isood(inputs, threshold)
+
+
+def is_batched(dataset):
+
+    nb_column = dataset_nb_columns(dataset)
+    if nb_column == 1:
+        batch_dim = dataset.element_spec.shape[0]
+    else:
+        batch_dim = dataset.element_spec[0].shape[0]
+    return batch_dim is None

@@ -29,6 +29,7 @@ from ..utils.tf_operations import find_layer
 from ..utils.tf_operations import gradient
 from ..utils.tf_operations import gradient_single
 from ..utils.tools import dataset_nb_columns
+from ..utils.tools import get_input_from_dataset_elem
 from .feature_extractor import FeatureExtractor
 
 
@@ -59,8 +60,8 @@ class KerasFeatureExtractor(FeatureExtractor):
     def __init__(
         self,
         model: Callable,
-        output_layers_id: List[Union[int, str]] = [],
-        input_layer_id: Union[int, str] = None,
+        output_layers_id: List[Union[int, str]] = [-1],
+        input_layer_id: Union[int, str] = 0,
     ):
         super().__init__(
             model=model,
@@ -81,10 +82,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         output_layers = [
             self.find_layer(ol_id).output for ol_id in self.output_layers_id
         ]
-        if self.input_layer_id is not None:
-            input_layer = self.find_layer(self.input_layer_id).input
-        else:
-            input_layer = self.model.input
+        input_layer = self.find_layer(self.input_layer_id).input
 
         extractor = tf.keras.Model(input_layer, output_layers)
         return extractor
@@ -132,12 +130,12 @@ class KerasFeatureExtractor(FeatureExtractor):
             _type_: _description_
         """
         if not isinstance(dataset, tf.data.Dataset):
-            tensor = self.get_input_from_dataset_elem(dataset)
+            tensor = get_input_from_dataset_elem(dataset)
             return self.predict_tensor(tensor)
 
         features = [None for i in range(len(self.output_layers_id))]
         for elem in dataset:
-            tensor = self.get_input_from_dataset_elem(elem)
+            tensor = get_input_from_dataset_elem(elem)
             features_batch = self.predict_tensor(tensor)
             if len(features) == 1:
                 features_batch = [features_batch]
@@ -150,16 +148,6 @@ class KerasFeatureExtractor(FeatureExtractor):
         if len(features) == 1:
             features = features[0]
         return features
-
-    @staticmethod
-    def get_input_from_dataset_elem(elem):
-        if isinstance(elem, tuple):
-            tensor = elem[0]
-        elif isinstance(elem, dict):
-            tensor = elem[elem.keys[0]]
-        else:
-            tensor = elem
-        return tensor
 
     def get_weights(self):
         """

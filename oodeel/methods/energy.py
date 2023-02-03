@@ -50,12 +50,8 @@ class Energy(OODModel):
             Defaults to 256.
     """
 
-    def __init__(
-        self,
-        output_activation: str = "linear",
-        batch_size: int = 256,
-    ):
-        super().__init__(output_activation=output_activation, batch_size=batch_size)
+    def __init__(self):
+        super().__init__(output_layers_id=[-1], input_layers_id=0)
 
     def _score_tensor(
         self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
@@ -73,6 +69,6 @@ class Energy(OODModel):
         assert self.feature_extractor is not None, "Call .fit() before .score()"
 
         # compute logits (softmax(logits,axis=1) is the actual softmax output minimized using binary cross entropy)
-        logits = self.feature_extractor(inputs)[0]
+        logits = self.feature_extractor(inputs)
         scores = -logsumexp(logits, axis=1)
         return scores

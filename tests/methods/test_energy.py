@@ -27,6 +27,7 @@ from oodeel.methods import Energy
 from oodeel.types import *
 from tests import almost_equal
 from tests import generate_data
+from tests import generate_data_tfds
 from tests import generate_model
 
 
@@ -40,7 +41,7 @@ def test_energy():
 
     data_x, _ = generate_data(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )  # .batch(samples)
+    )
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
@@ -50,7 +51,9 @@ def test_energy():
 
     assert scores.shape == (100,)
 
-    data = tf.data.Dataset.from_tensor_slices(data_x)
+    data = generate_data_tfds(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    ).batch(samples)
     scores = energy.score(data)
 
     assert scores.shape == (100,)
