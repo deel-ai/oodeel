@@ -37,7 +37,8 @@ class FeatureExtractor(ABC):
     """
     Feature extractor based on "model" to construct a feature space
     on which OOD detection is performed. The features can be the output
-    activation values of internal model layers, or the output of the model (softmax/logits).
+    activation values of internal model layers, or the output of the model
+    (softmax/logits).
 
     Args:
         model: model to extract the features from
@@ -48,7 +49,8 @@ class FeatureExtractor(ABC):
         output_activation: activation function for the last layer.
             Defaults to None.
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
-            when working on the feature space without finetuning the bottom of the model).
+            when working on the feature space without finetuning the bottom of the
+            model).
             Defaults to None.
         flatten: Flatten the output features or not.
             Defaults to False.
