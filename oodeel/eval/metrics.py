@@ -71,7 +71,8 @@ def bench_metrics(
             else:
                 if threshold is None:
                     print(
-                        f"No threshold is specified for metric {metric.__name__}, skipping"
+                        f"No threshold is specified for metric {metric.__name__}, "
+                        "skipping"
                     )
                 else:
                     oodness = [1 if x > threshold else 0 for x in scores]
