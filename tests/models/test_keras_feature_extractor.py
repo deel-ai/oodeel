@@ -26,7 +26,7 @@ import tensorflow as tf
 from oodeel.models.keras_feature_extractor import KerasFeatureExtractor
 from oodeel.types import *
 from tests import almost_equal
-from tests import generate_data_tfds
+from tests import generate_data_tf
 from tests import generate_model
 
 
@@ -35,7 +35,7 @@ def test_predict():
     num_labels = 10
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples
     ).batch(samples // 2)
 

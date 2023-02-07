@@ -25,7 +25,7 @@ import tensorflow as tf
 from oodeel.types import *
 from oodeel.utils.tools import *
 from tests import almost_equal
-from tests import generate_data_tfds
+from tests import generate_data_tf
 from tests import generate_model
 
 
@@ -35,7 +35,7 @@ def test_dataset_nb_columns():
     num_labels = 10
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples
     )  # .batch(samples)
 
@@ -49,7 +49,7 @@ def test_dataset_image_shape():
     num_labels = 10
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples
     )  # .batch(samples)
 
@@ -63,7 +63,7 @@ def test_dataset_label_shape():
     num_labels = 10
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples
     )  # .batch(samples)
 
@@ -77,7 +77,7 @@ def test_dataset_max_pixel():
     num_labels = 10
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples
     )  # .batch(samples)
 
@@ -91,7 +91,7 @@ def test_dataset_nb_labels():
     num_labels = 10
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )  # .batch(samples)
 
@@ -105,7 +105,7 @@ def test_dataset_cardinality():
     num_labels = 10
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples
     )  # .batch(samples)
 
@@ -119,7 +119,7 @@ def test_dataset_get_columns():
     num_labels = 10
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples
     )  # .batch(samples)
 
@@ -142,7 +142,7 @@ def test_get_input_from_dataset_elem():
     num_labels = 10
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples
     )  # .batch(samples)
 

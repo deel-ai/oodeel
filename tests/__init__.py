@@ -20,16 +20,26 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .tools import almost_equal
-from .tools import generate_data
-from .tools import generate_data_tfds
-from .tools import generate_model
-from .tools import generate_regression_model
+from .tools_tf import almost_equal
+from .tools_tf import generate_data
+from .tools_tf import generate_data_tf
+from .tools_tf import generate_model
+from .tools_tf import generate_regression_model
+from .tools_torch import ComplexNet
+from .tools_torch import generate_data_torch
+from .tools_torch import named_sequential_model
+from .tools_torch import Net
+from .tools_torch import sequential_model
 
 __all__ = [
     "almost_equal",
     "generate_data",
-    "generate_data_tfds",
+    "generate_data_tf",
     "generate_model",
     "generate_regression_model",
+    "ComplexNet",
+    "generate_data_torch",
+    "named_sequential_model",
+    "Net",
+    "sequential_model",
 ]
