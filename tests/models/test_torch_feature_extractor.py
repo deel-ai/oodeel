@@ -20,108 +20,17 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from collections import OrderedDict
-
-import numpy as np
 import pytest
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
 from oodeel.models.torch_feature_extractor import TorchFeatureExtractor
-
+from tests.tools_torch import ComplexNet
+from tests.tools_torch import generate_data_torch
+from tests.tools_torch import named_sequential_model
+from tests.tools_torch import Net
+from tests.tools_torch import sequential_model
 
 # From Pytorch CIFAR-10 example
-class Net(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = torch.flatten(x, 1)  # flatten all dimensions except batch
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
-
-class ComplexNet(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-        self.feature_extractor = nn.Sequential(
-            OrderedDict(
-                [
-                    ("conv1", nn.Conv2d(3, 6, 5)),
-                    ("relu1", nn.ReLU()),
-                    ("pool1", nn.MaxPool2d(2, 2)),
-                    ("conv2", nn.Conv2d(6, 16, 5)),
-                    ("relu2", nn.ReLU()),
-                    ("pool2", nn.MaxPool2d(2, 2)),
-                    ("flatten", nn.Flatten()),
-                ]
-            )
-        )
-
-        self.fcs = nn.Sequential(
-            OrderedDict(
-                [
-                    ("fc1", nn.Linear(16 * 5 * 5, 120)),
-                    ("fc2", nn.Linear(120, 84)),
-                    ("fc3", nn.Linear(84, 10)),
-                ]
-            )
-        )
-
-    def forward(self, x):
-        x = self.feature_extractor(x)
-        x = self.fcs(x)
-        return x
-
-
-def sequential_model():
-    return nn.Sequential(
-        nn.Conv2d(3, 6, 5),
-        nn.ReLU(),
-        nn.MaxPool2d(2, 2),
-        nn.Conv2d(6, 16, 5),
-        nn.ReLU(),
-        nn.MaxPool2d(2, 2),
-        nn.Flatten(),
-        nn.Linear(16 * 5 * 5, 120),
-        nn.Linear(120, 84),
-        nn.Linear(84, 10),
-    )
-
-
-def named_sequential_model():
-    return nn.Sequential(
-        OrderedDict(
-            [
-                ("conv1", nn.Conv2d(3, 6, 5)),
-                ("relu1", nn.ReLU()),
-                ("pool1", nn.MaxPool2d(2, 2)),
-                ("conv2", nn.Conv2d(6, 16, 5)),
-                ("relu2", nn.ReLU()),
-                ("pool2", nn.MaxPool2d(2, 2)),
-                ("flatten", nn.Flatten()),
-                ("fc1", nn.Linear(16 * 5 * 5, 120)),
-                ("fc2", nn.Linear(120, 84)),
-                ("fc3", nn.Linear(84, 10)),
-            ]
-        )
-    )
-
-
-# There are various ways to define models in Pytorch. The feature extractor is tested
-# on usual ways of defining models.
 
 
 @pytest.mark.parametrize(
@@ -149,14 +58,14 @@ def named_sequential_model():
 )
 def test_params_torch_feature_extractor(kwargs_factory, expected_sz):
     n_samples = 100
-    n_channels = 3
-    imsize = 32
+    input_shape = (3, 32, 32)
+    num_labels = 10
 
-    x = np.random.randn(n_samples, n_channels, imsize, imsize)
-    x_tens = torch.from_numpy(x).float()
+    x = generate_data_torch(input_shape, num_labels, n_samples)
+    dataset = DataLoader(x, batch_size=n_samples // 2)
 
     feature_extractor = TorchFeatureExtractor(**kwargs_factory())
-    pred_feature_extractor = feature_extractor.predict(x_tens)
+    pred_feature_extractor = feature_extractor.predict(dataset)
 
     assert list(pred_feature_extractor.size()) == expected_sz
 
@@ -183,16 +92,14 @@ def test_params_torch_feature_extractor(kwargs_factory, expected_sz):
 )
 def test_pytorch_feature_extractor_with_input_ids(kwargs_factory, expected_sz):
     n_samples = 100
-    imsize_at_layer = 14
-    n_channels_at_layer = 6
+    n_samples = 100
+    input_shape = (6, 14, 14)
+    num_labels = 10
 
-    x = np.random.randn(
-        n_samples, n_channels_at_layer, imsize_at_layer, imsize_at_layer
-    )
-    x_tens = torch.from_numpy(x).float()
+    x = generate_data_torch(input_shape, num_labels, n_samples)
+    dataset = DataLoader(x, batch_size=n_samples // 2)
 
     feature_extractor = TorchFeatureExtractor(**kwargs_factory())
-
-    pred_feature_extractor = feature_extractor.predict(x_tens)
+    pred_feature_extractor = feature_extractor.predict(dataset)
 
     assert list(pred_feature_extractor.size()) == expected_sz
