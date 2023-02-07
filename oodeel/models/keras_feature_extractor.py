@@ -37,7 +37,8 @@ class KerasFeatureExtractor(FeatureExtractor):
     """
     Feature extractor based on "model" to construct a feature space
     on which OOD detection is performed. The features can be the output
-    activation values of internal model layers, or the output of the model (softmax/logits).
+    activation values of internal model layers, or the output of the model
+    (softmax/logits).
 
     Args:
         model: model to extract the features from
