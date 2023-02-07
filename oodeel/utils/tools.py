@@ -27,7 +27,7 @@ from oodeel.types import *
 
 
 def get_input_from_dataset_elem(elem):
-    if isinstance(elem, tuple):
+    if isinstance(elem, tuple) or isinstance(elem, list):
         tensor = elem[0]
     elif isinstance(elem, dict):
         tensor = elem[elem.keys[0]]
