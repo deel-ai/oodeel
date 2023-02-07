@@ -27,39 +27,16 @@ import numpy as np
 import torch
 from torch import nn
 
-FEATURES = dict()
+from ..utils.tools import get_input_from_dataset_elem
+from .feature_extractor import FeatureExtractor
 
 
-def get_features_hook(key: str, store_inputs: bool = False):
-    """
-    Hook that stores the tensor value into a global dictionnary with a given key so that it can be easily retrieve.
-    """
-    global FEATURES
-    if not (key in FEATURES.keys()):
-        FEATURES[key] = list()
-
-    def hook(m, i, o):
-        if store_inputs:
-            tens = i
-        else:
-            tens = o
-        if isinstance(tens, torch.Tensor):
-            FEATURES[key].append([tens.detach()])
-        elif isinstance(tens, (list, tuple)):
-            FEATURES[key].append([_.detach() for _ in tens])
-        else:
-            print(tens)
-            print(type(tens))
-            raise NotImplementedError
-
-    return hook
-
-
-class TorchFeatureExtractor(object):
+class TorchFeatureExtractor(FeatureExtractor):
     """
     Feature extractor based on "model" to construct a feature space
     on which OOD detection is performed. The features can be the output
-    activation values of internal model layers, or the output of the model (softmax/logits).
+    activation values of internal model layers,
+    or the output of the model (softmax/logits).
 
     Args:
         model: model to extract the features from
@@ -67,7 +44,8 @@ class TorchFeatureExtractor(object):
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [].
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
-            when working on the feature space without finetuning the bottom of the model).
+            when working on the feature space without finetuning the bottom of
+            the model).
             Defaults to None.
         output_activation:  activation function for the last layer.
             Defaults to None.
@@ -83,18 +61,20 @@ class TorchFeatureExtractor(object):
         model: nn.Module,
         output_layers_id: List[Union[int, str]] = [],
         input_layer_id: Union[int, str] = None,
-        output_activation: str = None,
-        flatten: bool = False,
-        batch_size: int = None,
     ):
 
-        self.model = model
-        self.output_layers_id = output_layers_id
-        self.input_layer_id = input_layer_id
-        self.output_activation = output_activation
-        self.flatten = flatten
-        self.batch_size = batch_size
+        self._features = {layer: torch.empty(0) for layer in output_layers_id}
 
+        super().__init__(
+            model=model,
+            output_layers_id=output_layers_id,
+            input_layer_id=input_layer_id,
+        )
+
+    def prepare_extractor(self):
+        """
+        Prepare the feature extractor for inference.
+        """
         # Register a hook to store feature values for each considered layer.
         _layer_store = dict()
         for layer_name, layer in self.model.named_modules():
@@ -104,15 +84,16 @@ class TorchFeatureExtractor(object):
         for layer_id in self.output_layers_id:
             if isinstance(layer_id, str):
                 _layer_store[layer_id].register_forward_hook(
-                    get_features_hook(layer_id)
+                    self.get_features_hook(layer_id)
                 )
             elif isinstance(layer_id, int):
-                self.model[layer_id].register_forward_hook(get_features_hook(layer_id))
+                self.model[layer_id].register_forward_hook(
+                    self.get_features_hook(layer_id)
+                )
             else:
                 raise NotImplementedError
 
         # Crop model if input layer is provided
-
         if not (self.input_layer_id) is None:
 
             if isinstance(self.input_layer_id, int):
@@ -139,57 +120,63 @@ class TorchFeatureExtractor(object):
             else:
                 raise NotImplementedError
 
-    def predict_on_batch(self, x: torch.Tensor) -> List[torch.Tensor]:
+    def get_features_hook(self, layer_id: Union[str, int]):
+        """
+        Hook that stores features corresponding to a specific layer
+        in a class dictionary.
+        """
+
+        def hook(_, __, output):
+            if isinstance(output, torch.Tensor):
+                self._features[layer_id] = output.detach()
+            else:
+                raise NotImplementedError
+
+        return hook
+
+    def predict_tensor(self, x: torch.Tensor) -> List[torch.Tensor]:
         """
         Get features associated with the input. Works on an in-memory tensor.
         """
-        global FEATURES
-        # Empty feature dict
-        for key in FEATURES.keys():
-            FEATURES[key] = list()
 
-        model_outputs = self.model(x)
+        _ = self.model(x)
 
-        flatten_fn = (
-            (lambda t: torch.flatten(t, start_dim=1)) if self.flatten else (lambda t: t)
-        )
-        output_act_fn = (
-            getattr(nn, self.output_activation)()
-            if self.output_activation
-            else (lambda t: t)
-        )
+        features = [self._features[layer_id] for layer_id in self.output_layers_id]
 
-        def process_outputs_fn(t: torch.Tensor) -> torch.Tensor:
-            return output_act_fn(flatten_fn(t))
+        if len(features) == 1:
+            features = features[0]
+        return features
 
-        return [
-            process_outputs_fn(FEATURES[layer_id][0][0])
-            for layer_id in self.output_layers_id
-        ]
-
-    def predict(self, x: torch.Tensor) -> List[torch.Tensor]:
+    def predict(self, dataset: torch.utils.data.DataLoader) -> List[torch.Tensor]:
         """
-        Extract features for a given inputs. If batch_size is specified, the model is called on batches and outputs are concatenated.
+        Extract features for a given inputs. If batch_size is specified,
+        the model is called on batches and outputs are concatenated.
         """
-        if self.batch_size:
-            batch_bounds = np.arange(0, x.size(0), self.batch_size).tolist() + [
-                x.size(0)
-            ]
-            _batch_results = list()
-            for low, up in zip(batch_bounds[:-1], batch_bounds[1:]):
-                _batch = x[low:up, :, :, :]
-                _batch_results.append(self.predict_on_batch(_batch))
 
-            n_features = len(_batch_results[0])
+        if not isinstance(dataset, torch.utils.data.DataLoader):
+            tensor = get_input_from_dataset_elem(dataset)
+            return self.predict_tensor(tensor)
 
-            _features = list()
-
-            for feature_idx in range(n_features):
-                _features.append(
-                    torch.cat([_batch[feature_idx] for _batch in _batch_results])
+        features = [None for i in range(len(self.output_layers_id))]
+        for elem in dataset:
+            tensor = get_input_from_dataset_elem(elem)
+            features_batch = self.predict_tensor(tensor)
+            if len(features) == 1:
+                features_batch = [features_batch]
+            for i, f in enumerate(features_batch):
+                features[i] = (
+                    f if features[i] is None else torch.concat([features[i], f], dim=0)
                 )
 
-            return _features
+        # No need to return a list when there is only one input layer
+        if len(features) == 1:
+            features = features[0]
+        return features
 
-        else:
-            return self.predict_on_batch(x)
+    def get_weights(self):
+        """
+        Constructs the feature extractor model
+
+        Returns:
+        """
+        raise NotImplementedError()
