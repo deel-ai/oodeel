@@ -27,7 +27,7 @@ from oodeel.datasets import DataHandler
 from oodeel.utils import dataset_max_pixel
 from oodeel.utils import dataset_nb_columns
 from tests import almost_equal
-from tests import generate_data_tfds
+from tests import generate_data_tf
 
 
 # def test_load_tfds():
@@ -49,7 +49,7 @@ from tests import generate_data_tfds
 
 def test_convert_to_numpy():
     data_handler = DataHandler()
-    ds = generate_data_tfds(
+    ds = generate_data_tf(
         x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=False
     )
     x, y = data_handler.convert_to_numpy(ds)
@@ -62,7 +62,7 @@ def test_convert_to_numpy():
 def test_filter_tfds():
     data_handler = DataHandler()
     inc_labels = [0, 1, 2, 3, 4]
-    ds = generate_data_tfds(
+    ds = generate_data_tf(
         x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=False
     )
     data_id, data_ood = data_handler.filter_tfds(ds, inc_labels=inc_labels)
@@ -79,8 +79,8 @@ def test_filter_tfds():
 
 def test_merge_tfds_get_ood_labels():
     data_handler = DataHandler()
-    data_id = generate_data_tfds(x_shape=(32, 32, 3), num_labels=10, samples=100)
-    data_ood = generate_data_tfds(x_shape=(32, 32, 3), num_labels=10, samples=100)
+    data_id = generate_data_tf(x_shape=(32, 32, 3), num_labels=10, samples=100)
+    data_ood = generate_data_tf(x_shape=(32, 32, 3), num_labels=10, samples=100)
 
     data = data_handler.merge_tfds(data_id, data_ood, shuffle="True")
     labels = data_handler.get_ood_labels(data)

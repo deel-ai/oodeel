@@ -25,7 +25,7 @@ import tensorflow as tf
 from oodeel.models.training_funs import train_convnet
 from oodeel.models.training_funs import train_keras_app
 from oodeel.types import *
-from tests import generate_data_tfds
+from tests import generate_data_tf
 from tests import generate_model
 
 
@@ -37,7 +37,7 @@ def test_convnet():
     num_labels = 10
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
@@ -52,7 +52,7 @@ def test_train_keras_app_imagenet():
     num_labels = 1000
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
@@ -69,11 +69,11 @@ def test_train_keras_app():
     num_labels = 123
     samples = 100
 
-    data = generate_data_tfds(
+    data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    validation_data = generate_data_tfds(
+    validation_data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
