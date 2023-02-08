@@ -62,14 +62,13 @@ class TorchFeatureExtractor(FeatureExtractor):
         output_layers_id: List[Union[int, str]] = [],
         input_layer_id: Union[int, str] = None,
     ):
-
-        self._features = {layer: torch.empty(0) for layer in output_layers_id}
-
         super().__init__(
             model=model,
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
         )
+        self._device = next(model.parameters()).device
+        self._features = {layer: torch.empty(0) for layer in output_layers_id}
 
     def prepare_extractor(self):
         """
@@ -128,26 +127,35 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         def hook(_, __, output):
             if isinstance(output, torch.Tensor):
-                self._features[layer_id] = output.detach()
+                self._features[layer_id] = output
             else:
                 raise NotImplementedError
 
         return hook
 
-    def predict_tensor(self, x: torch.Tensor) -> List[torch.Tensor]:
+    def predict_tensor(self, x: torch.Tensor, detach=False) -> List[torch.Tensor]:
         """
         Get features associated with the input. Works on an in-memory tensor.
         """
 
+        if x.device != self._device:
+            x = x.to(self._device)
         _ = self.model(x)
 
-        features = [self._features[layer_id] for layer_id in self.output_layers_id]
+        features = [
+            self._features[layer_id]
+            if not detach
+            else self._features[layer_id].detach()
+            for layer_id in self.output_layers_id
+        ]
 
         if len(features) == 1:
             features = features[0]
         return features
 
-    def predict(self, dataset: torch.utils.data.DataLoader) -> List[torch.Tensor]:
+    def predict(
+        self, dataset: torch.utils.data.DataLoader, detach=False
+    ) -> List[torch.Tensor]:
         """
         Extract features for a given inputs. If batch_size is specified,
         the model is called on batches and outputs are concatenated.
@@ -155,12 +163,12 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         if not isinstance(dataset, torch.utils.data.DataLoader):
             tensor = get_input_from_dataset_elem(dataset)
-            return self.predict_tensor(tensor)
+            return self.predict_tensor(tensor, detach)
 
         features = [None for i in range(len(self.output_layers_id))]
         for elem in dataset:
             tensor = get_input_from_dataset_elem(elem)
-            features_batch = self.predict_tensor(tensor)
+            features_batch = self.predict_tensor(tensor, detach)
             if len(features) == 1:
                 features_batch = [features_batch]
             for i, f in enumerate(features_batch):

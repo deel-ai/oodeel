@@ -29,9 +29,14 @@ from typing import Union
 
 import numpy as np
 import tensorflow as tf
+import torch
 
+from ..models.keras_feature_extractor import KerasFeatureExtractor
+from ..models.torch_feature_extractor import TorchFeatureExtractor
 from ..types import *
 from ..utils.tf_tools import dataset_nb_columns
+
+# TODO find a way to avoid this import and to only import the needed class
 
 
 class OODModel(ABC):
@@ -107,16 +112,9 @@ class OODModel(ABC):
             model : tf.keras model (for now)
                 keras models saved as pb files e.g. with model.save()
         """
-        model_class = (
-            str(type(model)).replace("<class '", "").replace("'>", "").split(".")
-        )
-        if "keras" in model_class:
-            from ..models.keras_feature_extractor import KerasFeatureExtractor
-
+        if isinstance(model, tf.keras.Model):
             FeatureExtractor = KerasFeatureExtractor
-        elif "torch" in model_class:
-            from ..models.torch_feature_extractor import TorchFeatureExtractor
-
+        elif isinstance(model, torch.nn.module):
             FeatureExtractor = TorchFeatureExtractor
         else:
             raise NotImplementedError()
