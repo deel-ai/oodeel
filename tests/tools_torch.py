@@ -123,7 +123,7 @@ def named_sequential_model():
     )
 
 
-def generate_data(x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=True):
+def generate_data(x_shape=(3, 32, 32), num_labels=10, samples=100, one_hot=True):
     x = np.random.rand(samples, *x_shape).astype(np.float32)
     x /= np.max(x)
     if one_hot:
@@ -134,7 +134,7 @@ def generate_data(x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=True)
     return x, y
 
 
-def generate_data_torch(x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=True):
+def generate_data_torch(x_shape=(3, 32, 32), num_labels=10, samples=100, one_hot=True):
     x, y = generate_data(x_shape, num_labels, samples, one_hot)
     dataset = TensorDataset(torch.Tensor(x), torch.Tensor(y))
     return dataset
