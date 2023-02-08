@@ -24,12 +24,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..types import *
-from ..utils.tf_operations import batch_tensor
-from ..utils.tf_operations import find_layer
-from ..utils.tf_operations import gradient
-from ..utils.tf_operations import gradient_single
-from ..utils.tools import dataset_nb_columns
-from ..utils.tools import get_input_from_dataset_elem
+from ..utils.tf_tools import get_input_from_dataset_elem
 from .feature_extractor import FeatureExtractor
 
 
