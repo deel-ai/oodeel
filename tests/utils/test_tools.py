@@ -23,7 +23,7 @@
 import tensorflow as tf
 
 from oodeel.types import *
-from oodeel.utils.tools import *
+from oodeel.utils.tf_tools import *
 from tests import almost_equal
 from tests import generate_data_tf
 from tests import generate_model

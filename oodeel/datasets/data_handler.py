@@ -28,7 +28,7 @@ import tensorflow_datasets as tfds
 
 from ..types import *
 from ..utils import dataset_nb_columns
-from ..utils.load_utils import keras_dataset_load
+from .tf_load_utils import keras_dataset_load
 
 
 class DataHandler(object):

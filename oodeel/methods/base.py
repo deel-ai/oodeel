@@ -30,9 +30,10 @@ from typing import Union
 import numpy as np
 import tensorflow as tf
 
-from ..models.keras_feature_extractor import KerasFeatureExtractor
+from ..models.feature_extractor import KerasFeatureExtractor
+from ..models.feature_extractor import TorchFeatureExtractor
 from ..types import *
-from ..utils.tools import dataset_nb_columns
+from ..utils.tf_tools import dataset_nb_columns
 
 
 class OODModel(ABC):
@@ -111,7 +112,7 @@ class OODModel(ABC):
         if isinstance(model, tf.keras.Model):
             FeatureExtractor = KerasFeatureExtractor
         else:
-            raise NotImplementedError()
+            FeatureExtractor = TorchFeatureExtractor
 
         feature_extractor = FeatureExtractor(
             model,

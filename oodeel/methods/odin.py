@@ -26,14 +26,8 @@ import tensorflow as tf
 from keras.layers import Activation
 
 from ..types import *
-from ..utils.tf_operations import batch_tensor
-from ..utils.tf_operations import find_layer
-from ..utils.tf_operations import gradient
-from ..utils.tf_operations import gradient_single
-from ..utils.tools import dataset_get_columns
-from ..utils.tools import dataset_nb_columns
-from ..utils.tools import dataset_nb_labels
-from ..utils.tools import get_input_from_dataset_elem
+from ..utils.tf_tools import get_input_from_dataset_elem
+from ..utils.tf_tools import gradient_single
 from .base import OODModel
 
 
