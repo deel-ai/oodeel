@@ -30,8 +30,6 @@ from typing import Union
 import numpy as np
 import tensorflow as tf
 
-from ..models.feature_extractor import KerasFeatureExtractor
-from ..models.feature_extractor import TorchFeatureExtractor
 from ..types import *
 from ..utils.tf_tools import dataset_nb_columns
 
@@ -109,10 +107,19 @@ class OODModel(ABC):
             model : tf.keras model (for now)
                 keras models saved as pb files e.g. with model.save()
         """
-        if isinstance(model, tf.keras.Model):
+        model_class = (
+            str(type(model)).replace("<class '", "").replace("'>", "").split(".")
+        )
+        if "keras" in model_class:
+            from ..models.keras_feature_extractor import KerasFeatureExtractor
+
             FeatureExtractor = KerasFeatureExtractor
-        else:
+        elif "torch" in model_class:
+            from ..models.torch_feature_extractor import TorchFeatureExtractor
+
             FeatureExtractor = TorchFeatureExtractor
+        else:
+            raise NotImplementedError()
 
         feature_extractor = FeatureExtractor(
             model,
