@@ -181,10 +181,17 @@ class TorchFeatureExtractor(FeatureExtractor):
             features = features[0]
         return features
 
-    def get_weights(self):
+    def get_weights(self, layer_id: Union[str, int]):
         """
         Constructs the feature extractor model
 
         Returns:
         """
-        raise NotImplementedError()
+        assert isinstance(
+            self.model, nn.Sequential
+        ), "Only implemented for sequential models"
+        if isinstance(layer_id, int):
+            layer_id = str(layer_id)
+        for layer_name, layer in self.model.named_modules():
+            if layer_name == layer_id:
+                return layer.weight

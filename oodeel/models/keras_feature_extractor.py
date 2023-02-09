@@ -149,10 +149,10 @@ class KerasFeatureExtractor(FeatureExtractor):
             features = features[0]
         return features
 
-    def get_weights(self):
+    def get_weights(self, layer_id: Union[int, str]):
         """
         Constructs the feature extractor model
 
         Returns:
         """
-        raise NotImplementedError()
+        return self.find_layer[layer_id].get_weights()

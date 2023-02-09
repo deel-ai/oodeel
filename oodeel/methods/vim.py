@@ -122,7 +122,7 @@ class VIM(OODModel):
         if self.pca_origin == "center":
             self.center = np.mean(features_train, axis=0)
         elif self.pca_origin == "pseudo":
-            W, b = self.feature_extractor.model.layers[-1].get_weights()
+            W, b = self.feature_extractor.get_weights(-1)
             self.center = -np.matmul(pinv(W.T), b)
         else:
             raise NotImplementedError(
