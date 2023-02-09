@@ -38,8 +38,10 @@ try:
 except ImportError:
     _has_kneed = False
     _kneed_not_found_err = ModuleNotFoundError(
-        "This function requires Kneed to be executed. Please run command "
-        "`pip install kneed` 'conda install -c conda-forge kneed'"
+        (
+            "This function requires Kneed to be executed. Please run command "
+            "`pip install kneed` 'conda install -c conda-forge kneed'"
+        )
     )
 else:
     _has_kneed = True
@@ -157,18 +159,20 @@ class VIM(OODModel):
             ), f"Found invalid number of residual dimensions ({self.res_dim}) "
             self._princ_dim = self.feature_dim - self.res_dim
             print(
-                f"Found an elbow point for {self.feature_dim-self.res_dim} principal "
-                "dimensions inside the {self.feature_dim} dimensional feature space."
+                (
+                    f"Found an elbow point for {self.feature_dim-self.res_dim} principal "
+                    "dimensions inside the {self.feature_dim} dimensional feature space."
+                )
             )
             print(
                 "You can visualize this elbow by calling the method '.plot_spectrum()' "
                 "of this class"
             )
         elif isinstance(self._princ_dim, int):
-            assert (
-                self._princ_dim < self.feature_dim
-            ), f"if 'princ_dims'(={self._princ_dim}) is an int, it must be less than "
-            "feature space dimension ={self.feature_dim})"
+            assert self._princ_dim < self.feature_dim, (
+                f"if 'princ_dims'(={self._princ_dim}) is an int, it must be less than "
+                "feature space dimension ={self.feature_dim})"
+            )
             self.res_dim = self.feature_dim - self._princ_dim
             self._princ_dim = self._princ_dim
         elif isinstance(self._princ_dim, float):
@@ -255,8 +259,10 @@ class VIM(OODModel):
             plt.ylabel("Explained variance")
             plt.xlabel("Number of principal dimensions")
             plt.title(
-                f"Found elbow at dimension {self.kneedle.elbow}\n "
-                f"{self.feature_dim-self.kneedle.elbow} principal dimensions"
+                (
+                    f"Found elbow at dimension {self.kneedle.elbow}\n "
+                    f"{self.feature_dim-self.kneedle.elbow} principal dimensions"
+                )
             )
         else:
             plt.plot(np.cumsum(self.eigenvalues))

@@ -24,5 +24,6 @@ from .dknn import DKNN
 from .energy import Energy
 from .mls import MLS
 from .odin import ODIN
+from .vim import VIM
 
-__all__ = ["MLS", "DKNN", "ODIN"]
+__all__ = ["MLS", "DKNN", "ODIN", "Energy", "VIM"]
