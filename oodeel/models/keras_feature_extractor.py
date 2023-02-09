@@ -23,7 +23,10 @@
 import numpy as np
 import tensorflow as tf
 
-from ..types import *
+from ..types import Callable
+from ..types import List
+from ..types import Tuple
+from ..types import Union
 from ..utils.tf_tools import get_input_from_dataset_elem
 from .feature_extractor import FeatureExtractor
 
@@ -44,7 +47,8 @@ class KerasFeatureExtractor(FeatureExtractor):
         output_activation: activation function for the last layer.
             Defaults to None.
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
-            when working on the feature space without finetuning the bottom of the model).
+            when working on the feature space without finetuning the bottom of the
+            model).
             Defaults to None.
         flatten: Flatten the output features or not.
             Defaults to False.

@@ -94,15 +94,10 @@ class VIM(OODModel):
         princ_dims: Union[int, float] = None,
         pca_origin: str = "center",
         output_layers_id: List[int] = [-2, -1],
-        output_activation: str = "linear",
-        batch_size: int = 256,
     ):
 
         super().__init__(
             output_layers_id=output_layers_id,
-            output_activation=output_activation,
-            flatten=True,
-            batch_size=batch_size,
         )
         self._princ_dim = princ_dims
         self.pca_origin = pca_origin
@@ -120,7 +115,7 @@ class VIM(OODModel):
         Args:
             fit_dataset: input dataset (ID) to construct the index with.
         """
-        features_train, logits_train = self.feature_extractor(fit_dataset)[:2]
+        features_train, logits_train = self.feature_extractor.predict(fit_dataset)
         self.feature_dim = features_train.shape[1]
         if self.pca_origin == "center":
             self.center = np.mean(features_train, axis=0)
@@ -228,7 +223,7 @@ class VIM(OODModel):
         assert self.feature_extractor is not None, "Call .fit() before .score()"
         # compute predicted features
 
-        features = self.feature_extractor(inputs)[0]
+        features = self.feature_extractor.predict(inputs)[0]
         res_scores = self._compute_residual_score_tensor(features)
         return np.array(res_scores)
 
@@ -248,7 +243,7 @@ class VIM(OODModel):
         assert self.feature_extractor is not None, "Call .fit() before .score()"
         # compute predicted features
 
-        features, logits = self.feature_extractor(inputs)[:2]
+        features, logits = self.feature_extractor(inputs)
         res_scores = self._compute_residual_score_tensor(features)
         energy_scores = logsumexp(logits, axis=-1)
         scores = -self.alpha * res_scores + energy_scores
