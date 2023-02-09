@@ -244,7 +244,6 @@ class VIM(OODModel):
         Returns:
             scores
         """
-        assert self.feature_extractor is not None, "Call .fit() before .score()"
         # compute predicted features
 
         features, logits = self.feature_extractor(inputs)

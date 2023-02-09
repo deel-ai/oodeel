@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
 import numpy as np
 import tensorflow as tf
 
@@ -61,7 +60,6 @@ class MLS(OODModel):
         Returns:
             scores
         """
-        assert self.feature_extractor is not None, "Call .fit() before .score()"
 
         pred = self.feature_extractor(inputs)
         if hasattr(tf.keras.activations, self.output_activation):

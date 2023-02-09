@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
 import numpy as np
 import tensorflow as tf
 
@@ -64,7 +63,6 @@ class ODIN(OODModel):
         Returns:
             scores
         """
-        assert self.feature_extractor is not None, "Call .fit() before .score()"
         num_classes = self.feature_extractor.model.output_shape[-1]
         tensor = get_input_from_dataset_elem(inputs)
         x = self._input_perturbation(tensor, num_classes)

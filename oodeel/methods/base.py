@@ -20,7 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 
 import numpy as np
 import tensorflow as tf
@@ -28,7 +29,10 @@ import torch
 
 from ..models.keras_feature_extractor import KerasFeatureExtractor
 from ..models.torch_feature_extractor import TorchFeatureExtractor
-from ..types import Optional, Callable, Union, List
+from ..types import Callable
+from ..types import List
+from ..types import Optional
+from ..types import Union
 from ..utils.tf_tools import dataset_nb_columns
 
 # TODO find a way to avoid this import and to only import the needed class
@@ -176,6 +180,8 @@ class OODModel(ABC):
         Returns:
             scores or list of scores (depending on the input)
         """
+        assert self.feature_extractor is not None, "Call .fit() before .score()"
+
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, np.ndarray) or isinstance(dataset, tf.Tensor):
             return self._score_tensor(dataset)

@@ -20,7 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import List, Union
+from typing import List
+from typing import Union
 
 import faiss
 import numpy as np
@@ -89,7 +90,6 @@ class DKNN(OODModel):
         Returns:
             scores
         """
-        assert self.feature_extractor is not None, "Call .fit() before .score()"
 
         input_projected = self.feature_extractor(inputs)
         input_projected = np.array(input_projected)
