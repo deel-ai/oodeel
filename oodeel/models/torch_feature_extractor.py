@@ -23,7 +23,6 @@
 from typing import List
 from typing import Union
 
-import numpy as np
 import torch
 from torch import nn
 
@@ -70,27 +69,53 @@ class TorchFeatureExtractor(FeatureExtractor):
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in output_layers_id}
 
+    def get_features_hook(self, layer_id: Union[str, int]):
+        """
+        Hook that stores features corresponding to a specific layer
+        in a class dictionary.
+        """
+
+        def hook(_, __, output):
+            if isinstance(output, torch.Tensor):
+                self._features[layer_id] = output
+            else:
+                raise NotImplementedError
+
+        return hook
+
+    def find_layer(self, layer_id: Union[str, int]) -> nn.Module:
+        """
+        Find a layer in a model either by his name or by his index.
+        Parameters
+        ----------
+        model
+            Model on which to search.
+        layer
+            Layer name or layer index
+        Returns
+        -------
+        layer
+            Layer found
+        """
+        if isinstance(layer_id, int):
+            assert isinstance(self.model, nn.Sequential), (
+                "The model must be "
+                "subscriptable to find output layer by int identifier"
+            )
+            return self.model[layer_id]
+        else:
+            for layer_name, layer in self.model.named_modules():
+                if layer_name == layer_id:
+                    return layer
+
     def prepare_extractor(self):
         """
         Prepare the feature extractor for inference.
         """
         # Register a hook to store feature values for each considered layer.
-        _layer_store = dict()
-        for layer_name, layer in self.model.named_modules():
-            if layer_name in self.output_layers_id:
-                _layer_store[layer_name] = layer
-
         for layer_id in self.output_layers_id:
-            if isinstance(layer_id, str):
-                _layer_store[layer_id].register_forward_hook(
-                    self.get_features_hook(layer_id)
-                )
-            elif isinstance(layer_id, int):
-                self.model[layer_id].register_forward_hook(
-                    self.get_features_hook(layer_id)
-                )
-            else:
-                raise NotImplementedError
+            layer = self.find_layer(layer_id)
+            layer.register_forward_hook(self.get_features_hook(layer_id))
 
         # Crop model if input layer is provided
         if not (self.input_layer_id) is None:
@@ -118,20 +143,6 @@ class TorchFeatureExtractor(FeatureExtractor):
                     raise NotImplementedError
             else:
                 raise NotImplementedError
-
-    def get_features_hook(self, layer_id: Union[str, int]):
-        """
-        Hook that stores features corresponding to a specific layer
-        in a class dictionary.
-        """
-
-        def hook(_, __, output):
-            if isinstance(output, torch.Tensor):
-                self._features[layer_id] = output
-            else:
-                raise NotImplementedError
-
-        return hook
 
     def predict_tensor(self, x: torch.Tensor, detach=False) -> List[torch.Tensor]:
         """
@@ -187,11 +198,5 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         Returns:
         """
-        assert isinstance(
-            self.model, nn.Sequential
-        ), "Only implemented for sequential models"
-        if isinstance(layer_id, int):
-            layer_id = str(layer_id)
-        for layer_name, layer in self.model.named_modules():
-            if layer_name == layer_id:
-                return layer.weight
+        layer = self.find_layer(layer_id)
+        return [layer.weight.detach().numpy(), layer.bias.detach().numpy()]

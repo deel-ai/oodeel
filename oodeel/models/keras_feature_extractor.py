@@ -71,6 +71,26 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         self.model.layers[-1].activation = getattr(tf.keras.activations, "linear")
 
+    def find_layer(self, layer_id: Union[str, int]) -> tf.keras.layers.Layer:
+        """
+        Find a layer in a model either by his name or by his index.
+        Parameters
+        ----------
+        model
+            Model on which to search.
+        layer
+            Layer name or layer index
+        Returns
+        -------
+        layer
+            Layer found
+        """
+        if isinstance(layer_id, str):
+            return self.model.get_layer(layer_id)
+        if isinstance(layer_id, int):
+            return self.model.layers[layer_id]
+        raise ValueError(f"Could not find any layer {layer_id}.")
+
     # @tf.function
     # TODO check with Thomas about @tf.function
     def prepare_extractor(self):
@@ -86,26 +106,6 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         extractor = tf.keras.Model(input_layer, output_layers)
         return extractor
-
-    def find_layer(self, layer: Union[str, int]) -> tf.keras.layers.Layer:
-        """
-        Find a layer in a model either by his name or by his index.
-        Parameters
-        ----------
-        model
-            Model on which to search.
-        layer
-            Layer name or layer index
-        Returns
-        -------
-        layer
-            Layer found
-        """
-        if isinstance(layer, str):
-            return self.model.get_layer(layer)
-        if isinstance(layer, int):
-            return self.model.layers[layer]
-        raise ValueError(f"Could not find any layer {layer}.")
 
     def predict_tensor(self, tensor: Union[tf.Tensor, np.ndarray, Tuple]) -> tf.Tensor:
         """
@@ -155,4 +155,4 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         Returns:
         """
-        return self.find_layer[layer_id].get_weights()
+        return self.find_layer(layer_id).get_weights()

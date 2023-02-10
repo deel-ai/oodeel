@@ -103,3 +103,14 @@ def test_pytorch_feature_extractor_with_input_ids(kwargs_factory, expected_sz):
     pred_feature_extractor = feature_extractor.predict(dataset)
 
     assert list(pred_feature_extractor.size()) == expected_sz
+
+
+def test_get_weights():
+
+    model = named_sequential_model()
+
+    model_fe = TorchFeatureExtractor(model, output_layers_id=[-1])
+    W, b = model_fe.get_weights(-1)
+
+    assert W.shape == (10, 84)
+    assert b.shape == (10,)

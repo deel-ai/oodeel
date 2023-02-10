@@ -20,11 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import numpy as np
-import tensorflow as tf
-
 from oodeel.models.keras_feature_extractor import KerasFeatureExtractor
-from oodeel.types import *
 from tests import almost_equal
 from tests import generate_data_tf
 from tests import generate_model
@@ -58,3 +54,16 @@ def test_predict():
 
     assert almost_equal(pred_model, pred_model_fe)
     assert almost_equal(pred_model, pred_last_layer)
+
+
+def test_get_weights():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    model_fe = KerasFeatureExtractor(model, output_layers_id=[-1])
+    W, b = model_fe.get_weights(-2)
+
+    assert W.shape == (900, 10)
+    assert b.shape == (10,)
