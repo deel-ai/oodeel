@@ -25,14 +25,12 @@ from abc import abstractmethod
 
 import numpy as np
 import tensorflow as tf
-import torch
 
-from ..models.keras_feature_extractor import KerasFeatureExtractor
-from ..models.torch_feature_extractor import TorchFeatureExtractor
 from ..types import Callable
 from ..types import List
 from ..types import Optional
 from ..types import Union
+from ..utils import is_from
 from ..utils.tf_tools import dataset_nb_columns
 
 # TODO find a way to avoid this import and to only import the needed class
@@ -111,9 +109,12 @@ class OODModel(ABC):
             model : tf.keras model (for now)
                 keras models saved as pb files e.g. with model.save()
         """
-        if isinstance(model, tf.keras.Model):
+        if is_from(model, 'keras'):
+            from ..models.keras_feature_extractor import KerasFeatureExtractor
             FeatureExtractor = KerasFeatureExtractor
-        elif isinstance(model, torch.nn.module):
+
+        elif is_from(model, 'torch'):
+            from ..models.torch_feature_extractor import TorchFeatureExtractor
             FeatureExtractor = TorchFeatureExtractor
         else:
             raise NotImplementedError()
