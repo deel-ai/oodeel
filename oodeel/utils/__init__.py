@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import Callable
+
 from .tf_tools import (
     dataset_cardinality,
     dataset_get_columns,
@@ -29,3 +31,54 @@ from .tf_tools import (
     dataset_nb_columns,
     dataset_nb_labels,
 )
+
+__all__ = ["dataset_cardinality", "dataset_get_columns", "dataset_image_shape",
+           "dataset_label_shape", "dataset_max_pixel", "dataset_nb_columns",
+           "dataset_nb_labels"]
+
+
+def is_from(model: Callable, framework: str) -> str:
+    """Check wether the model belongs to a specific framework
+
+    Args:
+        model (Callable): Neural network
+        framework (str): Model framework ("torch" | "keras")
+
+    Returns:
+        bool: Wether the model belongs to specified framework or not
+    """
+    class_parents = list(
+        map(lambda x: str(x).split("'")[1].split(".")[0],
+            model.__class__.__mro__)
+    )
+    return framework in class_parents
+
+
+if __name__ == '__main__':
+    # torch model
+    import torch.nn as nn
+
+    torch_model = nn.Sequential(
+        nn.Conv2d(3, 32, 3, 1, 1),
+        nn.ReLU(),
+        nn.Conv2d(32, 16, 3, 1, 1),
+        nn.ReLU(),
+        nn.Flatten(),
+        nn.Linear(32*32*16, 10)
+    )
+
+    assert is_from(torch_model, 'torch')
+
+    # keras model
+    from tensorflow import keras
+    from keras import layers
+
+    keras_model = keras.Sequential([
+        keras.Input(shape=(32, 32, 3)),
+        layers.Conv2D(32, kernel_size=(3, 3), padding='same', activation="relu"),
+        layers.Conv2D(16, kernel_size=(3, 3), padding='same', activation="relu"),
+        layers.Flatten(),
+        layers.Dense(10),
+    ])
+
+    assert is_from(keras_model, 'keras')
