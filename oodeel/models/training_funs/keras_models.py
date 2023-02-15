@@ -20,13 +20,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import List, Optional
+from typing import List
+from typing import Optional
 
 import numpy as np
 import tensorflow as tf
-from keras.layers import Dense, Flatten
+from keras.layers import Dense
+from keras.layers import Flatten
 
-from ...utils import dataset_cardinality, dataset_image_shape
+from ...utils import dataset_cardinality
+from ...utils import dataset_image_shape
 
 
 def train_keras_app(
@@ -40,6 +43,7 @@ def train_keras_app(
     metrics: List[str] = ["accuracy"],
     imagenet_pretrained: bool = False,
     validation_data: Optional[tf.data.Dataset] = None,
+    save_dir: Optional[str] = None,
 ) -> tf.keras.Model:
     """
     Loads a model from keras.applications.
@@ -79,8 +83,23 @@ def train_keras_app(
     output = Dense(num_classes, activation="softmax")(features)
     model = tf.keras.Model(backbone.layers[0].input, output)
 
-    train_data = train_data.map(lambda x, y: (x, tf.one_hot(y, num_classes))).batch(
-        batch_size
+    padding = 4
+    image_size = input_shape[0]
+    target_size = image_size + padding * 2
+
+    def _augment_fn(images, labels):
+
+        images = tf.image.pad_to_bounding_box(
+            images, padding, padding, target_size, target_size
+        )
+        images = tf.image.random_crop(images, (image_size, image_size, 3))
+        images = tf.image.random_flip_left_right(images)
+        return images, labels
+
+    train_data = (
+        train_data.map(lambda x, y: (x, tf.one_hot(y, num_classes)))
+        .map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        .batch(batch_size)
     )
 
     if validation_data is not None:
@@ -94,17 +113,37 @@ def train_keras_app(
 
     # TODO
     # Add preprocessing (data augmentation)
+    model_checkpoint_callback = []
+
+    if save_dir is not None:
+        checkpoint_filepath = save_dir
+        model_checkpoint_callback.append(
+            tf.keras.callbacks.ModelCheckpoint(
+                filepath=checkpoint_filepath,
+                save_weights_only=False,
+                monitor="val_accuracy",
+                mode="max",
+                save_best_only=True,
+            )
+        )
+
+    if len(model_checkpoint_callback) == 0:
+        model_checkpoint_callback = None
 
     lr_scheduler = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
         boundaries, values
     )
-
     config = {"class_name": optimizer, "config": {"learning_rate": lr_scheduler}}
-
     keras_optimizer = tf.keras.optimizers.get(config)
 
     model.compile(loss=loss, optimizer=keras_optimizer, metrics=metrics)
 
-    model.fit(train_data, validation_data=validation_data, epochs=epochs)
+    print(model_checkpoint_callback)
+    model.fit(
+        train_data,
+        validation_data=validation_data,
+        epochs=epochs,
+        callbacks=model_checkpoint_callback,
+    )
 
     return model
