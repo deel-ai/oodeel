@@ -25,10 +25,10 @@ from typing import Optional
 
 import numpy as np
 import tensorflow as tf
+from classification_models.tfkeras import Classifiers
 from keras.layers import Dense
 from keras.layers import Flatten
 
-from ...utils import dataset_cardinality
 from ...utils import dataset_image_shape
 
 
@@ -37,7 +37,7 @@ def train_keras_app(
     model_name: str,
     batch_size: int = 128,
     epochs: int = 50,
-    loss: str = "categorical_crossentropy",
+    loss: str = "sparse_categorical_crossentropy",
     optimizer: str = "adam",
     learning_rate: float = 1e-3,
     metrics: List[str] = ["accuracy"],
@@ -64,6 +64,8 @@ def train_keras_app(
     Returns:
         trained model
     """
+
+    # Prepare model
     if imagenet_pretrained:
         input_shape = (224, 224, 3)
         backbone = getattr(tf.keras.applications, model_name)(
@@ -75,14 +77,25 @@ def train_keras_app(
         classes = train_data.map(lambda x, y: y).unique()
         num_classes = len(list(classes.as_numpy_iterator()))
 
-        backbone = getattr(tf.keras.applications, model_name)(
-            include_top=False, weights=None, input_shape=input_shape
-        )
+        if model_name != "resnet18":
+            backbone = getattr(tf.keras.applications, model_name)(
+                include_top=False, weights=None, input_shape=input_shape
+            )
 
-    features = Flatten()(backbone.layers[-1].output)
-    output = Dense(num_classes, activation="softmax")(features)
-    model = tf.keras.Model(backbone.layers[0].input, output)
+    if model_name != "resnet18":
+        features = Flatten()(backbone.layers[-1].output)
+        output = Dense(
+            num_classes,
+            kernel_initializer="glorot_normal",
+            bias_initializer="zeros",
+            activation="softmax",
+        )(features)
+        model = tf.keras.Model(backbone.layers[0].input, output)
+    else:
+        ResNet18, _ = Classifiers.get("resnet18")
+        model = ResNet18(input_shape, classes=num_classes, weights=None)
 
+    # Prepare data
     padding = 4
     image_size = input_shape[0]
     target_size = image_size + padding * 2
@@ -96,23 +109,17 @@ def train_keras_app(
         images = tf.image.random_flip_left_right(images)
         return images, labels
 
+    n_samples = len(train_data)
     train_data = (
-        train_data.map(lambda x, y: (x, tf.one_hot(y, num_classes)))
-        .map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        train_data.map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        .shuffle(n_samples)
         .batch(batch_size)
     )
 
     if validation_data is not None:
-        validation_data = validation_data.map(
-            lambda x, y: (x, tf.one_hot(y, num_classes))
-        ).batch(batch_size)
+        validation_data = validation_data.batch(batch_size)
 
-    n_steps = dataset_cardinality(train_data) * epochs
-    values = list(learning_rate * np.array([1, 0.1, 0.01]))
-    boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
-
-    # TODO
-    # Add preprocessing (data augmentation)
+    # Prepare callbacks
     model_checkpoint_callback = []
 
     if save_dir is not None:
@@ -130,6 +137,11 @@ def train_keras_app(
     if len(model_checkpoint_callback) == 0:
         model_checkpoint_callback = None
 
+    # Prepare learning rate scheduler and optimizer
+    n_steps = len(train_data) * epochs
+    values = list(learning_rate * np.array([1, 0.1, 0.01]))
+    boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
+
     lr_scheduler = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
         boundaries, values
     )
@@ -138,7 +150,6 @@ def train_keras_app(
 
     model.compile(loss=loss, optimizer=keras_optimizer, metrics=metrics)
 
-    print(model_checkpoint_callback)
     model.fit(
         train_data,
         validation_data=validation_data,
