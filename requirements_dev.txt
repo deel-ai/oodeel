@@ -9,3 +9,5 @@ mkdocs-material
 mkdocstrings
 mknotebooks
 bump2version
+
+image-classifiers
