@@ -7,7 +7,7 @@ setuptools
 tensorflow>=2.4.0
 tensorflow_datasets
 matplotlib
-timm,
-torch,
+timm
+torch
 torchvision
 kneed

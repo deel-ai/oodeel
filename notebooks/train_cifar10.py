@@ -28,83 +28,31 @@ import os
 import sys
 import warnings
 
-import tensorflow as tf
-from classification_models.tfkeras import Classifiers
-
 from oodeel.datasets import DataHandler
-
+from oodeel.models.training_funs import train_keras_app
 
 warnings.filterwarnings("ignore")
 
 
 sys.path.append("../")
-# os.system("export TFDS_DATA_DIR=/datasets/tensorflow_datasets")
-
 
 # cifar10
 data_handler = DataHandler()
 
-
 ds1 = data_handler.load_tfds(
-    "cifar10", preprocess=True, preprocessing_fun=lambda x: x / 255
+    "cifar10", preprocess=True, preprocessing_fun=(lambda x: x / 255)
 )
 x_train, x_test = ds1["train"], ds1["test"]
 
-# define model
-num_classes = 10
-input_shape = (32, 32, 3)
-
-
-ResNet18, _ = Classifiers.get("resnet18")
-model = ResNet18(input_shape, classes=num_classes, weights=None)
-
-# train hparams
-# (same config as in https://github.com/kuangliu/pytorch-cifar)
-batch_size = 128
-epochs = 200
-lr = 1e-1
-# weight_decay = 1e-3
-weight_decay = 5e-4
-
-# data aug
-padding = 4
-image_size = input_shape[0]
-target_size = image_size + padding * 2
-
-
-def _augment_fn(images, labels):
-    images = tf.image.pad_to_bounding_box(
-        images, padding, padding, target_size, target_size
-    )
-    images = tf.image.random_crop(images, (image_size, image_size, 3))
-    images = tf.image.random_flip_left_right(images)
-    return images, labels
-
-
-train_ds = x_train.map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-
-# optimizer
-decay_steps = int(epochs * len(train_ds) / batch_size)
-learning_rate_fn = tf.keras.experimental.CosineDecay(lr, decay_steps=decay_steps)
-optimizer = tf.keras.optimizers.SGD(learning_rate_fn, momentum=0.9, decay=weight_decay)
-
-# checkpoint callback
 os.makedirs("saved_models", exist_ok=True)
 checkpoint_filepath = "saved_models/cifar10"
-model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-    filepath=checkpoint_filepath,
-    save_weights_only=False,
-    monitor="val_accuracy",
-    mode="max",
-    save_best_only=True,
-)
 
-model.compile(
-    loss="sparse_categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"]
-)
-model.fit(
-    train_ds.shuffle(len(train_ds)).batch(batch_size),
-    validation_data=x_test.batch(batch_size),
-    epochs=epochs,
-    callbacks=[model_checkpoint_callback],
+# define model
+model = train_keras_app(
+    x_train,
+    model_name="resnet18",
+    epochs=200,
+    batch_size=128,
+    validation_data=x_test,
+    save_dir=checkpoint_filepath,
 )
