@@ -30,7 +30,7 @@ from ..types import Callable
 from ..types import List
 from ..types import Optional
 from ..types import Union
-from ..utils import is_from
+from ..utils import universal_tools as ut
 from ..utils.tf_tools import dataset_nb_columns
 
 # TODO find a way to avoid this import and to only import the needed class
@@ -109,12 +109,14 @@ class OODModel(ABC):
             model : tf.keras model (for now)
                 keras models saved as pb files e.g. with model.save()
         """
-        if is_from(model, 'keras'):
+        if ut.is_from(model, "keras"):
             from ..models.keras_feature_extractor import KerasFeatureExtractor
+
             FeatureExtractor = KerasFeatureExtractor
 
-        elif is_from(model, 'torch'):
+        elif ut.is_from(model, "torch"):
             from ..models.torch_feature_extractor import TorchFeatureExtractor
+
             FeatureExtractor = TorchFeatureExtractor
         else:
             raise NotImplementedError()
