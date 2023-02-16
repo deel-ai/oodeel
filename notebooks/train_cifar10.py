@@ -24,10 +24,10 @@
 # For image-classifiers, see:
 # (https://github.com/qubvel/classification_models)
 # !pip install image-classifiers==1.0.0b1
+import argparse
 import os
 import sys
 import warnings
-import argparse
 
 from oodeel.datasets import DataHandler
 
@@ -37,30 +37,48 @@ warnings.filterwarnings("ignore")
 sys.path.append("../")
 
 parser = argparse.ArgumentParser(
-    prog='Train CIFAR-10',
-    description='Train keras or torch model on CIFAR-10 dataset',
+    prog="Train CIFAR-10",
+    description="Train keras or torch model on CIFAR-10 dataset",
 )
-parser.add_argument('-f', '--framework', type=str, default='keras',
-                    help="Framework name: (default: 'keras' | 'torch')")
-parser.add_argument('-e', '--epochs', type=int, default=200,
-                    help='Number of epochs (default: 200)')
-parser.add_argument('-b', '--batch_size', type=int, default=128,
-                    help='Batch size (default: 128)')
-parser.add_argument('-m', '--model_name', type=str, default='resnet18',
-                    help="Model name (default: 'resnet18')")
-parser.add_argument('-s', '--save_dir', type=str, default='saved_models/cifar10',
-                    help="Directory where model will be saved"
-                    + " (default: 'saved_models/cifar10')")
+parser.add_argument(
+    "-f",
+    "--framework",
+    type=str,
+    default="keras",
+    help="Framework name: (default: 'keras' | 'torch')",
+)
+parser.add_argument(
+    "-e", "--epochs", type=int, default=200, help="Number of epochs (default: 200)"
+)
+parser.add_argument(
+    "-b", "--batch_size", type=int, default=128, help="Batch size (default: 128)"
+)
+parser.add_argument(
+    "-m",
+    "--model_name",
+    type=str,
+    default="resnet18",
+    help="Model name (default: 'resnet18')",
+)
+parser.add_argument(
+    "-s",
+    "--save_dir",
+    type=str,
+    default="saved_models/cifar10",
+    help="Directory where model will be saved" + " (default: 'saved_models/cifar10')",
+)
 args = parser.parse_args()
 
 
-if __name__ == '__main__':
-    if args.framework == 'keras':
+if __name__ == "__main__":
+    if args.framework == "keras":
         from oodeel.models.training_funs import train_keras_app
+
         training_func = train_keras_app
-    elif args.framework == 'torch':
+    elif args.framework == "torch":
         # important: this needs to be imported before loading dataset
         from oodeel.models.training_funs import train_torch_model
+
         training_func = train_torch_model
 
     # cifar10
@@ -78,5 +96,5 @@ if __name__ == '__main__':
         model_name="resnet18",
         epochs=args.epochs,
         batch_size=args.batch_size,
-        save_dir=args.save_dir
+        save_dir=args.save_dir,
     )

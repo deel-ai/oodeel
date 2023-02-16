@@ -26,8 +26,8 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 import torch
-import torch.optim as optim
 import torch.nn as nn
+import torch.optim as optim
 import torchvision
 from tqdm import tqdm
 
@@ -40,7 +40,7 @@ def allow_growth():
 
     /!\\ This function needs to be called BEFORE loading the tfds dataset!
     """
-    physical_devices = tf.config.list_physical_devices('GPU')
+    physical_devices = tf.config.list_physical_devices("GPU")
     try:
         tf.config.experimental.set_memory_growth(physical_devices[0], True)
     except:
@@ -53,7 +53,7 @@ allow_growth()
 
 def train_torch_model(
     train_data: tf.data.Dataset,
-    model_name: str = 'resnet18',
+    model_name: str = "resnet18",
     batch_size: int = 128,
     epochs: int = 50,
     loss: str = "CrossEntropyLoss",
@@ -62,7 +62,7 @@ def train_torch_model(
     imagenet_pretrained: bool = False,
     validation_data: Optional[tf.data.Dataset] = None,
     save_dir: Optional[str] = None,
-    cuda_idx: int = 0
+    cuda_idx: int = 0,
 ) -> nn.Module:
     """
     Load a model from torchvision.models and train it on a tfds dataset.
@@ -84,7 +84,7 @@ def train_torch_model(
         trained model
     """
     # device
-    device = torch.device(f'cuda:{cuda_idx}' if cuda_idx is not None else 'cpu')
+    device = torch.device(f"cuda:{cuda_idx}" if cuda_idx is not None else "cpu")
 
     # Prepare model
     input_shape = dataset_image_shape(train_data)
@@ -92,7 +92,8 @@ def train_torch_model(
     num_classes = len(list(classes.as_numpy_iterator()))
 
     model = getattr(torchvision.models, model_name)(
-        num_classes=num_classes, pretrained=imagenet_pretrained).to(device)
+        num_classes=num_classes, pretrained=imagenet_pretrained
+    ).to(device)
 
     # Prepare data
     padding = 4
@@ -123,7 +124,8 @@ def train_torch_model(
     boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     lr_scheduler = optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=boundaries, gamma=0.1)
+        optimizer, milestones=boundaries, gamma=0.1
+    )
 
     # define loss
     criterion = getattr(nn, loss)()
@@ -138,14 +140,21 @@ def train_torch_model(
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
         save_dir=save_dir,
-        device=device
+        device=device,
     )
     return model
 
 
 def _train(
-    model, train_data, validation_data, epochs, criterion, optimizer, lr_scheduler,
-    save_dir, device
+    model,
+    train_data,
+    validation_data,
+    epochs,
+    criterion,
+    optimizer,
+    lr_scheduler,
+    save_dir,
+    device,
 ):
     """Torch training loop over tfds dataset
 
@@ -168,7 +177,7 @@ def _train(
         # train phase
         model.train()
         running_loss, running_acc = 0.0, 0.0
-        with tqdm(train_data, desc=f'Epoch {epoch + 1}/{epochs} [Train]') as iterator:
+        with tqdm(train_data, desc=f"Epoch {epoch + 1}/{epochs} [Train]") as iterator:
             for i, (inputs, labels) in enumerate(iterator):
                 # convert [inputs, labels] into torch tensors
                 inputs = torch.Tensor(inputs.numpy()).permute(0, 3, 1, 2).to(device)
@@ -188,18 +197,21 @@ def _train(
                 running_loss += loss.item()
                 running_acc += acc.item()
                 if i % max(len(iterator) // 100, 1) == 0:
-                    iterator.set_postfix({
-                        'Loss': f'{running_loss / (i + 1):.3f}',
-                        'Acc': f'{running_acc / (i + 1):.3f}'
-                    })
+                    iterator.set_postfix(
+                        {
+                            "Loss": f"{running_loss / (i + 1):.3f}",
+                            "Acc": f"{running_acc / (i + 1):.3f}",
+                        }
+                    )
         lr_scheduler.step()
 
         # validation phase
         if validation_data is not None:
             model.eval()
             running_loss, running_acc = 0.0, 0.0
-            with tqdm(validation_data, desc=f'Epoch {epoch + 1}/{epochs} [Val]')\
-                 as iterator:
+            with tqdm(
+                validation_data, desc=f"Epoch {epoch + 1}/{epochs} [Val]"
+            ) as iterator:
                 for i, (inputs, labels) in enumerate(iterator):
                     # convert [inputs, labels] into torch tensors
                     inputs = torch.Tensor(inputs.numpy()).permute(0, 3, 1, 2).to(device)
@@ -210,18 +222,21 @@ def _train(
 
                     running_loss += criterion(outputs, labels).item()
                     running_acc += torch.mean(
-                        (outputs.argmax(-1) == labels).float()).item()
+                        (outputs.argmax(-1) == labels).float()
+                    ).item()
                     if i % max(len(iterator) // 100, 1) == 0:
-                        iterator.set_postfix({
-                            'Loss': f'{running_loss / (i + 1):.3f}',
-                            'Acc': f'{running_acc / (i + 1):.3f}'
-                        })
+                        iterator.set_postfix(
+                            {
+                                "Loss": f"{running_loss / (i + 1):.3f}",
+                                "Acc": f"{running_acc / (i + 1):.3f}",
+                            }
+                        )
             val_acc = running_acc / (i + 1)
             if best_val_acc is None or val_acc > best_val_acc:
                 best_val_acc = val_acc
                 if save_dir is not None:
                     os.makedirs(save_dir, exist_ok=True)
-                    torch.save(model, os.path.join(save_dir, 'best.pt'))
+                    torch.save(model, os.path.join(save_dir, "best.pt"))
 
-    torch.save(model, os.path.join(save_dir, 'last.pt'))
+    torch.save(model, os.path.join(save_dir, "last.pt"))
     return model
