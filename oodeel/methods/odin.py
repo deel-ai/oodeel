@@ -24,8 +24,8 @@ import numpy as np
 import tensorflow as tf
 
 from ..types import Union
+from ..utils import universal_tools as ut
 from ..utils.tf_tools import get_input_from_dataset_elem
-from ..utils.tf_tools import gradient_single
 from .base import OODModel
 
 
@@ -66,15 +66,15 @@ class ODIN(OODModel):
         tensor = get_input_from_dataset_elem(inputs)
         x = self._input_perturbation(tensor)
         pred = self.feature_extractor(x)
-        scores = -np.max(pred, axis=1)
+        scores = -ut.max(pred, axis=1)
         return scores
 
     @tf.function
     def _input_perturbation(self, x):
         preds = self.feature_extractor.model(x)
-        preds = tf.keras.activations.softmax(preds / self.temperature)
+        preds = ut.softmax(preds / self.temperature)
         num_classes = preds.shape[-1]
-        outputs_b = tf.one_hot(tf.argmax(preds, axis=1), num_classes)
-        gradients = gradient_single(self.feature_extractor.model, x, outputs_b)
-        x = x - self.noise * tf.sign(gradients)
+        outputs_b = ut.one_hot(ut.argmax(preds, axis=1), num_classes)
+        gradients = ut.gradient_single(self.feature_extractor.model, x, outputs_b)
+        x = x - self.noise * ut.sign(gradients)
         return x
