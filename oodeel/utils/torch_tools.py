@@ -20,9 +20,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import torch
-
 from typing import Callable
+
+import torch
 
 
 def gradient_single(
@@ -50,7 +50,7 @@ def gradient_single(
     return gradients[0]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import torch.nn as nn
     import torch.nn.functional as F
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
         nn.Conv2d(32, 16, 3, 1, 1),
         nn.ReLU(),
         nn.Flatten(),
-        nn.Linear(32*32*16, 10)
+        nn.Linear(32 * 32 * 16, 10),
     )
     gradients = gradient_single(model, inputs, targets)
     print(gradients.shape, inputs.requires_grad)
