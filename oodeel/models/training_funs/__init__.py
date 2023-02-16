@@ -21,4 +21,5 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from .keras_models import train_keras_app
+from .torch_models import train_torch_model
 from .toy import train_convnet
