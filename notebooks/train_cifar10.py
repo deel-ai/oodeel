@@ -27,32 +27,56 @@
 import os
 import sys
 import warnings
+import argparse
 
 from oodeel.datasets import DataHandler
-from oodeel.models.training_funs import train_keras_app
 
 warnings.filterwarnings("ignore")
 
 
 sys.path.append("../")
 
-# cifar10
-data_handler = DataHandler()
-
-ds1 = data_handler.load_tfds(
-    "cifar10", preprocess=True, preprocessing_fun=(lambda x: x / 255)
+parser = argparse.ArgumentParser(
+    prog='Train CIFAR-10',
+    description='Train keras or torch model on CIFAR-10 dataset',
 )
-x_train, x_test = ds1["train"], ds1["test"]
+parser.add_argument('-f', '--framework', type=str, default='keras',
+                    help="Framework name: (default: 'keras' | 'torch')")
+parser.add_argument('-e', '--epochs', type=int, default=200,
+                    help='Number of epochs (default: 200)')
+parser.add_argument('-b', '--batch_size', type=int, default=128,
+                    help='Batch size (default: 128)')
+parser.add_argument('-m', '--model_name', type=str, default='resnet18',
+                    help="Model name (default: 'resnet18')")
+parser.add_argument('-s', '--save_dir', type=str, default='saved_models/cifar10',
+                    help="Directory where model will be saved"
+                    + " (default: 'saved_models/cifar10')")
+args = parser.parse_args()
 
-os.makedirs("saved_models", exist_ok=True)
-checkpoint_filepath = "saved_models/cifar10"
 
-# define model
-model = train_keras_app(
-    x_train,
-    model_name="resnet18",
-    epochs=200,
-    batch_size=128,
-    validation_data=x_test,
-    save_dir=checkpoint_filepath,
-)
+if __name__ == '__main__':
+    if args.framework == 'keras':
+        from oodeel.models.training_funs import train_keras_app
+        training_func = train_keras_app
+    elif args.framework == 'torch':
+        # important: this needs to be imported before loading dataset
+        from oodeel.models.training_funs import train_torch_model
+        training_func = train_torch_model
+
+    # cifar10
+    data_handler = DataHandler()
+    os.makedirs(args.save_dir, exist_ok=True)
+    ds1 = data_handler.load_tfds(
+        "cifar10", preprocess=True, preprocessing_fun=(lambda x: x / 255)
+    )
+    x_train, x_test = ds1["train"], ds1["test"]
+
+    # define model
+    model = training_func(
+        train_data=x_train,
+        validation_data=x_test,
+        model_name="resnet18",
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        save_dir=args.save_dir
+    )
