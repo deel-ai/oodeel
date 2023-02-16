@@ -55,6 +55,54 @@ def softmax(tensor: Any):
         return F.softmax(tensor)
 
 
+def argmax(tensor: Any, axis: int = None):
+    """Argmax function"""
+    if is_from(tensor, "tensorflow"):
+        import tensorflow as tf
+
+        return tf.argmax(tensor, axis=axis)
+    elif is_from(tensor, "torch"):
+        import torch
+
+        return torch.argmax(tensor, dim=axis)
+
+
+def max(tensor: Any, axis: int = None):
+    """Max function"""
+    if is_from(tensor, "tensorflow"):
+        import tensorflow as tf
+
+        return tf.max(tensor, axis=axis)
+    elif is_from(tensor, "torch"):
+        import torch
+
+        return torch.max(tensor, dim=axis)
+
+
+def one_hot(tensor: Any, num_classes: int):
+    """One hot function"""
+    if is_from(tensor, "tensorflow"):
+        import tensorflow as tf
+
+        return tf.one_hot(tensor, num_classes)
+    elif is_from(tensor, "torch"):
+        import torch.nn.functional as F
+
+        return F.one_hot(tensor, num_classes)
+
+
+def sign(tensor: Any):
+    """Sign function"""
+    if is_from(tensor, "tensorflow"):
+        import tensorflow as tf
+
+        return tf.sign(tensor)
+    elif is_from(tensor, "torch"):
+        import torch
+
+        return torch.sign(tensor)
+
+
 def gradient_single(model: Callable, inputs: Any, targets: Any):
     """
     Compute gradients for a batch of samples.
