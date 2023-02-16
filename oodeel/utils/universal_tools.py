@@ -72,7 +72,7 @@ def max(tensor: Any, axis: int = None):
     if is_from(tensor, "tensorflow"):
         import tensorflow as tf
 
-        return tf.max(tensor, axis=axis)
+        return tf.reduce_max(tensor, axis=axis)
     elif is_from(tensor, "torch"):
         import torch
 
