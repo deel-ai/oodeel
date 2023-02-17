@@ -34,21 +34,14 @@ from tqdm import tqdm
 from ...utils import dataset_image_shape
 
 
-def allow_growth():
-    """Prevent tensorflow from allocating the totality of the GPU so that
+def run_tf_on_cpu():
+    """Run tensorflow on cpu device.
+    It prevents tensorflow from allocating the totality of the GPU so that
     some VRAM remain free to train torch models.
 
     /!\\ This function needs to be called BEFORE loading the tfds dataset!
     """
-    physical_devices = tf.config.list_physical_devices("GPU")
-    try:
-        tf.config.experimental.set_memory_growth(physical_devices[0], True)
-    except:
-        # Invalid device or cannot modify virtual devices once initialized.
-        pass
-
-
-allow_growth()
+    tf.config.set_visible_devices([], "GPU")
 
 
 def train_torch_model(
