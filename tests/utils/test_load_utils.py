@@ -20,3 +20,42 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from oodeel.utils import is_from
+
+
+def test_is_from():
+    # === torch model / tensor ===
+    import torch
+    import torch.nn as nn
+
+    torch_model = nn.Sequential(
+        nn.Conv2d(3, 32, 3, 1, 1),
+        nn.ReLU(),
+        nn.Conv2d(32, 16, 3, 1, 1),
+        nn.ReLU(),
+        nn.Flatten(),
+        nn.Linear(32 * 32 * 16, 10),
+    )
+    assert is_from(torch_model, "torch")
+
+    torch_tensor = torch.randn((3, 32, 32))
+    assert is_from(torch_tensor, "torch")
+
+    # === keras model / tensor ===
+    import tensorflow as tf
+    from tensorflow import keras
+    from keras import layers
+
+    keras_model = keras.Sequential(
+        [
+            keras.Input(shape=(32, 32, 3)),
+            layers.Conv2D(32, kernel_size=(3, 3), padding="same", activation="relu"),
+            layers.Conv2D(16, kernel_size=(3, 3), padding="same", activation="relu"),
+            layers.Flatten(),
+            layers.Dense(10),
+        ]
+    )
+    assert is_from(keras_model, "keras")
+
+    tf_tensor = tf.random.normal((32, 32, 3))
+    assert is_from(tf_tensor, "tensorflow")
