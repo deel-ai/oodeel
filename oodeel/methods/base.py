@@ -24,16 +24,15 @@ from abc import ABC
 from abc import abstractmethod
 
 import numpy as np
-import tensorflow as tf
+import tensorflow as tf  # TODO: remove
 
+from ..types import Any
 from ..types import Callable
 from ..types import List
 from ..types import Optional
 from ..types import Union
-from ..utils import universal_tools as ut
+from ..utils import is_from
 from ..utils.tf_tools import dataset_nb_columns
-
-# TODO find a way to avoid this import and to only import the needed class
 
 
 class OODModel(ABC):
@@ -95,6 +94,7 @@ class OODModel(ABC):
             fit_dataset: dataset to fit the oodmodel on
         """
         self.feature_extractor = self._load_feature_extractor(model)
+
         if fit_dataset is not None:
             self._fit_to_dataset(fit_dataset)
 
@@ -109,15 +109,24 @@ class OODModel(ABC):
             model : tf.keras model (for now)
                 keras models saved as pb files e.g. with model.save()
         """
-        if ut.is_from(model, "keras"):
+        if is_from(model, "keras"):
+            global tf, tf_tools
+            import tensorflow as tf
+            from ..utils import tf_tools
             from ..models.keras_feature_extractor import KerasFeatureExtractor
 
+            self.framework = "keras"
             FeatureExtractor = KerasFeatureExtractor
 
-        elif ut.is_from(model, "torch"):
+        elif is_from(model, "torch"):
+            global torch, torch_tools
+            import torch
+            from ..utils import torch_tools
             from ..models.torch_feature_extractor import TorchFeatureExtractor
 
+            self.framework = "torch"
             FeatureExtractor = TorchFeatureExtractor
+
         else:
             raise NotImplementedError()
 
@@ -237,6 +246,68 @@ class OODModel(ABC):
         Convenience wrapper for isood
         """
         return self.isood(inputs, threshold)
+
+    # === Tools ===
+
+    def softmax(self, tensor: Any):
+        """Softmax function"""
+        if self.framework == "keras":
+            return tf.keras.activations.softmax(tensor)
+        elif self.framework == "torch":
+            return torch.nn.functional.softmax(tensor)
+
+    def argmax(self, tensor: Any, axis: int = None):
+        """Argmax function"""
+        if self.framework == "keras":
+            return tf.argmax(tensor, axis=axis)
+        elif self.framework == "torch":
+            return torch.argmax(tensor, dim=axis)
+
+    def max(self, tensor: Any, axis: int = None):
+        """Max function"""
+        if self.framework == "keras":
+            return tf.reduce_max(tensor, axis=axis)
+        elif self.framework == "torch":
+            return torch.max(tensor, dim=axis)
+
+    def one_hot(self, tensor: Any, num_classes: int):
+        """One hot function"""
+        if self.framework == "keras":
+            return tf.one_hot(tensor, num_classes)
+        elif self.framework == "torch":
+            return torch.nn.functional.one_hot(tensor, num_classes)
+
+    def sign(self, tensor: Any):
+        """Sign function"""
+        if self.framework == "keras":
+            return tf.sign(tensor)
+        elif self.framework == "torch":
+            return torch.sign(tensor)
+
+    def gradient_single(self, model: Callable, inputs: Any, targets: Any):
+        """
+        Compute gradients for a batch of samples.
+        Parameters
+        ----------
+        model
+            Model used for computing gradient.
+        inputs
+            Input samples to be explained.
+        targets
+            One-hot encoded labels or regression target (e.g {+1, -1}), one for each
+            sample.
+        Returns
+        -------
+        gradients
+            Gradients computed, with the same shape as the inputs.
+        """
+        if self.framework == "keras":
+            grad_fn = tf_tools.gradient_single
+        elif self.framework == "torch":
+            grad_fn = torch_tools.gradient_single
+        else:
+            raise NotImplementedError()
+        return grad_fn(model, inputs, targets)
 
 
 def is_batched(dataset):

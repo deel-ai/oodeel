@@ -20,8 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import Callable
-
+from ..types import Any
+from ..types import str
 from .tf_tools import dataset_cardinality
 from .tf_tools import dataset_get_columns
 from .tf_tools import dataset_image_shape
@@ -39,3 +39,22 @@ __all__ = [
     "dataset_nb_columns",
     "dataset_nb_labels",
 ]
+
+
+def is_from(model_or_tensor: Any, framework: str) -> str:
+    """Check wether a model or tensor belongs to a specific framework
+
+    Args:
+        model_or_tensor (Any): Neural network or Tensor
+        framework (str):  Model or tensor framework ("torch" | "keras" | "tensorflow")
+
+    Returns:
+        bool: Wether the model belongs to specified framework or not
+    """
+    class_parents = list(
+        map(
+            lambda x: str(x).split("'")[1].split(".")[0],
+            model_or_tensor.__class__.__mro__,
+        )
+    )
+    return framework in class_parents
