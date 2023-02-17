@@ -77,9 +77,10 @@ if __name__ == "__main__":
         training_func = train_keras_app
     elif args.framework == "torch":
         # important: this needs to be imported before loading dataset
-        from oodeel.models.training_funs import train_torch_model
+        from oodeel.models.training_funs import train_torch_model, run_tf_on_cpu
 
         training_func = train_torch_model
+        run_tf_on_cpu()
 
     # cifar10
     data_handler = DataHandler()
