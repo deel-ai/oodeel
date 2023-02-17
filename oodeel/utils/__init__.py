@@ -21,7 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from ..types import Any
-from ..types import str
 from .tf_tools import dataset_cardinality
 from .tf_tools import dataset_get_columns
 from .tf_tools import dataset_image_shape
