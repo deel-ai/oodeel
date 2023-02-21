@@ -23,36 +23,11 @@
 import numpy as np
 import tensorflow as tf
 
-from ..types import Callable
-from ..types import List
-from ..types import Optional
-from ..types import Tuple
-from ..types import Union
-
-
-def softmax(tensor: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
-    """Softmax function"""
-    return tf.keras.activations.softmax(tensor)
-
-
-def argmax(tensor: Union[tf.Tensor, np.ndarray], axis: int = None) -> tf.Tensor:
-    """Argmax function"""
-    return tf.argmax(tensor, axis=axis)
-
-
-def max(tensor: Union[tf.Tensor, np.ndarray], axis: int = None) -> tf.Tensor:
-    """Max function"""
-    return tf.reduce_max(tensor, axis=axis)
-
-
-def one_hot(tensor: Union[tf.Tensor, np.ndarray], num_classes: int) -> tf.Tensor:
-    """One hot function"""
-    return tf.one_hot(tensor, num_classes)
-
-
-def sign(tensor: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
-    """Sign function"""
-    return tf.sign(tensor)
+from oodeel.types import Callable
+from oodeel.types import List
+from oodeel.types import Optional
+from oodeel.types import Tuple
+from oodeel.types import Union
 
 
 def get_input_from_dataset_elem(elem):
@@ -65,11 +40,14 @@ def get_input_from_dataset_elem(elem):
     return tensor
 
 
-def dataset_nb_columns(dataset: tf.data.Dataset) -> int:
-    try:
+def dataset_len_elem(dataset: tf.data.Dataset) -> int:
+    if (
+        isinstance(dataset.element_spec, tuple)
+        or isinstance(dataset.element_spec, list)
+        or isinstance(dataset.element_spec, dict)
+    ):
         return len(dataset.element_spec)
-    except TypeError:
-        return 1
+    return 1
 
 
 def dataset_image_shape(dataset: tf.data.Dataset) -> Tuple[int]:
@@ -132,7 +110,7 @@ def dataset_get_columns(
     """
     if isinstance(columns, int):
         columns = [columns]
-    length = dataset_nb_columns(dataset)
+    length = dataset_len_elem(dataset)
 
     if length == 2:  # when image, label
 
@@ -183,7 +161,7 @@ def batch_tensor(
         # check if it is one_hot_encoded
         label_shape = list(dataset_label_shape(tensors))
         if label_shape == []:
-            nb_columns = dataset_nb_columns(tensors)
+            nb_columns = dataset_len_elem(tensors)
             assert nb_columns == 2, "No labels to one-hot-encode"
             if num_classes is None:
                 num_classes = dataset_nb_labels(tensors)
