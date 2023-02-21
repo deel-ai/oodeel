@@ -107,6 +107,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         extractor = tf.keras.Model(input_layer, output_layers)
         return extractor
 
+    @tf.function
     def predict_tensor(self, tensor: Union[tf.Tensor, np.ndarray, Tuple]) -> tf.Tensor:
         """
         Projects input samples "inputs" into the feature space
