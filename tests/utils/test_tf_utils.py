@@ -31,7 +31,7 @@ from oodeel.utils.tf_utils import get_input_from_dataset_elem
 from tests import generate_data_tf
 
 
-def test_dataset_nb_columns():
+def test_dataset_len_elem():
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
@@ -40,7 +40,7 @@ def test_dataset_nb_columns():
         x_shape=input_shape, num_labels=num_labels, samples=samples
     )  # .batch(samples)
 
-    length = dataset_nb_columns(data)
+    length = dataset_len_elem(data)
     assert length == 2
 
 
@@ -119,20 +119,19 @@ def test_dataset_get_columns():
     )  # .batch(samples)
 
     data_0 = dataset_get_columns(data, 0)
-    length = dataset_nb_columns(data_0)
+    length = dataset_len_elem(data_0)
     assert length == 1
 
     data_0 = dataset_get_columns(data, [1])
-    length = dataset_nb_columns(data_0)
+    length = dataset_len_elem(data_0)
     assert length == 1
 
     data_0 = dataset_get_columns(data, [0, 1])
-    length = dataset_nb_columns(data_0)
+    length = dataset_len_elem(data_0)
     assert length == 2
 
 
 def test_get_input_from_dataset_elem():
-
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
