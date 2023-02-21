@@ -71,9 +71,7 @@ class ODIN(OODModel):
     @tf.function
     def _input_perturbation(self, x):
         preds = self.feature_extractor.model(x)
-        outputs_b = self.op.softmax(preds / self.temperature)
-        num_classes = preds.shape[-1]
-        outputs_b = self.op.one_hot(self.op.argmax(preds, axis=1), num_classes)
+        outputs_b = self.op.argmax(preds, axis=1)
         gradients = self.op.gradient_model(self.feature_extractor.model, x, outputs_b)
         x = x - self.noise * self.op.sign(gradients)
         return x
