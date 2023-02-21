@@ -48,6 +48,9 @@ class ODIN(OODModel):
         self.temperature = temperature
         super().__init__(output_layers_id=[-1], input_layers_id=0)
         self.noise = noise
+        self._loss_func = tf.keras.losses.SparseCategoricalCrossentropy(
+            from_logits=True, reduction="sum"
+        )
 
     def _score_tensor(
         self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
@@ -72,6 +75,20 @@ class ODIN(OODModel):
     def _input_perturbation(self, x):
         preds = self.feature_extractor.model(x)
         outputs_b = self.op.argmax(preds, axis=1)
-        gradients = self.op.gradient_model(self.feature_extractor.model, x, outputs_b)
+        gradients = self._get_gradient(outputs_b, x)
         x = x - self.noise * self.op.sign(gradients)
         return x
+
+    def _get_gradient(self, labels, inputs):
+        """
+        Computes the gradient of the model ending with calibrated softmax, as a
+        function of the inputs.
+        """
+        with tf.GradientTape(watch_accessed_variables=False) as tape:
+            tape.watch(inputs)
+            preds = (
+                self.feature_extractor.model(inputs, training=False) / self.temperature
+            )
+            loss = self._loss_func(labels, preds)
+
+        return tape.gradient(loss, inputs)
