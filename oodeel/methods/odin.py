@@ -67,8 +67,9 @@ class ODIN(OODModel):
         """
         tensor = get_input_from_dataset_elem(inputs)
         x = self._input_perturbation(tensor)
-        pred = self.feature_extractor(x)
-        scores = -self.op.max(pred, axis=1)
+        logits = self.feature_extractor.model(x, training=False) / self.temperature
+        preds = self.op.softmax(logits)
+        scores = -self.op.max(preds, axis=1)
         return scores
 
     @tf.function
