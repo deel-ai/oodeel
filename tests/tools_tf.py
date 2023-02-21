@@ -75,7 +75,12 @@ def generate_data(x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=True)
     return x, y
 
 
-def generate_data_tf(x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=True):
+def generate_data_tf(
+    x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=True, as_supervised=True
+):
     x, y = generate_data(x_shape, num_labels, samples, one_hot)
-    dataset = tf.data.Dataset.from_tensor_slices((x, y))
+    if as_supervised:
+        dataset = tf.data.Dataset.from_tensor_slices((x, y))
+    else:
+        dataset = tf.data.Dataset.from_tensor_slices({"input": x, "label": y})
     return dataset
