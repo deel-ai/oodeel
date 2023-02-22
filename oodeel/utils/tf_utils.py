@@ -34,7 +34,7 @@ def get_input_from_dataset_elem(elem):
     if isinstance(elem, tuple) or isinstance(elem, list):
         tensor = elem[0]
     elif isinstance(elem, dict):
-        tensor = elem[elem.keys[0]]
+        tensor = elem[list(elem.keys())[0]]
     else:
         tensor = elem
     return tensor

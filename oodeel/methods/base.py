@@ -32,7 +32,7 @@ from ..types import Optional
 from ..types import Union
 from ..utils import ArrayLike
 from ..utils import is_from
-from ..utils.tf_utils import dataset_len_elem
+from ..utils import get_input_from_dataset_elem
 
 
 class OODModel(ABC):
@@ -232,9 +232,6 @@ class OODModel(ABC):
 
 
 def is_batched(dataset):
-    nb_column = dataset_len_elem(dataset)
-    if nb_column == 1:
-        batch_dim = dataset.element_spec.shape[0]
-    else:
-        batch_dim = dataset.element_spec[0].shape[0]
+    tensor = get_input_from_dataset_elem(dataset.element_spec)
+    batch_dim = tensor.shape[0]
     return batch_dim is None
