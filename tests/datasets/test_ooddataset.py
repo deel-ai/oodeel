@@ -25,6 +25,7 @@ import pytest
 import tensorflow as tf
 
 from oodeel.datasets import OODDataset
+from oodeel.utils import dataset_cardinality
 from tests import generate_data
 from tests import generate_data_tf
 
@@ -32,13 +33,16 @@ from tests import generate_data_tf
 @pytest.mark.parametrize(
     "kwargs_factory, expected_output",
     [
-        (lambda: dict(dataset_id="mnist", is_id=True, split="test"), [10000, 2, 3, 0]),
+        (
+            lambda: dict(dataset_id="mnist", is_ood=False, split="test"),
+            [10000, 2, 3, 0],
+        ),
         (
             lambda: dict(
                 dataset_id=generate_data_tf(
                     x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=False
                 ),
-                is_id=True,
+                is_ood=False,
             ),
             [100, 2, 3, 0],
         ),
@@ -47,7 +51,7 @@ from tests import generate_data_tf
                 dataset_id=generate_data(
                     x_shape=(32, 32, 3), num_labels=10, samples=100
                 ),
-                is_id=True,
+                is_ood=False,
             ),
             [100, 2, 3, 0],
         ),
@@ -56,7 +60,7 @@ from tests import generate_data_tf
                 dataset_id=generate_data_tf(
                     x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=False
                 ),
-                is_id=None,
+                is_ood=None,
             ),
             [100, 2, 2, None],
         ),
@@ -65,7 +69,7 @@ from tests import generate_data_tf
                 dataset_id=generate_data(
                     x_shape=(32, 32, 3), num_labels=10, samples=100
                 ),
-                is_id=None,
+                is_ood=None,
             ),
             [100, 2, 2, None],
         ),
@@ -82,55 +86,27 @@ def test_instanciate_ood_dataset(kwargs_factory, expected_output):
     """Test the instanciation of OODDataset.
     The instanciation involves using:
     * self.assign_ood_label
-    * self.get_ood_labels
     So these methods are considered tested as well
     """
     dataset = OODDataset(**kwargs_factory())
 
     if dataset.has_ood_labels():
-        ood_labels = np.mean(dataset.get_ood_labels())
+        ood_labels = np.mean(dataset.ood_labels)
     else:
         ood_labels = None
 
     assert len(dataset.data) == expected_output[0]
     assert dataset.len_elem == expected_output[1]
-    if kwargs_factory()["is_id"]:
-        assert len(dataset.ood_labeled_data.element_spec) == expected_output[2]
+    assert len(dataset.data.element_spec) == expected_output[2]
     assert ood_labels == expected_output[3]
 
 
 @pytest.mark.parametrize(
-    "kwargs_factory, as_tf_datasets, expected_output",
+    "is_ood, as_tf_datasets, expected_output",
     [
-        (
-            lambda: dict(
-                dataset_id=generate_data_tf(
-                    x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=False
-                ),
-                is_id=True,
-            ),
-            False,
-            [200, 2, 3, 0.5],
-        ),
-        (
-            lambda: dict(
-                dataset_id=generate_data_tf(
-                    x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=False
-                ),
-            ),
-            False,
-            [200, 2, 3, 0.5],
-        ),
-        (
-            lambda: dict(
-                dataset_id=generate_data_tf(
-                    x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=False
-                ),
-                is_id=True,
-            ),
-            True,
-            [200, 2, 3, 0.5],
-        ),
+        (False, False, [200, 2, 3, 0.5]),
+        (None, False, [200, 2, 3, 0.5]),
+        (True, True, [200, 2, 3, 1]),
     ],
     ids=[
         "Concatenate two Datasets with OOD labels",
@@ -138,24 +114,29 @@ def test_instanciate_ood_dataset(kwargs_factory, expected_output):
         "Concatenate a Dataset with OOD labels with a tf.data.Dataset",
     ],
 )
-def test_concatenate_ood_dataset(kwargs_factory, as_tf_datasets, expected_output):
+def test_concatenate_ood_dataset(is_ood, as_tf_datasets, expected_output):
     """Test the concatenation of OODDataset.
     The concatenation involves using:
     * self.assign_ood_label
-    * self.get_ood_labels
     So these methods are considered tested as well
     """
 
-    ds_kwargs = kwargs_factory()
-    dataset1 = OODDataset(**ds_kwargs)
-
-    if "is_id" in ds_kwargs.keys():
-        ds_kwargs["is_id"] = False
+    dataset1 = OODDataset(
+        dataset_id=generate_data_tf(
+            x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=False
+        ),
+        is_ood=is_ood,
+    )
 
     if as_tf_datasets:
-        dataset2 = generate_data(x_shape=(32, 32, 3), num_labels=10, samples=100)
+        dataset2 = generate_data(x_shape=(38, 38, 3), num_labels=10, samples=100)
     else:
-        dataset2 = OODDataset(**ds_kwargs)
+        dataset2 = OODDataset(
+            dataset_id=generate_data_tf(
+                x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=False
+            ),
+            is_ood=True,
+        )
 
     if dataset1.has_ood_labels():
         dataset = dataset1.concatenate(dataset2)
@@ -164,16 +145,16 @@ def test_concatenate_ood_dataset(kwargs_factory, as_tf_datasets, expected_output
 
     assert len(dataset.data) == expected_output[0]
     assert dataset.len_elem == expected_output[1]
-    assert len(dataset.ood_labeled_data.element_spec) == expected_output[2]
-    assert np.mean(dataset.get_ood_labels()) == expected_output[3]
+    assert len(dataset.data.element_spec) == expected_output[2]
+    assert np.mean(dataset.ood_labels) == expected_output[3]
 
 
 @pytest.mark.parametrize(
     "id_labels, ood_labels, one_hot, expected_output",
     [
-        ([1, 2], None, False, 0),
-        (None, [1, 2], True, 0),
-        ([1], [2], False, 0),
+        ([1, 2], None, False, [100, 67, 33, 2, 1, 3]),
+        (None, [1, 2], True, [100, 33, 67, 1, 2, 3]),
+        ([1], [2], False, [67, 33, 34, 1, 1, 2]),
     ],
     ids=[
         "Assign OOD labels by class with ID labels",
@@ -191,46 +172,80 @@ def test_assign_ood_labels_by_class(id_labels, ood_labels, one_hot, expected_out
         one_hot=one_hot,
     )
 
-    for i in range(100):
-        if i < 33:
-            labels[i] = 0
-        if i >= 33 and i < 66:
-            labels[i] = 1
-        if i >= 66:
-            labels[i] = 2
+    if not one_hot:
+        for i in range(100):
+            if i < 33:
+                labels[i] = 0
+            if i >= 33 and i < 66:
+                labels[i] = 1
+            if i >= 66:
+                labels[i] = 2
+    else:
+        for i in range(100):
+            if i < 33:
+                labels[i] = np.array([1, 0, 0])
+            if i >= 33 and i < 66:
+                labels[i] = np.array([0, 1, 0])
+            if i >= 66:
+                labels[i] = np.array([0, 0, 1])
 
     dataset = OODDataset(
         dataset_id=(images, labels),
-        is_id=True,
     )
 
-    dataset.assign_ood_labels_by_class(id_labels=id_labels, ood_labels=ood_labels)
+    id_dataset, ood_dataset = dataset.assign_ood_labels_by_class(
+        id_labels=id_labels, ood_labels=ood_labels, return_filtered_ds=True
+    )
 
+    len_ds = dataset_cardinality(dataset.data)
+    len_idds = dataset_cardinality(id_dataset.data)
+    len_oodds = dataset_cardinality(ood_dataset.data)
+
+    classes = dataset.data.map(lambda elem: elem["label"])
+    classes = np.array(list(classes.as_numpy_iterator())[:-1])
+    classes = np.unique(classes, axis=0)
+
+    classes_id = id_dataset.data.map(lambda elem: elem["label"])
+    classes_id = np.array(list(classes_id.as_numpy_iterator())[:-1])
+    classes_id = np.unique(classes_id, axis=0)
+
+    classes_ood = ood_dataset.data.map(lambda elem: elem["label"])
+    classes_ood = np.array(list(classes_ood.as_numpy_iterator())[:-1])
+    classes_ood = np.unique(classes_ood, axis=0)
+
+    assert len_ds == expected_output[0]
+    assert len_idds == expected_output[1]
+    assert len_oodds == expected_output[2]
+    assert len(classes_id) == expected_output[3]
+    assert len(classes_ood) == expected_output[4]
+    assert len(classes) == expected_output[5]
+    assert np.mean(dataset.ood_labels) == expected_output[2] / expected_output[0]
     print(expected_output)
 
 
 @pytest.mark.parametrize(
-    "training, with_labels, with_ood_labels, expected_output",
+    "shuffle, with_labels, as_supervised, with_ood_labels, expected_output",
     [
-        (False, True, True, [3, (32, 10)]),
-        (False, False, True, [2, (32,)]),
-        (True, True, True, [3, (32,)]),
-        (True, True, False, [2, (32, 10)]),
+        (False, True, False, True, [3, (32,)]),
+        (False, False, False, True, [2, (32,)]),
+        (True, True, True, True, [3, (32, 10)]),
+        (True, True, True, False, [2, (32, 10)]),
     ],
     ids=[
         "Prepare OODDataset for scoring with labels and ood labels",
         "Prepare OODDataset for scoring with only ood labels",
-        "Prepare OODDataset for training with labels and ood labels",
-        "Prepare OODDataset for training with only labels",
+        "Prepare OODDataset for training (with shuffle and augment_fn) with labels "
+        "and ood labels",
+        "Prepare OODDataset for training (with shuffle and augment_fn) "
+        "with only labels",
     ],
 )
-def test_prepare(training, with_labels, with_ood_labels, expected_output):
+def test_prepare(shuffle, with_labels, as_supervised, with_ood_labels, expected_output):
     """Test the prepare method."""
 
     num_labels = 10
     batch_size = 32
     samples = 100
-    shuffle_buffer_size = samples
 
     dataset = OODDataset(
         dataset_id=generate_data_tf(
@@ -239,26 +254,46 @@ def test_prepare(training, with_labels, with_ood_labels, expected_output):
             samples=samples,
             as_supervised=False,
             one_hot=False,
-        ),
-        is_id=True,
+        )
     )
 
-    def preprocess_fn(elem):
-        elem["input"] = elem["input"] / 255
-        elem["label"] = tf.one_hot(elem["label"], num_labels)
-        return elem
+    if as_supervised and with_ood_labels:
 
-    def augment_fn(elem):
-        elem["input"] = tf.image.random_flip_left_right(elem["input"])
-        return elem
+        def preprocess_fn(x, y, z):
+            x = x / 255
+            return x, y, z
+
+        def augment_fn(x, y, z):
+            x = tf.image.random_flip_left_right(x)
+            return x, y, z
+
+    elif as_supervised and not with_ood_labels:
+
+        def preprocess_fn(x, y):
+            x = x / 255
+            return x, y
+
+        def augment_fn(x, y):
+            x = tf.image.random_flip_left_right(x)
+            return x, y
+
+    elif not as_supervised:
+
+        def preprocess_fn(elem):
+            elem["input"] = elem["input"] / 255
+            if "label" in elem.keys():
+                elem["label"] = tf.one_hot(elem["label"], num_labels)
+            return elem
+
+        augment_fn = None
 
     ds = dataset.prepare(
         batch_size=batch_size,
         preprocess_fn=preprocess_fn,
+        as_supervised=as_supervised,
         with_labels=with_labels,
         with_ood_labels=with_ood_labels,
-        training=training,
-        shuffle_buffer_size=shuffle_buffer_size,
+        shuffle=shuffle,
         augment_fn=augment_fn,
     )
 
@@ -268,24 +303,20 @@ def test_prepare(training, with_labels, with_ood_labels, expected_output):
     for elem in ds.take(1):
         tensor2 = elem
 
-    if training:
-        assert tf.reduce_sum(tensor1[0] - tensor2[0]) != 0
-        assert tuple(tensor1[-1].shape) == expected_output[1]
-    else:
-        assert tf.reduce_sum(tensor1[0] - tensor2[0]) == 0
-        assert tuple(tensor1[1].shape) == expected_output[1]
-    assert tensor1[0].shape == (batch_size, 32, 32, 3)
-    assert tf.reduce_max(tensor1[0]) <= 1
-    assert tf.reduce_min(tensor1[0]) >= 0
     assert len(tensor1) == expected_output[0]
-    """
-    else:
+
+    if not as_supervised:
         assert tf.reduce_sum(tensor1["input"] - tensor2["input"]) == 0
+        assert tuple(tensor1["ood_label"].shape) == expected_output[1]
+        if "label" in tensor1.keys():
+            assert tuple(tensor1["label"].shape) == (32, 10)
         assert tensor1["input"].shape == (batch_size, 32, 32, 3)
         assert tf.reduce_max(tensor1["input"]) <= 1
         assert tf.reduce_min(tensor1["input"]) >= 0
-        assert list(tensor1.keys()) == expected_output[0]
-        assert tuple(tensor1["ood_label"].shape) == (batch_size,)
-        if "label" in tensor1.keys():
-            assert tuple(tensor1["label"].shape) == (batch_size, num_labels)
-    """
+    else:
+        assert tf.reduce_sum(tensor1[0] - tensor2[0]) != 0
+        assert tuple(tensor1[1].shape) == (32,)
+        assert tuple(tensor1[-1].shape) == (32,)
+        assert tensor1[0].shape == (batch_size, 32, 32, 3)
+        assert tf.reduce_max(tensor1[0]) <= 1
+        assert tf.reduce_min(tensor1[0]) >= 0
