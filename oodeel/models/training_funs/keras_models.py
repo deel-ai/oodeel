@@ -20,15 +20,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import List
-from typing import Optional
-
 import numpy as np
 import tensorflow as tf
 from classification_models.tfkeras import Classifiers
 from keras.layers import Dense
 from keras.layers import Flatten
 
+from ...types import List
+from ...types import Optional
 from ...utils import dataset_image_shape
 
 
@@ -101,7 +100,6 @@ def train_keras_app(
     target_size = image_size + padding * 2
 
     def _augment_fn(images, labels):
-
         images = tf.image.pad_to_bounding_box(
             images, padding, padding, target_size, target_size
         )
