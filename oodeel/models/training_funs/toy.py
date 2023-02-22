@@ -22,7 +22,6 @@
 # SOFTWARE.
 import numpy as np
 import tensorflow as tf
-from classification_models.tfkeras import Classifiers
 from keras.layers import Conv2D
 from keras.layers import Dense
 from keras.layers import Dropout
@@ -31,11 +30,14 @@ from keras.layers import MaxPooling2D
 
 from ...types import List
 from ...types import Optional
-from ...utils import dataset_image_shape
+from ...utils import dataset_cardinality
 
 
-def train_convnet(
+def train_convnet_classifier(
     train_data: tf.data.Dataset,
+    input_shape: tuple = None,
+    num_classes: int = None,
+    is_prepared: bool = False,
     batch_size: int = 128,
     epochs: int = 50,
     loss: str = "sparse_categorical_crossentropy",
@@ -64,11 +66,12 @@ def train_convnet(
     Returns:
         trained model
     """
-    input_shape = dataset_image_shape(train_data)
-    classes = train_data.map(lambda x, y: y).unique()
-    num_classes = len(list(classes.as_numpy_iterator()))
-
     # Prepare model
+
+    assert (num_classes is not None) and (
+        input_shape is not None
+    ), "Please specify num_classes and input_shape"
+
     model = tf.keras.Sequential(
         [
             # keras.Input(shape=input_shape),
@@ -83,27 +86,30 @@ def train_convnet(
     )
 
     # Prepare data
-    padding = 4
-    image_size = input_shape[0]
-    target_size = image_size + padding * 2
+    if not is_prepared:
+        padding = 4
+        image_size = input_shape[0]
+        target_size = image_size + padding * 2
 
-    def _augment_fn(images, labels):
-        images = tf.image.pad_to_bounding_box(
-            images, padding, padding, target_size, target_size
+        def _augment_fn(images, labels):
+            images = tf.image.pad_to_bounding_box(
+                images, padding, padding, target_size, target_size
+            )
+            images = tf.image.random_crop(images, (image_size, image_size, 3))
+            images = tf.image.random_flip_left_right(images)
+            return images, labels
+
+        n_samples = len(train_data)
+        train_data = (
+            train_data.map(
+                _augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
+            )
+            .shuffle(n_samples)
+            .batch(batch_size)
         )
-        images = tf.image.random_crop(images, (image_size, image_size, 3))
-        images = tf.image.random_flip_left_right(images)
-        return images, labels
 
-    n_samples = len(train_data)
-    train_data = (
-        train_data.map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        .shuffle(n_samples)
-        .batch(batch_size)
-    )
-
-    if validation_data is not None:
-        validation_data = validation_data.batch(batch_size)
+        if validation_data is not None:
+            validation_data = validation_data.batch(batch_size)
 
     # Prepare callbacks
     model_checkpoint_callback = []
@@ -124,7 +130,7 @@ def train_convnet(
         model_checkpoint_callback = None
 
     # Prepare learning rate scheduler and optimizer
-    n_steps = len(train_data) * epochs
+    n_steps = dataset_cardinality(train_data) * epochs
     values = list(learning_rate * np.array([1, 0.1, 0.01]))
     boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
 

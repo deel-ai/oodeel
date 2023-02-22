@@ -20,34 +20,41 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-from oodeel.models.training_funs import train_convnet
+from oodeel.models.training_funs import train_convnet_classifier
 from oodeel.models.training_funs import train_keras_app
 from tests import generate_data_tf
 
 
-def test_convnet():
-
-    train_config = {"batch_size": 128, "epochs": 2}
-
+def test_convnet_classifier():
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
+
+    train_config = {
+        "batch_size": 5,
+        "epochs": 3,
+        "input_shape": input_shape,
+        "num_classes": num_labels,
+    }
 
     data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    train_convnet(data, **train_config)
+    train_convnet_classifier(data, **train_config)
 
 
 def test_train_keras_app_imagenet():
-
-    train_config = {"batch_size": 5, "epochs": 2}
-
     input_shape = (224, 224, 3)
     num_labels = 1000
     samples = 100
+
+    train_config = {
+        "batch_size": 5,
+        "epochs": 3,
+        "input_shape": input_shape,
+        "num_classes": num_labels,
+    }
 
     data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
@@ -59,12 +66,16 @@ def test_train_keras_app_imagenet():
 
 
 def test_train_keras_app():
-
-    train_config = {"batch_size": 5, "epochs": 3}
-
     input_shape = (56, 56, 3)
     num_labels = 123
     samples = 100
+
+    train_config = {
+        "batch_size": 5,
+        "epochs": 3,
+        "input_shape": input_shape,
+        "num_classes": num_labels,
+    }
 
     data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
