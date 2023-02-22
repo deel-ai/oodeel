@@ -20,38 +20,127 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import numpy as np
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
+from classification_models.tfkeras import Classifiers
+from keras.layers import Conv2D
+from keras.layers import Dense
+from keras.layers import Dropout
+from keras.layers import Flatten
+from keras.layers import MaxPooling2D
+
+from ...types import List
+from ...types import Optional
+from ...utils import dataset_image_shape
 
 
 def train_convnet(
-    train_data: tf.data.Dataset, batch_size: int = 128, epochs: int = 5
+    train_data: tf.data.Dataset,
+    batch_size: int = 128,
+    epochs: int = 50,
+    loss: str = "sparse_categorical_crossentropy",
+    optimizer: str = "adam",
+    learning_rate: float = 1e-3,
+    metrics: List[str] = ["accuracy"],
+    validation_data: Optional[tf.data.Dataset] = None,
+    save_dir: Optional[str] = None,
 ) -> tf.keras.Model:
+    """
+    Loads a model from keras.applications.
+    If the dataset is different from imagenet, trains on provided dataset.
 
+    Args:
+        train_data: _description_
+        model_name: _description_
+        batch_size: _description_. Defaults to 128.
+        epochs: _description_. Defaults to 50.
+        loss: _description_. Defaults to "categorical_crossentropy".
+        optimizer: _description_. Defaults to "adam".
+        learning_rate: _description_. Defaults to 1e-3.
+        metrics: _description_. Defaults to ["accuracy"].
+        imagenet_pretrained: _description_. Defaults to False.
+        validation_data: _description_. Defaults to None.
+
+    Returns:
+        trained model
+    """
+    input_shape = dataset_image_shape(train_data)
     classes = train_data.map(lambda x, y: y).unique()
     num_classes = len(list(classes.as_numpy_iterator()))
 
-    train_data = train_data.map(lambda x, y: (x, tf.one_hot(y, num_classes))).batch(
-        batch_size
-    )
-    model = keras.Sequential(
+    # Prepare model
+    model = tf.keras.Sequential(
         [
             # keras.Input(shape=input_shape),
-            layers.Conv2D(32, kernel_size=(3, 3), activation="relu"),
-            layers.MaxPooling2D(pool_size=(2, 2)),
-            layers.Conv2D(64, kernel_size=(3, 3), activation="relu"),
-            layers.MaxPooling2D(pool_size=(2, 2)),
-            layers.Flatten(),
-            layers.Dropout(0.5),
-            layers.Dense(num_classes, activation="softmax"),
+            Conv2D(32, kernel_size=(3, 3), activation="relu"),
+            MaxPooling2D(pool_size=(2, 2)),
+            Conv2D(64, kernel_size=(3, 3), activation="relu"),
+            MaxPooling2D(pool_size=(2, 2)),
+            Flatten(),
+            Dropout(0.5),
+            Dense(num_classes, activation="softmax"),
         ]
     )
 
-    # compile and fit
-    model.compile(
-        loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"]
+    # Prepare data
+    padding = 4
+    image_size = input_shape[0]
+    target_size = image_size + padding * 2
+
+    def _augment_fn(images, labels):
+        images = tf.image.pad_to_bounding_box(
+            images, padding, padding, target_size, target_size
+        )
+        images = tf.image.random_crop(images, (image_size, image_size, 3))
+        images = tf.image.random_flip_left_right(images)
+        return images, labels
+
+    n_samples = len(train_data)
+    train_data = (
+        train_data.map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        .shuffle(n_samples)
+        .batch(batch_size)
     )
-    model.fit(train_data, epochs=epochs)
+
+    if validation_data is not None:
+        validation_data = validation_data.batch(batch_size)
+
+    # Prepare callbacks
+    model_checkpoint_callback = []
+
+    if save_dir is not None:
+        checkpoint_filepath = save_dir
+        model_checkpoint_callback.append(
+            tf.keras.callbacks.ModelCheckpoint(
+                filepath=checkpoint_filepath,
+                save_weights_only=False,
+                monitor="val_accuracy",
+                mode="max",
+                save_best_only=True,
+            )
+        )
+
+    if len(model_checkpoint_callback) == 0:
+        model_checkpoint_callback = None
+
+    # Prepare learning rate scheduler and optimizer
+    n_steps = len(train_data) * epochs
+    values = list(learning_rate * np.array([1, 0.1, 0.01]))
+    boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
+
+    lr_scheduler = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+        boundaries, values
+    )
+    config = {"class_name": optimizer, "config": {"learning_rate": lr_scheduler}}
+    keras_optimizer = tf.keras.optimizers.get(config)
+
+    model.compile(loss=loss, optimizer=keras_optimizer, metrics=metrics)
+
+    model.fit(
+        train_data,
+        validation_data=validation_data,
+        epochs=epochs,
+        callbacks=model_checkpoint_callback,
+    )
 
     return model
