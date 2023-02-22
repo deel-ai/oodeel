@@ -122,6 +122,8 @@ class OODDataset(object):
                 self.assign_ood_label(self.ood_value)
             self.ood_labels = self.get_ood_labels()
 
+        self.input_key = list(self.data.element_spec.keys())[0]
+
     def has_ood_labels(self):
         return 0 if self.ood_labeled_data is None else 1
 
@@ -316,53 +318,67 @@ class OODDataset(object):
         ), "specify labels to filter with"
         assert self.len_elem == 2, "the dataset has no labels"
 
-        if (id_labels is not None) and (ood_labels is not None):
-            if len(self.data.element_spec["label"].shape) > 0:
+        if len(self.data.element_spec["label"].shape) > 0:
 
-                def filter_func(elem):
-                    label = tf.argmax(elem["label"])
-                    return tf.reduce_any(tf.equal(label, id_labels)) + tf.reduce_any(
-                        tf.equal(label, ood_labels)
-                    )
-
-            else:
-
-                def filter_func(elem):
-                    label = elem["label"]
-                    return tf.reduce_any(tf.equal(label, id_labels)) + tf.reduce_any(
-                        tf.equal(label, ood_labels)
-                    )
-
-            self.ood_labeled_data = self.data.filter(filter_func)
+            def get_label_int(elem):
+                return tf.argmax(elem["label"])
 
         else:
-            self.ood_labeled_data = self.data
 
-        def assign_ood_label_to_elem(elem):
-            label = elem["label"]
-            if ood_labels is None:
-                elem["ood_label"] = self.id_value * tf.reduce_any(
-                    tf.equal(label, id_labels)
-                ) + self.ood_value * (1 - tf.reduce_any(tf.equal(label, id_labels)))
-            else:
-                elem["ood_label"] = self.id_value * (
-                    1 - tf.reduce_any(tf.equal(label, ood_labels))
-                ) + self.ood_value * tf.reduce_any(tf.equal(label, ood_labels))
+            def get_label_int(elem):
+                return elem["label"]
+
+        def add_ood_label(elem, ood_label):
+            elem["ood_label"] = ood_label
             return elem
 
-        self.ood_labeled_data = self.data.map(assign_ood_label_to_elem)
+        if (id_labels is not None) and (ood_labels is not None):
+
+            def filter_func_id(elem):
+                label = get_label_int(elem)
+                return tf.reduce_any(tf.equal(label, id_labels))
+
+            def filter_func_ood(elem):
+                label = get_label_int(elem)
+                return tf.reduce_any(tf.equal(label, ood_labels))
+
+        elif ood_labels is None:
+
+            def filter_func_id(elem):
+                label = get_label_int(elem)
+                return tf.reduce_any(tf.equal(label, id_labels))
+
+            def filter_func_ood(elem):
+                label = get_label_int(elem)
+                return not tf.reduce_any(tf.equal(label, id_labels))
+
+        else:
+
+            def filter_func_id(elem):
+                label = get_label_int(elem)
+                return not tf.reduce_any(tf.equal(label, ood_labels))
+
+            def filter_func_ood(elem):
+                label = get_label_int(elem)
+                return tf.reduce_any(tf.equal(label, ood_labels))
+
+        id_data = self.data.filter(filter_func_id)
+        id_data = id_data.map(lambda elem: add_ood_label(elem, self.id_value))
+        ood_data = self.data.filter(filter_func_ood)
+        ood_data = id_data.map(lambda elem: add_ood_label(elem, self.ood_value))
+
+        self.ood_labeled_data = id_data.concatenate(ood_data)
         self.ood_labels = self.get_ood_labels()
         return self
 
     def prepare(
         self,
         batch_size: int = 128,
-        preprocess_fun: Callable = None,
+        preprocess_fn: Callable = None,
         with_ood_labels: bool = True,
         with_labels: bool = True,
         training: bool = False,
-        input_labels: bool = None,
-        buffer_size: int = None,
+        shuffle_buffer_size: int = None,
         augment_fn: Callable = None,
     ) -> tf.data.Dataset:
         """prepare self.data and self.ood_labeled_data for scoring
@@ -385,66 +401,59 @@ class OODDataset(object):
             with_ood_labels or with_labels
         ), "The dataset must have at least one of label and ood_label"
 
-        if preprocess_fun is None:
-
-            def preprocess_fun(x):
-                return x
-
-        len_elem = self.len_elem + 1 if with_ood_labels else self.elem
-
-        if self.backend in ["torch", "pytorch"]:
-            if len_elem == 1:
-
-                def channel_order(x):
-                    return tf.transpose(x, perm=[1, 2, 0])
-
-            else:
-
-                def channel_order(x):
-                    tensor = x[0]
-                    tensor = tf.transpose(tensor, perm=[1, 2, 0])
-                    return tuple([tensor] + list(x[1:]))
-
         dataset_to_prepare = self.ood_labeled_data if with_ood_labels else self.data
 
-        dataset = dataset_to_prepare.map(
-            lambda x: channel_order(preprocess_fun(x)),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        )
+        if self.backend in ["torch", "pytorch"]:
 
-        if training:
+            def channel_order(elem):
+                elem[self.input_key] = tf.transpose(
+                    elem[self.input_key], perm=[1, 2, 0]
+                )
+                return elem
 
-            def unroll_dict(elem):
-                input_tensor = (
-                    tuple([elem[key] for key in input_labels])
-                    if isinstance(input_labels, list) or isinstance(input_labels, tuple)
-                    else elem[input_labels]
-                )
-                if with_ood_labels and with_labels:
-                    return (
-                        input_tensor,
-                        elem["label"],
-                        elem["ood_label"],
-                    )
-                elif with_ood_labels and not with_labels:
-                    return (
-                        input_tensor,
-                        elem["ood_label"],
-                    )
-                return (
-                    input_tensor,
-                    elem["label"],
-                )
-
-            dataset = (
-                dataset.map(
-                    unroll_dict, num_parallel_calls=tf.data.experimental.AUTOTUNE
-                )
-                .map(augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-                .shuffle(buffer_size=buffer_size)
-                .cache()
+            dataset_to_prepare = dataset_to_prepare.map(
+                lambda x: channel_order(x),
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
 
-        dataset = dataset.batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE)
+        def unroll_dict(elem):
+            if with_ood_labels and with_labels:
+                return (
+                    elem[self.input_key],
+                    elem["label"],
+                    elem["ood_label"],
+                )
+            elif with_ood_labels and not with_labels:
+                return (
+                    elem[self.input_key],
+                    elem["ood_label"],
+                )
+            return (
+                elem[self.input_key],
+                elem["label"],
+            )
+
+        if preprocess_fn is not None:
+            dataset_to_prepare = dataset_to_prepare.map(
+                preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
+            )
+
+        if training:
+            dataset_to_prepare = (
+                dataset_to_prepare.map(
+                    augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
+                )
+                .map(unroll_dict, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+                .cache()
+                .shuffle(buffer_size=shuffle_buffer_size)
+            )
+        else:
+            dataset_to_prepare = dataset_to_prepare.map(
+                unroll_dict, num_parallel_calls=tf.data.experimental.AUTOTUNE
+            ).cache()
+
+        dataset = dataset_to_prepare.batch(batch_size).prefetch(
+            tf.data.experimental.AUTOTUNE
+        )
 
         return dataset
