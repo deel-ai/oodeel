@@ -30,65 +30,43 @@ from tests import generate_data
 from tests import generate_data_tf
 
 
+def test_instanciate_from_tfds():
+    dataset = OODDataset(dataset_id="mnist", is_ood=False, split="test")
+
+    ood_labels = np.mean(dataset.ood_labels)
+
+    assert len(dataset.data) == 10000
+    assert dataset.len_elem == 2
+    assert len(dataset.data.element_spec) == 3
+    assert ood_labels == 0
+
+
 @pytest.mark.parametrize(
-    "kwargs_factory, expected_output",
+    "as_supervised, is_ood, expected_output",
     [
-        (
-            lambda: dict(dataset_id="mnist", is_ood=False, split="test"),
-            [10000, 2, 3, 0],
-        ),
-        (
-            lambda: dict(
-                dataset_id=generate_data_tf(
-                    x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=False
-                ),
-                is_ood=False,
-            ),
-            [100, 2, 3, 0],
-        ),
-        (
-            lambda: dict(
-                dataset_id=generate_data(
-                    x_shape=(32, 32, 3), num_labels=10, samples=100
-                ),
-                is_ood=False,
-            ),
-            [100, 2, 3, 0],
-        ),
-        (
-            lambda: dict(
-                dataset_id=generate_data_tf(
-                    x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=False
-                ),
-                is_ood=None,
-            ),
-            [100, 2, 2, None],
-        ),
-        (
-            lambda: dict(
-                dataset_id=generate_data(
-                    x_shape=(32, 32, 3), num_labels=10, samples=100
-                ),
-                is_ood=None,
-            ),
-            [100, 2, 2, None],
-        ),
+        (False, False, [100, 2, 3, 0]),
+        (True, False, [100, 2, 3, 0]),
+        (False, None, [100, 2, 2, None]),
+        (True, None, [100, 2, 2, None]),
     ],
     ids=[
-        "Instanciate from tfds",
         "Instanciate from tf dataset as ID",
         "Instanciate from np dataset as ID",
         "Instanciate from tf data without ood labels",
         "Instanciate from np data without ood labels",
     ],
 )
-def test_instanciate_ood_dataset(kwargs_factory, expected_output):
+def test_instanciate_ood_dataset(as_supervised, is_ood, expected_output):
     """Test the instanciation of OODDataset.
     The instanciation involves using:
     * self.assign_ood_label
     So these methods are considered tested as well
     """
-    dataset = OODDataset(**kwargs_factory())
+
+    dataset_id = generate_data_tf(
+        x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=as_supervised
+    )
+    dataset = OODDataset(dataset_id=dataset_id, is_ood=is_ood)
 
     if dataset.has_ood_labels():
         ood_labels = np.mean(dataset.ood_labels)
@@ -224,12 +202,12 @@ def test_assign_ood_labels_by_class(id_labels, ood_labels, one_hot, expected_out
 
 
 @pytest.mark.parametrize(
-    "shuffle, with_labels, as_supervised, with_ood_labels, expected_output",
+    "shuffle, with_labels, with_ood_labels, expected_output",
     [
-        (False, True, False, True, [3, (32,)]),
-        (False, False, False, True, [2, (32,)]),
-        (True, True, True, True, [3, (32, 10)]),
-        (True, True, True, False, [2, (32, 10)]),
+        (False, True, True, [3, (32, 10)]),
+        (False, False, True, [2, (32,)]),
+        (True, True, True, [3, (32, 10)]),
+        (True, True, False, [2, (32, 10)]),
     ],
     ids=[
         "Prepare OODDataset for scoring with labels and ood labels",
@@ -240,7 +218,7 @@ def test_assign_ood_labels_by_class(id_labels, ood_labels, one_hot, expected_out
         "with only labels",
     ],
 )
-def test_prepare(shuffle, with_labels, as_supervised, with_ood_labels, expected_output):
+def test_prepare(shuffle, with_labels, with_ood_labels, expected_output):
     """Test the prepare method."""
 
     num_labels = 10
@@ -253,44 +231,26 @@ def test_prepare(shuffle, with_labels, as_supervised, with_ood_labels, expected_
             num_labels=num_labels,
             samples=samples,
             as_supervised=False,
-            one_hot=False,
+            one_hot=True,
         )
     )
 
-    if as_supervised and with_ood_labels:
+    def preprocess_fn(*inputs):
+        x = inputs[0] / 255
+        return tuple([x] + list(inputs[1:]))
 
-        def preprocess_fn(x, y, z):
-            x = x / 255
-            return x, y, z
+    if shuffle:
 
-        def augment_fn(x, y, z):
-            x = tf.image.random_flip_left_right(x)
-            return x, y, z
+        def augment_fn(*inputs):
+            x = tf.image.random_flip_left_right(inputs[0])
+            return tuple([x] + list(inputs[1:]))
 
-    elif as_supervised and not with_ood_labels:
-
-        def preprocess_fn(x, y):
-            x = x / 255
-            return x, y
-
-        def augment_fn(x, y):
-            x = tf.image.random_flip_left_right(x)
-            return x, y
-
-    elif not as_supervised:
-
-        def preprocess_fn(elem):
-            elem["input"] = elem["input"] / 255
-            if "label" in elem.keys():
-                elem["label"] = tf.one_hot(elem["label"], num_labels)
-            return elem
-
+    else:
         augment_fn = None
 
     ds = dataset.prepare(
         batch_size=batch_size,
         preprocess_fn=preprocess_fn,
-        as_supervised=as_supervised,
         with_labels=with_labels,
         with_ood_labels=with_ood_labels,
         shuffle=shuffle,
@@ -304,19 +264,11 @@ def test_prepare(shuffle, with_labels, as_supervised, with_ood_labels, expected_
         tensor2 = elem
 
     assert len(tensor1) == expected_output[0]
-
-    if not as_supervised:
-        assert tf.reduce_sum(tensor1["input"] - tensor2["input"]) == 0
-        assert tuple(tensor1["ood_label"].shape) == expected_output[1]
-        if "label" in tensor1.keys():
-            assert tuple(tensor1["label"].shape) == (32, 10)
-        assert tensor1["input"].shape == (batch_size, 32, 32, 3)
-        assert tf.reduce_max(tensor1["input"]) <= 1
-        assert tf.reduce_min(tensor1["input"]) >= 0
-    else:
-        assert tf.reduce_sum(tensor1[0] - tensor2[0]) != 0
-        assert tuple(tensor1[1].shape) == (32,)
-        assert tuple(tensor1[-1].shape) == (32,)
-        assert tensor1[0].shape == (batch_size, 32, 32, 3)
-        assert tf.reduce_max(tensor1[0]) <= 1
-        assert tf.reduce_min(tensor1[0]) >= 0
+    if shuffle:
+        assert np.sum(tensor1[0] - tensor2[0]) != 0
+    assert tuple(tensor1[1].shape) == expected_output[1]
+    if with_ood_labels and with_labels:
+        assert tuple(tensor1[2].shape) == (32,)
+    assert tensor1[0].shape == (batch_size, 32, 32, 3)
+    assert tf.reduce_max(tensor1[0]) <= 1
+    assert tf.reduce_min(tensor1[0]) >= 0
