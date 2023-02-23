@@ -41,7 +41,7 @@ class OODDataset(object):
     # TODO Penser à la doc
     # TODO Usage of "ood" is confusing. Can denote the task and a dataset.
     # As a result, ood_label can be ood or id
-    # TODO Faire un loader à part ?
+    # TODO Faire un loader à part, spécialiser cette classe pour les images
     def __init__(
         self,
         dataset_id=Union[tf.data.Dataset, tuple, str],
@@ -58,6 +58,7 @@ class OODDataset(object):
         self.backend = backend
         self.ood_labels = None
         self.is_ood = is_ood
+        self.length = None
 
         if self.backend in ["torch", "pytorch"]:
             tf.config.set_visible_devices([], "GPU")
@@ -66,11 +67,23 @@ class OODDataset(object):
             self.channel_order = "channels_last"
 
         if isinstance(dataset_id, tf.data.Dataset):
-            assert isinstance(dataset_id.element_spec, dict), (
-                "Please provide a dataset with elements as a dict instead of a tuple. "
-                "For instance, use tf.data.Dataset.from_tensor_slices({'input': x, "
-                "'label': y}) instead of tf.data.Dataset.from_tensor_slices((x, y))"
-            )
+            if not isinstance(dataset_id.element_spec, dict):
+                print(
+                    "Feature name not found, assigning 'input_i' "
+                    "key to the i-th tensor and 'label' key to the last"
+                )
+                len_elem = len(dataset_id.element_spec)
+                if len_elem == 2:
+                    keys = ["input", "label"]
+                else:
+                    keys = [f"input_{i}" for i in range(len_elem)]
+                    keys[-1] = "label"
+
+                def tuple_to_dict(elem):
+                    return {keys[i]: elem[i] for i in range(len_elem)}
+
+                dataset_id = dataset_id.map(tuple_to_dict)
+
             self.data = dataset_id
 
         elif isinstance(dataset_id, np.ndarray):
@@ -92,6 +105,9 @@ class OODDataset(object):
             )
             self.data = tf.data.Dataset.from_tensor_slices(dataset_dict)
 
+        elif isinstance(dataset_id, dict):
+            self.data = tf.data.Dataset.from_tensor_slices(dataset_id)
+
         elif isinstance(dataset_id, str):
             if dataset_id in tfds.list_builders():
                 print("Loading from tensorflow_datasets")
@@ -102,7 +118,10 @@ class OODDataset(object):
                             " tensorflow datasets. Changing to True."
                         )
                 load_kwargs["as_supervised"] = False
-                self.data = tfds.load(dataset_id, split=split, **load_kwargs)
+                self.data, infos = tfds.load(
+                    dataset_id, split=split, **load_kwargs, with_info=True
+                )
+                self.length = infos.splits[split].num_examples
                 assert isinstance(self.data, tf.data.Dataset), (
                     "Please specify a split for loading from tensorflow_datasets"
                     " (train, test, ...)"
@@ -113,10 +132,7 @@ class OODDataset(object):
                 # TODO
                 raise NotImplementedError()
 
-        try:
-            self.length = len(self.data)
-        except TypeError:
-            self.length = None
+        self.length = self.cardinality()
 
         if self.has_ood_labels():
             self.len_elem = dataset_len_elem(self.data) - 1
@@ -137,8 +153,7 @@ class OODDataset(object):
         if self.length is not None:
             return self.length
         else:
-            self.length = dataset_cardinality(self.data)
-            return self.length
+            return dataset_cardinality(self.data)
 
     def assign_ood_label(self, ood_label: int, replace: bool = None):
         """Assign an ood_label to a dataset.
