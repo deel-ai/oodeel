@@ -57,12 +57,10 @@ class OODModel(ABC):
         self,
         output_layers_id: List[int] = [-1],
         input_layers_id: List[int] = 0,
-        uses_labels: bool = False,
     ):
         self.feature_extractor = None
         self.output_layers_id = output_layers_id
         self.input_layers_id = input_layers_id
-        self.uses_labels = uses_labels
 
     @abstractmethod
     def _score_tensor(self, inputs: ArrayLike):
@@ -183,29 +181,16 @@ class OODModel(ABC):
         assert self.feature_extractor is not None, "Call .fit() before .score()"
 
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
-        if isinstance(dataset, np.ndarray) or isinstance(dataset, tf.Tensor):
-            return self._score_tensor(dataset)
-        elif isinstance(dataset, tuple):
-            return (
-                self._score_tensor(dataset)
-                if self.uses_labels
-                else self._score_tensor(dataset[0])
-            )
+        if isinstance(dataset, (np.ndarray, tf.Tensor, tuple)):
+            tensor = get_input_from_dataset_elem(dataset)
+            return self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         else:
             scores = np.array([])
-            assert is_batched(
-                dataset
-            ), "Please input a batched dataset. Add .batch(batch_size) to your dataset."
+            assert is_batched(dataset), "Please input a batched dataset."
             for tensor in dataset:
-                if isinstance(tensor, tuple):
-                    score_batch = (
-                        self._score_tensor(tensor)
-                        if self.uses_labels
-                        else self._score_tensor(tensor[0])
-                    )
-                else:
-                    score_batch = self._score_tensor(tensor)
+                tensor = get_input_from_dataset_elem(tensor)
+                score_batch = self._score_tensor(tensor)
                 scores = np.append(scores, score_batch)
         return scores
 
