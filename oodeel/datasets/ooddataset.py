@@ -270,7 +270,7 @@ class OODDataset(object):
             if self.is_ood is None:
                 self.assign_ood_label(self.id_value)
 
-        if isinstance(ood_dataset, tf.data.Dataset) or isinstance(ood_dataset, tuple):
+        if isinstance(ood_dataset, (tf.data.Dataset, tuple)):
             ood_dataset = OODDataset(
                 ood_dataset, backend=self.backend, is_ood=not ood_as_id
             )
