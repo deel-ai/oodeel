@@ -79,8 +79,8 @@ class OODDataset(object):
                     keys = [f"input_{i}" for i in range(len_elem)]
                     keys[-1] = "label"
 
-                def tuple_to_dict(elem):
-                    return {keys[i]: elem[i] for i in range(len_elem)}
+                def tuple_to_dict(*inputs):
+                    return {keys[i]: inputs[i] for i in range(len_elem)}
 
                 dataset_id = dataset_id.map(tuple_to_dict)
 
@@ -409,7 +409,6 @@ class OODDataset(object):
         self,
         batch_size: int = 128,
         preprocess_fn: Callable = None,
-        as_supervised: bool = False,
         with_ood_labels: bool = True,
         with_labels: bool = True,
         shuffle: bool = False,
@@ -464,35 +463,22 @@ class OODDataset(object):
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
 
-        if as_supervised:
-
-            def process_dict(elem):
-                if with_ood_labels and with_labels:
-                    return (
-                        elem[self.input_key],
-                        elem["label"],
-                        elem["ood_label"],
-                    )
-                elif with_ood_labels and not with_labels:
-                    return (
-                        elem[self.input_key],
-                        elem["ood_label"],
-                    )
+        def process_dict(elem):
+            if with_ood_labels and with_labels:
                 return (
                     elem[self.input_key],
                     elem["label"],
+                    elem["ood_label"],
                 )
-
-        else:
-
-            def process_dict(elem):
-                if with_ood_labels and with_labels:
-                    return elem
-                elif with_ood_labels and not with_labels:
-                    elem.pop("label")
-                    return elem
-                elem.pop("ood_label")
-                return elem
+            elif with_ood_labels and not with_labels:
+                return (
+                    elem[self.input_key],
+                    elem["ood_label"],
+                )
+            return (
+                elem[self.input_key],
+                elem["label"],
+            )
 
         dataset_to_prepare = dataset_to_prepare.map(
             process_dict, num_parallel_calls=tf.data.experimental.AUTOTUNE
