@@ -68,7 +68,7 @@ def test_instanciate_ood_dataset(as_supervised, is_ood, expected_output):
     )
     dataset = OODDataset(dataset_id=dataset_id, is_ood=is_ood)
 
-    if dataset.has_ood_labels():
+    if dataset.has_ood_label():
         ood_labels = np.mean(dataset.ood_labels)
     else:
         ood_labels = None
@@ -116,7 +116,7 @@ def test_concatenate_ood_dataset(is_ood, as_tf_datasets, expected_output):
             is_ood=True,
         )
 
-    if dataset1.has_ood_labels():
+    if dataset1.has_ood_label():
         dataset = dataset1.concatenate(dataset2)
     else:
         dataset = dataset1.concatenate(dataset2, ood_as_id=True, shape=(23, 23))
