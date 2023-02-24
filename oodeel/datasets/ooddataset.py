@@ -79,24 +79,30 @@ class OODDataset(object):
         self.id_value = id_value
         self.ood_value = ood_value
         self.backend = backend
+
+        # OOD labels are kept as attribute to avoid iterating over the dataset
         self.ood_labels = None
         self.is_ood = is_ood
         self.length = None
 
+        # Set the load parameters for tfds
         if load_kwargs is None:
             load_kwargs = {}
         load_kwargs["as_supervised"] = False
         load_kwargs["split"] = split
         self.load_params = load_kwargs
 
+        # Set the channel order depending on the backend
         if self.backend in ["torch", "pytorch"]:
             tf.config.set_visible_devices([], "GPU")
             self.channel_order = "channels_first"
         else:
             self.channel_order = "channels_last"
 
+        # Load the data handler
         self.data_handler = TFDataHandler()
 
+        # Load the dataset depending on the type of dataset_id
         if isinstance(dataset_id, tf.data.Dataset):
             self.data = self.data_handler.load_tf_ds(dataset_id)
 
@@ -114,18 +120,22 @@ class OODDataset(object):
                 )
                 self.length = infos.splits[split].num_examples
 
+        # Get the length of the dataset
         self.length = self.cardinality()
 
+        # Get the length of the elements in the dataset
         if self.has_ood_label():
             self.len_elem = dataset_len_elem(self.data) - 1
         else:
             self.len_elem = dataset_len_elem(self.data)
 
+        # Assign ood label, except if is_ood is None
         if self.is_ood:
             self.assign_ood_label(self.ood_value)
         elif (not self.is_ood) and (self.is_ood is not None):
             self.assign_ood_label(self.id_value)
 
+        # Get the key of the tensor to feed the model with
         self.input_key = self.data_handler.get_ds_feature_keys(self.data)[0]
 
     def cardinality(self):
@@ -186,6 +196,8 @@ class OODDataset(object):
         Returns:
             OODDataset: a Dataset object with the concatenated data
         """
+
+        # Assign the correct ood_label to self.data, depending on ood_as_id
         if ood_as_id:
             if (not self.is_ood) or (self.is_ood is None):
                 self.assign_ood_label(self.ood_value)
@@ -193,18 +205,22 @@ class OODDataset(object):
             if self.is_ood is None:
                 self.assign_ood_label(self.id_value)
 
+        # Creating an OODDataset object from ood_dataset if necessary and make sure
+        # the two OODDatasets have compatible parameters
         if isinstance(ood_dataset, (tf.data.Dataset, tuple)):
-            ood_dataset = OODDataset(
-                ood_dataset, backend=self.backend, is_ood=not ood_as_id
-            )
+            data = ood_dataset
         else:
-            assert (
-                self.backend == ood_dataset.backend
-            ), "The two datasets must have the same backend."
-            ood_dataset = OODDataset(
-                ood_dataset.data, backend=self.backend, is_ood=not ood_as_id
-            )
+            data = ood_dataset.data
 
+        ood_dataset = OODDataset(
+            data,
+            id_value=self.id_value,
+            ood_value=self.ood_value,
+            backend=self.backend,
+            is_ood=not ood_as_id,
+        )
+
+        # Merge the two underlying tf.data.Datasets
         data = self.data_handler.merge(
             self.data,
             ood_dataset.data,
@@ -213,6 +229,7 @@ class OODDataset(object):
             channel_order=self.channel_order,
         )
 
+        # Create a new OODDataset from the merged tf.data.Dataset
         output_ds = OODDataset(
             dataset_id=data,
             is_ood=None,
@@ -220,6 +237,8 @@ class OODDataset(object):
             ood_value=self.ood_value,
             backend=self.backend,
         )
+
+        # Get the ood_labels
         output_ds.ood_labels = np.concatenate([self.ood_labels, ood_dataset.ood_labels])
         return output_ds
 
@@ -244,11 +263,13 @@ class OODDataset(object):
             Optional[Tuple[OODDataset]]: Tuple of in-distribution and
                 out-of-distribution OODDatasets
         """
+        # Make sure the dataset has labels
         assert (id_labels is not None) or (
             ood_labels is not None
         ), "specify labels to filter with"
         assert self.len_elem == 2, "the dataset has no labels"
 
+        # Filter the dataset depending on id_labels and ood_labels given
         if (ood_labels is not None) and (id_labels is not None):
             id_data = self.data_handler.filter_by_feature_value(
                 self.data, "label", id_labels
@@ -273,6 +294,7 @@ class OODDataset(object):
                 self.data, "label", ood_labels
             )
 
+        # Assign the correct ood_label to the filtered datasets
         id_data = self.data_handler.assign_feature_value(
             id_data, "ood_label", self.id_value
         )
@@ -283,15 +305,21 @@ class OODDataset(object):
         )
         len_ood = dataset_cardinality(ood_data)
 
+        # Concatenate the two filtered datasets
         self.data = id_data.concatenate(ood_data)
+
+        # Get the ood_labels
         self.ood_labels = np.concatenate(
             [
                 np.array([self.id_value for i in range(len_id)]),
                 np.array([self.ood_value for i in range(len_ood)]),
             ]
         )
+
+        # The OODDataset is neither in-distribution nor out-of-distribution
         self.is_ood = None
 
+        # Return the filtered OODDatasets if necessary
         if return_filtered_ds:
             return OODDataset(
                 id_data,
@@ -337,10 +365,12 @@ class OODDataset(object):
         Returns:
             tf.data.Dataset: prepared dataset
         """
+        # Check if the dataset has at least one of label and ood_label
         assert (
             with_ood_labels or with_labels
         ), "The dataset must have at least one of label and ood_label"
 
+        # Check if the dataset has ood_labels when asked to return with_ood_labels
         if with_ood_labels:
             assert (
                 self.has_ood_label()
@@ -348,11 +378,13 @@ class OODDataset(object):
 
         dataset_to_prepare = self.data
 
+        # Making the dataset channel first if the backend is pytorch
         if self.backend in ["torch", "pytorch"]:
             dataset_to_prepare = self.data_handler.make_channel_first(
                 dataset_to_prepare
             )
 
+        # Select the keys to be returned
         if with_ood_labels and with_labels:
             keys = [self.input_key, "label", "ood_label"]
         elif with_ood_labels and not with_labels:
@@ -360,8 +392,10 @@ class OODDataset(object):
         else:
             keys = [self.input_key, "label"]
 
+        # Transform the dataset from dict to tuple
         dataset_to_prepare = self.data_handler.dict_to_tuple(dataset_to_prepare, keys)
 
+        # Apply the preprocessing and augmentation functions if necessary
         if preprocess_fn is not None:
             dataset_to_prepare = self.data_handler.map_ds(
                 dataset_to_prepare, preprocess_fn
@@ -372,12 +406,15 @@ class OODDataset(object):
                 dataset_to_prepare, augment_fn
             )
 
+        # Set the shuffle buffer size if necessary
         if shuffle:
             shuffle_buffer_size = (
                 self.cardinality()
                 if shuffle_buffer_size is None
                 else shuffle_buffer_size
             )
+
+        # Prepare the dataset for training or scoring
         dataset = self.data_handler.prepare_for_training(
             dataset_to_prepare, batch_size, shuffle_buffer_size
         )
