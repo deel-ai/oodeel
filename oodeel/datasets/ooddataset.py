@@ -24,7 +24,6 @@ import os
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_datasets as tfds
 
 from ..types import Callable
 from ..types import Optional
@@ -33,6 +32,7 @@ from ..types import TypeVar
 from ..types import Union
 from ..utils import dataset_cardinality
 from ..utils import dataset_len_elem
+from .tf_data_handler import TFDataHandler
 
 TOODDadaset = TypeVar("TOODDadaset", bound="OODDadaset")
 
@@ -44,21 +44,27 @@ class OODDataset(object):
     # TODO Faire un loader à part, spécialiser cette classe pour les images
     def __init__(
         self,
-        dataset_id=Union[tf.data.Dataset, tuple, str],
+        dataset_id=Union[tf.data.Dataset, tuple, dict, str],
+        from_directory: bool = False,
         is_ood: bool = False,
         id_value: int = 0,
         ood_value: int = 1,
-        backend: str = "tf",
+        backend: str = "tensorflow",
         split: str = None,
         load_kwargs: dict = {},
     ):
         self.id_value = id_value
         self.ood_value = ood_value
-        self.load_params = load_kwargs
         self.backend = backend
         self.ood_labels = None
         self.is_ood = is_ood
         self.length = None
+
+        if load_kwargs is None:
+            load_kwargs = {}
+        load_kwargs["as_supervised"] = False
+        load_kwargs["split"] = split
+        self.load_params = load_kwargs
 
         if self.backend in ["torch", "pytorch"]:
             tf.config.set_visible_devices([], "GPU")
@@ -66,71 +72,24 @@ class OODDataset(object):
         else:
             self.channel_order = "channels_last"
 
+        self.data_handler = TFDataHandler()
+
         if isinstance(dataset_id, tf.data.Dataset):
-            if not isinstance(dataset_id.element_spec, dict):
-                print(
-                    "Feature name not found, assigning 'input_i' "
-                    "key to the i-th tensor and 'label' key to the last"
-                )
-                len_elem = len(dataset_id.element_spec)
-                if len_elem == 2:
-                    keys = ["input", "label"]
-                else:
-                    keys = [f"input_{i}" for i in range(len_elem)]
-                    keys[-1] = "label"
+            self.data = self.data_handler.load_tf_ds(dataset_id)
 
-                def tuple_to_dict(*inputs):
-                    return {keys[i]: inputs[i] for i in range(len_elem)}
-
-                dataset_id = dataset_id.map(tuple_to_dict)
-
-            self.data = dataset_id
-
-        elif isinstance(dataset_id, np.ndarray):
-            dataset_dict = {"input": dataset_id}
-
-        elif isinstance(dataset_id, tuple):
-            len_elem = len(dataset_id)
-            if len_elem == 2:
-                dataset_dict = {"input": dataset_id[0], "label": dataset_id[1]}
-            else:
-                dataset_dict = {
-                    f"input_{i}": dataset_id[i] for i in range(len_elem - 1)
-                }
-                dataset_dict["label"] = dataset_id[-1]
-            print(
-                'Loading tf.data.Dataset with elems as dicts, assigning "input_i" key'
-                ' to the i-th tuple dimension and "label" key to the last '
-                "tuple dimension."
-            )
-            self.data = tf.data.Dataset.from_tensor_slices(dataset_dict)
-
-        elif isinstance(dataset_id, dict):
-            self.data = tf.data.Dataset.from_tensor_slices(dataset_id)
+        elif isinstance(dataset_id, (np.ndarray, tuple, dict)):
+            self.data = self.data_handler.load_tf_ds_from_numpy(dataset_id)
 
         elif isinstance(dataset_id, str):
-            if dataset_id in tfds.list_builders():
-                print("Loading from tensorflow_datasets")
-                if "as_supervised" in load_kwargs.keys():
-                    if load_kwargs["as_supervised"]:
-                        print(
-                            "as_supervised must be False when loading from"
-                            " tensorflow datasets. Changing to True."
-                        )
-                load_kwargs["as_supervised"] = False
-                self.data, infos = tfds.load(
-                    dataset_id, split=split, **load_kwargs, with_info=True
-                )
-                self.length = infos.splits[split].num_examples
-                assert isinstance(self.data, tf.data.Dataset), (
-                    "Please specify a split for loading from tensorflow_datasets"
-                    " (train, test, ...)"
-                )
-            else:
+            if from_directory:
                 assert os.path.exists(dataset_id), f"Path {dataset_id} does not exist"
                 print(f"Loading from directory {dataset_id}")
                 # TODO
-                raise NotImplementedError()
+            else:
+                self.data, infos = self.data_handler.load_tf_ds_from_tfds(
+                    dataset_id, load_kwargs
+                )
+                self.length = infos.splits[split].num_examples
 
         self.length = self.cardinality()
 
@@ -292,7 +251,7 @@ class OODDataset(object):
         else:
             assert (
                 self.backend == ood_dataset.backend
-            ), "The two datasets have different backends"
+            ), "The two datasets must have the same backend."
             ood_dataset = OODDataset(
                 ood_dataset.data, backend=self.backend, is_ood=not ood_as_id
             )
