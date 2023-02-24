@@ -33,7 +33,10 @@ from ..utils import dataset_len_elem
 
 def dict_only_ds(ds_handling_method: Callable) -> Callable:
     """Decorator to ensure that the dataset is a dict dataset and that the input key
-    matches one of the feature keys
+    matches one of the feature keys. Ne careful, the signature of decorated functions
+    must be function(dataset, *args, **kwargs) with feature_key either in kwargs or
+    args[0] when relevant.
+
 
     Args:
         ds_handling_method: method to decorate
@@ -50,6 +53,7 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
         elif len(args) > 0:
             feature_key = args[0]
 
+        # If feature_key is provided, check that it is in the dataset feature keys
         if (len(args) > 0) or ("feature_key" in kwargs):
             if isinstance(feature_key, str):
                 feature_key = [feature_key]
@@ -80,9 +84,11 @@ class TFDataHandler(object):
         Returns:
             tf.data.Dataset
         """
+        # If dataset_id is a numpy array, convert it to a dict
         if isinstance(dataset_id, np.ndarray):
             dataset_dict = {"input": dataset_id}
 
+        # If dataset_id is a tuple, convert it to a dict
         elif isinstance(dataset_id, tuple):
             len_elem = len(dataset_id)
             if len_elem == 2:
@@ -117,6 +123,7 @@ class TFDataHandler(object):
         Returns:
             tf.data.Dataset
         """
+        # If dataset_id is a tuple based tf.data.dataset, convert it to a dict
         if not isinstance(dataset_id.element_spec, dict):
             print(
                 "Feature name not found, assigning 'input_i' "
@@ -365,6 +372,7 @@ class TFDataHandler(object):
             len_elem_id == len_elem_ood
         ), "incompatible dataset elements (different elem dict length)"
 
+        # If a desired shape is given, triggers the resize
         if shape is not None:
             resize = True
 
@@ -378,6 +386,7 @@ class TFDataHandler(object):
         shape_id = id_dataset.element_spec[input_key_id].shape
         shape_ood = ood_dataset.element_spec[input_key_ood].shape
 
+        # If the shape of the two datasets are different, triggers the resize
         if shape_id != shape_ood:
             resize = True
 
@@ -428,6 +437,7 @@ class TFDataHandler(object):
         Returns:
             tf.data.Dataset: Filtered dataset
         """
+        # If the labels are one-hot encoded, prepare a function to get the label as int
         if len(dataset.element_spec[feature_key].shape) > 0:
 
             def get_label_int(elem):
