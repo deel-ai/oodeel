@@ -45,7 +45,8 @@ class OODDataset(object):
 
     Args:
         dataset_id (Union[tf.data.Dataset, tuple, dict, str]): The dataset to load.
-            Can be loaded from tensorflow_datasets catalog when the str mathches one of the datasets. Defaults to Union[tf.data.Dataset, tuple, dict, str].
+            Can be loaded from tensorflow_datasets catalog when the str mathches one of
+            the datasets. Defaults to Union[tf.data.Dataset, tuple, dict, str].
         from_directory (bool, optional): If the dataset has to be loaded from directory,
             when dataset_id is str. Defaults to False.
         is_ood (bool, optional): If the dataset has to be considered out-of-distribution
