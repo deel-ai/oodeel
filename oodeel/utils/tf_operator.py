@@ -29,27 +29,32 @@ from .operator import Operator
 
 
 class TFOperator(Operator):
+    @staticmethod
     def softmax(tensor: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
         """Softmax function"""
         return tf.keras.activations.softmax(tensor)
 
+    @staticmethod
     def argmax(tensor: Union[tf.Tensor, np.ndarray], axis: int = None) -> tf.Tensor:
         """Argmax function"""
         return tf.argmax(tensor, axis=axis)
 
+    @staticmethod
     def max(tensor: Union[tf.Tensor, np.ndarray], axis: int = None) -> tf.Tensor:
         """Max function"""
         return tf.reduce_max(tensor, axis=axis)
 
+    @staticmethod
     def one_hot(tensor: Union[tf.Tensor, np.ndarray], num_classes: int) -> tf.Tensor:
         """One hot function"""
         return tf.one_hot(tensor, num_classes)
 
+    @staticmethod
     def sign(tensor: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
         """Sign function"""
         return tf.sign(tensor)
 
-    @tf.function
+    @staticmethod
     def gradient_model(
         model: Callable, inputs: tf.Tensor, targets: tf.Tensor
     ) -> tf.Tensor:
@@ -74,7 +79,7 @@ class TFOperator(Operator):
             score = tf.reduce_sum(tf.multiply(model(inputs), targets), axis=1)
         return tape.gradient(score, inputs)
 
-    @tf.function
+    @staticmethod
     def gradient(func: Callable, inputs: tf.Tensor) -> tf.Tensor:
         """
         Compute gradients for a batch of samples.
@@ -93,4 +98,4 @@ class TFOperator(Operator):
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(inputs)
             outputs = func(inputs)
-        raise tape.gradient(outputs, inputs)
+        return tape.gradient(outputs, inputs)

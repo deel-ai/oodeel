@@ -20,3 +20,43 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import torch
+
+from oodeel.utils.torch_operator import TorchOperator
+from tests.tools_torch import generate_data
+from tests.tools_torch import Net
+
+
+def test_gradient_model():
+    """Test gradient model."""
+    input_shape = (3, 32, 32)
+    num_labels = 10
+    samples = 100
+
+    x, y = generate_data(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
+    )
+
+    x = torch.Tensor(x)
+    y = torch.Tensor(y)
+    model = Net()
+
+    torch_operator = TorchOperator()
+    gradients = torch_operator.gradient_model(model, x, y)
+
+    assert tuple(gradients.shape) == (samples, 3, 32, 32)
+
+
+def test_gradient():
+    """Test gradient."""
+    input_shape = (3, 32, 32)
+
+    def diff_fun(x):
+        return x.sum()
+
+    x = torch.ones(input_shape)
+    torch_operator = TorchOperator()
+    gradients = torch_operator.gradient(diff_fun, x)[0]
+
+    assert tuple(gradients.shape) == input_shape
+    assert torch.all(gradients == torch.ones(input_shape))

@@ -20,3 +20,41 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import tensorflow as tf
+
+from oodeel.utils.tf_operator import TFOperator
+from tests import generate_data
+from tests import generate_model
+
+
+def test_gradient_model():
+    """Test gradient model."""
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    x, y = generate_data(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
+    )
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    tf_operator = TFOperator()
+    gradients = tf_operator.gradient_model(model, x, y)
+
+    assert tuple(gradients.shape) == (samples, 32, 32, 3)
+
+
+def test_gradient():
+    """Test gradient."""
+    input_shape = (32, 32, 3)
+
+    def diff_fun(x):
+        return tf.reduce_sum(x)
+
+    x = tf.ones(input_shape)
+    tf_operator = TFOperator()
+    gradients = tf_operator.gradient(diff_fun, x)
+
+    assert tuple(gradients.shape) == input_shape
+    assert tf.reduce_all(gradients == tf.ones(input_shape))

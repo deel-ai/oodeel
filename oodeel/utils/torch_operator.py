@@ -29,30 +29,36 @@ from .operator import Operator
 
 
 class TorchOperator(Operator):
+    @staticmethod
     def softmax(tensor: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
         """Softmax function"""
         return torch.nn.functional.softmax(tensor)
 
+    @staticmethod
     def argmax(
         tensor: Union[torch.Tensor, np.ndarray], axis: int = None
     ) -> torch.Tensor:
         """Argmax function"""
         return torch.argmax(tensor, dim=axis)
 
+    @staticmethod
     def max(tensor: Union[torch.Tensor, np.ndarray], axis: int = None) -> torch.Tensor:
         """Max function"""
         return torch.max(tensor, dim=axis)
 
+    @staticmethod
     def one_hot(
         tensor: Union[torch.Tensor, np.ndarray], num_classes: int
     ) -> torch.Tensor:
         """One hot function"""
         return torch.nn.functional.one_hot(tensor, num_classes)
 
+    @staticmethod
     def sign(tensor: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
         """Sign function"""
         return torch.sign(tensor)
 
+    @staticmethod
     def gradient_model(
         model: Callable, inputs: torch.Tensor, targets: torch.Tensor
     ) -> torch.Tensor:
@@ -78,6 +84,7 @@ class TorchOperator(Operator):
         inputs.requires_grad_(False)
         return gradients[0]
 
+    @staticmethod
     def gradient(func: Callable, inputs: torch.Tensor) -> torch.Tensor:
         """
         Compute gradients for a batch of samples.
