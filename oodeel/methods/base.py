@@ -32,7 +32,7 @@ from ..types import List
 from ..types import Optional
 from ..types import Union
 from ..utils import is_from
-from ..utils.tf_tools import dataset_nb_columns
+from ..utils.tf_utils import dataset_nb_columns
 
 
 class OODModel(ABC):

@@ -27,7 +27,7 @@ from ..types import Callable
 from ..types import List
 from ..types import Tuple
 from ..types import Union
-from ..utils.tf_tools import get_input_from_dataset_elem
+from ..utils.tf_utils import get_input_from_dataset_elem
 from .feature_extractor import FeatureExtractor
 
 

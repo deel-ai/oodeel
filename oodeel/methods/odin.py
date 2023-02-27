@@ -24,7 +24,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..types import Union
-from ..utils.tf_tools import get_input_from_dataset_elem
+from ..utils.tf_utils import get_input_from_dataset_elem
 from .base import OODModel
 
 

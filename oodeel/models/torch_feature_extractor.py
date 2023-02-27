@@ -26,7 +26,7 @@ from typing import Union
 import torch
 from torch import nn
 
-from ..utils.tf_tools import get_input_from_dataset_elem
+from ..utils.tf_utils import get_input_from_dataset_elem
 from .feature_extractor import FeatureExtractor
 
 
