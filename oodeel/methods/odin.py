@@ -73,23 +73,14 @@ class ODIN(OODModel):
         return scores
 
     @tf.function
-    def _input_perturbation(self, x):
-        preds = self.feature_extractor.model(x, training=False)
-        outputs_b = self.op.argmax(preds, axis=1)
-        gradients = self._get_gradient(outputs_b, x)
-        x = x - self.noise * self.op.sign(gradients)
-        return x
+    def _input_perturbation(self, inputs):
+        preds = self.feature_extractor.model(inputs, training=False)
+        outputs = self.op.argmax(preds, axis=1)
+        gradients = self.op.gradient(self.temperature_loss, inputs, outputs)
+        inputs_p = inputs - self.noise * self.op.sign(gradients)
+        return inputs_p
 
-    def _get_gradient(self, labels, inputs):
-        """
-        Computes the gradient of the model ending with calibrated softmax, as a
-        function of the inputs.
-        """
-        with tf.GradientTape(watch_accessed_variables=False) as tape:
-            tape.watch(inputs)
-            preds = (
-                self.feature_extractor.model(inputs, training=False) / self.temperature
-            )
-            loss = self._loss_func(labels, preds)
-
-        return tape.gradient(loss, inputs)
+    def temperature_loss(self, inputs, labels):
+        preds = self.feature_extractor.model(inputs, training=False) / self.temperature
+        loss = self._loss_func(labels, preds)
+        return loss

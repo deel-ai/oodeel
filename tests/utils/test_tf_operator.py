@@ -37,6 +37,8 @@ def test_gradient_model():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
     )
 
+    x = tf.convert_to_tensor(x)
+    y = tf.convert_to_tensor(y)
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
     tf_operator = TFOperator()
