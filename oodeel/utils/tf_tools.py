@@ -20,11 +20,39 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
 import numpy as np
 import tensorflow as tf
 
-from oodeel.types import Callable, Optional, Tuple, Union, List
+from ..types import Callable
+from ..types import List
+from ..types import Optional
+from ..types import Tuple
+from ..types import Union
+
+
+def softmax(tensor: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
+    """Softmax function"""
+    return tf.keras.activations.softmax(tensor)
+
+
+def argmax(tensor: Union[tf.Tensor, np.ndarray], axis: int = None) -> tf.Tensor:
+    """Argmax function"""
+    return tf.argmax(tensor, axis=axis)
+
+
+def max(tensor: Union[tf.Tensor, np.ndarray], axis: int = None) -> tf.Tensor:
+    """Max function"""
+    return tf.reduce_max(tensor, axis=axis)
+
+
+def one_hot(tensor: Union[tf.Tensor, np.ndarray], num_classes: int) -> tf.Tensor:
+    """One hot function"""
+    return tf.one_hot(tensor, num_classes)
+
+
+def sign(tensor: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
+    """Sign function"""
+    return tf.sign(tensor)
 
 
 def get_input_from_dataset_elem(elem):
