@@ -85,7 +85,7 @@ class TorchOperator(Operator):
         return gradients[0]
 
     @staticmethod
-    def gradient(func: Callable, inputs: torch.Tensor) -> torch.Tensor:
+    def gradient(func: Callable, inputs: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """
         Compute gradients for a batch of samples.
         Parameters
@@ -101,7 +101,7 @@ class TorchOperator(Operator):
             Gradients computed, with the same shape as the inputs.
         """
         inputs.requires_grad_(True)
-        outputs = func(inputs)
+        outputs = func(inputs, *args, **kwargs)
         gradients = torch.autograd.grad(outputs, inputs)
         inputs.requires_grad_(False)
         return gradients

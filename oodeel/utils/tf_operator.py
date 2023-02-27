@@ -80,7 +80,7 @@ class TFOperator(Operator):
         return tape.gradient(score, inputs)
 
     @staticmethod
-    def gradient(func: Callable, inputs: tf.Tensor) -> tf.Tensor:
+    def gradient(func: Callable, inputs: tf.Tensor, *args, **kwargs) -> tf.Tensor:
         """
         Compute gradients for a batch of samples.
         Parameters
@@ -97,5 +97,5 @@ class TFOperator(Operator):
         """
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(inputs)
-            outputs = func(inputs)
+            outputs = func(inputs, *args, **kwargs)
         return tape.gradient(outputs, inputs)
