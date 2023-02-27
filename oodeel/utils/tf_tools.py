@@ -196,27 +196,6 @@ def batch_tensor(
     return dataset
 
 
-def find_layer(model: tf.keras.Model, layer: Union[str, int]) -> tf.keras.layers.Layer:
-    """
-    Find a layer in a model either by his name or by his index.
-    Parameters
-    ----------
-    model
-        Model on which to search.
-    layer
-        Layer name or layer index
-    Returns
-    -------
-    layer
-        Layer found
-    """
-    if isinstance(layer, str):
-        return model.get_layer(layer)
-    if isinstance(layer, int):
-        return model.layers[layer]
-    raise ValueError(f"Could not find any layer {layer}.")
-
-
 @tf.function
 def gradient_single(
     model: Callable, inputs: tf.Tensor, targets: tf.Tensor
