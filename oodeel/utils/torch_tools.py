@@ -20,9 +20,31 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import Callable
-
+import numpy as np
 import torch
+
+from ..types import Callable
+from ..types import Union
+
+
+def softmax(tensor: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
+    return torch.nn.functional.softmax(tensor)
+
+
+def argmax(tensor: Union[torch.Tensor, np.ndarray], axis: int = None) -> torch.Tensor:
+    return torch.argmax(tensor, dim=axis)
+
+
+def max(tensor: Union[torch.Tensor, np.ndarray], axis: int = None) -> torch.Tensor:
+    return torch.max(tensor, dim=axis)
+
+
+def one_hot(tensor: Union[torch.Tensor, np.ndarray], num_classes: int) -> torch.Tensor:
+    return torch.nn.functional.one_hot(tensor, num_classes)
+
+
+def sign(tensor: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
+    return torch.sign(tensor)
 
 
 def gradient_single(

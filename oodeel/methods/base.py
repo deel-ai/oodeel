@@ -20,13 +20,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import sys
 from abc import ABC
 from abc import abstractmethod
 
 import numpy as np
 import tensorflow as tf  # TODO: remove
 
-from ..types import Any
 from ..types import Callable
 from ..types import List
 from ..types import Optional
@@ -111,19 +111,23 @@ class OODModel(ABC):
         """
         if is_from(model, "keras"):
             global tf, tf_tools
-            import tensorflow as tf
+            if "tensorflow" not in sys.modules.keys():
+                import tensorflow as tf
             from ..utils import tf_tools
             from ..models.keras_feature_extractor import KerasFeatureExtractor
 
-            self.framework = "keras"
+            self.op = tf_tools
+            self.framework = "tensorflow"
             FeatureExtractor = KerasFeatureExtractor
 
         elif is_from(model, "torch"):
             global torch, torch_tools
-            import torch
+            if "torch" not in sys.modules.keys():
+                import torch
             from ..utils import torch_tools
             from ..models.torch_feature_extractor import TorchFeatureExtractor
 
+            self.op = torch_tools
             self.framework = "torch"
             FeatureExtractor = TorchFeatureExtractor
 
@@ -247,71 +251,8 @@ class OODModel(ABC):
         """
         return self.isood(inputs, threshold)
 
-    # === Tools ===
-
-    def softmax(self, tensor: Any):
-        """Softmax function"""
-        if self.framework == "keras":
-            return tf.keras.activations.softmax(tensor)
-        elif self.framework == "torch":
-            return torch.nn.functional.softmax(tensor)
-
-    def argmax(self, tensor: Any, axis: int = None):
-        """Argmax function"""
-        if self.framework == "keras":
-            return tf.argmax(tensor, axis=axis)
-        elif self.framework == "torch":
-            return torch.argmax(tensor, dim=axis)
-
-    def max(self, tensor: Any, axis: int = None):
-        """Max function"""
-        if self.framework == "keras":
-            return tf.reduce_max(tensor, axis=axis)
-        elif self.framework == "torch":
-            return torch.max(tensor, dim=axis)
-
-    def one_hot(self, tensor: Any, num_classes: int):
-        """One hot function"""
-        if self.framework == "keras":
-            return tf.one_hot(tensor, num_classes)
-        elif self.framework == "torch":
-            return torch.nn.functional.one_hot(tensor, num_classes)
-
-    def sign(self, tensor: Any):
-        """Sign function"""
-        if self.framework == "keras":
-            return tf.sign(tensor)
-        elif self.framework == "torch":
-            return torch.sign(tensor)
-
-    def gradient_single(self, model: Callable, inputs: Any, targets: Any):
-        """
-        Compute gradients for a batch of samples.
-        Parameters
-        ----------
-        model
-            Model used for computing gradient.
-        inputs
-            Input samples to be explained.
-        targets
-            One-hot encoded labels or regression target (e.g {+1, -1}), one for each
-            sample.
-        Returns
-        -------
-        gradients
-            Gradients computed, with the same shape as the inputs.
-        """
-        if self.framework == "keras":
-            grad_fn = tf_tools.gradient_single
-        elif self.framework == "torch":
-            grad_fn = torch_tools.gradient_single
-        else:
-            raise NotImplementedError()
-        return grad_fn(model, inputs, targets)
-
 
 def is_batched(dataset):
-
     nb_column = dataset_nb_columns(dataset)
     if nb_column == 1:
         batch_dim = dataset.element_spec.shape[0]
