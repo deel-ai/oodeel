@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import sys
 from abc import ABC
 from abc import abstractmethod
 
@@ -31,6 +30,7 @@ from ..types import Callable
 from ..types import List
 from ..types import Optional
 from ..types import Union
+from ..utils import ArrayLike
 from ..utils import is_from
 from ..utils.tf_utils import dataset_nb_columns
 
@@ -65,7 +65,7 @@ class OODModel(ABC):
         self.uses_labels = uses_labels
 
     @abstractmethod
-    def _score_tensor(self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]):
+    def _score_tensor(self, inputs: ArrayLike):
         """
         Computes an OOD score for input samples "inputs".
         Method to override with child classes.
@@ -81,7 +81,7 @@ class OODModel(ABC):
     def fit(
         self,
         model: Callable,
-        fit_dataset: Optional[Union[tf.data.Dataset, tf.Tensor, np.ndarray]] = None,
+        fit_dataset: Optional[ArrayLike] = None,
     ):
         """
         Prepare oodmodel for scoring:
@@ -110,9 +110,6 @@ class OODModel(ABC):
                 keras models saved as pb files e.g. with model.save()
         """
         if is_from(model, "keras"):
-            global tf, tf_tools
-            if "tensorflow" not in sys.modules.keys():
-                import tensorflow as tf
             from ..utils import TFOperator
             from ..models.keras_feature_extractor import KerasFeatureExtractor
 
@@ -121,9 +118,6 @@ class OODModel(ABC):
             FeatureExtractor = KerasFeatureExtractor
 
         elif is_from(model, "torch"):
-            global torch, torch_tools
-            if "torch" not in sys.modules.keys():
-                import torch
             from ..utils import TorchOperator
             from ..models.torch_feature_extractor import TorchFeatureExtractor
 
@@ -141,9 +135,7 @@ class OODModel(ABC):
         )
         return feature_extractor
 
-    def _fit_to_dataset(
-        self, fit_dataset: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
-    ):
+    def _fit_to_dataset(self, fit_dataset: ArrayLike):
         """
         Fits the oodmodel to fit_dataset.
         To be overrided in child classes (if needed)
@@ -158,7 +150,7 @@ class OODModel(ABC):
 
     def calibrate_threshold(
         self,
-        fit_dataset: Union[tf.data.Dataset, tf.Tensor, np.ndarray],
+        fit_dataset: ArrayLike,
         scores: np.ndarray,
     ):
         """
@@ -176,16 +168,8 @@ class OODModel(ABC):
 
     def score(
         self,
-        dataset: Union[
-            List[Union[tf.data.Dataset, tf.Tensor, np.ndarray]],
-            Union[tf.data.Dataset, tf.Tensor, np.ndarray],
-        ],
-        outputs: Optional[
-            Union[
-                List[Union[tf.data.Dataset, tf.Tensor, np.ndarray]],
-                Union[tf.data.Dataset, tf.Tensor, np.ndarray],
-            ]
-        ] = None,
+        dataset: ArrayLike,
+        outputs: Optional[ArrayLike] = None,
     ) -> Union[List[np.ndarray], np.ndarray]:
         """
         Computes an OOD score for input samples "inputs"
@@ -225,9 +209,7 @@ class OODModel(ABC):
                 scores = np.append(scores, score_batch)
         return scores
 
-    def isood(
-        self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray], threshold: float
-    ) -> np.ndarray:
+    def isood(self, inputs: ArrayLike, threshold: float) -> np.ndarray:
         """
         Returns whether the input samples "inputs" are OOD or not, given a threshold
 
@@ -240,12 +222,9 @@ class OODModel(ABC):
         """
         scores = self.score(inputs)
         OODness = tf.map_fn(lambda x: 0 if x < threshold else 1, scores)
-
         return OODness
 
-    def __call__(
-        self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray], threshold: float
-    ) -> np.ndarray:
+    def __call__(self, inputs: ArrayLike, threshold: float) -> np.ndarray:
         """
         Convenience wrapper for isood
         """
