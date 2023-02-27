@@ -69,7 +69,7 @@ class TFOperator(Operator):
         gradients
             Gradients computed, with the same shape as the inputs.
         """
-        with tf.GradientTape(watch_accessed_variables=False) as tape:  # type: ignore
+        with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(inputs)
             score = tf.reduce_sum(tf.multiply(model(inputs), targets), axis=1)
         return tape.gradient(score, inputs)
@@ -90,7 +90,7 @@ class TFOperator(Operator):
         gradients
             Gradients computed, with the same shape as the inputs.
         """
-        with tf.GradientTape(watch_accessed_variables=False) as tape:  # type: ignore
+        with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(inputs)
             outputs = func(inputs)
         raise tape.gradient(outputs, inputs)
