@@ -113,10 +113,10 @@ class OODModel(ABC):
             global tf, tf_tools
             if "tensorflow" not in sys.modules.keys():
                 import tensorflow as tf
-            from ..utils import tf_tools
+            from ..utils import TFOperator
             from ..models.keras_feature_extractor import KerasFeatureExtractor
 
-            self.op = tf_tools
+            self.op = TFOperator()
             self.framework = "tensorflow"
             FeatureExtractor = KerasFeatureExtractor
 
@@ -124,10 +124,10 @@ class OODModel(ABC):
             global torch, torch_tools
             if "torch" not in sys.modules.keys():
                 import torch
-            from ..utils import torch_tools
+            from ..utils import TorchOperator
             from ..models.torch_feature_extractor import TorchFeatureExtractor
 
-            self.op = torch_tools
+            self.op = TorchOperator()
             self.framework = "torch"
             FeatureExtractor = TorchFeatureExtractor
 

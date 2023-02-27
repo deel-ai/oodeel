@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from ..types import Any
+from .tf_operator import TFOperator
 from .tf_tools import dataset_cardinality
 from .tf_tools import dataset_get_columns
 from .tf_tools import dataset_image_shape
@@ -28,6 +29,7 @@ from .tf_tools import dataset_label_shape
 from .tf_tools import dataset_max_pixel
 from .tf_tools import dataset_nb_columns
 from .tf_tools import dataset_nb_labels
+from .torch_operator import TorchOperator
 
 __all__ = [
     "dataset_cardinality",
