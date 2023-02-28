@@ -112,7 +112,7 @@ class OODModel(ABC):
             from ..models.keras_feature_extractor import KerasFeatureExtractor
 
             self.op = TFOperator()
-            self.framework = "tensorflow"
+            self.backend = "tensorflow"
             FeatureExtractor = KerasFeatureExtractor
 
         elif is_from(model, "torch"):
@@ -120,7 +120,7 @@ class OODModel(ABC):
             from ..models.torch_feature_extractor import TorchFeatureExtractor
 
             self.op = TorchOperator()
-            self.framework = "torch"
+            self.backend = "torch"
             FeatureExtractor = TorchFeatureExtractor
 
         else:
