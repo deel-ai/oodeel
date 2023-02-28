@@ -167,7 +167,6 @@ class OODModel(ABC):
     def score(
         self,
         dataset: ArrayLike,
-        outputs: Optional[ArrayLike] = None,
     ) -> Union[List[np.ndarray], np.ndarray]:
         """
         Computes an OOD score for input samples "inputs"
