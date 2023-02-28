@@ -24,8 +24,8 @@ from oodeel.utils.tf_utils import dataset_cardinality
 from oodeel.utils.tf_utils import dataset_get_columns
 from oodeel.utils.tf_utils import dataset_image_shape
 from oodeel.utils.tf_utils import dataset_label_shape
+from oodeel.utils.tf_utils import dataset_len_elem
 from oodeel.utils.tf_utils import dataset_max_pixel
-from oodeel.utils.tf_utils import dataset_nb_columns
 from oodeel.utils.tf_utils import dataset_nb_labels
 from oodeel.utils.tf_utils import get_input_from_dataset_elem
 from tests import generate_data_tf

@@ -26,8 +26,8 @@ from .tf_utils import dataset_cardinality
 from .tf_utils import dataset_get_columns
 from .tf_utils import dataset_image_shape
 from .tf_utils import dataset_label_shape
+from .tf_utils import dataset_len_elem
 from .tf_utils import dataset_max_pixel
-from .tf_utils import dataset_nb_columns
 from .tf_utils import dataset_nb_labels
 from .tf_utils import get_input_from_dataset_elem
 from .torch_operator import TorchOperator
@@ -38,8 +38,9 @@ __all__ = [
     "dataset_image_shape",
     "dataset_label_shape",
     "dataset_max_pixel",
-    "dataset_nb_columns",
+    "dataset_len_elem",
     "dataset_nb_labels",
+    "get_input_from_dataset_elem",
 ]
 
 
