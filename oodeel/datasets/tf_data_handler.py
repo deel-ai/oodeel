@@ -316,9 +316,9 @@ class TFDataHandler(object):
         Returns:
             tf.data.Dataset: Prepared dataset
         """
+        dataset = dataset.cache()
         if shuffle_buffer_size is not None:
             dataset = dataset.shuffle(shuffle_buffer_size)
-        dataset = dataset.cache()
         dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
         if prefetch_buffer_size is not None:
             prefetch_buffer_size = tf.data.experimental.AUTOTUNE
