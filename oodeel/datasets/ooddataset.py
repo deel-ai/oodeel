@@ -49,7 +49,7 @@ class OODDataset(object):
             the datasets. Defaults to Union[tf.data.Dataset, tuple, dict, str].
         from_directory (bool, optional): If the dataset has to be loaded from directory,
             when dataset_id is str. Defaults to False.
-        is_ood (bool, optional): If the dataset has to be considered out-of-distribution
+        is_out (bool, optional): If the dataset has to be considered out-of-distribution
             or not. Defaults to False.
         in_value (int, optional): The label to assign to in-distribution samples.
             Defaults to 0.
@@ -63,14 +63,12 @@ class OODDataset(object):
             tensorflow_datasets catalog. Defaults to {}.
     """
 
-    # TODO Usage of "ood" is confusing. Can denote the task and a dataset.
-    # As a result, ood_label can be ood or id
     def __init__(
         self,
         dataset_id: Union[tf.data.Dataset, tuple, dict, str],
         from_directory: bool = False,
-        is_ood: bool = False,
-        in_value: int = 0,  # TODO in_value, out_value ? in_dataset, out_dataset
+        is_out: bool = False,
+        in_value: int = 0,
         out_value: int = 1,
         backend: str = "tensorflow",
         split: str = None,
@@ -82,8 +80,7 @@ class OODDataset(object):
 
         # OOD labels are kept as attribute to avoid iterating over the dataset
         self.ood_labels = None
-        # TODO @property
-        self.is_ood = is_ood
+        self.is_out = is_out
         self.length = None
 
         # Set the load parameters for tfds
@@ -122,20 +119,19 @@ class OODDataset(object):
                 self.length = infos.splits[split].num_examples
 
         # Get the length of the dataset
-        # TODO @property ?
         self.length = len(self)
 
         # Get the length of the elements in the dataset
-        if self.has_ood_label():
+        if self._has_ood_label():
             self.len_elem = dataset_len_elem(self.data) - 1
         else:
             self.len_elem = dataset_len_elem(self.data)
 
-        # Assign ood label, except if is_ood is None
-        if self.is_ood:
-            self.assign_ood_label(self.out_value)
-        elif (not self.is_ood) and (self.is_ood is not None):
-            self.assign_ood_label(self.in_value)
+        # Assign ood label, except if is_out is None
+        if self.is_out:
+            self._assign_ood_label(self.out_value)
+        elif (not self.is_out) and (self.is_out is not None):
+            self._assign_ood_label(self.in_value)
 
         # Get the key of the tensor to feed the model with
         self.input_key = self.data_handler.get_ds_feature_keys(self.data)[0]
@@ -151,7 +147,7 @@ class OODDataset(object):
         else:
             return dataset_cardinality(self.data)
 
-    def assign_ood_label(self, ood_label: int, replace: bool = None):
+    def _assign_ood_label(self, ood_label: int, replace: bool = None):
         """Assign an out-of-distribution label to the dataset.
 
         Args:
@@ -159,14 +155,14 @@ class OODDataset(object):
             replace (bool, optional): Replace existing label or not, if any.
                 Defaults to None.
         """
-        if not self.has_ood_label() or replace:
+        if not self._has_ood_label() or replace:
             self.data = self.data_handler.assign_feature_value(
                 self.data, "ood_label", ood_label
             )
 
         self.ood_labels = np.array([ood_label for i in range(len(self))])
 
-    def has_ood_label(self):
+    def _has_ood_label(self):
         """Check if the dataset has an out-of-distribution label.
 
         Returns:
@@ -201,11 +197,11 @@ class OODDataset(object):
 
         # Assign the correct ood_label to self.data, depending on out_as_in
         if out_as_in:
-            if (not self.is_ood) or (self.is_ood is None):
-                self.assign_ood_label(self.out_value)
+            if (not self.is_out) or (self.is_out is None):
+                self._assign_ood_label(self.out_value)
         else:
-            if self.is_ood is None:
-                self.assign_ood_label(self.in_value)
+            if self.is_out is None:
+                self._assign_ood_label(self.in_value)
 
         # Creating an OODDataset object from out_dataset if necessary and make sure
         # the two OODDatasets have compatible parameters
@@ -219,7 +215,7 @@ class OODDataset(object):
             in_value=self.in_value,
             out_value=self.out_value,
             backend=self.backend,
-            is_ood=not out_as_in,
+            is_out=not out_as_in,
         )
 
         # Merge the two underlying tf.data.Datasets
@@ -234,7 +230,7 @@ class OODDataset(object):
         # Create a new OODDataset from the merged tf.data.Dataset
         output_ds = OODDataset(
             dataset_id=data,
-            is_ood=None,
+            is_out=None,
             in_value=self.in_value,
             out_value=self.out_value,
             backend=self.backend,
@@ -244,7 +240,7 @@ class OODDataset(object):
         output_ds.ood_labels = np.concatenate([self.ood_labels, out_dataset.ood_labels])
         return output_ds
 
-    def assign_ood_labels_by_class(
+    def _assign_ood_labels_by_class(
         self,
         in_labels: Optional[Union[np.ndarray, list]] = None,
         ood_labels: Optional[Union[np.ndarray, list]] = None,
@@ -319,7 +315,7 @@ class OODDataset(object):
         )
 
         # The OODDataset is neither in-distribution nor out-of-distribution
-        self.is_ood = None
+        self.is_out = None
 
         # Return the filtered OODDatasets if necessary
         if return_filtered_ds:
@@ -330,7 +326,7 @@ class OODDataset(object):
                 backend=self.backend,
             ), OODDataset(
                 out_data,
-                is_ood=True,
+                is_out=True,
                 in_value=self.in_value,
                 out_value=self.out_value,
                 backend=self.backend,
@@ -375,7 +371,7 @@ class OODDataset(object):
         # Check if the dataset has ood_labels when asked to return with_ood_labels
         if with_ood_labels:
             assert (
-                self.has_ood_label()
+                self._has_ood_label()
             ), "Please assign ood labels before preparing with ood_labels"
 
         dataset_to_prepare = self.data
