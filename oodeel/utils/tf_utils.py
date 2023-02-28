@@ -89,8 +89,11 @@ def dataset_nb_labels(dataset: tf.data.Dataset) -> int:
 
 
 def dataset_cardinality(dataset: tf.data.Dataset) -> int:
-    cardinality = dataset.reduce(0, lambda x, _: x + 1)
-    return int(cardinality)
+    try:
+        return len(dataset)
+    except TypeError:
+        cardinality = dataset.reduce(0, lambda x, _: x + 1)
+        return int(cardinality)
 
 
 def dataset_get_columns(

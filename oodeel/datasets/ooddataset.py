@@ -67,7 +67,6 @@ class OODDataset(object):
         self,
         dataset_id: Union[tf.data.Dataset, tuple, dict, str],
         from_directory: bool = False,
-        is_out: bool = False,
         in_value: int = 0,
         out_value: int = 1,
         backend: str = "tensorflow",
@@ -79,8 +78,6 @@ class OODDataset(object):
         self.backend = backend
 
         # OOD labels are kept as attribute to avoid iterating over the dataset
-        self.ood_labels = None
-        self.is_out = is_out
         self.length = None
 
         # Set the load parameters for tfds
@@ -118,20 +115,11 @@ class OODDataset(object):
                 )
                 self.length = infos.splits[split].num_examples
 
-        # Get the length of the dataset
-        self.length = len(self)
-
         # Get the length of the elements in the dataset
-        if self._has_ood_label():
+        if self.has_ood_labels:
             self.len_elem = dataset_len_elem(self.data) - 1
         else:
             self.len_elem = dataset_len_elem(self.data)
-
-        # Assign ood label, except if is_out is None
-        if self.is_out:
-            self._assign_ood_label(self.out_value)
-        elif (not self.is_out) and (self.is_out is not None):
-            self._assign_ood_label(self.in_value)
 
         # Get the key of the tensor to feed the model with
         self.input_key = self.data_handler.get_ds_feature_keys(self.data)[0]
@@ -142,27 +130,12 @@ class OODDataset(object):
         Returns:
             int: length of the dataset
         """
-        if self.length is not None:
-            return self.length
-        else:
-            return dataset_cardinality(self.data)
+        if self.length is None:
+            self.length = dataset_cardinality(self.data)
+        return self.length
 
-    def _assign_ood_label(self, ood_label: int, replace: bool = None):
-        """Assign an out-of-distribution label to the dataset.
-
-        Args:
-            ood_label (int): label to assign
-            replace (bool, optional): Replace existing label or not, if any.
-                Defaults to None.
-        """
-        if not self._has_ood_label() or replace:
-            self.data = self.data_handler.assign_feature_value(
-                self.data, "ood_label", ood_label
-            )
-
-        self.ood_labels = np.array([ood_label for i in range(len(self))])
-
-    def _has_ood_label(self):
+    @property
+    def has_ood_labels(self):
         """Check if the dataset has an out-of-distribution label.
 
         Returns:
@@ -170,10 +143,9 @@ class OODDataset(object):
         """
         return self.data_handler.has_key(self.data, "ood_label")
 
-    def concatenate(
+    def add_out_data(
         self,
         out_dataset: Union[OODDataset, tf.data.Dataset],
-        out_as_in: bool = False,  # TODO do we need this ?
         resize: Optional[bool] = False,
         shape: Optional[Tuple[int]] = None,
     ) -> OODDataset:
@@ -195,27 +167,17 @@ class OODDataset(object):
             OODDataset: a Dataset object with the concatenated data
         """
 
-        # Assign the correct ood_label to self.data, depending on out_as_in
-        if out_as_in:
-            if (not self.is_out) or (self.is_out is None):
-                self._assign_ood_label(self.out_value)
-        else:
-            if self.is_out is None:
-                self._assign_ood_label(self.in_value)
-
         # Creating an OODDataset object from out_dataset if necessary and make sure
         # the two OODDatasets have compatible parameters
-        if isinstance(out_dataset, (tf.data.Dataset, tuple)):
-            data = out_dataset
-        else:
-            data = out_dataset.data
+        if isinstance(out_dataset, OODDataset):
+            out_dataset = out_dataset.data
 
-        out_dataset = OODDataset(
-            data,
-            in_value=self.in_value,
-            out_value=self.out_value,
-            backend=self.backend,
-            is_out=not out_as_in,
+        # Assign the correct ood_label to self.data, depending on out_as_in
+        self.data = self.data_handler.assign_feature_value(
+            self.data, "ood_label", self.in_value
+        )
+        out_dataset = self.data_handler.assign_feature_value(
+            out_dataset, "ood_label", self.out_value
         )
 
         # Merge the two underlying tf.data.Datasets
@@ -230,21 +192,17 @@ class OODDataset(object):
         # Create a new OODDataset from the merged tf.data.Dataset
         output_ds = OODDataset(
             dataset_id=data,
-            is_out=None,
             in_value=self.in_value,
             out_value=self.out_value,
             backend=self.backend,
         )
 
-        # Get the ood_labels
-        output_ds.ood_labels = np.concatenate([self.ood_labels, out_dataset.ood_labels])
         return output_ds
 
-    def _assign_ood_labels_by_class(
+    def assign_ood_labels_by_class(
         self,
         in_labels: Optional[Union[np.ndarray, list]] = None,
         ood_labels: Optional[Union[np.ndarray, list]] = None,
-        return_filtered_ds: bool = False,
     ) -> Optional[Tuple[OODDataset]]:
         """Filter the dataset by assigning ood labels depending on labels
         value (typically, class id).
@@ -265,7 +223,7 @@ class OODDataset(object):
         assert (in_labels is not None) or (
             ood_labels is not None
         ), "specify labels to filter with"
-        assert self.len_elem == 2, "the dataset has no labels"
+        assert self.len_elem >= 2, "the dataset has no labels"
 
         # Filter the dataset depending on in_labels and ood_labels given
         if (ood_labels is not None) and (in_labels is not None):
@@ -296,47 +254,29 @@ class OODDataset(object):
         in_data = self.data_handler.assign_feature_value(
             in_data, "ood_label", self.in_value
         )
-        len_in = dataset_cardinality(in_data)
 
         out_data = self.data_handler.assign_feature_value(
             out_data, "ood_label", self.out_value
         )
-        len_out = dataset_cardinality(out_data)
 
-        # Concatenate the two filtered datasets
-        self.data = in_data.concatenate(out_data)
-
-        # Get the ood_labels
-        self.ood_labels = np.concatenate(
-            [
-                np.array([self.in_value for i in range(len_in)]),
-                np.array([self.out_value for i in range(len_out)]),
-            ]
+        # Return the filtered OODDatasets
+        return OODDataset(
+            in_data,
+            in_value=self.in_value,
+            out_value=self.out_value,
+            backend=self.backend,
+        ), OODDataset(
+            out_data,
+            in_value=self.in_value,
+            out_value=self.out_value,
+            backend=self.backend,
         )
-
-        # The OODDataset is neither in-distribution nor out-of-distribution
-        self.is_out = None
-
-        # Return the filtered OODDatasets if necessary
-        if return_filtered_ds:
-            return OODDataset(
-                in_data,
-                in_value=self.in_value,
-                out_value=self.out_value,
-                backend=self.backend,
-            ), OODDataset(
-                out_data,
-                is_out=True,
-                in_value=self.in_value,
-                out_value=self.out_value,
-                backend=self.backend,
-            )
 
     def prepare(
         self,
         batch_size: int = 128,
         preprocess_fn: Callable = None,
-        with_ood_labels: bool = True,
+        with_ood_labels: bool = False,
         with_labels: bool = True,
         shuffle: bool = False,
         shuffle_buffer_size: int = None,
@@ -371,14 +311,13 @@ class OODDataset(object):
         # Check if the dataset has ood_labels when asked to return with_ood_labels
         if with_ood_labels:
             assert (
-                self._has_ood_label()
+                self.has_ood_label
             ), "Please assign ood labels before preparing with ood_labels"
 
         dataset_to_prepare = self.data
 
         # Making the dataset channel first if the backend is pytorch
         if self.backend in ["torch", "pytorch"]:
-            # TODO shouldn't we add this in score function ?
             dataset_to_prepare = self.data_handler.make_channel_first(
                 dataset_to_prepare
             )
