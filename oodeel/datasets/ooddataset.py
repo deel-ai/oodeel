@@ -51,9 +51,9 @@ class OODDataset(object):
             when dataset_id is str. Defaults to False.
         is_ood (bool, optional): If the dataset has to be considered out-of-distribution
             or not. Defaults to False.
-        id_value (int, optional): The label to assign to in-distribution samples.
+        in_value (int, optional): The label to assign to in-distribution samples.
             Defaults to 0.
-        ood_value (int, optional): The label to assign to out-of-distribution samples.
+        out_value (int, optional): The label to assign to out-of-distribution samples.
             Defaults to 1.
         backend (str, optional): Wether the dataset is to be used for tensorflow
              or pytorch models. Defaults to "tensorflow".
@@ -70,14 +70,14 @@ class OODDataset(object):
         dataset_id: Union[tf.data.Dataset, tuple, dict, str],
         from_directory: bool = False,
         is_ood: bool = False,
-        id_value: int = 0,  # TODO in_value, out_value ? in_dataset, out_dataset
-        ood_value: int = 1,
+        in_value: int = 0,  # TODO in_value, out_value ? in_dataset, out_dataset
+        out_value: int = 1,
         backend: str = "tensorflow",
         split: str = None,
         load_kwargs: dict = {},
     ):
-        self.id_value = id_value
-        self.ood_value = ood_value
+        self.in_value = in_value
+        self.out_value = out_value
         self.backend = backend
 
         # OOD labels are kept as attribute to avoid iterating over the dataset
@@ -133,9 +133,9 @@ class OODDataset(object):
 
         # Assign ood label, except if is_ood is None
         if self.is_ood:
-            self.assign_ood_label(self.ood_value)
+            self.assign_ood_label(self.out_value)
         elif (not self.is_ood) and (self.is_ood is not None):
-            self.assign_ood_label(self.id_value)
+            self.assign_ood_label(self.in_value)
 
         # Get the key of the tensor to feed the model with
         self.input_key = self.data_handler.get_ds_feature_keys(self.data)[0]
@@ -176,8 +176,8 @@ class OODDataset(object):
 
     def concatenate(
         self,
-        ood_dataset: Union[OODDataset, tf.data.Dataset],
-        ood_as_id: bool = False,  # TODO do we need this ?
+        out_dataset: Union[OODDataset, tf.data.Dataset],
+        out_as_in: bool = False,  # TODO do we need this ?
         resize: Optional[bool] = False,
         shape: Optional[Tuple[int]] = None,
     ) -> OODDataset:
@@ -185,47 +185,47 @@ class OODDataset(object):
         training with added out-of-distribution data.
 
         Args:
-            ood_dataset (Union[OODDataset, tf.data.Dataset]): dataset of
+            out_dataset (Union[OODDataset, tf.data.Dataset]): dataset of
                 out-of-distribution data
-            ood_as_id (bool, optional): To consider ood_dataset as ood or not.
+            out_as_in (bool, optional): To consider out_dataset as ood or not.
                 Defaults to False.
             resize (Optional[bool], optional):toggles if input tensors of the
                 datasets have to be resized to have the same shape. Defaults to False.
             shape (Optional[Tuple[int]], optional):shape to use for resizing input
                 tensors. If None, the tensors are resized with the shape of the
-                id_dataset input tensors. Defaults to None.
+                in_dataset input tensors. Defaults to None.
 
         Returns:
             OODDataset: a Dataset object with the concatenated data
         """
 
-        # Assign the correct ood_label to self.data, depending on ood_as_id
-        if ood_as_id:
+        # Assign the correct ood_label to self.data, depending on out_as_in
+        if out_as_in:
             if (not self.is_ood) or (self.is_ood is None):
-                self.assign_ood_label(self.ood_value)
+                self.assign_ood_label(self.out_value)
         else:
             if self.is_ood is None:
-                self.assign_ood_label(self.id_value)
+                self.assign_ood_label(self.in_value)
 
-        # Creating an OODDataset object from ood_dataset if necessary and make sure
+        # Creating an OODDataset object from out_dataset if necessary and make sure
         # the two OODDatasets have compatible parameters
-        if isinstance(ood_dataset, (tf.data.Dataset, tuple)):
-            data = ood_dataset
+        if isinstance(out_dataset, (tf.data.Dataset, tuple)):
+            data = out_dataset
         else:
-            data = ood_dataset.data
+            data = out_dataset.data
 
-        ood_dataset = OODDataset(
+        out_dataset = OODDataset(
             data,
-            id_value=self.id_value,
-            ood_value=self.ood_value,
+            in_value=self.in_value,
+            out_value=self.out_value,
             backend=self.backend,
-            is_ood=not ood_as_id,
+            is_ood=not out_as_in,
         )
 
         # Merge the two underlying tf.data.Datasets
         data = self.data_handler.merge(
             self.data,
-            ood_dataset.data,
+            out_dataset.data,
             resize=resize,
             shape=shape,
             channel_order=self.channel_order,
@@ -235,18 +235,18 @@ class OODDataset(object):
         output_ds = OODDataset(
             dataset_id=data,
             is_ood=None,
-            id_value=self.id_value,
-            ood_value=self.ood_value,
+            in_value=self.in_value,
+            out_value=self.out_value,
             backend=self.backend,
         )
 
         # Get the ood_labels
-        output_ds.ood_labels = np.concatenate([self.ood_labels, ood_dataset.ood_labels])
+        output_ds.ood_labels = np.concatenate([self.ood_labels, out_dataset.ood_labels])
         return output_ds
 
     def assign_ood_labels_by_class(
         self,
-        id_labels: Optional[Union[np.ndarray, list]] = None,
+        in_labels: Optional[Union[np.ndarray, list]] = None,
         ood_labels: Optional[Union[np.ndarray, list]] = None,
         return_filtered_ds: bool = False,
     ) -> Optional[Tuple[OODDataset]]:
@@ -254,7 +254,7 @@ class OODDataset(object):
         value (typically, class id).
 
         Args:
-            id_labels (Optional[Union[np.ndarray, list]], optional): set of labels
+            in_labels (Optional[Union[np.ndarray, list]], optional): set of labels
                 to be considered as in-distribution. Defaults to None.
             ood_labels (Optional[Union[np.ndarray, list]], optional): set of labels
                 to be considered as out-of-distribution. Defaults to None.
@@ -266,55 +266,55 @@ class OODDataset(object):
                 out-of-distribution OODDatasets
         """
         # Make sure the dataset has labels
-        assert (id_labels is not None) or (
+        assert (in_labels is not None) or (
             ood_labels is not None
         ), "specify labels to filter with"
         assert self.len_elem == 2, "the dataset has no labels"
 
-        # Filter the dataset depending on id_labels and ood_labels given
-        if (ood_labels is not None) and (id_labels is not None):
-            id_data = self.data_handler.filter_by_feature_value(
-                self.data, "label", id_labels
+        # Filter the dataset depending on in_labels and ood_labels given
+        if (ood_labels is not None) and (in_labels is not None):
+            in_data = self.data_handler.filter_by_feature_value(
+                self.data, "label", in_labels
             )
-            ood_data = self.data_handler.filter_by_feature_value(
+            out_data = self.data_handler.filter_by_feature_value(
                 self.data, "label", ood_labels
             )
 
         if ood_labels is None:
-            id_data = self.data_handler.filter_by_feature_value(
-                self.data, "label", id_labels
+            in_data = self.data_handler.filter_by_feature_value(
+                self.data, "label", in_labels
             )
-            ood_data = self.data_handler.filter_by_feature_value(
-                self.data, "label", id_labels, excluded=True
+            out_data = self.data_handler.filter_by_feature_value(
+                self.data, "label", in_labels, excluded=True
             )
 
-        elif id_labels is None:
-            id_data = self.data_handler.filter_by_feature_value(
+        elif in_labels is None:
+            in_data = self.data_handler.filter_by_feature_value(
                 self.data, "label", ood_labels, excluded=True
             )
-            ood_data = self.data_handler.filter_by_feature_value(
+            out_data = self.data_handler.filter_by_feature_value(
                 self.data, "label", ood_labels
             )
 
         # Assign the correct ood_label to the filtered datasets
-        id_data = self.data_handler.assign_feature_value(
-            id_data, "ood_label", self.id_value
+        in_data = self.data_handler.assign_feature_value(
+            in_data, "ood_label", self.in_value
         )
-        len_id = dataset_cardinality(id_data)
+        len_in = dataset_cardinality(in_data)
 
-        ood_data = self.data_handler.assign_feature_value(
-            ood_data, "ood_label", self.ood_value
+        out_data = self.data_handler.assign_feature_value(
+            out_data, "ood_label", self.out_value
         )
-        len_ood = dataset_cardinality(ood_data)
+        len_out = dataset_cardinality(out_data)
 
         # Concatenate the two filtered datasets
-        self.data = id_data.concatenate(ood_data)
+        self.data = in_data.concatenate(out_data)
 
         # Get the ood_labels
         self.ood_labels = np.concatenate(
             [
-                np.array([self.id_value for i in range(len_id)]),
-                np.array([self.ood_value for i in range(len_ood)]),
+                np.array([self.in_value for i in range(len_in)]),
+                np.array([self.out_value for i in range(len_out)]),
             ]
         )
 
@@ -324,15 +324,15 @@ class OODDataset(object):
         # Return the filtered OODDatasets if necessary
         if return_filtered_ds:
             return OODDataset(
-                id_data,
-                id_value=self.id_value,
-                ood_value=self.ood_value,
+                in_data,
+                in_value=self.in_value,
+                out_value=self.out_value,
                 backend=self.backend,
             ), OODDataset(
-                ood_data,
+                out_data,
                 is_ood=True,
-                id_value=self.id_value,
-                ood_value=self.ood_value,
+                in_value=self.in_value,
+                out_value=self.out_value,
                 backend=self.backend,
             )
 
