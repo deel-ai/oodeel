@@ -26,13 +26,13 @@ from abc import abstractmethod
 import numpy as np
 import tensorflow as tf  # TODO: remove
 
+from ..types import ArrayLike
 from ..types import Callable
 from ..types import List
 from ..types import Optional
 from ..types import Union
-from ..utils import ArrayLike
-from ..utils import is_from
 from ..utils import get_input_from_dataset_elem
+from ..utils import is_from
 
 
 class OODModel(ABC):
