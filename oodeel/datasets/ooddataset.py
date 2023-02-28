@@ -70,7 +70,7 @@ class OODDataset(object):
         dataset_id: Union[tf.data.Dataset, tuple, dict, str],
         from_directory: bool = False,
         is_ood: bool = False,
-        id_value: int = 0,
+        id_value: int = 0,  # TODO in_value, out_value ? in_dataset, out_dataset
         ood_value: int = 1,
         backend: str = "tensorflow",
         split: str = None,
@@ -82,6 +82,7 @@ class OODDataset(object):
 
         # OOD labels are kept as attribute to avoid iterating over the dataset
         self.ood_labels = None
+        # TODO @property
         self.is_ood = is_ood
         self.length = None
 
@@ -121,7 +122,8 @@ class OODDataset(object):
                 self.length = infos.splits[split].num_examples
 
         # Get the length of the dataset
-        self.length = self.cardinality()
+        # TODO @property ?
+        self.length = len(self)
 
         # Get the length of the elements in the dataset
         if self.has_ood_label():
@@ -138,7 +140,7 @@ class OODDataset(object):
         # Get the key of the tensor to feed the model with
         self.input_key = self.data_handler.get_ds_feature_keys(self.data)[0]
 
-    def cardinality(self):
+    def __len__(self):
         """get the length of the dataset.
 
         Returns:
@@ -162,7 +164,7 @@ class OODDataset(object):
                 self.data, "ood_label", ood_label
             )
 
-        self.ood_labels = np.array([ood_label for i in range(self.cardinality())])
+        self.ood_labels = np.array([ood_label for i in range(len(self))])
 
     def has_ood_label(self):
         """Check if the dataset has an out-of-distribution label.
@@ -175,7 +177,7 @@ class OODDataset(object):
     def concatenate(
         self,
         ood_dataset: Union[OODDataset, tf.data.Dataset],
-        ood_as_id: bool = False,
+        ood_as_id: bool = False,  # TODO do we need this ?
         resize: Optional[bool] = False,
         shape: Optional[Tuple[int]] = None,
     ) -> OODDataset:
@@ -380,6 +382,7 @@ class OODDataset(object):
 
         # Making the dataset channel first if the backend is pytorch
         if self.backend in ["torch", "pytorch"]:
+            # TODO shouldn't we add this in score function ?
             dataset_to_prepare = self.data_handler.make_channel_first(
                 dataset_to_prepare
             )
@@ -409,9 +412,7 @@ class OODDataset(object):
         # Set the shuffle buffer size if necessary
         if shuffle:
             shuffle_buffer_size = (
-                self.cardinality()
-                if shuffle_buffer_size is None
-                else shuffle_buffer_size
+                len(self) if shuffle_buffer_size is None else shuffle_buffer_size
             )
 
         # Prepare the dataset for training or scoring
