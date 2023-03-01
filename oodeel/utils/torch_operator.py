@@ -59,32 +59,6 @@ class TorchOperator(Operator):
         return torch.sign(tensor)
 
     @staticmethod
-    def gradient_model(
-        model: Callable, inputs: torch.Tensor, targets: torch.Tensor
-    ) -> torch.Tensor:
-        """
-        Compute gradients of the output dimension corresponding to the prediction
-        of a model w.r.t inputs for a batch of samples.
-        ----------
-        model
-            Model used for computing gradient.
-        inputs
-            Input samples to be explained.
-        targets
-            One-hot encoded labels or regression target (e.g {+1, -1}),
-            one for each sample.
-        Returns
-        -------
-        gradients
-            Gradients computed, with the same shape as the inputs.
-        """
-        inputs.requires_grad_(True)
-        score = torch.sum(model(inputs) * targets)
-        gradients = torch.autograd.grad(score, inputs)
-        inputs.requires_grad_(False)
-        return gradients[0]
-
-    @staticmethod
     def gradient(func: Callable, inputs: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """
         Compute gradients for a batch of samples.

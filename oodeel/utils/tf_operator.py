@@ -55,31 +55,6 @@ class TFOperator(Operator):
         return tf.sign(tensor)
 
     @staticmethod
-    def gradient_model(
-        model: Callable, inputs: tf.Tensor, targets: tf.Tensor
-    ) -> tf.Tensor:
-        """
-        Compute gradients of the output dimension corresponding to the prediction
-        of a model w.r.t inputs for a batch of samples.
-        ----------
-        model
-            Model used for computing gradient.
-        inputs
-            Input samples to be explained.
-        targets
-            One-hot encoded labels or regression target (e.g {+1, -1}),
-            one for each sample.
-        Returns
-        -------
-        gradients
-            Gradients computed, with the same shape as the inputs.
-        """
-        with tf.GradientTape(watch_accessed_variables=False) as tape:
-            tape.watch(inputs)
-            score = tf.reduce_sum(tf.multiply(model(inputs), targets), axis=1)
-        return tape.gradient(score, inputs)
-
-    @staticmethod
     def gradient(func: Callable, inputs: tf.Tensor, *args, **kwargs) -> tf.Tensor:
         """
         Compute gradients for a batch of samples.

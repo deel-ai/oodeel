@@ -54,27 +54,6 @@ class Operator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def gradient_model(model: Callable, inputs: Any, targets: Any) -> Any:
-        """
-        Compute gradients of the output dimension corresponding to the prediction
-        of a model w.r.t inputs for a batch of samples.
-        Parameters
-        ----------
-        model
-            Model used for computing gradient.
-        inputs
-            Input samples to be explained.
-        targets
-            One-hot encoded labels or regression target (e.g {+1, -1}),
-            one for each sample.
-        Returns
-        -------
-        gradients
-            Gradients computed, with the same shape as the inputs.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
     def gradient(func: Callable, inputs: Any) -> Any:
         """
         Compute gradients for a batch of samples.

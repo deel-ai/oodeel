@@ -23,7 +23,6 @@
 import numpy as np
 import tensorflow as tf
 
-from oodeel.types import Callable
 from oodeel.types import List
 from oodeel.types import Optional
 from oodeel.types import Tuple
@@ -175,52 +174,3 @@ def batch_tensor(
         dataset = tensors.batch(batch_size)
 
     return dataset
-
-
-@tf.function
-def gradient(
-    model: Callable, inputs: tf.Tensor, index: Union[tuple, int] = None
-) -> tf.Tensor:
-    """
-    Compute gradients for a batch of samples.
-    Parameters
-    ----------
-    model
-        Model used for computing gradient.
-    inputs
-        Input samples to be explained.
-    targets
-        One-hot encoded labels or regression target (e.g {+1, -1}), one for each sample.
-    Returns
-    -------
-    gradients
-        Gradients computed, with the same shape as the inputs.
-    """
-    with tf.GradientTape(watch_accessed_variables=False) as tape:  # type: ignore
-        tape.watch(inputs)
-        score = model(inputs)
-        score = score[:][index]
-    return tape.gradient(score, inputs)
-
-
-@tf.function
-def gradient_full(model: Callable, inputs: tf.Tensor) -> tf.Tensor:
-    """
-    Compute gradients for a batch of samples.
-    Parameters
-    ----------
-    model
-        Model used for computing gradient.
-    inputs
-        Input samples to be explained.
-    targets
-        One-hot encoded labels or regression target (e.g {+1, -1}), one for each sample.
-    Returns
-    -------
-    gradients
-        Gradients computed, with the same shape as the inputs.
-    """
-    with tf.GradientTape(watch_accessed_variables=False) as tape:  # type: ignore
-        tape.watch(inputs)
-        score = model(inputs)
-    return tape.gradient(score, inputs)

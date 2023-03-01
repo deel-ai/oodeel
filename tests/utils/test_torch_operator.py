@@ -23,28 +23,6 @@
 import torch
 
 from oodeel.utils.torch_operator import TorchOperator
-from tests.tools_torch import generate_data
-from tests.tools_torch import Net
-
-
-def test_gradient_model():
-    """Test gradient model."""
-    input_shape = (3, 32, 32)
-    num_labels = 10
-    samples = 100
-
-    x, y = generate_data(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
-    )
-
-    x = torch.Tensor(x)
-    y = torch.Tensor(y)
-    model = Net()
-
-    torch_operator = TorchOperator()
-    gradients = torch_operator.gradient_model(model, x, y)
-
-    assert tuple(gradients.shape) == (samples, 3, 32, 32)
 
 
 def test_gradient():

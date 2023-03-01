@@ -23,28 +23,6 @@
 import tensorflow as tf
 
 from oodeel.utils.tf_operator import TFOperator
-from tests import generate_data
-from tests import generate_model
-
-
-def test_gradient_model():
-    """Test gradient model."""
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
-
-    x, y = generate_data(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
-    )
-
-    x = tf.convert_to_tensor(x)
-    y = tf.convert_to_tensor(y)
-    model = generate_model(input_shape=input_shape, output_shape=num_labels)
-
-    tf_operator = TFOperator()
-    gradients = tf_operator.gradient_model(model, x, y)
-
-    assert tuple(gradients.shape) == (samples, 32, 32, 3)
 
 
 def test_gradient():
