@@ -38,24 +38,31 @@ def bench_metrics(
     threshold: Optional[float] = None,
     step: Optional[int] = 4,
 ) -> dict:
-    """
-    Compute various common metrics from OODmodel scores.
+    """Compute various common metrics from OODmodel scores.
     Only AUROC for now. Also returns the
     positive and negative mtrics curve for visualizations.
 
     Args:
-        scores: scores output of oodmodel to evaluate. If a tuple is provided,
+        scores (Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]): scores output of
+            oodmodel to evaluate. If a tuple is provided,
             the first array is considered in-distribution scores, and the second
             is considered out-of-distribution scores.
-        labels: labels denoting oodness. When labels is not None, the following
-            in_values and out_values are not used.
-        metrics: list of metrics to compute.
-            Can pass any metric name from sklearn.metric
-        step: integration step (wrt percentile). Defaults to 4.
-            Only used for auroc and fpr95tpr
+        labels (Optional[np.ndarray], optional): labels denoting oodness. When labels
+            is not None, the following in_values and out_values are not used.
+            Defaults to None.
+        in_value (Optional[int], optional): ood label value for in-distribution data.
+            Defaults to 0.
+        out_value (Optional[int], optional): ood label value for out-of-distribution
+            data. Defaults to 1.
+        metrics (Optional[List[str]], optional): list of metrics to compute. Can pass
+            any metric name from sklearn.metric. Defaults to ["auroc", "fpr95tpr"].
+        threshold (Optional[float], optional): Threshold to use when using
+            threshold-dependent metrics. Defaults to None.
+        step (Optional[int], optional): integration step (wrt percentile).
+            Only used for auroc and fpr95tpr. Defaults to 4.
 
     Returns:
-        a dictionnary of metrics
+        dict: Dictionnary of metrics
     """
     metrics_dict = {}
 

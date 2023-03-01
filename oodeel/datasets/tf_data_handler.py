@@ -87,7 +87,7 @@ class TFDataHandler(object):
         """
         # If dataset_id is a numpy array, convert it to a dict
         if isinstance(dataset_id, np.ndarray):
-            dataset_dict = {"input": dataset_id}
+            dataset = {"input": dataset_id}
 
         # If dataset_id is a tuple, convert it to a dict
         elif isinstance(dataset_id, tuple):
@@ -105,10 +105,11 @@ class TFDataHandler(object):
                 "tuple dimension."
             )
             dataset = tf.data.Dataset.from_tensor_slices(dataset_dict)
-            return dataset
 
         elif isinstance(dataset_id, dict):
             dataset = tf.data.Dataset.from_tensor_slices(dataset_id)
+
+        return dataset
 
     def load_tf_ds(
         self, dataset_id: tf.data.Dataset, keys: list = None

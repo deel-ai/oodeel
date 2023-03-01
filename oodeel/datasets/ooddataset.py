@@ -40,23 +40,19 @@ OODDataset = TypeVar("OODDataset", bound="OODDadaset")
 class OODDataset(object):
     """Class for managing loading and processing of datasets that are to be used for
     OOD detection. The class encapsulates a dataset like object augmented with OOD
-    related inforamtion, and then returrns a dataset like object that is suited for
+    related information, and then returns a dataset like object that is suited for
     scoring or training with the .prepare method.
 
     Args:
         dataset_id (Union[tf.data.Dataset, tuple, dict, str]): The dataset to load.
-            Can be loaded from tensorflow_datasets catalog when the str mathches one of
+            Can be loaded from tensorflow_datasets catalog when the str matches one of
             the datasets. Defaults to Union[tf.data.Dataset, tuple, dict, str].
         from_directory (bool, optional): If the dataset has to be loaded from directory,
             when dataset_id is str. Defaults to False.
-        in_value (int, optional): The label to assign to in-distribution samples.
-            Defaults to 0.
-        out_value (int, optional): The label to assign to out-of-distribution samples.
-            Defaults to 1.
-        backend (str, optional): Wether the dataset is to be used for tensorflow
+        backend (str, optional): Whether the dataset is to be used for tensorflow
              or pytorch models. Defaults to "tensorflow".
         split (str, optional): Split to use ('test' or 'train') When the dataset is
-            loaded from tensorflow_dataset. Defaults to None.
+            loaded from tensorflow_datasets. Defaults to None.
         load_kwargs (dict, optional): Additional loading kwargs when loading from
             tensorflow_datasets catalog. Defaults to {}.
     """
@@ -71,7 +67,8 @@ class OODDataset(object):
     ):
         self.backend = backend
 
-        # OOD labels are kept as attribute to avoid iterating over the dataset
+        # The length of the dataset is kept as attribute to avoid redundant
+        # iterations over self.data
         self.length = None
 
         # Set the load parameters for tfds
@@ -165,6 +162,8 @@ class OODDataset(object):
         Args:
             out_dataset (Union[OODDataset, tf.data.Dataset]): dataset of
                 out-of-distribution data
+            in_value (int): ood label value for in-distribution data. Defaults to 0
+            out_value (int): ood label value for out-of-distribution data. Defaults to 1
             resize (Optional[bool], optional):toggles if input tensors of the
                 datasets have to be resized to have the same shape. Defaults to False.
             shape (Optional[Tuple[int]], optional):shape to use for resizing input
@@ -275,7 +274,7 @@ class OODDataset(object):
         """Prepare self.data for scoring or training
 
         Args:
-            batch_size (int, optional): Batch_size of the returned dataset like obejct.
+            batch_size (int, optional): Batch_size of the returned dataset like object.
                 Defaults to 128.
             preprocess_fn (Callable, optional): Preprocessing function to apply to
                 the dataset. Defaults to None.
@@ -288,7 +287,7 @@ class OODDataset(object):
             shuffle_buffer_size (int, optional): Size of the shuffle buffer. If None,
                 taken as the number of samples in the dataset. Defaults to None.
             augment_fn (Callable, optional): Augment function to be used (when the
-                returned dataset is to be used for taining). Defaults to None.
+                returned dataset is to be used for training). Defaults to None.
 
         Returns:
             tf.data.Dataset: prepared dataset

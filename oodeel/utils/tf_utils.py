@@ -23,10 +23,10 @@
 import numpy as np
 import tensorflow as tf
 
-from oodeel.types import List
-from oodeel.types import Optional
-from oodeel.types import Tuple
-from oodeel.types import Union
+from ..types import List
+from ..types import Optional
+from ..types import Tuple
+from ..types import Union
 
 
 def get_input_from_dataset_elem(elem):
@@ -40,11 +40,7 @@ def get_input_from_dataset_elem(elem):
 
 
 def dataset_len_elem(dataset: tf.data.Dataset) -> int:
-    if (
-        isinstance(dataset.element_spec, tuple)
-        or isinstance(dataset.element_spec, list)
-        or isinstance(dataset.element_spec, dict)
-    ):
+    if isinstance(dataset.element_spec, (tuple, list, dict)):
         return len(dataset.element_spec)
     return 1
 
