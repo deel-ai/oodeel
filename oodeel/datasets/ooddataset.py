@@ -116,7 +116,7 @@ class OODDataset(object):
                 self.length = infos.splits[split].num_examples
 
         # Get the length of the elements in the dataset
-        if self.has_ood_labels:
+        if self.has_ood_label:
             self.len_elem = dataset_len_elem(self.data) - 1
         else:
             self.len_elem = dataset_len_elem(self.data)
@@ -135,13 +135,31 @@ class OODDataset(object):
         return self.length
 
     @property
-    def has_ood_labels(self):
+    def has_ood_label(self):
         """Check if the dataset has an out-of-distribution label.
 
         Returns:
             bool: True if the dataset has an out-of-distribution label.
         """
         return self.data_handler.has_key(self.data, "ood_label")
+
+    def get_ood_labels(
+        self,
+    ) -> np.ndarray:
+        """Get labels from a merged dataset built with ID and OOD data.
+
+        Args:
+            dataset (tf.data.Dataset): tf.data.Dataset to get labels from
+
+        Returns:
+            np.ndarray: array of labels
+        """
+        assert self.data_handler.has_key(
+            self.data, "ood_label"
+        ), "The data has no ood_labels"
+        labels = self.data.map(lambda x: x["ood_label"])
+        labels = list(labels.as_numpy_iterator())
+        return np.array(labels)
 
     def add_out_data(
         self,
@@ -171,6 +189,8 @@ class OODDataset(object):
         # the two OODDatasets have compatible parameters
         if isinstance(out_dataset, OODDataset):
             out_dataset = out_dataset.data
+        else:
+            out_dataset = OODDataset(out_dataset).data
 
         # Assign the correct ood_label to self.data, depending on out_as_in
         self.data = self.data_handler.assign_feature_value(
@@ -183,7 +203,7 @@ class OODDataset(object):
         # Merge the two underlying tf.data.Datasets
         data = self.data_handler.merge(
             self.data,
-            out_dataset.data,
+            out_dataset,
             resize=resize,
             shape=shape,
             channel_order=self.channel_order,
@@ -202,7 +222,7 @@ class OODDataset(object):
     def assign_ood_labels_by_class(
         self,
         in_labels: Optional[Union[np.ndarray, list]] = None,
-        ood_labels: Optional[Union[np.ndarray, list]] = None,
+        out_labels: Optional[Union[np.ndarray, list]] = None,
     ) -> Optional[Tuple[OODDataset]]:
         """Filter the dataset by assigning ood labels depending on labels
         value (typically, class id).
@@ -221,20 +241,20 @@ class OODDataset(object):
         """
         # Make sure the dataset has labels
         assert (in_labels is not None) or (
-            ood_labels is not None
+            out_labels is not None
         ), "specify labels to filter with"
         assert self.len_elem >= 2, "the dataset has no labels"
 
-        # Filter the dataset depending on in_labels and ood_labels given
-        if (ood_labels is not None) and (in_labels is not None):
+        # Filter the dataset depending on in_labels and out_labels given
+        if (out_labels is not None) and (in_labels is not None):
             in_data = self.data_handler.filter_by_feature_value(
                 self.data, "label", in_labels
             )
             out_data = self.data_handler.filter_by_feature_value(
-                self.data, "label", ood_labels
+                self.data, "label", out_labels
             )
 
-        if ood_labels is None:
+        if out_labels is None:
             in_data = self.data_handler.filter_by_feature_value(
                 self.data, "label", in_labels
             )
@@ -244,10 +264,10 @@ class OODDataset(object):
 
         elif in_labels is None:
             in_data = self.data_handler.filter_by_feature_value(
-                self.data, "label", ood_labels, excluded=True
+                self.data, "label", out_labels, excluded=True
             )
             out_data = self.data_handler.filter_by_feature_value(
-                self.data, "label", ood_labels
+                self.data, "label", out_labels
             )
 
         # Assign the correct ood_label to the filtered datasets
