@@ -95,14 +95,14 @@ class OODDataset(object):
             self.channel_order = "channels_last"
 
         # Load the data handler
-        self.data_handler = TFDataHandler()
+        self._data_handler = TFDataHandler()
 
         # Load the dataset depending on the type of dataset_id
         if isinstance(dataset_id, tf.data.Dataset):
-            self.data = self.data_handler.load_tf_ds(dataset_id)
+            self.data = self._data_handler.load_tf_ds(dataset_id)
 
         elif isinstance(dataset_id, (np.ndarray, tuple, dict)):
-            self.data = self.data_handler.load_tf_ds_from_numpy(dataset_id)
+            self.data = self._data_handler.load_tf_ds_from_numpy(dataset_id)
 
         elif isinstance(dataset_id, str):
             if from_directory:
@@ -110,7 +110,7 @@ class OODDataset(object):
                 print(f"Loading from directory {dataset_id}")
                 # TODO
             else:
-                self.data, infos = self.data_handler.load_tf_ds_from_tfds(
+                self.data, infos = self._data_handler.load_tf_ds_from_tfds(
                     dataset_id, load_kwargs
                 )
                 self.length = infos.splits[split].num_examples
@@ -122,7 +122,7 @@ class OODDataset(object):
             self.len_elem = dataset_len_elem(self.data)
 
         # Get the key of the tensor to feed the model with
-        self.input_key = self.data_handler.get_ds_feature_keys(self.data)[0]
+        self.input_key = self._data_handler.get_ds_feature_keys(self.data)[0]
 
     def __len__(self):
         """get the length of the dataset.
@@ -141,7 +141,7 @@ class OODDataset(object):
         Returns:
             bool: True if the dataset has an out-of-distribution label.
         """
-        return self.data_handler.has_key(self.data, "ood_label")
+        return self._data_handler.has_key(self.data, "ood_label")
 
     def get_ood_labels(
         self,
@@ -154,12 +154,11 @@ class OODDataset(object):
         Returns:
             np.ndarray: array of labels
         """
-        assert self.data_handler.has_key(
+        assert self._data_handler.has_key(
             self.data, "ood_label"
         ), "The data has no ood_labels"
-        labels = self.data.map(lambda x: x["ood_label"])
-        labels = list(labels.as_numpy_iterator())
-        return np.array(labels)
+        labels = self._data_handler.get_feature_from_ds(self.data, "ood_label")
+        return labels
 
     def add_out_data(
         self,
@@ -193,15 +192,15 @@ class OODDataset(object):
             out_dataset = OODDataset(out_dataset).data
 
         # Assign the correct ood_label to self.data, depending on out_as_in
-        self.data = self.data_handler.assign_feature_value(
+        self.data = self._data_handler.assign_feature_value(
             self.data, "ood_label", self.in_value
         )
-        out_dataset = self.data_handler.assign_feature_value(
+        out_dataset = self._data_handler.assign_feature_value(
             out_dataset, "ood_label", self.out_value
         )
 
         # Merge the two underlying tf.data.Datasets
-        data = self.data_handler.merge(
+        data = self._data_handler.merge(
             self.data,
             out_dataset,
             resize=resize,
@@ -247,35 +246,35 @@ class OODDataset(object):
 
         # Filter the dataset depending on in_labels and out_labels given
         if (out_labels is not None) and (in_labels is not None):
-            in_data = self.data_handler.filter_by_feature_value(
+            in_data = self._data_handler.filter_by_feature_value(
                 self.data, "label", in_labels
             )
-            out_data = self.data_handler.filter_by_feature_value(
+            out_data = self._data_handler.filter_by_feature_value(
                 self.data, "label", out_labels
             )
 
         if out_labels is None:
-            in_data = self.data_handler.filter_by_feature_value(
+            in_data = self._data_handler.filter_by_feature_value(
                 self.data, "label", in_labels
             )
-            out_data = self.data_handler.filter_by_feature_value(
+            out_data = self._data_handler.filter_by_feature_value(
                 self.data, "label", in_labels, excluded=True
             )
 
         elif in_labels is None:
-            in_data = self.data_handler.filter_by_feature_value(
+            in_data = self._data_handler.filter_by_feature_value(
                 self.data, "label", out_labels, excluded=True
             )
-            out_data = self.data_handler.filter_by_feature_value(
+            out_data = self._data_handler.filter_by_feature_value(
                 self.data, "label", out_labels
             )
 
         # Assign the correct ood_label to the filtered datasets
-        in_data = self.data_handler.assign_feature_value(
+        in_data = self._data_handler.assign_feature_value(
             in_data, "ood_label", self.in_value
         )
 
-        out_data = self.data_handler.assign_feature_value(
+        out_data = self._data_handler.assign_feature_value(
             out_data, "ood_label", self.out_value
         )
 
@@ -338,7 +337,7 @@ class OODDataset(object):
 
         # Making the dataset channel first if the backend is pytorch
         if self.backend in ["torch", "pytorch"]:
-            dataset_to_prepare = self.data_handler.make_channel_first(
+            dataset_to_prepare = self._data_handler.make_channel_first(
                 dataset_to_prepare
             )
 
@@ -351,16 +350,16 @@ class OODDataset(object):
             keys = [self.input_key, "label"]
 
         # Transform the dataset from dict to tuple
-        dataset_to_prepare = self.data_handler.dict_to_tuple(dataset_to_prepare, keys)
+        dataset_to_prepare = self._data_handler.dict_to_tuple(dataset_to_prepare, keys)
 
         # Apply the preprocessing and augmentation functions if necessary
         if preprocess_fn is not None:
-            dataset_to_prepare = self.data_handler.map_ds(
+            dataset_to_prepare = self._data_handler.map_ds(
                 dataset_to_prepare, preprocess_fn
             )
 
         if augment_fn is not None:
-            dataset_to_prepare = self.data_handler.map_ds(
+            dataset_to_prepare = self._data_handler.map_ds(
                 dataset_to_prepare, augment_fn
             )
 
@@ -371,7 +370,7 @@ class OODDataset(object):
             )
 
         # Prepare the dataset for training or scoring
-        dataset = self.data_handler.prepare_for_training(
+        dataset = self._data_handler.prepare_for_training(
             dataset_to_prepare, batch_size, shuffle_buffer_size
         )
 
