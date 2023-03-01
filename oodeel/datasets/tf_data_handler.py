@@ -45,7 +45,7 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
         decorated method
     """
 
-    def wrapper(self, dataset: tf.data.Dataset, *args, **kwargs):
+    def wrapper(dataset: tf.data.Dataset, *args, **kwargs):
         assert isinstance(dataset.element_spec, dict), "dataset elements must be dicts"
 
         if "feature_key" in kwargs:
@@ -61,7 +61,7 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
                 assert (
                     key in dataset.element_spec.keys()
                 ), f"The input dataset has no feature names {key}"
-        return ds_handling_method(self, dataset, *args, **kwargs)
+        return ds_handling_method(dataset, *args, **kwargs)
 
     return wrapper
 
@@ -73,8 +73,9 @@ class TFDataHandler(object):
     tensorflow syntax.
     """
 
+    @staticmethod
     def load_tf_ds_from_numpy(
-        self, dataset_id: Union[np.ndarray, dict, tuple]
+        dataset_id: Union[np.ndarray, dict, tuple]
     ) -> tf.data.Dataset:
         """Load a tf.data.Dataset from a numpy array or a tuple/dict of numpy arrays
 
@@ -142,8 +143,8 @@ class TFDataHandler(object):
         dataset = dataset_id
         return dataset
 
+    @staticmethod
     def load_tf_ds_from_tfds(
-        self,
         dataset_id: str,
         load_kwargs: dict = {},
     ) -> tf.data.Dataset:
@@ -164,10 +165,9 @@ class TFDataHandler(object):
         dataset, infos = tfds.load(dataset_id, **load_kwargs)
         return dataset, infos
 
+    @staticmethod
     @dict_only_ds
-    def dict_to_tuple(
-        self, dataset: tf.data.Dataset, keys: list = None
-    ) -> tf.data.Dataset:
+    def dict_to_tuple(dataset: tf.data.Dataset, keys: list = None) -> tf.data.Dataset:
         """Turn a dict based tf.data.Dataset to a tuple based tf.data.Dataset
 
         Args:
@@ -183,7 +183,8 @@ class TFDataHandler(object):
         dataset = dataset.map(lambda x: tuple(x[k] for k in keys))
         return dataset
 
-    def tuple_to_dict(self, dataset: tf.data.Dataset, keys: list) -> tf.data.Dataset:
+    @staticmethod
+    def tuple_to_dict(dataset: tf.data.Dataset, keys: list) -> tf.data.Dataset:
         """Turn a tuple based tf.data.Dataset to a dict based tf.data.Dataset
 
         Args:
@@ -207,8 +208,9 @@ class TFDataHandler(object):
         dataset = dataset.map(tuple_to_dict)
         return dataset
 
+    @staticmethod
     def assign_feature_value(
-        self, dataset: tf.data.Dataset, feature_key: str, value: int
+        dataset: tf.data.Dataset, feature_key: str, value: int
     ) -> tf.data.Dataset:
         """Assign a value to a feature for every samples in a tf.data.Dataset
 
@@ -229,10 +231,9 @@ class TFDataHandler(object):
         dataset = dataset.map(assign_value_to_feature)
         return dataset
 
+    @staticmethod
     @dict_only_ds
-    def get_feature_from_ds(
-        self, dataset: tf.data.Dataset, feature_key: str
-    ) -> np.ndarray:
+    def get_feature_from_ds(dataset: tf.data.Dataset, feature_key: str) -> np.ndarray:
         """Get a feature from a tf.data.Dataset
 
         Args:
@@ -247,8 +248,9 @@ class TFDataHandler(object):
         features = np.array(features)
         return features
 
+    @staticmethod
     @dict_only_ds
-    def get_ds_feature_keys(self, dataset: tf.data.Dataset) -> list:
+    def get_ds_feature_keys(dataset: tf.data.Dataset) -> list:
         """Get the feature keys of a tf.data.Dataset
 
         Args:
@@ -259,7 +261,8 @@ class TFDataHandler(object):
         """
         return list(dataset.element_spec.keys())
 
-    def has_key(self, dataset: tf.data.Dataset, key: str) -> bool:
+    @staticmethod
+    def has_key(dataset: tf.data.Dataset, key: str) -> bool:
         """Check if a tf.data.Dataset has a feature denoted by key
 
         Args:
@@ -272,8 +275,8 @@ class TFDataHandler(object):
         assert isinstance(dataset.element_spec, dict), "dataset elements must be dicts"
         return 1 if (key in dataset.element_spec.keys()) else 0
 
+    @staticmethod
     def map_ds(
-        self,
         dataset: tf.data.Dataset,
         map_fn: Callable,
         num_parallel_calls: Optional[int] = None,
@@ -289,11 +292,13 @@ class TFDataHandler(object):
         Returns:
             tf.data.Dataset: Maped dataset
         """
+        if num_parallel_calls is None:
+            num_parallel_calls = tf.data.experimental.AUTOTUNE
         dataset = dataset.map(map_fn, num_parallel_calls=num_parallel_calls)
         return dataset
 
+    @staticmethod
     def prepare_for_training(
-        self,
         dataset: tf.data.Dataset,
         batch_size: int,
         shuffle_buffer_size: int = None,
@@ -325,6 +330,7 @@ class TFDataHandler(object):
         dataset = dataset.prefetch(prefetch_buffer_size)
         return dataset
 
+    @staticmethod
     def make_channel_first(dataset: tf.data.Dataset) -> tf.data.Dataset:
         """Make a tf.data.Dataset channel first. Make sur that the dataset is not
             already Channel first. If so, the tensor will have the format
@@ -343,8 +349,8 @@ class TFDataHandler(object):
         dataset = dataset.map(channel_first)
         return dataset
 
+    @staticmethod
     def merge(
-        self,
         id_dataset: tf.data.Dataset,
         ood_dataset: tf.data.Dataset,
         resize: Optional[bool] = False,
@@ -416,9 +422,9 @@ class TFDataHandler(object):
         merged_dataset = id_dataset.concatenate(ood_dataset)
         return merged_dataset
 
+    @staticmethod
     @dict_only_ds
     def filter_by_feature_value(
-        self,
         dataset: tf.data.Dataset,
         feature_key: str,
         values: list,

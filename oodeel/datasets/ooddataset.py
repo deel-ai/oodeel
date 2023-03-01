@@ -49,8 +49,6 @@ class OODDataset(object):
             the datasets. Defaults to Union[tf.data.Dataset, tuple, dict, str].
         from_directory (bool, optional): If the dataset has to be loaded from directory,
             when dataset_id is str. Defaults to False.
-        is_out (bool, optional): If the dataset has to be considered out-of-distribution
-            or not. Defaults to False.
         in_value (int, optional): The label to assign to in-distribution samples.
             Defaults to 0.
         out_value (int, optional): The label to assign to out-of-distribution samples.
@@ -146,10 +144,7 @@ class OODDataset(object):
     def get_ood_labels(
         self,
     ) -> np.ndarray:
-        """Get labels from a merged dataset built with ID and OOD data.
-
-        Args:
-            dataset (tf.data.Dataset): tf.data.Dataset to get labels from
+        """Get ood_labels from self.data if any
 
         Returns:
             np.ndarray: array of labels
@@ -172,8 +167,6 @@ class OODDataset(object):
         Args:
             out_dataset (Union[OODDataset, tf.data.Dataset]): dataset of
                 out-of-distribution data
-            out_as_in (bool, optional): To consider out_dataset as ood or not.
-                Defaults to False.
             resize (Optional[bool], optional):toggles if input tensors of the
                 datasets have to be resized to have the same shape. Defaults to False.
             shape (Optional[Tuple[int]], optional):shape to use for resizing input
@@ -231,8 +224,6 @@ class OODDataset(object):
                 to be considered as in-distribution. Defaults to None.
             ood_labels (Optional[Union[np.ndarray, list]], optional): set of labels
                 to be considered as out-of-distribution. Defaults to None.
-            return_filtered_ds (bool, optional): To return the filtered
-                datasets (in-distribution and out-of-distribution). Defaults to False.
 
         Returns:
             Optional[Tuple[OODDataset]]: Tuple of in-distribution and
