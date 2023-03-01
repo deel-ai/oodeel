@@ -31,79 +31,55 @@ from tests import generate_data_tf
 
 
 def test_instanciate_from_tfds():
-    dataset = OODDataset(dataset_id="mnist", is_ood=False, split="test")
-
-    ood_labels = np.mean(dataset.ood_labels)
+    dataset = OODDataset(dataset_id="mnist", split="test")
 
     assert len(dataset.data) == 10000
     assert dataset.len_elem == 2
-    assert len(dataset.data.element_spec) == 3
-    assert ood_labels == 0
+    assert len(dataset.data.element_spec) == 2
 
 
 @pytest.mark.parametrize(
-    "as_supervised, is_ood, expected_output",
+    "as_supervised, expected_output",
     [
-        (False, False, [100, 2, 3, 0]),
-        (True, False, [100, 2, 3, 0]),
-        (False, None, [100, 2, 2, None]),
-        (True, None, [100, 2, 2, None]),
+        (False, [100, 2, 2]),
+        (True, [100, 2, 2]),
     ],
     ids=[
-        "Instanciate from tf dataset as ID",
-        "Instanciate from np dataset as ID",
         "Instanciate from tf data without ood labels",
         "Instanciate from np data without ood labels",
     ],
 )
-def test_instanciate_ood_dataset(as_supervised, is_ood, expected_output):
-    """Test the instanciation of OODDataset.
-    The instanciation involves using:
-    * self.assign_ood_label
-    So these methods are considered tested as well
-    """
+def test_instanciate_ood_dataset(as_supervised, expected_output):
+    """Test the instanciation of OODDataset."""
 
     dataset_id = generate_data_tf(
         x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=as_supervised
     )
-    dataset = OODDataset(dataset_id=dataset_id, is_ood=is_ood)
-
-    if dataset.has_ood_label():
-        ood_labels = np.mean(dataset.ood_labels)
-    else:
-        ood_labels = None
+    dataset = OODDataset(dataset_id=dataset_id)
 
     assert len(dataset.data) == expected_output[0]
     assert dataset.len_elem == expected_output[1]
     assert len(dataset.data.element_spec) == expected_output[2]
-    assert ood_labels == expected_output[3]
 
 
 @pytest.mark.parametrize(
-    "is_ood, as_tf_datasets, expected_output",
+    "as_tf_datasets, expected_output",
     [
-        (False, False, [200, 2, 3, 0.5]),
-        (None, False, [200, 2, 3, 0.5]),
-        (True, True, [200, 2, 3, 1]),
+        (False, [200, 2, 3, 0.5]),
+        (True, [200, 2, 3, 0.5]),
     ],
     ids=[
-        "Concatenate two Datasets with OOD labels",
-        "Concatenate two Datasets without OOD labels",
-        "Concatenate a Dataset with OOD labels with a tf.data.Dataset",
+        "Concatenate two OODDatasets",
+        "Concatenate a OODDataset a tf.data.Dataset",
     ],
 )
-def test_concatenate_ood_dataset(is_ood, as_tf_datasets, expected_output):
-    """Test the concatenation of OODDataset.
-    The concatenation involves using:
-    * self.assign_ood_label
-    So these methods are considered tested as well
-    """
+def test_add_ood_data(as_tf_datasets, expected_output):
+    """Test the concatenation of OODDataset."""
 
     dataset1 = OODDataset(
         dataset_id=generate_data_tf(
             x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=False
-        ),
-        is_ood=is_ood,
+        )
     )
 
     if as_tf_datasets:
@@ -112,27 +88,24 @@ def test_concatenate_ood_dataset(is_ood, as_tf_datasets, expected_output):
         dataset2 = OODDataset(
             dataset_id=generate_data_tf(
                 x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=False
-            ),
-            is_ood=True,
+            )
         )
 
-    if dataset1.has_ood_label():
-        dataset = dataset1.concatenate(dataset2)
-    else:
-        dataset = dataset1.concatenate(dataset2, ood_as_id=True, shape=(23, 23))
+    dataset = dataset1.add_out_data(dataset2, shape=(23, 23))
+    ood_labels = dataset.get_ood_labels()
 
     assert len(dataset.data) == expected_output[0]
     assert dataset.len_elem == expected_output[1]
     assert len(dataset.data.element_spec) == expected_output[2]
-    assert np.mean(dataset.ood_labels) == expected_output[3]
+    assert np.mean(ood_labels) == expected_output[3]
 
 
 @pytest.mark.parametrize(
-    "id_labels, ood_labels, one_hot, expected_output",
+    "in_labels, out_labels, one_hot, expected_output",
     [
-        ([1, 2], None, False, [100, 67, 33, 2, 1, 3]),
-        (None, [1, 2], True, [100, 33, 67, 1, 2, 3]),
-        ([1], [2], False, [67, 33, 34, 1, 1, 2]),
+        ([1, 2], None, False, [100, 67, 33, 2, 1]),
+        (None, [1, 2], True, [100, 33, 67, 1, 2]),
+        ([1], [2], False, [100, 33, 34, 1, 1]),
     ],
     ids=[
         "Assign OOD labels by class with ID labels",
@@ -140,7 +113,7 @@ def test_concatenate_ood_dataset(is_ood, as_tf_datasets, expected_output):
         "Assign OOD labels by class with ID and OOD labels",
     ],
 )
-def test_assign_ood_labels_by_class(id_labels, ood_labels, one_hot, expected_output):
+def test_assign_ood_labels_by_class(in_labels, out_labels, one_hot, expected_output):
     """Test the assign_ood_labels_by_class method."""
 
     images, labels = generate_data(
@@ -171,34 +144,32 @@ def test_assign_ood_labels_by_class(id_labels, ood_labels, one_hot, expected_out
         dataset_id=(images, labels),
     )
 
-    id_dataset, ood_dataset = dataset.assign_ood_labels_by_class(
-        id_labels=id_labels, ood_labels=ood_labels, return_filtered_ds=True
+    in_dataset, out_dataset = dataset.assign_ood_labels_by_class(
+        in_labels=in_labels,
+        out_labels=out_labels,
     )
 
     len_ds = dataset_cardinality(dataset.data)
-    len_idds = dataset_cardinality(id_dataset.data)
-    len_oodds = dataset_cardinality(ood_dataset.data)
+    len_inds = dataset_cardinality(in_dataset.data)
+    len_outds = dataset_cardinality(out_dataset.data)
 
     classes = dataset.data.map(lambda elem: elem["label"])
     classes = np.array(list(classes.as_numpy_iterator())[:-1])
     classes = np.unique(classes, axis=0)
 
-    classes_id = id_dataset.data.map(lambda elem: elem["label"])
-    classes_id = np.array(list(classes_id.as_numpy_iterator())[:-1])
-    classes_id = np.unique(classes_id, axis=0)
+    classes_in = in_dataset.data.map(lambda elem: elem["label"])
+    classes_in = np.array(list(classes_in.as_numpy_iterator())[:-1])
+    classes_in = np.unique(classes_in, axis=0)
 
-    classes_ood = ood_dataset.data.map(lambda elem: elem["label"])
-    classes_ood = np.array(list(classes_ood.as_numpy_iterator())[:-1])
-    classes_ood = np.unique(classes_ood, axis=0)
+    classes_out = out_dataset.data.map(lambda elem: elem["label"])
+    classes_out = np.array(list(classes_out.as_numpy_iterator())[:-1])
+    classes_out = np.unique(classes_out, axis=0)
 
     assert len_ds == expected_output[0]
-    assert len_idds == expected_output[1]
-    assert len_oodds == expected_output[2]
-    assert len(classes_id) == expected_output[3]
-    assert len(classes_ood) == expected_output[4]
-    assert len(classes) == expected_output[5]
-    assert np.mean(dataset.ood_labels) == expected_output[2] / expected_output[0]
-    print(expected_output)
+    assert len_inds == expected_output[1]
+    assert len_outds == expected_output[2]
+    assert len(classes_in) == expected_output[3]
+    assert len(classes_out) == expected_output[4]
 
 
 @pytest.mark.parametrize(
@@ -247,6 +218,18 @@ def test_prepare(shuffle, with_labels, with_ood_labels, expected_output):
 
     else:
         augment_fn = None
+
+    dataset2 = OODDataset(
+        dataset_id=generate_data_tf(
+            x_shape=(32, 32, 3),
+            num_labels=num_labels,
+            samples=samples,
+            as_supervised=False,
+            one_hot=True,
+        )
+    )
+
+    dataset = dataset.add_out_data(dataset2)
 
     ds = dataset.prepare(
         batch_size=batch_size,
