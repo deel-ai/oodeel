@@ -20,15 +20,20 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import List, Optional, Tuple, Union
-
 import numpy as np
 import sklearn
 
+from ..types import List
+from ..types import Optional
+from ..types import Tuple
+from ..types import Union
+
 
 def bench_metrics(
-    scores: np.ndarray,
-    labels: np.ndarray,
+    scores: Union[np.ndarray, Tuple[np.ndarray, np.ndarray]],
+    labels: Optional[np.ndarray] = None,
+    in_value: Optional[int] = 0,
+    out_value: Optional[int] = 1,
     metrics: Optional[List[str]] = ["auroc", "fpr95tpr"],
     threshold: Optional[float] = None,
     step: Optional[int] = 4,
@@ -39,8 +44,11 @@ def bench_metrics(
     positive and negative mtrics curve for visualizations.
 
     Args:
-        scores: scores output of oodmodel to evaluate
-        labels: 1 if ood else 0
+        scores: scores output of oodmodel to evaluate. If a tuple is provided,
+            the first array is considered in-distribution scores, and the second
+            is considered out-of-distribution scores.
+        labels: labels denoting oodness. When labels is not None, the following
+            in_values and out_values are not used.
         metrics: list of metrics to compute.
             Can pass any metric name from sklearn.metric
         step: integration step (wrt percentile). Defaults to 4.
@@ -50,10 +58,20 @@ def bench_metrics(
         a dictionnary of metrics
     """
     metrics_dict = {}
+
+    if isinstance(scores, np.ndarray):
+        assert labels is not None, (
+            "Provide labels with scores, or provide a tuple of in-distribution "
+            "and out-of-distribution scores arrays"
+        )
+    elif isinstance(scores, tuple):
+        scores_in, scores_out = scores
+        scores = np.concatenate([scores_in, scores_out])
+        labels = np.concatenate([scores_in * 0 + in_value, scores_out * 0 + out_value])
+
     fpr, tpr = get_curve(scores, labels, step)
 
     for metric in metrics:
-
         if metric == "auroc":
             auroc = -np.trapz(1.0 - fpr, tpr)
             metrics_dict["auroc"] = auroc
