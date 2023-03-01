@@ -65,14 +65,10 @@ class OODDataset(object):
         self,
         dataset_id: Union[tf.data.Dataset, tuple, dict, str],
         from_directory: bool = False,
-        in_value: int = 0,
-        out_value: int = 1,
         backend: str = "tensorflow",
         split: str = None,
         load_kwargs: dict = {},
     ):
-        self.in_value = in_value
-        self.out_value = out_value
         self.backend = backend
 
         # OOD labels are kept as attribute to avoid iterating over the dataset
@@ -158,6 +154,8 @@ class OODDataset(object):
     def add_out_data(
         self,
         out_dataset: Union[OODDataset, tf.data.Dataset],
+        in_value: int = 0,
+        out_value: int = 1,
         resize: Optional[bool] = False,
         shape: Optional[Tuple[int]] = None,
     ) -> OODDataset:
@@ -186,10 +184,10 @@ class OODDataset(object):
 
         # Assign the correct ood_label to self.data, depending on out_as_in
         self.data = self._data_handler.assign_feature_value(
-            self.data, "ood_label", self.in_value
+            self.data, "ood_label", in_value
         )
         out_dataset = self._data_handler.assign_feature_value(
-            out_dataset, "ood_label", self.out_value
+            out_dataset, "ood_label", out_value
         )
 
         # Merge the two underlying tf.data.Datasets
@@ -204,8 +202,6 @@ class OODDataset(object):
         # Create a new OODDataset from the merged tf.data.Dataset
         output_ds = OODDataset(
             dataset_id=data,
-            in_value=self.in_value,
-            out_value=self.out_value,
             backend=self.backend,
         )
 
@@ -260,26 +256,10 @@ class OODDataset(object):
                 self.data, "label", out_labels
             )
 
-        # Assign the correct ood_label to the filtered datasets
-        in_data = self._data_handler.assign_feature_value(
-            in_data, "ood_label", self.in_value
-        )
-
-        out_data = self._data_handler.assign_feature_value(
-            out_data, "ood_label", self.out_value
-        )
-
         # Return the filtered OODDatasets
-        return OODDataset(
-            in_data,
-            in_value=self.in_value,
-            out_value=self.out_value,
-            backend=self.backend,
-        ), OODDataset(
-            out_data,
-            in_value=self.in_value,
-            out_value=self.out_value,
-            backend=self.backend,
+        return (
+            OODDataset(in_data, backend=self.backend),
+            OODDataset(out_data, backend=self.backend),
         )
 
     def prepare(
