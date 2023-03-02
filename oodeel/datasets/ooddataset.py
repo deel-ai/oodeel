@@ -34,8 +34,7 @@ from ..utils import dataset_cardinality
 from ..utils import dataset_len_elem
 from .tf_data_handler import TFDataHandler
 
-OODDataset = TypeVar("OODDataset", bound="OODDadaset")
-
+# OODDataset = TypeVar("OODDataset", bound="OODDadaset")
 
 class OODDataset(object):
     """Class for managing loading and processing of datasets that are to be used for
@@ -150,12 +149,12 @@ class OODDataset(object):
 
     def add_out_data(
         self,
-        out_dataset: Union[OODDataset, tf.data.Dataset],
+        out_dataset: Union['OODDataset', tf.data.Dataset],
         in_value: int = 0,
         out_value: int = 1,
         resize: Optional[bool] = False,
         shape: Optional[Tuple[int]] = None,
-    ) -> OODDataset:
+    ) -> 'OODDataset':
         """Concatenate two OODDatasets. Useful for scoring on multiple datasets, or
         training with added out-of-distribution data.
 
@@ -210,7 +209,7 @@ class OODDataset(object):
         self,
         in_labels: Optional[Union[np.ndarray, list]] = None,
         out_labels: Optional[Union[np.ndarray, list]] = None,
-    ) -> Optional[Tuple[OODDataset]]:
+    ) -> Optional[Tuple['OODDataset']]:
         """Filter the dataset by assigning ood labels depending on labels
         value (typically, class id).
 
