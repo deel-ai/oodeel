@@ -20,8 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from dataclasses import dataclass
-from typing import List, Iterator
+from typing import List
 from typing import Union
 
 import torch
@@ -147,7 +146,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 else:
                     raise NotImplementedError
 
-    def predict_tensor(self, x: torch.Tensor, detach=True) -> List[torch.Tensor]:
+    def predict_tensor(self, x: torch.Tensor) -> List[torch.Tensor]:
         """
         Get features associated with the input. Works on an in-memory tensor.
         """
@@ -157,10 +156,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         _ = self.model(x)
 
         features = [
-            self._features[layer_id]
-            if not detach
-            else self._features[layer_id].detach()
-            for layer_id in self.output_layers_id
+            self._features[layer_id].detach() for layer_id in self.output_layers_id
         ]
 
         if len(features) == 1:
@@ -168,7 +164,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         return features
 
     def predict(
-            self, dataset: torch.utils.data.DataLoader, detach=True
+        self, dataset: torch.utils.data.DataLoader, detach=False
     ) -> List[torch.Tensor]:
         """
         Extract features for a given inputs. If batch_size is specified,
