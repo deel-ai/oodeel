@@ -130,7 +130,7 @@ Currently, **oodeel** includes the following baselines:
 | VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |
 
 **Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for models from `keras.applications` in [training_funs](models/training_funs) directory. These functions come in handy for benchmarks like *leave-k-classes-out* that require retraining models on a subset of dataset classes.
-# Develoment Roadmap
+# Development Roadmap
 
 ## Roadmap to first release:
 - [x] The library works for `keras` models
