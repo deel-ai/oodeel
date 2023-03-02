@@ -115,8 +115,7 @@ def get_curve(
     step: Optional[int] = 4,
     return_raw: Optional[bool] = False,
 ) -> Union[Tuple[Tuple[np.ndarray], Tuple[np.ndarray]], Tuple[np.ndarray]]:
-    """
-    Computes the number of
+    """Computes the number of
         * true positives,
         * false positives,
         * true negatives,
@@ -125,12 +124,15 @@ def get_curve(
     distributed among the percentiles, with a step = 4 / scores.shape[0]
 
     Args:
-        scores: scores output of oodmodel to evaluate
-        labels: 1 if ood else 0
-        step: integration step (wrt percentile). Defaults to 4.
+        scores (np.ndarray): scores output of oodmodel to evaluate
+        labels (np.ndarray): 1 if ood else 0
+        step (Optional[int], optional): integration step (wrt percentile).
+            Defaults to 4.
+        return_raw (Optional[bool], optional): To return all the curves
+            or only the rate curves. Defaults to False.
 
     Returns:
-        4 arrays of metrics
+        Union[Tuple[Tuple[np.ndarray], Tuple[np.ndarray]], Tuple[np.ndarray]]: curves
     """
     tpc = np.array([])
     fpc = np.array([])
@@ -154,8 +156,7 @@ def get_curve(
 
 
 def ftpn(scores: np.ndarray, labels: np.ndarray, threshold: float) -> Tuple[float]:
-    """
-    Computes the number of
+    """Computes the number of
         * true positives,
         * false positives,
         * true negatives,
@@ -163,12 +164,13 @@ def ftpn(scores: np.ndarray, labels: np.ndarray, threshold: float) -> Tuple[floa
     for a given threshold
 
     Args:
-        scores: scores output of oodmodel to evaluate
-        labels: 1 if ood else 0
-        threshold:
+        scores (np.ndarray): scores output of oodmodel to evaluate
+        labels (np.ndarray): 1 if ood else 0
+        threshold (float): threshold to use to consider scores
+            as in-distribution or out-of-distribution
 
     Returns:
-        4 metrics
+        Tuple[float]: The four metrics
     """
     pos = np.where(scores >= threshold)
     neg = np.where(scores < threshold)
