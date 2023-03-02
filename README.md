@@ -61,7 +61,7 @@ We propose some tutorials to get familiar with the library and its API in the [n
 ```python
 git clone https://github.com/Jingkang50/OpenOOD.git
 cd oodeel
-make install-env-tensorflow
+make prepare-dev
 ```
 
 Now that *oodeel* is installed, here are some basic examples of what you can do with the available modules. See also the notebooks directory for more advanced examples.
@@ -136,10 +136,10 @@ Currently, **oodeel** includes the following baselines:
 ## Develoment Roadmap
 
 ### Roadmap to first release:
-- [x] The library works for `keras`models
+- [x] The library works for `keras` models
 - [ ] Unification of tutorial notebooks
 - [ ] Validation of all methods for pytorch using `TorchOperator`, making oodeel compatible with both tensorflow and pytorch models.
-- [ ] Integration of `TorchDataHandler` to alleviate the need of `tf.data.Dataset` when using pytorch. At this stage, oodeel will no more require any tensorflow components when using pytorch.
+- [ ] Integration of `TorchDataHandler` to alleviate the need of `tf.data.Dataset` when using pytorch. At this stage, oodeel will no more require any tensorflow components when using pytorch, and vice-versa.
 - [ ] Revise docstring and type hinting
 - [ ] Set up the doc
 

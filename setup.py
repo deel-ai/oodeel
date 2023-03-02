@@ -51,15 +51,13 @@ tensorflow_requirements = [
 torch_requirements = ["tensorflow_datasets", "timm", "torch", "torchvision"]
 
 dev_requirements = [
+    "flake8",
+    "setuptools",
+    "pre-commit",
     "tox",
     "black",
-    "flake8",
-    "flake8-black",
-    "pylint",
-    "pytest",
-    "setuptools",
-    "pre-commit" "tox",
-    "black",
+    "ipython",
+    "ipykernel",
     "pytest",
     "pylint",
     "mkdocs",
@@ -67,7 +65,15 @@ dev_requirements = [
     "mkdocstrings",
     "mknotebooks",
     "bump2version",
+    "tensorflow",
+    "tensorflow_datasets",
+    "kneed",
+    "image-classifiers",
+    "tensorflow_datasets",
+    "torch",
+    "torchvision",
 ]
+
 
 docs_requirements = [
     "mkdocs",
