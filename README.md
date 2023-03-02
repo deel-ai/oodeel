@@ -32,20 +32,20 @@ oodmodel = MLS()
 oodmodel.fit(model)
 scores = oodmodel.score(ds)
 ```
-**Disclaimer**: It is still a work in progress, see issues and [development roadmap](#-development-roadmap)
+**Disclaimer**: It is still a work in progress, see issues and [development roadmap](#development-roadmap)
 
 # Table of contents
 
-- [Table of contents](#-table-of-contents)
-- [Tutorials](#-tutorials)
-- [Quick Start](#-quick-start)
-- [What's Included](#-whats-included)
-- [Development roadmap](#-development-roadmap)
-- [Contributing](#-contributing)
-- [See Also](#-see-also)
-- [Acknowledgments](#-acknowledgments)
-- [Creator](#-creator)
-- [License](#-license)
+- [Table of contents](#table-of-contents)
+- [Tutorials](#tutorials)
+- [Quick Start](#quick-start)
+- [What's Included](#whats-included)
+- [Development roadmap](#development-roadmap)
+- [Contributing](#contributing)
+- [See Also](#see-also)
+- [Acknowledgments](#acknowledgments)
+- [Creator](#creator)
+- [License](#license)
 
 # Tutorials
 
