@@ -30,7 +30,25 @@ this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
-requirements = ["numpy"]
+requirements = [
+    "faiss_cpu",
+    "numpy",
+    "scikit_learn",
+    "scipy",
+    "setuptools",
+    "matplotlib",
+    "kneed",
+]
+
+tensorflow_requirements = [
+    "keras",
+    "tensorflow",
+    "tensorflow_datasets",
+    "kneed",
+    "image-classifiers",
+]
+
+torch_requirements = ["tensorflow_datasets", "timm", "torch", "torchvision"]
 
 dev_requirements = [
     "tox",
@@ -49,17 +67,6 @@ dev_requirements = [
     "mkdocstrings",
     "mknotebooks",
     "bump2version",
-    "faiss_cpu",
-    "keras",
-    "numpy",
-    "scikit_learn",
-    "scipy",
-    "tensorflow>=2.4.0",
-    "tensorflow_datasets",
-    "matplotlib",
-    "timm",
-    "torch",
-    "torchvision",
 ]
 
 docs_requirements = [
@@ -89,12 +96,16 @@ setup(
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     install_requires=requirements,
     extras_require={
         "dev": dev_requirements,
+        "tensorflow": tensorflow_requirements,
+        "torch": torch_requirements,
         "docs": docs_requirements,
     },
 )

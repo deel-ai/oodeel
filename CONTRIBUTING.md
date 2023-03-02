@@ -49,5 +49,32 @@ Something that will increase the chance that your pull request is accepted:
 - Write tests and ensure that the existing ones pass.
 - If `make test` is succesful, you have fair chances to pass the CI workflows (linting and test)
 - Follow the existing coding style and run `make check_all` to check all files format.
-- Write a [good commit message](https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html) (we follow a lowercase convention).
+- Write a [good commit message](https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html) (we follow a lowercase convention, see below).
 - For a major fix/feature make sure your PR has an issue and if it doesn't, please create one. This would help discussion with the community, and polishing ideas in case of a new feature.
+
+# pre-commit : Conventional Commits 1.0.0
+
+The commit message should be structured as follows:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+
+```
+
+The commit contains the following structural elements, to communicate intent to the consumers of your library:
+
+- fix: a commit of the type fix patches a bug in your codebase (this correlates with PATCH in Semantic Versioning).
+
+- feat: a commit of the type feat introduces a new feature to the codebase (this correlates with MINOR in Semantic Versioning).
+
+- BREAKING CHANGE: a commit that has a footer BREAKING CHANGE:, or appends a ! after the type/scope, introduces a breaking API change (correlating with MAJOR in Semantic Versioning). A BREAKING CHANGE can be part of commits of any type.
+
+- types other than fix: and feat: are allowed, for example @commitlint/config-conventional (based on the the Angular convention) recommends *build:, chore:, ci:, docs:, style:, refactor:, perf:, test:*, and [others](https://delicious-insights.com/fr/articles/git-hooks-et-commitlint/).
+
+- footers other than BREAKING CHANGE: <description> may be provided and follow a convention similar to git trailer format.
+
+- Additional types are not mandated by the Conventional Commits specification, and have no implicit effect in Semantic Versioning (unless they include a BREAKING CHANGE). A scope may be provided to a commit’s type, to provide additional contextual information and is contained within parenthesis, e.g., feat(parser): add ability to parse arrays.

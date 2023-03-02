@@ -127,11 +127,11 @@ class TFDataHandler(object):
         """
         # If dataset_id is a tuple based tf.data.dataset, convert it to a dict
         if not isinstance(dataset_id.element_spec, dict):
-            print(
-                "Feature name not found, assigning 'input_i' "
-                "key to the i-th tensor and 'label' key to the last"
-            )
             if keys is None:
+                print(
+                    "Feature name not found, assigning 'input_i' "
+                    "key to the i-th tensor and 'label' key to the last"
+                )
                 len_elem = len(dataset_id.element_spec)
                 if len_elem == 2:
                     keys = ["input", "label"]
