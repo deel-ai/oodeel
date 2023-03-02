@@ -36,8 +36,7 @@ from ..utils import is_from
 
 
 class OODModel(ABC):
-    """
-    Base Class for methods that assign a score to unseen samples.
+    """Base Class for methods that assign a score to unseen samples.
 
     Args:
         output_layers_id: list of str or int that identify features to output.
@@ -64,8 +63,7 @@ class OODModel(ABC):
 
     @abstractmethod
     def _score_tensor(self, inputs: ArrayLike):
-        """
-        Computes an OOD score for input samples "inputs".
+        """Computes an OOD score for input samples "inputs".
         Method to override with child classes.
 
         Args:
@@ -81,8 +79,7 @@ class OODModel(ABC):
         model: Callable,
         fit_dataset: Optional[ArrayLike] = None,
     ):
-        """
-        Prepare oodmodel for scoring:
+        """Prepare oodmodel for scoring:
         * Constructs the feature extractor based on the model
         * Calibrates the oodmodel on ID data "fit_dataset" if needed,
             using self._fit_to_dataset

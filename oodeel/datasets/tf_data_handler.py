@@ -467,15 +467,14 @@ class TFDataHandler(object):
         return dataset_to_filter
 
 
-def keras_dataset_load(
-    dataset_name: str, **kwargs
-) -> Tuple[Tuple[Union[tf.data.Dataset, tf.Tensor, np.ndarray]]]:
-    """
-    Loads a dataset
+def keras_dataset_load(dataset_name: str, **kwargs) -> Tuple[Tuple[np.ndarray]]:
+    """Load a dataset from keras
 
-    Parameters
-    ----------
-    dataset_name : str
+    Args:
+        dataset_name (str): identifier of keras.dataset to load
+
+    Returns:
+        Tuple[Tuple[np.ndarray]]: loaded dataset
     """
     assert hasattr(
         tf.keras.datasets, dataset_name
