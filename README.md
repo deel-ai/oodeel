@@ -2,9 +2,9 @@
 <!-- Banner section -->
 <div align="center">
         <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo_oodeel_dark.png">
-                <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo_oodeel_light.png">
-                <img src="docs/assets/logo_oodeel_light.png" alt="Library Banner">
+                <source media="(prefers-color-scheme: dark)" srcset="docs/assets/oodeel_dark.png">
+                <source media="(prefers-color-scheme: light)" srcset="docs/assets/oodeel_light.png">
+                <img src="docs/assets/oodeel_light.png" alt="Library Banner">
         </picture>
 </div>
 <br>
