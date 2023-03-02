@@ -89,13 +89,14 @@ def train_convnet_classifier(
     if not is_prepared:
         padding = 4
         image_size = input_shape[0]
+        nb_channels = input_shape[2]
         target_size = image_size + padding * 2
 
         def _augment_fn(images, labels):
             images = tf.image.pad_to_bounding_box(
                 images, padding, padding, target_size, target_size
             )
-            images = tf.image.random_crop(images, (image_size, image_size, 3))
+            images = tf.image.random_crop(images, (image_size, image_size, nb_channels))
             images = tf.image.random_flip_left_right(images)
             return images, labels
 
