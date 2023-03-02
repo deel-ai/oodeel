@@ -17,6 +17,7 @@ __pycache__
 .vscode
 .tox
 oodeel_dev_env
+*_env
 
 # Files generated:
 logs
