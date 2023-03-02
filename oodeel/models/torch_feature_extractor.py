@@ -144,7 +144,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             else:
                 raise NotImplementedError
 
-    def predict_tensor(self, x: torch.Tensor, detach=False) -> List[torch.Tensor]:
+    def predict_tensor(self, x: torch.Tensor) -> List[torch.Tensor]:
         """
         Get features associated with the input. Works on an in-memory tensor.
         """
@@ -154,10 +154,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         _ = self.model(x)
 
         features = [
-            self._features[layer_id]
-            if not detach
-            else self._features[layer_id].detach()
-            for layer_id in self.output_layers_id
+            self._features[layer_id].detach() for layer_id in self.output_layers_id
         ]
 
         if len(features) == 1:
