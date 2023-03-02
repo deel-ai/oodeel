@@ -51,6 +51,7 @@ tensorflow_requirements = [
 torch_requirements = ["tensorflow_datasets", "timm", "torch", "torchvision"]
 
 dev_requirements = [
+    "mkdocstrings-python",
     "flake8",
     "setuptools",
     "pre-commit",
@@ -67,9 +68,7 @@ dev_requirements = [
     "bump2version",
     "tensorflow",
     "tensorflow_datasets",
-    "kneed",
     "image-classifiers",
-    "tensorflow_datasets",
     "torch",
     "torchvision",
 ]
