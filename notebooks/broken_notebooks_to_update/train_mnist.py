@@ -27,6 +27,7 @@ import numpy as np
 from keras import layers
 from tensorflow import keras
 
+
 num_classes = 10
 input_shape = (28, 28, 1)
 
