@@ -27,3 +27,5 @@ docs/build
 # mkdocs documentation
 /site
 .env
+
+.DS_store*
