@@ -32,8 +32,8 @@ from ..types import Tuple
 
 
 class DataHandler(ABC):
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def load_dataset(dataset_id: Any, load_kwargs: dict = {}):
         """Load dataset from different manners
 
@@ -46,8 +46,8 @@ class DataHandler(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def assign_feature_value(dataset: Any, feature_key: str, value: int) -> Any:
         """Assign a value to a feature for every samples in a Dataset
 
@@ -61,8 +61,8 @@ class DataHandler(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def get_feature_from_ds(dataset: Any, feature_key: str) -> np.ndarray:
         """Get a feature from a Dataset
 
@@ -75,8 +75,8 @@ class DataHandler(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def get_ds_feature_keys(dataset: Any) -> list:
         """Get the feature keys of a Dataset
 
@@ -88,8 +88,8 @@ class DataHandler(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def has_key(dataset: Any, key: str) -> bool:
         """Check if a Dataset has a feature denoted by key
 
@@ -102,8 +102,8 @@ class DataHandler(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def map_ds(dataset: Any, map_fn: Callable) -> Any:
         """Map a function to a Dataset
 
@@ -116,8 +116,8 @@ class DataHandler(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def filter_by_feature_value(
         dataset: Any,
         feature_key: str,
@@ -136,8 +136,8 @@ class DataHandler(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def merge(
         id_dataset: Any,
         ood_dataset: Any,
@@ -160,8 +160,8 @@ class DataHandler(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def prepare_for_training(
         dataset: Any, batch_size: int, shuffle: bool = False
     ) -> Any:
