@@ -1,4 +1,4 @@
-site_name: <libname>
+site_name: OODEEL
 
 google_analytics:
   - UA-132343476-2
@@ -8,9 +8,14 @@ google_analytics:
 nav:
   - Home: index.md
   - API Reference:
-    - deel.libname.fake module: api/fake.md
+    - OOD methods: api/methods.md
+    - OOD dataset: api/ooddataset.md
+    - Metrics: api/metrics.md
+    - Training tools: api/training_funs.md
   - Tutorials:
-    - "Demo 0: How to use notebook in documentation": notebooks/demo_fake.ipynb
+    - Get started: notebooks/demo_experiment.ipynb
+    - DKNN benchmark: notebooks/dknn_benchmark.ipynb
+    - ODIN benchmark: notebooks/odin_benchmark.ipynb
   - Contributing: CONTRIBUTING.md
 
 theme:
@@ -65,5 +70,5 @@ extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
   - js/custom.js
 
-repo_name: "deel-ai/<libname>"
-repo_url: "https://github.com/deel-ai/<libname>"
+repo_name: "deel-ai/oodeel"
+repo_url: "https://github.com/deel-ai/oodeel"
