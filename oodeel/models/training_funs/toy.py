@@ -22,11 +22,11 @@
 # SOFTWARE.
 import numpy as np
 import tensorflow as tf
-from keras.layers import Conv2D
-from keras.layers import Dense
-from keras.layers import Dropout
-from keras.layers import Flatten
-from keras.layers import MaxPooling2D
+from tensorflow.python.keras.layers import Conv2D
+from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.layers import Dropout
+from tensorflow.python.keras.layers import Flatten
+from tensorflow.python.keras.layers import MaxPooling2D
 
 from ...types import List
 from ...types import Optional
@@ -48,7 +48,7 @@ def train_convnet_classifier(
     save_dir: Optional[str] = None,
 ) -> tf.keras.Model:
     """
-    Loads a model from keras.applications.
+    Loads a model from tensorflow.python.keras.applications.
     If the dataset is different from imagenet, trains on provided dataset.
 
     Args:
