@@ -35,7 +35,6 @@ All contributors with write rights (commit rigths) are maintainers.
 ### Contributions
 
 Contributions rules are defined and devopped in here: CONTRIBUTING.md
-Contributions are submit on the dedicated banch `develop`.
 
 Pull requests with major changes must be approved by at least by two members of governance committee.
 
