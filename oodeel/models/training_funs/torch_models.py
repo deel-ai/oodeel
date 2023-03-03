@@ -94,7 +94,6 @@ def train_torch_model(
     target_size = image_size + padding * 2
 
     def _augment_fn(images, labels):
-
         images = tf.image.pad_to_bounding_box(
             images, padding, padding, target_size, target_size
         )

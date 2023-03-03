@@ -23,8 +23,6 @@
 import numpy as np
 import tensorflow as tf
 from classification_models.tfkeras import Classifiers
-from keras.layers import Dense
-from keras.layers import Flatten
 
 from ...types import List
 from ...types import Optional
@@ -48,7 +46,7 @@ def train_keras_app(
     validation_data: Optional[tf.data.Dataset] = None,
     save_dir: Optional[str] = None,
 ) -> tf.keras.Model:
-    """Loads a model from keras.applications.
+    """Loads a model from tensorflow.python.keras.applications.
     If the dataset is different from imagenet, trains on provided dataset.
 
     Args:
@@ -96,8 +94,8 @@ def train_keras_app(
             )
 
     if model_name != "resnet18":
-        features = Flatten()(backbone.layers[-1].output)
-        output = Dense(
+        features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
+        output = tf.keras.layers.Dense(
             num_classes,
             kernel_initializer="glorot_normal",
             bias_initializer="zeros",

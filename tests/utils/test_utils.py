@@ -44,7 +44,7 @@ def test_is_from():
     # === keras model / tensor ===
     import tensorflow as tf
     from tensorflow import keras
-    from keras import layers
+    from tensorflow.python.keras import layers
 
     keras_model = keras.Sequential(
         [
