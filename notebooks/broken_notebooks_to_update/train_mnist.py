@@ -45,8 +45,7 @@ print(x_test.shape[0], "test samples")
 
 
 # convert class vectors to binary class matrices
-y_train = keras.utils.to_categorical(y_train, num_classes)
-y_test = keras.utils.to_categorical(y_test, num_classes)
+
 
 # build model
 model = keras.Sequential(
@@ -67,7 +66,9 @@ batch_size = 128
 epochs = 15
 
 # compile and fit
-model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+model.compile(
+    loss="sparse_categorical_crossentropy", optimizer="adam", metrics=["accuracy"]
+)
 model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1)
 
 score = model.evaluate(x_test, y_test, verbose=0)
