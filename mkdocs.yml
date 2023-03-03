@@ -1,9 +1,5 @@
 site_name: OODEEL
 
-google_analytics:
-  - UA-132343476-2
-  - auto
-
 # Set navigation here
 nav:
   - Home: index.md
