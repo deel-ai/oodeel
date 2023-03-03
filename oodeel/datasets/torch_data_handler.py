@@ -43,12 +43,6 @@ from ..types import Union
 from .data_handler import DataHandler
 
 
-DEFAULT_TRANSFORM = torchvision.transforms.ToTensor()
-DEFAULT_TARGET_TRANSFORM = lambda y: torch.LongTensor(
-    [y] if isinstance(y, (float, int)) else y
-)
-
-
 def to_torch(array: ArrayLike):
     """Convert an array into a torch Tensor"""
     if isinstance(array, np.ndarray):
@@ -167,10 +161,16 @@ class DictDataset(Dataset):
 
 class TorchDataHandler(DataHandler):
     """
-    Class to manage tf.data.Dataset. The aim is to provide a simple interface for
-    working with tf.data.Datasets and manage them without having to use
-    tensorflow syntax.
+    Class to manage torch DictDataset. The aim is to provide a simple interface
+    for working with torch datasets and manage them without having to use
+    torch syntax.
     """
+
+    def default_target_transform(y):
+        return torch.LongTensor([y] if isinstance(y, (float, int)) else y)
+
+    DEFAULT_TRANSFORM = torchvision.transforms.ToTensor()
+    DEFAULT_TARGET_TRANSFORM = default_target_transform
 
     @staticmethod
     def load_dataset(dataset_id: Any, load_kwargs: dict = {}):
@@ -189,7 +189,7 @@ class TorchDataHandler(DataHandler):
             )
         elif isinstance(dataset_id, Dataset):
             dataset = TorchDataHandler.load_custom_dataset(dataset_id)
-        else:
+        elif isinstance(dataset_id, (np.ndarray, torch.Tensor, tuple, dict)):
             dataset = TorchDataHandler.load_dataset_from_arrays(dataset_id)
         return dataset
 
