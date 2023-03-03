@@ -20,21 +20,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import os
-
 import numpy as np
 import tensorflow as tf
 
 from ..types import Callable
 from ..types import Optional
 from ..types import Tuple
-from ..types import TypeVar
 from ..types import Union
 from ..utils import dataset_cardinality
 from ..utils import dataset_len_elem
 from .tf_data_handler import TFDataHandler
-
-OODDataset = TypeVar("OODDataset", bound="OODDadaset")
 
 
 class OODDataset(object):
@@ -60,9 +55,9 @@ class OODDataset(object):
     def __init__(
         self,
         dataset_id: Union[tf.data.Dataset, tuple, dict, str],
-        from_directory: bool = False,
         backend: str = "tensorflow",
         split: str = None,
+        keys: list = None,
         load_kwargs: dict = {},
     ):
         self.backend = backend
@@ -89,22 +84,7 @@ class OODDataset(object):
         self._data_handler = TFDataHandler()
 
         # Load the dataset depending on the type of dataset_id
-        if isinstance(dataset_id, tf.data.Dataset):
-            self.data = self._data_handler.load_tf_ds(dataset_id)
-
-        elif isinstance(dataset_id, (np.ndarray, tuple, dict)):
-            self.data = self._data_handler.load_tf_ds_from_numpy(dataset_id)
-
-        elif isinstance(dataset_id, str):
-            if from_directory:
-                assert os.path.exists(dataset_id), f"Path {dataset_id} does not exist"
-                print(f"Loading from directory {dataset_id}")
-                # TODO
-            else:
-                self.data, infos = self._data_handler.load_tf_ds_from_tfds(
-                    dataset_id, load_kwargs
-                )
-                self.length = infos.splits[split].num_examples
+        self.data = self._data_handler.load_dataset(dataset_id, keys, load_kwargs)
 
         # Get the length of the elements in the dataset
         if self.has_ood_label:
@@ -150,12 +130,12 @@ class OODDataset(object):
 
     def add_out_data(
         self,
-        out_dataset: Union[OODDataset, tf.data.Dataset],
+        out_dataset: Union["OODDataset", tf.data.Dataset],
         in_value: int = 0,
         out_value: int = 1,
         resize: Optional[bool] = False,
         shape: Optional[Tuple[int]] = None,
-    ) -> OODDataset:
+    ) -> "OODDataset":
         """Concatenate two OODDatasets. Useful for scoring on multiple datasets, or
         training with added out-of-distribution data.
 
@@ -210,7 +190,7 @@ class OODDataset(object):
         self,
         in_labels: Optional[Union[np.ndarray, list]] = None,
         out_labels: Optional[Union[np.ndarray, list]] = None,
-    ) -> Optional[Tuple[OODDataset]]:
+    ) -> Optional[Tuple["OODDataset"]]:
         """Filter the dataset by assigning ood labels depending on labels
         value (typically, class id).
 

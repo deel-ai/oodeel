@@ -24,16 +24,18 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+from ..types import Any
 from ..types import Callable
 from ..types import Optional
 from ..types import Tuple
 from ..types import Union
 from ..utils import dataset_len_elem
+from .data_handler import DataHandler
 
 
 def dict_only_ds(ds_handling_method: Callable) -> Callable:
     """Decorator to ensure that the dataset is a dict dataset and that the input key
-    matches one of the feature keys. Ne careful, the signature of decorated functions
+    matches one of the feature keys. The signature of decorated functions
     must be function(dataset, *args, **kwargs) with feature_key either in kwargs or
     args[0] when relevant.
 
@@ -66,21 +68,47 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
     return wrapper
 
 
-class TFDataHandler(object):
+class TFDataHandler(DataHandler):
     """
     Class to manage tf.data.Dataset. The aim is to provide a simple interface for
     working with tf.data.Datasets and manage them without having to use
     tensorflow syntax.
     """
 
+    def load_dataset(
+        self, dataset_id: Any, keys: list = None, load_kwargs: dict = {}
+    ) -> tf.data.Dataset:
+        """Load dataset from different manners, ensuring to return a dict based
+        tf.data.Dataset.
+
+        Args:
+            dataset_id (Any): dataset identification
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
+            load_kwargs (dict, optional): Additional args for loading from
+                tensorflow_datasets. Defaults to {}.
+
+        Returns:
+            tf.data.Dataset: A dict based tf.data.Dataset
+        """
+        if isinstance(dataset_id, (np.ndarray, dict, tuple)):
+            dataset = self.load_dataset_from_arrays(dataset_id, keys)
+        elif isinstance(dataset_id, tf.data.Dataset):
+            dataset = self.load_custom_dataset(dataset_id, keys)
+        elif isinstance(dataset_id, str):
+            dataset = self.load_from_tensorflow_datasets(dataset_id, load_kwargs)
+        return dataset
+
     @staticmethod
-    def load_tf_ds_from_numpy(
-        dataset_id: Union[np.ndarray, dict, tuple]
+    def load_dataset_from_arrays(
+        dataset_id: Union[np.ndarray, dict, tuple], keys: list = None
     ) -> tf.data.Dataset:
         """Load a tf.data.Dataset from a numpy array or a tuple/dict of numpy arrays
 
         Args:
             dataset_id (Union[np.ndarray, dict, tuple]): numpy array(s) to load.
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
 
         Returns:
             tf.data.Dataset
@@ -92,18 +120,25 @@ class TFDataHandler(object):
         # If dataset_id is a tuple, convert it to a dict
         elif isinstance(dataset_id, tuple):
             len_elem = len(dataset_id)
-            if len_elem == 2:
-                dataset_dict = {"input": dataset_id[0], "label": dataset_id[1]}
+            if keys is None:
+                if len_elem == 2:
+                    dataset_dict = {"input": dataset_id[0], "label": dataset_id[1]}
+                else:
+                    dataset_dict = {
+                        f"input_{i}": dataset_id[i] for i in range(len_elem - 1)
+                    }
+                    dataset_dict["label"] = dataset_id[-1]
+                print(
+                    'Loading tf.data.Dataset with elems as dicts, assigning "input_i" '
+                    'key to the i-th tuple dimension and "label" key to the last '
+                    "tuple dimension."
+                )
             else:
-                dataset_dict = {
-                    f"input_{i}": dataset_id[i] for i in range(len_elem - 1)
-                }
-                dataset_dict["label"] = dataset_id[-1]
-            print(
-                'Loading tf.data.Dataset with elems as dicts, assigning "input_i" key'
-                ' to the i-th tuple dimension and "label" key to the last '
-                "tuple dimension."
-            )
+                assert (
+                    len(keys) == len_elem
+                ), "Number of keys mismatch with the number of features"
+                dataset_dict = {keys[i]: dataset_id[i] for i in range(len_elem)}
+
             dataset = tf.data.Dataset.from_tensor_slices(dataset_dict)
 
         elif isinstance(dataset_id, dict):
@@ -111,16 +146,15 @@ class TFDataHandler(object):
 
         return dataset
 
-    def load_tf_ds(
+    def load_custom_dataset(
         self, dataset_id: tf.data.Dataset, keys: list = None
     ) -> tf.data.Dataset:
-        """Load a tf.data.Dataset from a tf.data.Dataset by ensuring it has the
-            correct format (dict-based)
+        """Load a custom Dataset by ensuring it has the correct format (dict-based)
 
         Args:
             dataset_id (tf.data.Dataset): tf.data.Dataset
-            keys (list, optional): Keys to use for features if dataset_id is
-                tuple based. Defaults to None.
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
 
         Returns:
             tf.data.Dataset
@@ -138,6 +172,10 @@ class TFDataHandler(object):
                 else:
                     keys = [f"input_{i}" for i in range(len_elem)]
                     keys[-1] = "label"
+            else:
+                assert (
+                    len(keys) == len_elem
+                ), "Number of keys mismatch with the number of features"
 
             dataset_id = self.tuple_to_dict(dataset_id, keys)
 
@@ -145,7 +183,7 @@ class TFDataHandler(object):
         return dataset
 
     @staticmethod
-    def load_tf_ds_from_tfds(
+    def load_from_tensorflow_datasets(
         dataset_id: str,
         load_kwargs: dict = {},
     ) -> tf.data.Dataset:
@@ -162,9 +200,8 @@ class TFDataHandler(object):
         assert (
             dataset_id in tfds.list_builders()
         ), "Dataset not available on tensorflow datasets catalog"
-        load_kwargs["with_info"] = True
-        dataset, infos = tfds.load(dataset_id, **load_kwargs)
-        return dataset, infos
+        dataset = tfds.load(dataset_id, **load_kwargs)
+        return dataset
 
     @staticmethod
     @dict_only_ds
