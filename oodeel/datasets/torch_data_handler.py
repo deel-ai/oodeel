@@ -71,10 +71,6 @@ class DictDataset(Dataset):
         self._dataset = dataset
         self._raw_output_keys = output_keys
         self.map_fns = []
-        self._check_keys_and_dataset()
-
-    def _check_keys_and_dataset(self):
-        """Check if the initialization arguments are correct"""
         assert isinstance(
             self._dataset[0], (Tuple, List, torch.Tensor)
         ), "Dataset to be wrapped needs to output tuple of tensors"
@@ -144,15 +140,21 @@ class DictDataset(Dataset):
             The map functions that will be retained will be those of this dataset
 
         Args:
-            other_dataset (Dataset): Dataset to concatenate with
+            other_dataset (DictDataset): Dataset to concatenate with
             inplace (bool): if False, applies the filtering on a copied version of\
                 the dataset. Defaults to False.
 
         Returns:
             DictDataset: Concatenated dataset
         """
+        assert isinstance(
+            other_dataset, DictDataset
+        ), "Second dataset should be an instance of DictDataset"
+        assert (
+            self.output_keys == other_dataset.output_keys
+        ), "Incompatible dataset elements (different dict keys)"
         dataset = self if inplace else copy.deepcopy(self)
-        dataset._dataset = ConcatDataset([self._dataset, other_dataset])
+        dataset._dataset = ConcatDataset([self._dataset, other_dataset._dataset])
         return dataset
 
     def __len__(self):
@@ -451,10 +453,6 @@ class TorchDataHandler(DataHandler):
         Returns:
             DictDataset: merged dataset
         """
-        assert (
-            id_dataset.output_keys == ood_dataset.output_keys
-        ), "incompatible dataset elements (different dict keys)"
-
         # If a desired shape is given, triggers the resize
         if shape is not None:
             resize = True
