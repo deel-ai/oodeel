@@ -174,8 +174,7 @@ class TorchDataHandler(DataHandler):
     DEFAULT_TRANSFORM = torchvision.transforms.ToTensor()
     DEFAULT_TARGET_TRANSFORM = default_target_transform
 
-    @staticmethod
-    def load_dataset(dataset_id: Any, load_kwargs: dict = {}):
+    def load_dataset(self, dataset_id: Any, load_kwargs: dict = {}):
         """Load dataset from different manners
 
         Args:
@@ -186,13 +185,12 @@ class TorchDataHandler(DataHandler):
             Any: dataset
         """
         if isinstance(dataset_id, str):
-            dataset = TorchDataHandler.load_torchvision_dataset(
-                dataset_id, **load_kwargs
-            )
+            dataset = self.load_torchvision_dataset(dataset_id, **load_kwargs)
         elif isinstance(dataset_id, Dataset):
-            dataset = TorchDataHandler.load_custom_dataset(dataset_id)
+            keys = getattr(load_kwargs, "keys", None)
+            dataset = self.load_custom_dataset(dataset_id, keys)
         elif isinstance(dataset_id, (np.ndarray, torch.Tensor, tuple, dict)):
-            dataset = TorchDataHandler.load_dataset_from_arrays(dataset_id)
+            dataset = self.load_dataset_from_arrays(dataset_id)
         return dataset
 
     @staticmethod

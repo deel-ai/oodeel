@@ -32,7 +32,6 @@ from ..types import Tuple
 
 
 class DataHandler(ABC):
-    @staticmethod
     @abstractmethod
     def load_dataset(dataset_id: Any, load_kwargs: dict = {}):
         """Load dataset from different manners
