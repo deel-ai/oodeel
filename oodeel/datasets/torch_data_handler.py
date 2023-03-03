@@ -32,6 +32,7 @@ from torch.utils.data import Subset
 from torch.utils.data import TensorDataset
 from tqdm import tqdm
 
+from ..types import Any
 from ..types import ArrayLike
 from ..types import Callable
 from ..types import Dict
@@ -39,6 +40,13 @@ from ..types import List
 from ..types import Optional
 from ..types import Tuple
 from ..types import Union
+from .data_handler import DataHandler
+
+
+DEFAULT_TRANSFORM = torchvision.transforms.ToTensor()
+DEFAULT_TARGET_TRANSFORM = lambda y: torch.LongTensor(
+    [y] if isinstance(y, (float, int)) else y
+)
 
 
 def to_torch(array: ArrayLike):
@@ -48,7 +56,7 @@ def to_torch(array: ArrayLike):
     elif isinstance(array, torch.Tensor):
         return array
     else:
-        raise NotImplementedError()
+        raise TypeError("Input array must be of numpy or torch type")
 
 
 class DictDataset(Dataset):
@@ -62,38 +70,43 @@ class DictDataset(Dataset):
         dataset (Dataset): Dataset to wrap.
         output_keys (output_keys[str]): Keys describing the output tensors.
     """
-    _dataset: Dataset
-    output_keys: List[str]
 
     def __init__(
         self, dataset: Dataset, output_keys: List[str] = ["input", "label"]
     ) -> None:
         self._dataset = dataset
-        self.output_keys = output_keys
+        self._raw_output_keys = output_keys
+        self._added_output_keys = []
         self.map_fns = []
         self._check_keys_and_dataset()
 
     def _check_keys_and_dataset(self):
         """Check if the initialization arguments are correct"""
         assert isinstance(
-            self.dataset[0], (Tuple, List, torch.Tensor)
+            self._dataset[0], (Tuple, List, torch.Tensor)
         ), "Dataset to be wrapped needs to output tuple of tensors"
         assert len(self._dataset[0]) == len(
-            self.output_keys
+            self._raw_output_keys
         ), "Length mismatch between tuple of tensors and dictionary keys"
 
-    def __getitem__(self, index):
-        """Return a dictionary of tensors corresponding to a specfic index"""
-        tensors = self._dataset[index]
-        output_dict = {key: tensor for (key, tensor) in zip(self.output_keys, tensors)}
-        for map_fn in self.map_fns:
-            output_dict = map_fn(output_dict)
-        return output_dict
+    @property
+    def output_keys(self):
+        return self._raw_output_keys + self._added_output_keys
 
     @property
     def output_shapes(self):
         dummy_item = self[0]
         return [dummy_item[key].shape for key in self.output_keys]
+
+    def __getitem__(self, index):
+        """Return a dictionary of tensors corresponding to a specfic index"""
+        tensors = self._dataset[index]
+        output_dict = {
+            key: tensor for (key, tensor) in zip(self._raw_output_keys, tensors)
+        }
+        for map_fn in self.map_fns:
+            output_dict = map_fn(output_dict)
+        return output_dict
 
     def map(self, map_fn: Callable, inplace: bool = False):
         """Map the dataset
@@ -123,7 +136,7 @@ class DictDataset(Dataset):
         """
         indices = [
             i
-            for i in tqdm(range(len(self), desc="Filtering the dataset..."))
+            for i in tqdm(range(len(self)), desc="Filtering the dataset...")
             if filter_fn(self[i])
         ]
         dataset = self if inplace else copy.deepcopy(self)
@@ -133,7 +146,8 @@ class DictDataset(Dataset):
     def concatenate(self, other_dataset: Dataset, inplace: bool = False):
         """Concatenate with another dataset
 
-        Warning: The map functions that will be retained will be those of this dataset
+        !!! warning
+            The map functions that will be retained will be those of this dataset
 
         Args:
             other_dataset (Dataset): Dataset to concatenate with
@@ -141,7 +155,7 @@ class DictDataset(Dataset):
                 the dataset. Defaults to False.
 
         Returns:
-            _type_: _description_
+            DictDataset: Concatenated dataset
         """
         dataset = self if inplace else copy.deepcopy(self)
         dataset._dataset = ConcatDataset([self._dataset, other_dataset])
@@ -151,13 +165,33 @@ class DictDataset(Dataset):
         return len(self._dataset)
 
 
-# TODO: create an interface DataHandler
-class TorchDataHandler(object):
+class TorchDataHandler(DataHandler):
     """
     Class to manage tf.data.Dataset. The aim is to provide a simple interface for
     working with tf.data.Datasets and manage them without having to use
     tensorflow syntax.
     """
+
+    @staticmethod
+    def load_dataset(dataset_id: Any, load_kwargs: dict = {}):
+        """Load dataset from different manners
+
+        Args:
+            dataset_id (Any): dataset identification
+            load_kwargs (dict, optional): Additional loading kwargs. Defaults to {}.
+
+        Returns:
+            Any: dataset
+        """
+        if isinstance(dataset_id, str):
+            dataset = TorchDataHandler.load_torchvision_dataset(
+                dataset_id, **load_kwargs
+            )
+        elif isinstance(dataset_id, Dataset):
+            dataset = TorchDataHandler.load_custom_dataset(dataset_id)
+        else:
+            dataset = TorchDataHandler.load_dataset_from_arrays(dataset_id)
+        return dataset
 
     @staticmethod
     def load_dataset_from_arrays(
@@ -205,9 +239,8 @@ class TorchDataHandler(object):
         return dataset
 
     # TODO: adapt DictDataset to read dict based custom datasets
-    def load_custom_dataset(
-        self, dataset_id: Dataset, keys: list = None
-    ) -> DictDataset:
+    @staticmethod
+    def load_custom_dataset(dataset_id: Dataset, keys: list = None) -> DictDataset:
         """Load a custom Dataset by ensuring it has the correct format (dict-based)
 
         Args:
@@ -236,7 +269,7 @@ class TorchDataHandler(object):
                     output_keys = [f"input_{i}" for i in range(len_elem - 1)] + [
                         "label"
                     ]
-            dataset = DictDataset(dataset_id, output_keys)
+            dataset_id = DictDataset(dataset_id, output_keys)
 
         dataset = dataset_id
         return dataset
@@ -245,6 +278,8 @@ class TorchDataHandler(object):
     def load_torchvision_dataset(
         dataset_id: str,
         root: str,
+        transform: Callable = DEFAULT_TRANSFORM,
+        target_transform: Callable = DEFAULT_TARGET_TRANSFORM,
         download: bool = False,
         load_kwargs: dict = {},
     ) -> DictDataset:
@@ -266,7 +301,11 @@ class TorchDataHandler(object):
             dataset_id in torchvision.datasets.__all__
         ), "Dataset not available on torchvision datasets catalog"
         dataset = getattr(torchvision.datasets, dataset_id)(
-            root=root, download=download, **load_kwargs
+            root=root,
+            download=download,
+            transform=transform,
+            target_transform=target_transform,
+            **load_kwargs,
         )
         return TorchDataHandler.load_custom_dataset(dataset)
 
@@ -293,6 +332,8 @@ class TorchDataHandler(object):
             return x
 
         dataset = dataset.map(assign_value_to_feature)
+        if feature_key not in dataset.output_keys:
+            dataset._added_output_keys += [feature_key]
         return dataset
 
     @staticmethod
@@ -307,8 +348,7 @@ class TorchDataHandler(object):
             np.ndarray: Feature values for dataset
         """
         features = dataset.map(lambda x: x[feature_key])
-        features = list(features.as_numpy_iterator())
-        features = np.array(features)
+        features = np.stack([f.numpy() for f in features])
         return features
 
     @staticmethod
@@ -368,8 +408,6 @@ class TorchDataHandler(object):
             feature_key (str): Feature name to check the value
             values (list): Feature_key values to keep (if excluded is False)
                 or to exclude
-            inplace (bool): if False, applies the filtering on a copied version of\
-                the dataset. Defaults to False.
 
         Returns:
             DictDataset: Filtered dataset
