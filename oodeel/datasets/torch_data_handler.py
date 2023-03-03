@@ -190,6 +190,7 @@ class TorchDataHandler(DataHandler):
             keys = getattr(load_kwargs, "keys", None)
             dataset = self.load_custom_dataset(dataset_id, keys)
         elif isinstance(dataset_id, (np.ndarray, torch.Tensor, tuple, dict)):
+            keys = getattr(load_kwargs, "keys", None)
             dataset = self.load_dataset_from_arrays(dataset_id)
         return dataset
 
@@ -200,6 +201,7 @@ class TorchDataHandler(DataHandler):
             Dict[str, ArrayLike],
             Tuple[ArrayLike],
         ],
+        keys: list = None,
     ) -> DictDataset:
         """Load a torch.utils.data.Dataset from an array or a tuple/dict of arrays.
 
@@ -213,20 +215,24 @@ class TorchDataHandler(DataHandler):
         # If dataset_id is an array
         if isinstance(dataset_id, (np.ndarray, torch.Tensor)):
             tensors = tuple(to_torch(dataset_id))
-            output_keys = ["input"]
+            output_keys = keys or ["input"]
 
         # If dataset_id is a tuple of arrays
         elif isinstance(dataset_id, tuple):
             len_elem = len(dataset_id)
-            if len_elem == 2:
-                output_keys = ["input", "label"]
-            else:
-                output_keys = [f"input_{i}" for i in range(len_elem - 1)] + ["label"]
-                print(
-                    "Loading torch.utils.data.Dataset with elems as dicts, assigning "
-                    '"input_i" key to the i-th tuple dimension and "label" key to '
-                    "the last tuple dimension."
-                )
+            if keys is None:
+                if len_elem == 2:
+                    output_keys = ["input", "label"]
+                else:
+                    output_keys = [f"input_{i}" for i in range(len_elem - 1)] + [
+                        "label"
+                    ]
+                    print(
+                        "Loading torch.utils.data.Dataset with elems as dicts, "
+                        'assigning "input_i" key to the i-th tuple dimension and'
+                        ' "label" key to the last tuple dimension.'
+                    )
+            assert len(output_keys == 1)
             tensors = tuple(to_torch(array) for array in dataset_id)
 
         # If dataset_id is a dictionary of arrays
@@ -258,10 +264,6 @@ class TorchDataHandler(DataHandler):
                 dummy_item, (Tuple, torch.Tensor)
             ), "Custom dataset should be either dictionary based or tuple based"
             if keys is None:
-                print(
-                    "Feature name not found, assigning 'input_i' "
-                    "key to the i-th tensor and 'label' key to the last"
-                )
                 len_elem = len(dummy_item)
                 if len_elem == 2:
                     output_keys = ["input", "label"]
@@ -269,6 +271,10 @@ class TorchDataHandler(DataHandler):
                     output_keys = [f"input_{i}" for i in range(len_elem - 1)] + [
                         "label"
                     ]
+                    print(
+                        "Feature name not found, assigning 'input_i' "
+                        "key to the i-th tensor and 'label' key to the last"
+                    )
             dataset_id = DictDataset(dataset_id, output_keys)
 
         dataset = dataset_id
