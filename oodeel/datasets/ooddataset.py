@@ -29,7 +29,6 @@ from ..types import Tuple
 from ..types import Union
 from ..utils import dataset_cardinality
 from ..utils import dataset_len_elem
-from .tf_data_handler import TFDataHandler
 
 
 class OODDataset(object):
@@ -59,6 +58,7 @@ class OODDataset(object):
         split: str = None,
         keys: list = None,
         load_kwargs: dict = {},
+        load_from_tensorflow_datasets: bool = False,
     ):
         self.backend = backend
 
@@ -75,13 +75,21 @@ class OODDataset(object):
 
         # Set the channel order depending on the backend
         if self.backend in ["torch", "pytorch"]:
-            tf.config.set_visible_devices([], "GPU")
+            if load_from_tensorflow_datasets:
+                from .tf_data_handler import TFDataHandler
+
+                tf.config.set_visible_devices([], "GPU")
+                self._data_handler = TFDataHandler()
+            else:
+                from .torch_data_handler import TorchDataHandler
+
+                self._data_handler = TorchDataHandler()
             self.channel_order = "channels_first"
         else:
-            self.channel_order = "channels_last"
+            from .tf_data_handler import TFDataHandler
 
-        # Load the data handler
-        self._data_handler = TFDataHandler()
+            self._data_handler = TFDataHandler()
+            self.channel_order = "channels_last"
 
         # Load the dataset depending on the type of dataset_id
         self.data = self._data_handler.load_dataset(dataset_id, keys, load_kwargs)
