@@ -161,9 +161,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             features = features[0]
         return features
 
-    def predict(
-        self, dataset: torch.utils.data.DataLoader, detach=False
-    ) -> List[torch.Tensor]:
+    def predict(self, dataset: torch.utils.data.DataLoader) -> List[torch.Tensor]:
         """
         Extract features for a given inputs. If batch_size is specified,
         the model is called on batches and outputs are concatenated.
@@ -176,7 +174,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         features = [None for i in range(len(self.output_layers_id))]
         for elem in dataset:
             tensor = get_input_from_dataset_elem(elem)
-            features_batch = self.predict_tensor(tensor, detach)
+            features_batch = self.predict_tensor(tensor)
             if len(features) == 1:
                 features_batch = [features_batch]
             for i, f in enumerate(features_batch):

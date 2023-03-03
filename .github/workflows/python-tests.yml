@@ -20,7 +20,7 @@ jobs:
           - python-version: 3.9
             tf-version: 2.8
           - python-version: "3.10"
-            tf-version: latest
+            tf-version: 2.11
 
     steps:
     - uses: actions/checkout@v3

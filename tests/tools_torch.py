@@ -26,7 +26,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from keras.utils import to_categorical
 from torch.utils.data import TensorDataset
 
 
@@ -127,7 +126,7 @@ def generate_data(x_shape=(3, 32, 32), num_labels=10, samples=100, one_hot=True)
     x = np.random.rand(samples, *x_shape).astype(np.float32)
     x /= np.max(x)
     if one_hot:
-        y = to_categorical(np.random.randint(0, num_labels, samples), num_labels)
+        y = np.eye(num_labels)[np.random.randint(0, num_labels, samples)]
     else:
         y = np.random.randint(0, num_labels, samples)
 
