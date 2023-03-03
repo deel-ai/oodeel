@@ -20,8 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import os
-
 import numpy as np
 import tensorflow as tf
 
@@ -59,9 +57,9 @@ class OODDataset(object):
     def __init__(
         self,
         dataset_id: Union[tf.data.Dataset, tuple, dict, str],
-        from_directory: bool = False,
         backend: str = "tensorflow",
         split: str = None,
+        keys: list = None,
         load_kwargs: dict = {},
         input_key: str = None,
     ):
@@ -89,22 +87,7 @@ class OODDataset(object):
         self._data_handler = TFDataHandler()
 
         # Load the dataset depending on the type of dataset_id
-        if isinstance(dataset_id, tf.data.Dataset):
-            self.data = self._data_handler.load_tf_ds(dataset_id)
-
-        elif isinstance(dataset_id, (np.ndarray, tuple, dict)):
-            self.data = self._data_handler.load_tf_ds_from_numpy(dataset_id)
-
-        elif isinstance(dataset_id, str):
-            if from_directory:
-                assert os.path.exists(dataset_id), f"Path {dataset_id} does not exist"
-                print(f"Loading from directory {dataset_id}")
-                # TODO
-            else:
-                self.data, infos = self._data_handler.load_tf_ds_from_tfds(
-                    dataset_id, load_kwargs
-                )
-                self.length = infos.splits[split].num_examples
+        self.data = self._data_handler.load_dataset(dataset_id, keys, load_kwargs)
 
         # Get the length of the elements in the dataset
         if self.has_ood_label:
