@@ -62,10 +62,10 @@ class VIM(OODModel):
         Intuitively, this score method assumes that feature representations of ID data
         occupy a low dimensional affine subspace :math:'P+c' of the feature space.
         Specifically, the projection of ID data translated by :math:'-c' on the
-        orthognoal complement :math:'P^\perp' is expected to have small norm.
+        orthognoal complement :math:'P^\\perp' is expected to have small norm.
         It allows to detect points whose feature representation lie far from the
         identified affine subspace, namely those points :math:'x' such that the
-        projection on :math:'P^\perp' of :math:'x-c' has large norm.
+        projection on :math:'P^\\perp' of :math:'x-c' has large norm.
 
     Args:
         princ_dims: number of principal dimensions of in distribution features to
@@ -97,7 +97,6 @@ class VIM(OODModel):
         pca_origin: str = "center",
         output_layers_id: List[int] = [-2, -1],
     ):
-
         super().__init__(
             output_layers_id=output_layers_id,
         )

@@ -119,7 +119,6 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # Crop model if input layer is provided
         if not (self.input_layer_id) is None:
-
             if isinstance(self.input_layer_id, int):
                 if isinstance(self.model, nn.Sequential):
                     self.model = nn.Sequential(
@@ -169,7 +168,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         if not isinstance(dataset, torch.utils.data.DataLoader):
             tensor = get_input_from_dataset_elem(dataset)
-            return self.predict_tensor(tensor, detach)
+            return self.predict_tensor(tensor)
 
         features = [None for i in range(len(self.output_layers_id))]
         for elem in dataset:
