@@ -26,15 +26,15 @@ This command activate your virtual environment and launch the `tox` command.
 
 
 `tox` on the otherhand will do the following:
-- run pytest on the tests folder with python 3.6, python 3.7 and python 3.8
+- run pytest on the tests folder with python 3.7, python 3.8, python 3.9 and python 3.10
 > Note: If you do not have those 3 interpreters the tests would be only performs with your current interpreter
-- run pylint on the deel-datasets main files, also with python 3.6, python 3.7 and python 3.8
+- run flake8 on the oodeel main files, with python 3.9 and python 3.10.
 > Note: It is possible that pylint throw false-positive errors. If the linting test failed please check first pylint output to point out the reasons.
 
 Please, make sure you run all the tests at least once before opening a pull request.
 
-A word toward [Pylint](https://pypi.org/project/pylint/) for those that don't know it:
-> Pylint is a Python static code analysis tool which looks for programming errors, helps enforcing a coding standard, sniffs for code smells and offers simple refactoring suggestions.
+A word toward flake8 for those that don't know it:
+> Flake8 is a Python static code analysis tool which looks for programming errors, helps enforcing a coding standard, sniffs for code smells and offers simple refactoring suggestions.
 
 Basically, it will check that your code follow a certain number of convention. Any Pull Request will go through a Github workflow ensuring that your code respect the Pylint conventions (most of them at least).
 
