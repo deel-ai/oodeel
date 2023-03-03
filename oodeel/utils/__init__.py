@@ -54,10 +54,10 @@ def is_from(model_or_tensor: Any, framework: str) -> str:
     Returns:
         bool: Wether the model belongs to specified framework or not
     """
-    class_parents = list(
-        map(
-            lambda x: str(x).split("'")[1].split(".")[0],
-            model_or_tensor.__class__.__mro__,
-        )
-    )
-    return framework in class_parents
+    keywords_list = []
+    class_parents = list(model_or_tensor.__class__.__mro__)
+    for class_id in class_parents:
+        class_list = str(class_id).split("'")[1].split(".")
+        for keyword in class_list:
+            keywords_list.append(keyword)
+    return framework in keywords_list

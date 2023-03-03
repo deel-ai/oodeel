@@ -26,7 +26,7 @@ from abc import abstractmethod
 import numpy as np
 import tensorflow as tf  # TODO: remove
 
-from ..types import ArrayLike
+from ..types import Any
 from ..types import Callable
 from ..types import List
 from ..types import Optional
@@ -62,7 +62,7 @@ class OODModel(ABC):
         self.input_layers_id = input_layers_id
 
     @abstractmethod
-    def _score_tensor(self, inputs: ArrayLike):
+    def _score_tensor(self, inputs: Any):
         """Computes an OOD score for input samples "inputs".
         Method to override with child classes.
 
@@ -77,7 +77,7 @@ class OODModel(ABC):
     def fit(
         self,
         model: Callable,
-        fit_dataset: Optional[ArrayLike] = None,
+        fit_dataset: Optional[Any] = None,
     ):
         """Prepare oodmodel for scoring:
         * Constructs the feature extractor based on the model
@@ -130,7 +130,7 @@ class OODModel(ABC):
         )
         return feature_extractor
 
-    def _fit_to_dataset(self, fit_dataset: ArrayLike):
+    def _fit_to_dataset(self, fit_dataset: Any):
         """
         Fits the oodmodel to fit_dataset.
         To be overrided in child classes (if needed)
@@ -145,7 +145,7 @@ class OODModel(ABC):
 
     def calibrate_threshold(
         self,
-        fit_dataset: ArrayLike,
+        fit_dataset: Any,
         scores: np.ndarray,
     ):
         """
@@ -163,7 +163,7 @@ class OODModel(ABC):
 
     def score(
         self,
-        dataset: ArrayLike,
+        dataset: Any,
     ) -> Union[List[np.ndarray], np.ndarray]:
         """
         Computes an OOD score for input samples "inputs"
@@ -190,7 +190,7 @@ class OODModel(ABC):
                 scores = np.append(scores, score_batch)
         return scores
 
-    def isood(self, inputs: ArrayLike, threshold: float) -> np.ndarray:
+    def isood(self, inputs: Any, threshold: float) -> np.ndarray:
         """
         Returns whether the input samples "inputs" are OOD or not, given a threshold
 
@@ -205,7 +205,7 @@ class OODModel(ABC):
         OODness = tf.map_fn(lambda x: 0 if x < threshold else 1, scores)
         return OODness
 
-    def __call__(self, inputs: ArrayLike, threshold: float) -> np.ndarray:
+    def __call__(self, inputs: Any, threshold: float) -> np.ndarray:
         """
         Convenience wrapper for isood
         """

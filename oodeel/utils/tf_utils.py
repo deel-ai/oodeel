@@ -79,8 +79,9 @@ def dataset_max_pixel(dataset: tf.data.Dataset) -> float:
 
 def dataset_nb_labels(dataset: tf.data.Dataset) -> int:
     ds = dataset_get_columns(dataset, 1)
-    ds = ds.unique()
-    return len(list(ds.as_numpy_iterator()))
+    feature_list = list(ds.as_numpy_iterator())
+    labels = np.unique(np.array(feature_list))
+    return len(labels)
 
 
 def dataset_cardinality(dataset: tf.data.Dataset) -> int:

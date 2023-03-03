@@ -29,7 +29,6 @@ from tests import generate_model
 
 
 def test_isood():
-
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100

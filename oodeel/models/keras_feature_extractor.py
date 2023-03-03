@@ -88,7 +88,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         if isinstance(layer_id, str):
             return self.model.get_layer(layer_id)
         if isinstance(layer_id, int):
-            return self.model.layers[layer_id]
+            return self.model.get_layer(index=layer_id)
         raise ValueError(f"Could not find any layer {layer_id}.")
 
     # @tf.function
@@ -102,9 +102,10 @@ class KerasFeatureExtractor(FeatureExtractor):
         output_layers = [
             self.find_layer(ol_id).output for ol_id in self.output_layers_id
         ]
-        input_layer = self.find_layer(self.input_layer_id).input
 
-        extractor = tf.keras.Model(input_layer, output_layers)
+        input_layer = self.find_layer(self.input_layer_id)
+        new_input = tf.keras.layers.Input(tensor=input_layer.input)
+        extractor = tf.keras.models.Model(new_input, output_layers)
         return extractor
 
     @tf.function

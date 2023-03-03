@@ -468,7 +468,7 @@ class TFDataHandler(object):
 
 
 def keras_dataset_load(dataset_name: str, **kwargs) -> Tuple[Tuple[np.ndarray]]:
-    """Load a dataset from keras
+    """Load a dataset from tensorflow.python.keras
 
     Args:
         dataset_name (str): identifier of keras.dataset to load

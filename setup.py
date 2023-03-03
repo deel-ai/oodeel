@@ -41,7 +41,6 @@ requirements = [
 ]
 
 tensorflow_requirements = [
-    "keras",
     "tensorflow",
     "tensorflow_datasets",
     "kneed",

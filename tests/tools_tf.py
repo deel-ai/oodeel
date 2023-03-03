@@ -22,14 +22,6 @@
 # SOFTWARE.
 import numpy as np
 import tensorflow as tf
-from keras.layers import Activation
-from keras.layers import Conv2D
-from keras.layers import Dense
-from keras.layers import Dropout
-from keras.layers import Flatten
-from keras.layers import Input
-from keras.layers import MaxPooling2D
-from keras.models import Sequential
 
 
 def almost_equal(arr1, arr2, epsilon=1e-6):
@@ -38,26 +30,26 @@ def almost_equal(arr1, arr2, epsilon=1e-6):
 
 
 def generate_model(input_shape=(32, 32, 3), output_shape=10):
-    model = Sequential()
-    model.add(Input(shape=input_shape))
-    model.add(Conv2D(4, kernel_size=(2, 2), activation="relu"))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-    model.add(Flatten())
-    model.add(Dense(output_shape))
-    model.add(Activation("softmax"))
+    model = tf.keras.models.Sequential()
+    model.add(tf.keras.layers.Input(shape=input_shape))
+    model.add(tf.keras.layers.Conv2D(4, kernel_size=(2, 2), activation="relu"))
+    model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+    model.add(tf.keras.layers.Dropout(0.25))
+    model.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Dense(output_shape))
+    model.add(tf.keras.layers.Activation("softmax"))
     model.compile(loss="categorical_crossentropy", optimizer="sgd")
 
     return model
 
 
 def generate_regression_model(features_shape, output_shape=1):
-    model = Sequential()
-    model.add(Input(shape=features_shape))
-    model.add(Flatten())
-    model.add(Dense(4, activation="relu"))
-    model.add(Dense(4, activation="relu"))
-    model.add(Dense(output_shape))
+    model = tf.keras.models.Sequential()
+    model.add(tf.keras.layers.Input(shape=features_shape))
+    model.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Dense(4, activation="relu"))
+    model.add(tf.keras.layers.Dense(4, activation="relu"))
+    model.add(tf.keras.layers.Dense(output_shape))
     model.compile(loss="mean_absolute_error", optimizer="sgd", metrics=["accuracy"])
 
     return model
