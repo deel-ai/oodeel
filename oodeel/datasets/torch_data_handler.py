@@ -70,7 +70,6 @@ class DictDataset(Dataset):
     ) -> None:
         self._dataset = dataset
         self._raw_output_keys = output_keys
-        self._added_output_keys = []
         self.map_fns = []
         self._check_keys_and_dataset()
 
@@ -85,7 +84,8 @@ class DictDataset(Dataset):
 
     @property
     def output_keys(self):
-        return self._raw_output_keys + self._added_output_keys
+        dummy_item = self[0]
+        return list(dummy_item.keys())
 
     @property
     def output_shapes(self):
@@ -332,8 +332,6 @@ class TorchDataHandler(DataHandler):
             return x
 
         dataset = dataset.map(assign_value_to_feature)
-        if feature_key not in dataset.output_keys:
-            dataset._added_output_keys += [feature_key]
         return dataset
 
     @staticmethod
