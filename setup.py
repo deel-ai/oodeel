@@ -32,7 +32,7 @@ with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 requirements = [
     "faiss_cpu",
-    "numpy>=1.20",
+    "numpy",
     "scikit_learn",
     "scipy",
     "setuptools",
