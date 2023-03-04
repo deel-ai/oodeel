@@ -56,9 +56,9 @@ def to_torch(array: ArrayLike):
 class DictDataset(Dataset):
     r"""Dictionary pytorch dataset
 
-    Wrapper to output a dictionary of tensors instead of a tuple at the __getitem__ call
-    of a dataset. Some mapping, filtering and concatenation methods are implemented to
-    imitate tensorflow datasets features.
+    Wrapper to output a dictionary of tensors at the __getitem__ call of a dataset.
+    Some mapping, filtering and concatenation methods are implemented to imitate
+    tensorflow datasets features.
 
     Args:
         dataset (Dataset): Dataset to wrap.
@@ -71,12 +71,7 @@ class DictDataset(Dataset):
         self._dataset = dataset
         self._raw_output_keys = output_keys
         self.map_fns = []
-        assert isinstance(
-            self._dataset[0], (Tuple, List, torch.Tensor)
-        ), "Dataset to be wrapped needs to output tuple of tensors"
-        assert len(self._dataset[0]) == len(
-            self._raw_output_keys
-        ), "Length mismatch between tuple of tensors and dictionary keys"
+        self._check_init_args()
 
     @property
     def output_keys(self):
@@ -88,12 +83,36 @@ class DictDataset(Dataset):
         dummy_item = self[0]
         return [dummy_item[key].shape for key in self.output_keys]
 
+    def _check_init_args(self):
+        """Check validity of dataset and output keys provided at init"""
+        dummy_item = self._dataset[0]
+        assert isinstance(
+            dummy_item, (tuple, dict, list, torch.Tensor)
+        ), "Dataset to be wrapped needs to return tuple, list or dict of tensors"
+        if isinstance(dummy_item, torch.Tensor):
+            dummy_item = [dummy_item]
+        assert len(dummy_item) == len(
+            self._raw_output_keys
+        ), "Length mismatch between dataset item and provided keys"
+
     def __getitem__(self, index):
         """Return a dictionary of tensors corresponding to a specfic index"""
-        tensors = self._dataset[index]
+        item = self._dataset[index]
+
+        # convert item to a list / tuple of tensors
+        if isinstance(item, torch.Tensor):
+            tensors = [item]
+        elif isinstance(item, dict):
+            tensors = list(item.values())
+        else:
+            tensors = item
+
+        # build output dictionary
         output_dict = {
             key: tensor for (key, tensor) in zip(self._raw_output_keys, tensors)
         }
+
+        # apply map functions
         for map_fn in self.map_fns:
             output_dict = map_fn(output_dict)
         return output_dict
@@ -136,9 +155,6 @@ class DictDataset(Dataset):
     def concatenate(self, other_dataset: Dataset, inplace: bool = False):
         """Concatenate with another dataset
 
-        !!! warning
-            The map functions that will be retained will be those of this dataset
-
         Args:
             other_dataset (DictDataset): Dataset to concatenate with
             inplace (bool): if False, applies the filtering on a copied version of\
@@ -153,8 +169,16 @@ class DictDataset(Dataset):
         assert (
             self.output_keys == other_dataset.output_keys
         ), "Incompatible dataset elements (different dict keys)"
-        dataset = self if inplace else copy.deepcopy(self)
-        dataset._dataset = ConcatDataset([self._dataset, other_dataset._dataset])
+        if inplace:
+            dataset_copy = copy.deepcopy(self)
+            self._raw_output_keys = self.output_keys
+            self.map_fns = []
+            self._dataset = ConcatDataset([dataset_copy, other_dataset])
+            dataset = self
+        else:
+            dataset = DictDataset(
+                ConcatDataset([self, other_dataset]), self.output_keys
+            )
         return dataset
 
     def __len__(self):
@@ -244,7 +268,6 @@ class TorchDataHandler(DataHandler):
         dataset = DictDataset(TensorDataset(*tensors), output_keys)
         return dataset
 
-    # TODO: adapt DictDataset to read dict based custom datasets
     @staticmethod
     def load_custom_dataset(dataset_id: Dataset, keys: list = None) -> DictDataset:
         """Load a custom Dataset by ensuring it has the correct format (dict-based)
@@ -334,7 +357,7 @@ class TorchDataHandler(DataHandler):
         ), "Dataset must be an instance of DictDataset"
 
         def assign_value_to_feature(x):
-            x[feature_key] = value
+            x[feature_key] = torch.Tensor([value])
             return x
 
         dataset = dataset.map(assign_value_to_feature)
@@ -344,6 +367,10 @@ class TorchDataHandler(DataHandler):
     def get_feature_from_ds(dataset: DictDataset, feature_key: str) -> np.ndarray:
         """Get a feature from a DictDataset
 
+        !!! note
+            This function can be a bit of time consuming since it needs to iterate
+            over the whole dataset.
+
         Args:
             dataset (DictDataset): Dataset to get the feature from
             feature_key (str): Feature value to get
@@ -352,7 +379,12 @@ class TorchDataHandler(DataHandler):
             np.ndarray: Feature values for dataset
         """
         features = dataset.map(lambda x: x[feature_key])
-        features = np.stack([f.numpy() for f in features])
+        features = np.stack(
+            [
+                f.numpy()
+                for f in tqdm(features, desc="Extracting feature from dataset...")
+            ]
+        )
         return features
 
     @staticmethod
@@ -406,6 +438,10 @@ class TorchDataHandler(DataHandler):
         values: list,
     ):
         """Filter the dataset by checking the value of a feature is in `values`
+
+        !!! note
+            This function can be a bit of time consuming since it needs to iterate
+            over the whole dataset.
 
         Args:
             dataset (DictDataset): Dataset to filter
@@ -462,14 +498,14 @@ class TorchDataHandler(DataHandler):
             resize = True
 
         # If the shape of the two datasets are different, triggers the resize
-        if id_dataset.output_shapes != ood_dataset.output_shapes:
+        if id_dataset.output_shapes[0] != ood_dataset.output_shapes[0]:
             resize = True
             if shape is None:
                 print(
                     "Resizing the first item of elem (usually the image)",
                     " with the shape of id_dataset",
                 )
-                shape = id_dataset.output_shapes[:-1]
+                shape = id_dataset.output_shapes[0][1:]
 
         if resize:
             resize_fn = torchvision.transforms.Resize(shape)
