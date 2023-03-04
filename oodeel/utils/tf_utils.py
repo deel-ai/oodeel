@@ -23,6 +23,7 @@
 import numpy as np
 import tensorflow as tf
 
+from ..types import Any
 from ..types import List
 from ..types import Optional
 from ..types import Tuple
@@ -43,7 +44,15 @@ def is_batched(dataset: tf.data.Dataset) -> bool:
     return batch_dim is None
 
 
-def get_input_from_dataset_elem(elem):
+def get_input_from_dataset_elem(elem: Union[Any, tuple, dict]) -> Any:
+    """Get the tensor that is to be feed as input to a model from a dataset element.
+
+    Args:
+        elem (Union[Any, tuple, dict]): dataset element to extract input from
+
+    Returns:
+        Any: Input tensor
+    """
     if isinstance(elem, (tuple, list)):
         tensor = elem[0]
     elif isinstance(elem, dict):
@@ -54,6 +63,15 @@ def get_input_from_dataset_elem(elem):
 
 
 def dataset_len_elem(dataset: tf.data.Dataset) -> int:
+    """Get the length of a dataset element. If an element is a tensor, the length is
+    one and if it is a sequence (list or tuple), it is len(elem).
+
+    Args:
+        dataset (tf.data.Dataset): Dataset to process
+
+    Returns:
+        int: length of the dataset elems
+    """
     if isinstance(dataset.element_spec, (tuple, list, dict)):
         return len(dataset.element_spec)
     return 1
@@ -64,7 +82,7 @@ def dataset_image_shape(dataset: tf.data.Dataset) -> Tuple[int]:
     Get the shape of the images in the dataset
 
     Args:
-        dataset:   input dataset
+        dataset: Dataset to process
     Returns:
         shape of the images in the dataset
     """
@@ -77,6 +95,15 @@ def dataset_image_shape(dataset: tf.data.Dataset) -> Tuple[int]:
 
 
 def dataset_label_shape(dataset: tf.data.Dataset) -> Tuple[int]:
+    """Get the shape of a dataset label (typically to check if it is
+    one-hot-encoded or not)
+
+    Args:
+        dataset (tf.data.Dataset): Dataset to process
+
+    Returns:
+        Tuple[int]: shape of the label
+    """
     for x in dataset.take(1):
         assert len(x) > 1, "No label to get the shape from"
         shape = x[1].shape
@@ -84,6 +111,15 @@ def dataset_label_shape(dataset: tf.data.Dataset) -> Tuple[int]:
 
 
 def dataset_max_pixel(dataset: tf.data.Dataset) -> float:
+    """Get the maximum value of dataset inputs over the dataset.
+    Obtained by performing a reduce.
+
+    Args:
+        dataset (tf.data.Dataset): Dataset to process
+
+    Returns:
+        float: Maximum value
+    """
     dataset = dataset_get_columns(dataset, 0)
     max_pixel = dataset.reduce(
         0.0, lambda x, y: float(tf.math.reduce_max(tf.maximum(x, y)))
@@ -92,6 +128,14 @@ def dataset_max_pixel(dataset: tf.data.Dataset) -> float:
 
 
 def dataset_nb_labels(dataset: tf.data.Dataset) -> int:
+    """Get the number of unique labels of a dataset.
+
+    Args:
+        dataset (tf.data.Dataset): Dataset to process
+
+    Returns:
+        int: _description_
+    """
     ds = dataset_get_columns(dataset, 1)
     feature_list = list(ds.as_numpy_iterator())
     labels = np.unique(np.array(feature_list))
@@ -99,6 +143,15 @@ def dataset_nb_labels(dataset: tf.data.Dataset) -> int:
 
 
 def dataset_cardinality(dataset: tf.data.Dataset) -> int:
+    """Get the length of a dataset. Try to access it with len(), and if not available,
+    with a reduce op.
+
+    Args:
+        dataset (tf.data.Dataset): Dataset to process
+
+    Returns:
+        int: _description_
+    """
     try:
         return len(dataset)
     except TypeError:
@@ -140,48 +193,5 @@ def dataset_get_columns(
             return tuple([X[i] for i in col])
 
         dataset = dataset.map(lambda x, y, z: return_columns_xyz(x, y, z, columns))
-
-    return dataset
-
-
-def batch_tensor(
-    tensors: Union[
-        tf.data.Dataset, tf.Tensor, np.ndarray, Tuple[tf.Tensor], Tuple[np.ndarray]
-    ],
-    batch_size: int = 256,
-    one_hot_encode: Optional[bool] = False,
-    num_classes: Optional[int] = None,
-):
-    """
-    Create a tensorflow dataset of tensors or series of tensors.
-
-    Parameters
-    ----------
-    tensors
-        Tuple of tensors or tensors to batch.
-    batch_size
-        Number of samples to iterate at once, if None process all at once.
-
-    Returns
-    -------
-    dataset
-        Tensorflow dataset batched.
-    """
-    if not isinstance(tensors, tf.data.Dataset):
-        tensors = tf.data.Dataset.from_tensor_slices(tensors)
-
-    if one_hot_encode:
-        # check if it is one_hot_encoded
-        label_shape = list(dataset_label_shape(tensors))
-        if label_shape == []:
-            nb_columns = dataset_len_elem(tensors)
-            assert nb_columns == 2, "No labels to one-hot-encode"
-            if num_classes is None:
-                num_classes = dataset_nb_labels(tensors)
-            dataset = tensors.map(lambda x, y: (x, tf.one_hot(y, num_classes))).batch(
-                batch_size
-            )
-    else:
-        dataset = tensors.batch(batch_size)
 
     return dataset

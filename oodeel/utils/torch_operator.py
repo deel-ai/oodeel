@@ -29,6 +29,8 @@ from .operator import Operator
 
 
 class TorchOperator(Operator):
+    """Class to handle torch operations with a unified API"""
+
     @staticmethod
     def softmax(tensor: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
         """Softmax function"""
@@ -60,19 +62,16 @@ class TorchOperator(Operator):
 
     @staticmethod
     def gradient(func: Callable, inputs: torch.Tensor, *args, **kwargs) -> torch.Tensor:
-        """
-        Compute gradients for a batch of samples.
+        """Compute gradients for a batch of samples.
         Parameters
-        ----------
-        fun
-            Function used for computing gradient. Must be built with
-            torch differentiable operations only
-        inputs
-            Input samples to be explained.
-        Returns
-        -------
-        gradients
-            Gradients computed, with the same shape as the inputs.
+
+        Args:
+            func (Callable): Function used for computing gradient. Must be built with
+            torch differentiable operations only, and return a scalar.
+            inputs (torch.Tensor): Input tensor wrt which the gradients are computed
+
+        Returns:
+            torch.Tensor: Gradients computed, with the same shape as the inputs.
         """
         inputs.requires_grad_(True)
         outputs = func(inputs, *args, **kwargs)
