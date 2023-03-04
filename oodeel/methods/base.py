@@ -180,7 +180,7 @@ class OODModel(ABC):
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, (np.ndarray, tf.Tensor, tuple)):
             tensor = get_input_from_dataset_elem(dataset)
-            return self._score_tensor(tensor)
+            scores = np.array(self._score_tensor(tensor))
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         else:
             scores = np.array([])
@@ -191,7 +191,7 @@ class OODModel(ABC):
                 scores = np.append(scores, score_batch)
         return scores
 
-    def isood(self, inputs: Any, threshold: float) -> np.ndarray:
+    def isood(self, dataset: Any, threshold: float) -> np.ndarray:
         """
         Returns whether the input samples "inputs" are OOD or not, given a threshold
 
@@ -202,9 +202,22 @@ class OODModel(ABC):
         Returns:
             np.array of 0 for ID samples and 1 for OOD samples
         """
-        scores = self.score(inputs)
-        OODness = tf.map_fn(lambda x: 0 if x < threshold else 1, scores)
-        return OODness
+        assert self.feature_extractor is not None, "Call .fit() before .isood()"
+
+        # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
+        if isinstance(dataset, (np.ndarray, tf.Tensor, tuple)):
+            tensor = get_input_from_dataset_elem(dataset)
+            scores = np.array(self._score_tensor(tensor))
+        # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
+        else:
+            scores = np.array([])
+            assert is_batched(dataset), "Please input a batched dataset."
+            for tensor in dataset:
+                tensor = get_input_from_dataset_elem(tensor)
+                score_batch = self._score_tensor(tensor)
+                scores = np.append(scores, score_batch)
+        oodness = scores < threshold
+        return np.array(oodness, dtype=np.int8)
 
     def __call__(self, inputs: Any, threshold: float) -> np.ndarray:
         """
