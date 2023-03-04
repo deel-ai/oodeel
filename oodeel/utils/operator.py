@@ -53,9 +53,19 @@ class Operator(ABC):
         """Sign function"""
         raise NotImplementedError()
 
-    @staticmethod
+    @abstractmethod
     def CrossEntropyLoss(reduction: str = "mean"):
         """Cross Entropy Loss from logits"""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def norm(tensor: TensorType) -> TensorType:
+        """Tensor Norm"""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def matmul(tensor_1: TensorType, tensor_2: TensorType) -> TensorType:
+        """Matmul operation"""
         raise NotImplementedError()
 
     @abstractmethod

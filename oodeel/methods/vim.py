@@ -22,13 +22,14 @@
 # SOFTWARE.
 import matplotlib.pyplot as plt
 import numpy as np
-import tensorflow as tf
 from scipy.linalg import eigh
 from scipy.linalg import pinv
 from scipy.special import logsumexp
 from sklearn.covariance import EmpiricalCovariance
 
+from ..types import DatasetType
 from ..types import List
+from ..types import TensorType
 from ..types import Union
 from .base import OODModel
 
@@ -103,9 +104,7 @@ class VIM(OODModel):
         self._princ_dim = princ_dims
         self.pca_origin = pca_origin
 
-    def _fit_to_dataset(
-        self, fit_dataset: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
-    ):
+    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]):
         """
         Computes principal components of feature representations and store the residual
         eigenvectors.
@@ -182,9 +181,7 @@ class VIM(OODModel):
             self._princ_dim = np.where(explained_variance > self._princ_dim)[0][0]
             self.res_dim = self.feature_dim - self._princ_dim
 
-        self.res = tf.constant(
-            np.ascontiguousarray(eigen_vectors[:, : self.res_dim], np.float32)
-        )
+        self.res = np.ascontiguousarray(eigen_vectors[:, : self.res_dim], np.float32)
 
         # compute residual score on training data
         train_residual_scores = self._compute_residual_score_tensor(features_train)
@@ -193,7 +190,7 @@ class VIM(OODModel):
         # compute scaling factor
         self.alpha = np.mean(train_mls_scores) / np.mean(train_residual_scores)
 
-    def _compute_residual_score_tensor(self, features: tf.Tensor) -> tf.Tensor:
+    def _compute_residual_score_tensor(self, features: TensorType) -> TensorType:
         """
         Computes the norm of the residual projection in the feature space.
 
@@ -203,17 +200,13 @@ class VIM(OODModel):
         Returns:
             scores
         """
-        # TODO Tensor Compatibility: use of TF tensors
-        # to accelerate matrix multiplication!
-        res_coordinates = tf.matmul(features - self.center, self.res)
+        res_coordinates = self.op.matmul(features - self.center, self.res)
         # taking the norm of the coordinates, which amounts to the norm of
         # the projection since the eigenvectors form an orthornomal basis
-        res_norm = tf.norm(res_coordinates, axis=-1)
+        res_norm = self.op.norm(res_coordinates, axis=-1)
         return res_norm
 
-    def _residual_score_tensor(
-        self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
-    ) -> np.ndarray:
+    def _residual_score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
         Computes the residual score for input samples "inputs".
 
@@ -230,9 +223,7 @@ class VIM(OODModel):
         res_scores = self._compute_residual_score_tensor(features)
         return np.array(res_scores)
 
-    def _score_tensor(
-        self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
-    ) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
         Computes the VIM score for input samples "inputs" as the sum of the energy
         score and a scaled (PCA) residual norm in the feature space.
