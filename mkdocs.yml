@@ -11,9 +11,8 @@ nav:
     - Utils: api/utils.md
     - Operators: api/operators.md
   - Tutorials:
-    - Get started: notebooks/demo_experiment.ipynb
-    - DKNN benchmark: notebooks/dknn_benchmark.ipynb
-    - ODIN benchmark: notebooks/odin_benchmark.ipynb
+    - Get started: notebooks/demo_experiment.py
+    - Get started_jup: notebooks/demo_experiment.ipynb
   - Contributing: CONTRIBUTING.md
 
 theme:
@@ -37,7 +36,8 @@ theme:
 plugins:
   - search
   - mkdocstrings
-  - mknotebooks
+  - mkdocs-jupyter:
+      execute: True
 
 markdown_extensions:
   - footnotes
