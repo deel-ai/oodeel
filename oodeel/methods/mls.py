@@ -31,11 +31,17 @@ class MLS(OODModel):
     """
     Maximum Logit Scores method for OOD detection.
     "Open-Set Recognition: a Good Closed-Set Classifier is All You Need?"
-    https://arxiv.org/abs/2110.06207
+    https://arxiv.org/abs/2110.06207,
+    and Maximum Softmax Score
+    "A Baseline for Detecting Misclassified and Out-of-Distribution Examples
+    in Neural Networks"
+    http://arxiv.org/abs/1610.02136
+
 
 
     Args:
-        output_activation: activation function for the last layer.
+        output_activation: activation function for the last layer. If "linear",
+            the method is MLS and if "softmax", the method is MSS.
             Defaults to "linear".
         batch_size: batch_size used to compute the features space
             projection of input data.

@@ -29,6 +29,20 @@ from ..types import Tuple
 from ..types import Union
 
 
+def is_batched(dataset: tf.data.Dataset) -> bool:
+    """Check if a tf.data.Dataset is batched
+
+    Args:
+        dataset (tf.data.Dataset): Dataset to check
+
+    Returns:
+        bool: If the dataset is batched or no
+    """
+    tensor = get_input_from_dataset_elem(dataset.element_spec)
+    batch_dim = tensor.shape[0]
+    return batch_dim is None
+
+
 def get_input_from_dataset_elem(elem):
     if isinstance(elem, (tuple, list)):
         tensor = elem[0]
