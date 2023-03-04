@@ -25,7 +25,6 @@ import tensorflow as tf
 
 from ..types import Any
 from ..types import List
-from ..types import Optional
 from ..types import Tuple
 from ..types import Union
 
