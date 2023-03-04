@@ -24,12 +24,13 @@ from abc import ABC
 from abc import abstractmethod
 
 import numpy as np
-import tensorflow as tf  # TODO: remove
 
 from ..types import Any
 from ..types import Callable
+from ..types import DatasetType
 from ..types import List
 from ..types import Optional
+from ..types import TensorType
 from ..types import Union
 from ..utils import get_input_from_dataset_elem
 from ..utils import is_batched
@@ -78,7 +79,7 @@ class OODModel(ABC):
     def fit(
         self,
         model: Callable,
-        fit_dataset: Optional[Any] = None,
+        fit_dataset: Optional[Union[TensorType, DatasetType]] = None,
     ):
         """Prepare oodmodel for scoring:
         * Constructs the feature extractor based on the model
@@ -131,7 +132,7 @@ class OODModel(ABC):
         )
         return feature_extractor
 
-    def _fit_to_dataset(self, fit_dataset: Any):
+    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]):
         """
         Fits the oodmodel to fit_dataset.
         To be overrided in child classes (if needed)
@@ -146,7 +147,7 @@ class OODModel(ABC):
 
     def calibrate_threshold(
         self,
-        fit_dataset: Any,
+        fit_dataset: Union[TensorType, DatasetType],
         scores: np.ndarray,
     ):
         """
@@ -164,8 +165,8 @@ class OODModel(ABC):
 
     def score(
         self,
-        dataset: Any,
-    ) -> Union[List[np.ndarray], np.ndarray]:
+        dataset: Union[TensorType, DatasetType],
+    ) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs"
 
@@ -178,20 +179,24 @@ class OODModel(ABC):
         assert self.feature_extractor is not None, "Call .fit() before .score()"
 
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
-        if isinstance(dataset, (np.ndarray, tf.Tensor, tuple)):
+        if isinstance(dataset, TensorType):
             tensor = get_input_from_dataset_elem(dataset)
             scores = np.array(self._score_tensor(tensor))
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
-        else:
+        elif isinstance(dataset, DatasetType):
             scores = np.array([])
             assert is_batched(dataset), "Please input a batched dataset."
             for tensor in dataset:
                 tensor = get_input_from_dataset_elem(tensor)
                 score_batch = self._score_tensor(tensor)
                 scores = np.append(scores, score_batch)
+        else:
+            raise NotImplementedError(f"not implemented for {type(dataset)}")
         return scores
 
-    def isood(self, dataset: Any, threshold: float) -> np.ndarray:
+    def isood(
+        self, dataset: Union[TensorType, DatasetType], threshold: float
+    ) -> np.ndarray:
         """
         Returns whether the input samples "inputs" are OOD or not, given a threshold
 
@@ -205,21 +210,25 @@ class OODModel(ABC):
         assert self.feature_extractor is not None, "Call .fit() before .isood()"
 
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
-        if isinstance(dataset, (np.ndarray, tf.Tensor, tuple)):
+        if isinstance(dataset, TensorType):
             tensor = get_input_from_dataset_elem(dataset)
             scores = np.array(self._score_tensor(tensor))
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
-        else:
+        elif isinstance(dataset, DatasetType):
             scores = np.array([])
             assert is_batched(dataset), "Please input a batched dataset."
             for tensor in dataset:
                 tensor = get_input_from_dataset_elem(tensor)
                 score_batch = self._score_tensor(tensor)
                 scores = np.append(scores, score_batch)
+        else:
+            raise NotImplementedError(f"not implemented for {type(dataset)}")
         oodness = scores < threshold
         return np.array(oodness, dtype=np.int8)
 
-    def __call__(self, inputs: Any, threshold: float) -> np.ndarray:
+    def __call__(
+        self, inputs: Union[TensorType, DatasetType], threshold: float
+    ) -> np.ndarray:
         """
         Convenience wrapper for isood
         """
