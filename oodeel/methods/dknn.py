@@ -20,13 +20,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import List
-from typing import Union
-
 import faiss
 import numpy as np
-import tensorflow as tf
 
+from ..types import DatasetType
+from ..types import List
+from ..types import TensorType
+from ..types import Union
 from .base import OODModel
 
 
@@ -54,9 +54,7 @@ class DKNN(OODModel):
         self.index = None
         self.nearest = nearest
 
-    def _fit_to_dataset(
-        self, fit_dataset: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
-    ):
+    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]):
         """
         Constructs the index from ID data "fit_dataset", which will be used for
         nearest neighbor search.
@@ -69,9 +67,7 @@ class DKNN(OODModel):
         self.index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
         self.index.add(norm_fit_projected)
 
-    def _score_tensor(
-        self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
-    ) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on
         the distance to nearest neighbors in the feature space of self.model

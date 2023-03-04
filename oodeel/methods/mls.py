@@ -21,9 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import numpy as np
-import tensorflow as tf
 
-from ..types import Union
+from ..types import TensorType
 from .base import OODModel
 
 
@@ -53,9 +52,7 @@ class MLS(OODModel):
         super().__init__(output_layers_id=[-1], input_layers_id=0)
         self.output_activation = output_activation
 
-    def _score_tensor(
-        self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
-    ) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on
         the distance to nearest neighbors in the feature space of self.model
@@ -68,9 +65,7 @@ class MLS(OODModel):
         """
 
         pred = self.feature_extractor(inputs)
-        if self.output_activation != "linear":
-            if hasattr(tf.keras.activations, self.output_activation):
-                activation = getattr(tf.keras.activations, self.output_activation)
-            pred = activation(pred)
+        if self.output_activation == "softmax":
+            pred = self.op.softmax(pred)
         scores = -np.max(pred, axis=1)
         return scores
