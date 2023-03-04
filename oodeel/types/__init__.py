@@ -33,3 +33,31 @@ from typing import Sequence
 from typing import Tuple
 from typing import TypeVar
 from typing import Union
+
+import numpy as np
+
+avail_lib = []
+try:
+    import tensorflow as tf
+
+    avail_lib.append("tensorflow")
+except ImportError:
+    pass
+
+try:
+    import torch
+
+    avail_lib.append("torch")
+except ImportError:
+    pass
+
+
+if len(avail_lib) == 2:
+    DatasetType = Union[tf.data.Dataset, torch.utils.data.DataLoader]
+    TensorType = Union[tf.Tensor, torch.Tensor, np.ndarray, tuple, dict]
+elif "tensorflow" in avail_lib:
+    DatasetType = tf.data.Dataset
+    TensorType = Union[tf.Tensor, np.ndarray, tuple, dict]
+elif "torch" in avail_lib:
+    DatasetType = torch.utils.data.DataLoader
+    TensorType = Union[torch.Tensor, np.ndarray, tuple, dict]
