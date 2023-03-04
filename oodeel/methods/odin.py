@@ -23,7 +23,6 @@
 import numpy as np
 
 from ..types import TensorType
-from ..utils.tf_utils import get_input_from_dataset_elem
 from .base import OODModel
 
 
@@ -41,7 +40,6 @@ class ODIN(OODModel):
         self.temperature = temperature
         super().__init__(output_layers_id=[-1], input_layers_id=0)
         self.noise = noise
-        self._loss_func = self.op.CrossEntropyLoss(reduction="sum")
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
@@ -70,5 +68,5 @@ class ODIN(OODModel):
 
     def _temperature_loss(self, inputs, labels):
         preds = self.feature_extractor.model(inputs, training=False) / self.temperature
-        loss = self._loss_func(labels, preds)
+        loss = self.op.CrossEntropyLoss(reduction="sum")(labels, preds)
         return loss

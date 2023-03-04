@@ -24,6 +24,7 @@ import numpy as np
 import torch
 
 from ..types import Callable
+from ..types import TensorType
 from ..types import Union
 from .operator import Operator
 
@@ -64,6 +65,15 @@ class TorchOperator(Operator):
     def CrossEntropyLoss(reduction: str = "mean"):
         """Cross Entropy Loss from logits"""
         return torch.nn.CrossEntropyLoss(reduction=reduction)
+
+    @staticmethod
+    def norm(tensor: Union[torch.Tensor, np.ndarray], axis: int = None) -> torch.Tensor:
+        """Tensor Norm"""
+        return tensor.norm(dim=axis)
+
+    def matmul(tensor_1: TensorType, tensor_2: TensorType) -> TensorType:
+        """Matmul operation"""
+        return torch.matmul(tensor_1, tensor_2)
 
     @staticmethod
     def gradient(func: Callable, inputs: torch.Tensor, *args, **kwargs) -> torch.Tensor:

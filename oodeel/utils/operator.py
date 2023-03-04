@@ -55,7 +55,7 @@ class Operator(ABC):
         """Sign function"""
         raise NotImplementedError()
 
-    @staticmethod
+    @abstractmethod
     def CrossEntropyLoss(reduction: str = "mean"):
         """Cross Entropy Loss from logits"""
         raise NotImplementedError()
