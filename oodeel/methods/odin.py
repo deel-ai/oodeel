@@ -21,9 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import numpy as np
-import tensorflow as tf
 
-from ..types import Union
+from ..types import TensorType
 from ..utils.tf_utils import get_input_from_dataset_elem
 from .base import OODModel
 
@@ -48,13 +47,9 @@ class ODIN(OODModel):
         self.temperature = temperature
         super().__init__(output_layers_id=[-1], input_layers_id=0)
         self.noise = noise
-        self._loss_func = tf.keras.losses.SparseCategoricalCrossentropy(
-            from_logits=True, reduction="sum"
-        )
+        self._loss_func = self.op.CrossEntropyLoss(reduction="sum")
 
-    def _score_tensor(
-        self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
-    ) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on
         the distance to nearest neighbors in the feature space of self.model
@@ -72,7 +67,6 @@ class ODIN(OODModel):
         scores = -self.op.max(preds, axis=1)
         return scores
 
-    @tf.function
     def _input_perturbation(self, inputs):
         preds = self.feature_extractor.model(inputs, training=False)
         outputs = self.op.argmax(preds, axis=1)
