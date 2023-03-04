@@ -47,24 +47,31 @@ def train_convnet_classifier(
     validation_data: Optional[tf.data.Dataset] = None,
     save_dir: Optional[str] = None,
 ) -> tf.keras.Model:
-    """
-    Loads a model from tensorflow.python.keras.applications.
+    """Loads a model from tensorflow.python.keras.applications.
     If the dataset is different from imagenet, trains on provided dataset.
 
     Args:
-        train_data: _description_
-        model_name: _description_
-        batch_size: _description_. Defaults to 128.
-        epochs: _description_. Defaults to 50.
-        loss: _description_. Defaults to "categorical_crossentropy".
-        optimizer: _description_. Defaults to "adam".
-        learning_rate: _description_. Defaults to 1e-3.
-        metrics: _description_. Defaults to ["accuracy"].
-        imagenet_pretrained: _description_. Defaults to False.
-        validation_data: _description_. Defaults to None.
+        train_data (tf.data.Dataset)
+        input_shape (tuple, optional): If None, infered from train_data.
+            Defaults to None.
+        num_classes (int, optional): If None, infered from train_data. Defaults to None.
+        is_prepared (bool, optional): If train_data is a pipeline already prepared
+            for training (with batch, shufle, cache etc...). Defaults to False.
+        batch_size (int, optional): Defaults to 128.
+        epochs (int, optional): Defaults to 50.
+        loss (str, optional): Defaults to
+            "sparse_categorical_crossentropy".
+        optimizer (str, optional): Defaults to "adam".
+        learning_rate (float, optional): Defaults to 1e-3.
+        metrics (List[str], optional): Validation metrics. Defaults to ["accuracy"].
+        imagenet_pretrained (bool, optional): Load a model pretrained on imagenet or
+            not. Defaults to False.
+        validation_data (Optional[tf.data.Dataset], optional): Defaults to None.
+        save_dir (Optional[str], optional): Directory to save the model.
+            Defaults to None.
 
     Returns:
-        trained model
+        tf.keras.Model: Trained model
     """
     # Prepare model
 
