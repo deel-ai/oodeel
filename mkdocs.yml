@@ -8,6 +8,8 @@ nav:
     - OOD dataset: api/ooddataset.md
     - Metrics: api/metrics.md
     - Training tools: api/training_funs.md
+    - Utils: api/utils.md
+    - Operators: api/operators.md
   - Tutorials:
     - Get started: notebooks/demo_experiment.ipynb
     - DKNN benchmark: notebooks/dknn_benchmark.ipynb

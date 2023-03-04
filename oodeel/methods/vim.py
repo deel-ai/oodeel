@@ -60,12 +60,12 @@ class VIM(OODModel):
         Residual dimensions are the eigenvectors corresponding to the least eignevalues
         (least variance).
         Intuitively, this score method assumes that feature representations of ID data
-        occupy a low dimensional affine subspace :math:'P+c' of the feature space.
-        Specifically, the projection of ID data translated by :math:'-c' on the
-        orthognoal complement :math:'P^\\perp' is expected to have small norm.
+        occupy a low dimensional affine subspace $P+c$ of the feature space.
+        Specifically, the projection of ID data translated by $-c$ on the
+        orthognoal complement $P^{\\perp}$ is expected to have small norm.
         It allows to detect points whose feature representation lie far from the
-        identified affine subspace, namely those points :math:'x' such that the
-        projection on :math:'P^\\perp' of :math:'x-c' has large norm.
+        identified affine subspace, namely those points $x$ such that the
+        projection on $P^{\\perp}$ of $x-c$ has large norm.
 
     Args:
         princ_dims: number of principal dimensions of in distribution features to
@@ -77,7 +77,7 @@ class VIM(OODModel):
             dimensions.
             Defaults to None.
         pca_origin: either "center" for using the mean of the data in feature space, or
-        "pseudo" for using W^{-1}b where W^{-1} is the pseudo inverse of the final
+        "pseudo" for using $W^{-1}b$ where $W^{-1}$ is the pseudo inverse of the final
         linear layer applied to bias term (as in the VIM paper).
             Defaults to "center".
         output_layers_id: features to use for Residual and Energy score.
