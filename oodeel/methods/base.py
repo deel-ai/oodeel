@@ -25,7 +25,6 @@ from abc import abstractmethod
 
 import numpy as np
 
-from ..types import Any
 from ..types import Callable
 from ..types import DatasetType
 from ..types import List
@@ -64,7 +63,7 @@ class OODModel(ABC):
         self.input_layers_id = input_layers_id
 
     @abstractmethod
-    def _score_tensor(self, inputs: Any):
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """Computes an OOD score for input samples "inputs".
         Method to override with child classes.
 
@@ -181,7 +180,7 @@ class OODModel(ABC):
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, TensorType):
             tensor = get_input_from_dataset_elem(dataset)
-            scores = np.array(self._score_tensor(tensor))
+            scores = self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         elif isinstance(dataset, DatasetType):
             scores = np.array([])
@@ -212,7 +211,7 @@ class OODModel(ABC):
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, TensorType):
             tensor = get_input_from_dataset_elem(dataset)
-            scores = np.array(self._score_tensor(tensor))
+            scores = self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         elif isinstance(dataset, DatasetType):
             scores = np.array([])

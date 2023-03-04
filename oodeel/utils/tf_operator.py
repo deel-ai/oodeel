@@ -24,6 +24,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..types import Callable
+from ..types import TensorType
 from ..types import Union
 from .operator import Operator
 
@@ -62,6 +63,17 @@ class TFOperator(Operator):
         return tf.keras.losses.SparseCategoricalCrossentropy(
             from_logits=True, reduction=reduction
         )
+
+    @staticmethod
+    def norm(tensor: Union[tf.Tensor, np.ndarray], axis: int = None) -> tf.Tensor:
+        """Tensor Norm"""
+        return tf.norm(tensor, axis=axis)
+
+    @staticmethod
+    @tf.function
+    def matmul(tensor_1: TensorType, tensor_2: TensorType) -> TensorType:
+        """Matmul operation"""
+        return tf.matmul(tensor_1, tensor_2)
 
     @staticmethod
     @tf.function
