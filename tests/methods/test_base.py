@@ -42,7 +42,7 @@ def test_isood():
     oodmodel = MLS()
     oodmodel.fit(model)
 
-    isooddata = oodmodel.isood(inputs=data, threshold=-5)
+    isooddata = oodmodel.isood(data, threshold=-5)
     isooddata2 = oodmodel(data, threshold=-5)
     print(np.sum(isooddata - isooddata2))
 
