@@ -23,36 +23,41 @@
 from abc import ABC
 from abc import abstractmethod
 
-from ..types import Any
 from ..types import Callable
+from ..types import TensorType
 
 
 class Operator(ABC):
     """Class to handle tensorflow and torch operations with a unified API"""
 
     @abstractmethod
-    def softmax(tensor: Any) -> Any:
+    def softmax(tensor: TensorType) -> TensorType:
         """Softmax function"""
         raise NotImplementedError()
 
     @abstractmethod
-    def argmax(tensor: Any, axis: int = None) -> Any:
+    def argmax(tensor: TensorType, axis: int = None) -> TensorType:
         """Argmax function"""
         raise NotImplementedError()
 
     @abstractmethod
-    def max(tensor: Any, axis: int = None) -> Any:
+    def max(tensor: TensorType, axis: int = None) -> TensorType:
         """Max function"""
         raise NotImplementedError()
 
     @abstractmethod
-    def one_hot(tensor: Any, num_classes: int) -> Any:
+    def one_hot(tensor: TensorType, num_classes: int) -> TensorType:
         """One hot function"""
         raise NotImplementedError()
 
     @abstractmethod
-    def sign(tensor: Any) -> Any:
+    def sign(tensor: TensorType) -> TensorType:
         """Sign function"""
+        raise NotImplementedError()
+
+    @staticmethod
+    def CrossEntropyLoss(reduction: str = "mean"):
+        """Cross Entropy Loss from logits"""
         raise NotImplementedError()
 
     @abstractmethod

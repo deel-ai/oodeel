@@ -61,6 +61,11 @@ class TorchOperator(Operator):
         return torch.sign(tensor)
 
     @staticmethod
+    def CrossEntropyLoss(reduction: str = "mean"):
+        """Cross Entropy Loss from logits"""
+        return torch.nn.CrossEntropyLoss(reduction=reduction)
+
+    @staticmethod
     def gradient(func: Callable, inputs: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """Compute gradients for a batch of samples.
 

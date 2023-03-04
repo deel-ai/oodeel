@@ -57,6 +57,14 @@ class TFOperator(Operator):
         return tf.sign(tensor)
 
     @staticmethod
+    def CrossEntropyLoss(reduction: str = "mean"):
+        """Cross Entropy Loss from logits"""
+        return tf.keras.losses.SparseCategoricalCrossentropy(
+            from_logits=True, reduction=reduction
+        )
+
+    @staticmethod
+    @tf.function
     def gradient(func: Callable, inputs: tf.Tensor, *args, **kwargs) -> tf.Tensor:
         """Compute gradients for a batch of samples.
 

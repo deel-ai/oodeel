@@ -20,12 +20,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import Union
-
 import numpy as np
-import tensorflow as tf
 from scipy.special import logsumexp
 
+from ..types import TensorType
 from .base import OODModel
 
 
@@ -58,9 +56,7 @@ class Energy(OODModel):
     def __init__(self):
         super().__init__(output_layers_id=[-1], input_layers_id=0)
 
-    def _score_tensor(
-        self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
-    ) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on
         energy, namey $-logsumexp(logits(inputs))$.
