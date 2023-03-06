@@ -29,7 +29,7 @@ import os
 import sys
 import warnings
 
-from oodeel.datasets import DataHandler
+from oodeel.datasets import OODDataset
 
 warnings.filterwarnings("ignore")
 
@@ -83,19 +83,16 @@ if __name__ == "__main__":
         run_tf_on_cpu()
 
     # cifar10
-    data_handler = DataHandler()
+
+    oods_train = OODDataset("cifar10", split="train")
+    oods_test = OODDataset("cifar10", split="test")
     os.makedirs(args.save_dir, exist_ok=True)
-    ds1 = data_handler.load_tfds(
-        "cifar10", preprocess=True, preprocessing_fun=(lambda x: x / 255)
-    )
-    x_train, x_test = ds1["train"], ds1["test"]
 
     # define model
     model = training_func(
-        train_data=x_train,
-        validation_data=x_test,
+        train_data=oods_train,
+        validation_data=oods_test,
         model_name="resnet18",
         epochs=args.epochs,
-        batch_size=args.batch_size,
         save_dir=args.save_dir,
     )
