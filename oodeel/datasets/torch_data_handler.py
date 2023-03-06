@@ -193,7 +193,7 @@ class TorchDataHandler(DataHandler):
     """
 
     def default_target_transform(y):
-        return torch.LongTensor([y] if isinstance(y, (float, int)) else y)
+        return torch.tensor(y) if isinstance(y, (float, int)) else y
 
     DEFAULT_TRANSFORM = torchvision.transforms.ToTensor()
     DEFAULT_TARGET_TRANSFORM = default_target_transform
@@ -209,13 +209,14 @@ class TorchDataHandler(DataHandler):
             Any: dataset
         """
         if isinstance(dataset_id, str):
+            assert "root" in load_kwargs.keys()
             dataset = self.load_torchvision_dataset(dataset_id, **load_kwargs)
         elif isinstance(dataset_id, Dataset):
-            keys = getattr(load_kwargs, "keys", None)
+            keys = load_kwargs.get("keys", None)
             dataset = self.load_custom_dataset(dataset_id, keys)
         elif isinstance(dataset_id, (np.ndarray, torch.Tensor, tuple, dict)):
-            keys = getattr(load_kwargs, "keys", None)
-            dataset = self.load_dataset_from_arrays(dataset_id)
+            keys = load_kwargs.get("keys", None)
+            dataset = self.load_dataset_from_arrays(dataset_id, keys)
         return dataset
 
     @staticmethod
@@ -244,7 +245,8 @@ class TorchDataHandler(DataHandler):
         # If dataset_id is a tuple of arrays
         elif isinstance(dataset_id, tuple):
             len_elem = len(dataset_id)
-            if keys is None:
+            output_keys = keys
+            if output_keys is None:
                 if len_elem == 2:
                     output_keys = ["input", "label"]
                 else:
@@ -256,13 +258,14 @@ class TorchDataHandler(DataHandler):
                         'assigning "input_i" key to the i-th tuple dimension and'
                         ' "label" key to the last tuple dimension.'
                     )
-            assert len(output_keys == 1)
+            assert len(output_keys) == len(dataset_id)
             tensors = tuple(to_torch(array) for array in dataset_id)
 
         # If dataset_id is a dictionary of arrays
         elif isinstance(dataset_id, dict):
-            output_keys = list(dataset_id.keys())
-            tensors = tuple(to_torch(dataset_id[k]) for k in output_keys)
+            output_keys = keys or list(dataset_id.keys())
+            assert len(output_keys) == len(dataset_id)
+            tensors = tuple(to_torch(array) for array in dataset_id.values())
 
         # create torch dictionary dataset from tensors tuple and keys
         dataset = DictDataset(TensorDataset(*tensors), output_keys)
@@ -286,7 +289,8 @@ class TorchDataHandler(DataHandler):
             assert isinstance(
                 dummy_item, (Tuple, torch.Tensor)
             ), "Custom dataset should be either dictionary based or tuple based"
-            if keys is None:
+            output_keys = keys
+            if output_keys is None:
                 len_elem = len(dummy_item)
                 if len_elem == 2:
                     output_keys = ["input", "label"]
@@ -310,7 +314,7 @@ class TorchDataHandler(DataHandler):
         transform: Callable = DEFAULT_TRANSFORM,
         target_transform: Callable = DEFAULT_TARGET_TRANSFORM,
         download: bool = False,
-        load_kwargs: dict = {},
+        **load_kwargs,
     ) -> DictDataset:
         """Load a Dataset from the torchvision datasets catalog
 
@@ -320,8 +324,8 @@ class TorchDataHandler(DataHandler):
             download (bool):  If true, downloads the dataset from the internet and puts\
                 it in root directory. If dataset is already downloaded, it is not\
                 downloaded again. Defaults to False.
-            load_kwargs (dict, optional): Loading kwargs to add to the initialization\
-                of dataset. Defaults to {}.
+            load_kwargs: Loading kwargs to add to the initialization\
+                of dataset.
 
         Returns:
             DictDataset
@@ -357,7 +361,7 @@ class TorchDataHandler(DataHandler):
         ), "Dataset must be an instance of DictDataset"
 
         def assign_value_to_feature(x):
-            x[feature_key] = torch.Tensor([value])
+            x[feature_key] = torch.tensor(value)
             return x
 
         dataset = dataset.map(assign_value_to_feature)
@@ -446,13 +450,14 @@ class TorchDataHandler(DataHandler):
         Args:
             dataset (DictDataset): Dataset to filter
             feature_key (str): Feature name to check the value
-            values (list): Feature_key values to keep (if excluded is False)
-                or to exclude
+            values (list): Feature_key values to keep
 
         Returns:
             DictDataset: Filtered dataset
         """
-        filtered_dataset = dataset.filter(lambda x: x[feature_key] in values)
+        filtered_dataset = dataset.filter(
+            lambda x: any([torch.all(x[feature_key] == v) for v in values])
+        )
         return filtered_dataset
 
     @staticmethod
