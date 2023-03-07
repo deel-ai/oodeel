@@ -63,7 +63,7 @@ def test_load_torchvision(dataset_name, train, erase_after_test=True):
 
     # define dataset
     dataset = handler.load_dataset(
-        dataset_name, dict(root=temp_root, train=train, download=True)
+        dataset_name, load_kwargs=dict(root=temp_root, train=train, download=True)
     )
 
     # dummy item
@@ -117,7 +117,7 @@ def test_load_arrays_and_custom(x_shape, num_labels, num_samples, one_hot):
 
     # === load datasets ===
     for dataset_id in [tuple_np, dict_np, tuple_torch, dict_torch, tensor_ds_torch]:
-        ds = handler.load_dataset(dataset_id, dict(keys=["key_a", "key_b"]))
+        ds = handler.load_dataset(dataset_id, keys=["key_a", "key_b"])
 
         # check registered keys, shapes
         output_keys = ds.output_keys
@@ -148,7 +148,7 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     dataset_id = generate_data(
         x_shape=x_shape, num_labels=num_labels, samples=num_samples, one_hot=one_hot
     )
-    dataset = handler.load_dataset(dataset_id, dict(keys=["input", "label"]))
+    dataset = handler.load_dataset(dataset_id, keys=["input", "label"])
     assert len(dataset) == num_samples
     assert dataset.output_shapes[0] == torch.Size(x_shape)
     assert dataset.output_shapes[1] == (
@@ -158,13 +158,6 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     # filter by label
     a_labels = list(range(num_labels // 2))
     b_labels = list(range(num_labels // 2, num_labels))
-    if one_hot:
-        a_labels = [
-            F.one_hot(torch.tensor(a_label).long(), num_labels) for a_label in a_labels
-        ]
-        b_labels = [
-            F.one_hot(torch.tensor(b_label).long(), num_labels) for b_label in b_labels
-        ]
     dataset_a = handler.filter_by_feature_value(dataset, "label", a_labels)
     num_samples_a = len(dataset_a)
     dataset_b = handler.filter_by_feature_value(dataset, "label", b_labels)
@@ -198,8 +191,8 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     # prepare dataloader
     loader = handler.prepare_for_training(dataset_c, 64, True)
     batch = next(iter(loader))
-    assert batch["input"].shape == torch.Size([64, *x_shape])
-    assert batch["label"].shape == (
+    assert batch[0].shape == torch.Size([64, *x_shape])
+    assert batch[1].shape == (
         torch.Size([64, num_labels]) if one_hot else torch.Size([64])
     )
-    assert batch["new_feature"].shape == torch.Size([64])
+    assert batch[2].shape == torch.Size([64])
