@@ -56,7 +56,7 @@ We propose some tutorials to get familiar with the library and its API in the [n
 **Oodeel** requires some stuff and several libraries including Numpy. Installation can be done using Pypi:
 
 ```python
-git clone https://github.com/Jingkang50/OpenOOD.git
+git clone https://github.com/deel-ai/oodeel.git
 cd oodeel
 make prepare-dev
 ```
