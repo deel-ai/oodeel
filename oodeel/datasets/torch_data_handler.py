@@ -21,11 +21,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import copy
+from typing import TypeVar
 
 import numpy as np
 import torch
 import torchvision
-from numpy.typing import ArrayLike
 from torch.utils.data import ConcatDataset
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
@@ -41,6 +41,9 @@ from ..types import Optional
 from ..types import Tuple
 from ..types import Union
 from .data_handler import DataHandler
+
+
+ArrayLike = TypeVar("ArrayLike")
 
 
 def to_torch(array: ArrayLike):
