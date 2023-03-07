@@ -121,6 +121,7 @@ class DataHandler(ABC):
         dataset: Any,
         feature_key: str,
         values: list,
+        excluded: bool = False,
     ):
         """Filter the dataset by checking the value of a feature is in `values`
 
@@ -129,6 +130,8 @@ class DataHandler(ABC):
             feature_key (str): Feature name to check the value
             values (list): Feature_key values to keep (if excluded is False)
                 or to exclude
+            excluded (bool, optional): To keep (False) or exclude (True) the samples
+                with Feature_key value included in Values. Defaults to False.
 
         Returns:
             Any: Filtered dataset
@@ -173,5 +176,31 @@ class DataHandler(ABC):
 
         Returns:
             Any: prepared dataset / dataloader
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def get_item_length(dataset: Any) -> int:
+        """Number of elements in a dataset item
+
+        Args:
+            dataset (Any): Dataset
+
+        Returns:
+            int: Item length
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def get_dataset_length(dataset: Any) -> int:
+        """Number of items in a dataset
+
+        Args:
+            dataset (Any): Dataset
+
+        Returns:
+            int: Dataset length
         """
         raise NotImplementedError()

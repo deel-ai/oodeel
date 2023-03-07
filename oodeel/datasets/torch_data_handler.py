@@ -25,10 +25,12 @@ from typing import TypeVar
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 import torchvision
 from torch.utils.data import ConcatDataset
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
+from torch.utils.data import default_collate
 from torch.utils.data import Subset
 from torch.utils.data import TensorDataset
 from tqdm import tqdm
@@ -201,11 +203,13 @@ class TorchDataHandler(DataHandler):
     DEFAULT_TRANSFORM = torchvision.transforms.ToTensor()
     DEFAULT_TARGET_TRANSFORM = default_target_transform
 
-    def load_dataset(self, dataset_id: Any, load_kwargs: dict = {}):
+    def load_dataset(self, dataset_id: Any, keys: list = None, load_kwargs: dict = {}):
         """Load dataset from different manners
 
         Args:
             dataset_id (Any): dataset identification
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
             load_kwargs (dict, optional): Additional loading kwargs. Defaults to {}.
 
         Returns:
@@ -215,10 +219,8 @@ class TorchDataHandler(DataHandler):
             assert "root" in load_kwargs.keys()
             dataset = self.load_torchvision_dataset(dataset_id, **load_kwargs)
         elif isinstance(dataset_id, Dataset):
-            keys = load_kwargs.get("keys", None)
             dataset = self.load_custom_dataset(dataset_id, keys)
         elif isinstance(dataset_id, (np.ndarray, torch.Tensor, tuple, dict)):
-            keys = load_kwargs.get("keys", None)
             dataset = self.load_dataset_from_arrays(dataset_id, keys)
         return dataset
 
@@ -443,6 +445,7 @@ class TorchDataHandler(DataHandler):
         dataset: DictDataset,
         feature_key: str,
         values: list,
+        excluded: bool = False,
     ):
         """Filter the dataset by checking the value of a feature is in `values`
 
@@ -454,18 +457,32 @@ class TorchDataHandler(DataHandler):
             dataset (DictDataset): Dataset to filter
             feature_key (str): Feature name to check the value
             values (list): Feature_key values to keep
+            excluded (bool, optional): To keep (False) or exclude (True) the samples
+                with Feature_key value included in Values. Defaults to False.
 
         Returns:
             DictDataset: Filtered dataset
         """
-        filtered_dataset = dataset.filter(
-            lambda x: any([torch.all(x[feature_key] == v) for v in values])
-        )
+        if len(dataset[0][feature_key].shape) > 0:
+            value_dim = dataset[0][feature_key].shape[-1]
+            values = [
+                F.one_hot(torch.tensor(value).long(), value_dim) for value in values
+            ]
+
+        def filter_fn(x):
+            keep = any([torch.all(x[feature_key] == v) for v in values])
+            return keep if not excluded else not keep
+
+        filtered_dataset = dataset.filter(filter_fn)
         return filtered_dataset
 
     @staticmethod
     def prepare_for_training(
-        dataset: DictDataset, batch_size: int, shuffle: bool = False
+        dataset: DictDataset,
+        batch_size: int,
+        shuffle: bool = False,
+        with_ood_labels: bool = False,
+        with_labels: bool = True,
     ) -> DataLoader:
         """Prepare a DataLoader for training
 
@@ -477,7 +494,21 @@ class TorchDataHandler(DataHandler):
         Returns:
             DataLoader: dataloader
         """
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+
+        def dict_to_tuple_collate_fn(batch: List[dict]):
+            keys = list(batch[0].keys())
+            if with_ood_labels is False and "ood_label" in keys:
+                keys.remove("ood_label")
+            if with_labels is False and "label" in keys:
+                keys.remove("label")
+            return tuple(default_collate([d[key] for d in batch]) for key in keys)
+
+        loader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            collate_fn=dict_to_tuple_collate_fn,
+        )
         return loader
 
     @staticmethod
@@ -527,3 +558,27 @@ class TorchDataHandler(DataHandler):
 
         merged_dataset = id_dataset.concatenate(ood_dataset)
         return merged_dataset
+
+    @staticmethod
+    def get_item_length(dataset: DictDataset) -> int:
+        """Number of elements in a dataset item
+
+        Args:
+            dataset (DictDataset): Dataset
+
+        Returns:
+            int: Item length
+        """
+        return len(dataset[0])
+
+    @staticmethod
+    def get_dataset_length(dataset: DictDataset) -> int:
+        """Number of items in a dataset
+
+        Args:
+            dataset (DictDataset): Dataset
+
+        Returns:
+            int: Dataset length
+        """
+        return len(dataset)
