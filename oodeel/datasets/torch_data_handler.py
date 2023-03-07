@@ -25,6 +25,7 @@ import copy
 import numpy as np
 import torch
 import torchvision
+from numpy.typing import ArrayLike
 from torch.utils.data import ConcatDataset
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
@@ -33,7 +34,6 @@ from torch.utils.data import TensorDataset
 from tqdm import tqdm
 
 from ..types import Any
-from ..types import ArrayLike
 from ..types import Callable
 from ..types import Dict
 from ..types import List
