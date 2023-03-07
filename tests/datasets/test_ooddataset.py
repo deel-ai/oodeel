@@ -279,7 +279,7 @@ def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output
             x = inputs[0] / 255
             return tuple([x] + list(inputs[1:]))
 
-        def augment_fn(*inputs):
+        def augment_fn_(*inputs):
             x = tf.image.random_flip_left_right(inputs[0])
             return tuple([x] + list(inputs[1:]))
 
@@ -289,14 +289,13 @@ def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output
             item_dict["input"] /= 255.0
             return item_dict
 
-        def augment_fn(item_dict):
+        def augment_fn_(item_dict):
             item_dict["input"] = torchvision.transforms.RandomHorizontalFlip()(
                 item_dict["input"]
             )
             return item_dict
 
-    if shuffle is False:
-        augment_fn = None
+    augment_fn = augment_fn_ if shuffle else None
 
     dataset2 = OODDataset(
         dataset_id=generate_data_fn(
