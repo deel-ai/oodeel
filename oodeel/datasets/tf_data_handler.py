@@ -29,6 +29,7 @@ from ..types import Callable
 from ..types import Optional
 from ..types import Tuple
 from ..types import Union
+from ..utils import dataset_cardinality
 from ..utils import dataset_len_elem
 from .data_handler import DataHandler
 
@@ -339,6 +340,7 @@ class TFDataHandler(DataHandler):
     def prepare_for_training(
         dataset: tf.data.Dataset,
         batch_size: int,
+        shuffle: bool = False,
         shuffle_buffer_size: int = None,
         prefetch_buffer_size: Optional[int] = None,
         drop_remainder: Optional[bool] = False,
@@ -360,7 +362,7 @@ class TFDataHandler(DataHandler):
             tf.data.Dataset: Prepared dataset
         """
         dataset = dataset.cache()
-        if shuffle_buffer_size is not None:
+        if shuffle_buffer_size is not None and shuffle:
             dataset = dataset.shuffle(shuffle_buffer_size)
         dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
         if prefetch_buffer_size is not None:
@@ -502,6 +504,30 @@ class TFDataHandler(DataHandler):
         dataset_to_filter = dataset
         dataset_to_filter = dataset_to_filter.filter(filter_fn)
         return dataset_to_filter
+
+    @staticmethod
+    def get_item_length(dataset: tf.data.Dataset) -> int:
+        """Number of elements in a dataset item
+
+        Args:
+            dataset (Any): Dataset
+
+        Returns:
+            int: Item length
+        """
+        return dataset_len_elem(dataset)
+
+    @staticmethod
+    def get_dataset_length(dataset: tf.data.Dataset) -> int:
+        """Number of items in a dataset
+
+        Args:
+            dataset (Any): Dataset
+
+        Returns:
+            int: Dataset length
+        """
+        return dataset_cardinality(dataset)
 
 
 def keras_dataset_load(dataset_name: str, **kwargs) -> Tuple[Tuple[np.ndarray]]:
