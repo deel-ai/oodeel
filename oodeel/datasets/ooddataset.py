@@ -20,15 +20,17 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import TypeVar
+
 import numpy as np
-import tensorflow as tf
 
 from ..types import Callable
 from ..types import Optional
 from ..types import Tuple
 from ..types import Union
-from ..utils import dataset_cardinality
-from ..utils import dataset_len_elem
+
+
+Dataset = TypeVar("Dataset")
 
 
 class OODDataset(object):
@@ -38,13 +40,13 @@ class OODDataset(object):
     scoring or training with the .prepare method.
 
     Args:
-        dataset_id (Union[tf.data.Dataset, tuple, dict, str]): The dataset to load.
-            Can be loaded from tensorflow_datasets catalog when the str matches one of
-            the datasets. Defaults to Union[tf.data.Dataset, tuple, dict, str].
+        dataset_id (Union[Dataset, tuple, dict, str]): The dataset to load.
+            Can be loaded from tensorflow or torch datasets catalog when the str matches
+            one of the datasets. Defaults to Union[Dataset, tuple, dict, str].
         from_directory (bool, optional): If the dataset has to be loaded from directory,
             when dataset_id is str. Defaults to False.
         backend (str, optional): Whether the dataset is to be used for tensorflow
-             or pytorch models. Defaults to "tensorflow".
+             or torch models. Defaults to "tensorflow". Alternative: "torch".
         split (str, optional): Split to use ('test' or 'train') When the dataset is
             loaded from tensorflow_datasets. Defaults to None.
         load_kwargs (dict, optional): Additional loading kwargs when loading from
@@ -55,7 +57,7 @@ class OODDataset(object):
 
     def __init__(
         self,
-        dataset_id: Union[tf.data.Dataset, tuple, dict, str],
+        dataset_id: Union[Dataset, tuple, dict, str],
         backend: str = "tensorflow",
         split: str = None,
         keys: list = None,
@@ -63,22 +65,25 @@ class OODDataset(object):
         load_from_tensorflow_datasets: bool = False,
     ):
         self.backend = backend
+        self.load_from_tensorflow_datasets = load_from_tensorflow_datasets
 
         # The length of the dataset is kept as attribute to avoid redundant
         # iterations over self.data
         self.length = None
 
-        # Set the load parameters for tfds
-        if load_kwargs is None:
-            load_kwargs = {}
-        load_kwargs["as_supervised"] = False
-        load_kwargs["split"] = split
+        # Set the load parameters for tfds / torchvision
+        if backend == "tensorflow":
+            load_kwargs["as_supervised"] = False
+            load_kwargs["split"] = split
+        elif backend == "torch":
+            load_kwargs["train"] = split == "train"
         self.load_params = load_kwargs
 
         # Set the channel order depending on the backend
-        if self.backend in ["torch", "pytorch"]:
+        if self.backend == "torch":
             if load_from_tensorflow_datasets:
                 from .tf_data_handler import TFDataHandler
+                import tensorflow as tf
 
                 tf.config.set_visible_devices([], "GPU")
                 self._data_handler = TFDataHandler()
@@ -97,10 +102,9 @@ class OODDataset(object):
         self.data = self._data_handler.load_dataset(dataset_id, keys, load_kwargs)
 
         # Get the length of the elements in the dataset
+        self.len_elem = self._data_handler.get_item_length(self.data)
         if self.has_ood_label:
-            self.len_elem = dataset_len_elem(self.data) - 1
-        else:
-            self.len_elem = dataset_len_elem(self.data)
+            self.len_elem -= 1
 
         # Get the key of the tensor to feed the model with
         self.input_key = self._data_handler.get_ds_feature_keys(self.data)[0]
@@ -112,7 +116,7 @@ class OODDataset(object):
             int: length of the dataset
         """
         if self.length is None:
-            self.length = dataset_cardinality(self.data)
+            self.length = self._data_handler.get_dataset_length(self.data)
         return self.length
 
     @property
@@ -140,7 +144,7 @@ class OODDataset(object):
 
     def add_out_data(
         self,
-        out_dataset: Union["OODDataset", tf.data.Dataset],
+        out_dataset: Union["OODDataset", Dataset],
         in_value: int = 0,
         out_value: int = 1,
         resize: Optional[bool] = False,
@@ -150,7 +154,7 @@ class OODDataset(object):
         training with added out-of-distribution data.
 
         Args:
-            out_dataset (Union[OODDataset, tf.data.Dataset]): dataset of
+            out_dataset (Union[OODDataset, Dataset]): dataset of
                 out-of-distribution data
             in_value (int): ood label value for in-distribution data. Defaults to 0
             out_value (int): ood label value for out-of-distribution data. Defaults to 1
@@ -169,7 +173,7 @@ class OODDataset(object):
         if isinstance(out_dataset, type(self)):
             out_dataset = out_dataset.data
         else:
-            out_dataset = OODDataset(out_dataset).data
+            out_dataset = OODDataset(out_dataset, backend=self.backend).data
 
         # Assign the correct ood_label to self.data, depending on out_as_in
         self.data = self._data_handler.assign_feature_value(
@@ -179,16 +183,21 @@ class OODDataset(object):
             out_dataset, "ood_label", out_value
         )
 
-        # Merge the two underlying tf.data.Datasets
+        # Merge the two underlying Datasets
+        merge_kwargs = (
+            {"channel_order": self.channel_order}
+            if self.backend == "tensorflow"
+            else {}
+        )
         data = self._data_handler.merge(
             self.data,
             out_dataset,
             resize=resize,
             shape=shape,
-            channel_order=self.channel_order,
+            **merge_kwargs,
         )
 
-        # Create a new OODDataset from the merged tf.data.Dataset
+        # Create a new OODDataset from the merged Dataset
         output_ds = OODDataset(
             dataset_id=data,
             backend=self.backend,
@@ -308,7 +317,7 @@ class OODDataset(object):
         shuffle: bool = False,
         shuffle_buffer_size: int = None,
         augment_fn: Callable = None,
-    ) -> tf.data.Dataset:
+    ) -> Dataset:
         """Prepare self.data for scoring or training
 
         Args:
@@ -328,11 +337,41 @@ class OODDataset(object):
                 returned dataset is to be used for training). Defaults to None.
 
         Returns:
-            tf.data.Dataset: prepared dataset
+            Dataset: prepared dataset
         """
-        dataset_to_prepare = self.get_dataset(
-            with_ood_labels=with_ood_labels, with_labels=with_labels
-        )
+        # Check if the dataset has at least one of label and ood_label
+        assert (
+            with_ood_labels or with_labels
+        ), "The dataset must have at least one of label and ood_label"
+
+        # Check if the dataset has ood_labels when asked to return with_ood_labels
+        if with_ood_labels:
+            assert (
+                self.has_ood_label
+            ), "Please assign ood labels before preparing with ood_labels"
+
+        dataset_to_prepare = self.data
+        kwargs = {}
+
+        # Making the dataset channel first if the backend is torch
+        if self.backend == "torch" and self.load_from_tensorflow_datasets:
+            dataset_to_prepare = self._data_handler.make_channel_first(
+                dataset_to_prepare
+            )
+
+        # Select the keys to be returned
+        if with_ood_labels and with_labels:
+            keys = [self.input_key, "label", "ood_label"]
+        elif with_ood_labels and not with_labels:
+            keys = [self.input_key, "ood_label"]
+        else:
+            keys = [self.input_key, "label"]
+
+        if self.backend == "tensorflow":
+            # Transform the dataset from dict to tuple
+            dataset_to_prepare = self._data_handler.dict_to_tuple(
+                dataset_to_prepare, keys
+            )
 
         # Apply the preprocessing and augmentation functions if necessary
         if preprocess_fn is not None:
@@ -346,14 +385,19 @@ class OODDataset(object):
             )
 
         # Set the shuffle buffer size if necessary
-        if shuffle:
+        if shuffle and self.backend == "tensorflow":
             shuffle_buffer_size = (
                 len(self) if shuffle_buffer_size is None else shuffle_buffer_size
             )
+            kwargs["shuffle_buffer_size"] = shuffle_buffer_size
+        # ood labels / labels hparams for torch collate_fn
+        elif self.backend == "torch":
+            kwargs["with_ood_labels"] = with_ood_labels
+            kwargs["with_labels"] = with_labels
 
         # Prepare the dataset for training or scoring
         dataset = self._data_handler.prepare_for_training(
-            dataset_to_prepare, batch_size, shuffle_buffer_size
+            dataset_to_prepare, batch_size, shuffle, **kwargs
         )
 
         return dataset
