@@ -25,7 +25,6 @@ import shutil
 
 import pytest
 import torch
-import torch.nn.functional as F
 
 from oodeel.datasets.torch_data_handler import TorchDataHandler
 from tests import generate_data
