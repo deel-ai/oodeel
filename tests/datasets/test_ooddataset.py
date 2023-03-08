@@ -285,15 +285,13 @@ def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output
 
     else:
 
-        def preprocess_fn(item_dict):
-            item_dict["input"] /= 255.0
-            return item_dict
+        def preprocess_fn(inputs):
+            x = inputs[0] / 255
+            return tuple([x] + list(inputs[1:]))
 
-        def augment_fn_(item_dict):
-            item_dict["input"] = torchvision.transforms.RandomHorizontalFlip()(
-                item_dict["input"]
-            )
-            return item_dict
+        def augment_fn_(inputs):
+            x = torchvision.transforms.RandomHorizontalFlip()(inputs[0])
+            return tuple([x] + list(inputs[1:]))
 
     augment_fn = augment_fn_ if shuffle else None
 

@@ -312,11 +312,11 @@ class OODDataset(object):
         self,
         batch_size: int = 128,
         preprocess_fn: Callable = None,
+        augment_fn: Callable = None,
         with_ood_labels: bool = False,
         with_labels: bool = True,
         shuffle: bool = False,
         shuffle_buffer_size: int = None,
-        augment_fn: Callable = None,
     ) -> Dataset:
         """Prepare self.data for scoring or training
 
@@ -325,16 +325,16 @@ class OODDataset(object):
                 Defaults to 128.
             preprocess_fn (Callable, optional): Preprocessing function to apply to
                 the dataset. Defaults to None.
+            augment_fn (Callable, optional): Augment function to be used (when the
+                returned dataset is to be used for training). Defaults to None.
             with_ood_labels (bool, optional): To return the dataset with ood_labels
                 or not. Defaults to True.
             with_labels (bool, optional): To return the dataset with labels or not.
                 Defaults to True.
             shuffle (bool, optional): To shuffle the returned dataset or not.
                 Defaults to False.
-            shuffle_buffer_size (int, optional): Size of the shuffle buffer. If None,
-                taken as the number of samples in the dataset. Defaults to None.
-            augment_fn (Callable, optional): Augment function to be used (when the
-                returned dataset is to be used for training). Defaults to None.
+            shuffle_buffer_size (int, optional): (TF only) Size of the shuffle buffer.
+                If None, taken as the number of samples in the dataset. Defaults to None.
 
         Returns:
             Dataset: prepared dataset
@@ -351,7 +351,6 @@ class OODDataset(object):
             ), "Please assign ood labels before preparing with ood_labels"
 
         dataset_to_prepare = self.data
-        kwargs = {}
 
         # Making the dataset channel first if the backend is torch
         if self.backend == "torch" and self.load_from_tensorflow_datasets:
@@ -359,45 +358,22 @@ class OODDataset(object):
                 dataset_to_prepare
             )
 
-        # Select the keys to be returned
-        if with_ood_labels and with_labels:
-            keys = [self.input_key, "label", "ood_label"]
-        elif with_ood_labels and not with_labels:
-            keys = [self.input_key, "ood_label"]
-        else:
-            keys = [self.input_key, "label"]
-
-        if self.backend == "tensorflow":
-            # Transform the dataset from dict to tuple
-            dataset_to_prepare = self._data_handler.dict_to_tuple(
-                dataset_to_prepare, keys
-            )
-
-        # Apply the preprocessing and augmentation functions if necessary
-        if preprocess_fn is not None:
-            dataset_to_prepare = self._data_handler.map_ds(
-                dataset_to_prepare, preprocess_fn
-            )
-
-        if augment_fn is not None:
-            dataset_to_prepare = self._data_handler.map_ds(
-                dataset_to_prepare, augment_fn
-            )
-
-        # Set the shuffle buffer size if necessary
-        if shuffle and self.backend == "tensorflow":
-            shuffle_buffer_size = (
-                len(self) if shuffle_buffer_size is None else shuffle_buffer_size
-            )
-            kwargs["shuffle_buffer_size"] = shuffle_buffer_size
-        # ood labels / labels hparams for torch collate_fn
-        elif self.backend == "torch":
-            kwargs["with_ood_labels"] = with_ood_labels
-            kwargs["with_labels"] = with_labels
+        # # Select the keys to be returned
+        keys = [self.input_key, "label", "ood_label"]
+        if not with_labels:
+            keys.remove("label")
+        if not with_ood_labels:
+            keys.remove("ood_label")
 
         # Prepare the dataset for training or scoring
         dataset = self._data_handler.prepare_for_training(
-            dataset_to_prepare, batch_size, shuffle, **kwargs
+            dataset=dataset_to_prepare,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            preprocess_fn=preprocess_fn,
+            augment_fn=augment_fn,
+            output_keys=keys,
+            shuffle_buffer_size=shuffle_buffer_size,
         )
 
         return dataset
