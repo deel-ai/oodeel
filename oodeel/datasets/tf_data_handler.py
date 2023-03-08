@@ -336,22 +336,34 @@ class TFDataHandler(DataHandler):
         dataset = dataset.map(map_fn, num_parallel_calls=num_parallel_calls)
         return dataset
 
-    @staticmethod
     def prepare_for_training(
+        self,
         dataset: tf.data.Dataset,
         batch_size: int,
         shuffle: bool = False,
+        preprocess_fn: Callable = None,
+        augment_fn: Callable = None,
+        output_keys: list = None,
         shuffle_buffer_size: int = None,
         prefetch_buffer_size: Optional[int] = None,
         drop_remainder: Optional[bool] = False,
+        **kwargs,
     ) -> tf.data.Dataset:
         """Prepare a tf.data.Dataset for training
 
         Args:
             dataset (tf.data.Dataset): tf.data.Dataset to prepare
             batch_size (int): Batch size
-            shuffle_buffer_size (int): Shuffling buffer size. If None, shuffling is not
-                performed. Defaults to None.
+            shuffle (bool, optional): To shuffle the returned dataset or not.
+                Defaults to False.
+            preprocess_fn (Callable, optional): Preprocessing function to apply to\
+                the dataset. Defaults to None.
+            augment_fn (Callable, optional): Augment function to be used (when the\
+                returned dataset is to be used for training). Defaults to None.
+            output_keys (list): List of keys corresponding to the features that will be \
+                returned. Keep all features if None. Defaults to None.
+            shuffle_buffer_size (int, optional): Size of the shuffle buffer. If None,
+                taken as the number of samples in the dataset. Defaults to None.
             prefetch_buffer_size (Optional[int], optional): Buffer size for prefetch.
                 If None, automatically chose using tf.data.experimental.AUTOTUNE.
                 Defaults to None.
@@ -361,10 +373,28 @@ class TFDataHandler(DataHandler):
         Returns:
             tf.data.Dataset: Prepared dataset
         """
+        # dict based to tuple based
+        output_keys = output_keys or self.get_ds_feature_keys(dataset)
+        dataset = self.dict_to_tuple(dataset, output_keys)
+
+        # preprocess + DA
+        if preprocess_fn is not None:
+            dataset = self.map_ds(dataset, preprocess_fn)
+        if augment_fn is not None:
+            dataset = self.map_ds(dataset, augment_fn)
+
         dataset = dataset.cache()
-        if shuffle_buffer_size is not None and shuffle:
+
+        # shuffle
+        if shuffle:
+            num_samples = self.get_dataset_length(dataset)
+            shuffle_buffer_size = (
+                num_samples if shuffle_buffer_size is None else shuffle_buffer_size
+            )
             dataset = dataset.shuffle(shuffle_buffer_size)
+        # batch
         dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
+        # prefetch
         if prefetch_buffer_size is not None:
             prefetch_buffer_size = tf.data.experimental.AUTOTUNE
         dataset = dataset.prefetch(prefetch_buffer_size)

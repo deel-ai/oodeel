@@ -165,7 +165,13 @@ class DataHandler(ABC):
     @staticmethod
     @abstractmethod
     def prepare_for_training(
-        dataset: Any, batch_size: int, shuffle: bool = False
+        dataset: Any,
+        batch_size: int,
+        shuffle: bool = False,
+        preprocess_fn: Callable = None,
+        augment_fn: Callable = None,
+        output_keys: list = ["input", "label"],
+        **kwargs
     ) -> Any:
         """Prepare a dataset for training
 
@@ -173,6 +179,12 @@ class DataHandler(ABC):
             dataset (DictDataset): Dataset to prepare
             batch_size (int): Batch size
             shuffle (bool): Wether to shuffle the dataloader or not
+            preprocess_fn (Callable, optional): Preprocessing function to apply to\
+                the dataset. Defaults to None.
+            augment_fn (Callable, optional): Augment function to be used (when the\
+                returned dataset is to be used for training). Defaults to None.
+            output_keys (list): List of keys corresponding to the features that will be \
+                returned. Keep all features if None. Defaults to None.
 
         Returns:
             Any: prepared dataset / dataloader

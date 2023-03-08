@@ -476,13 +476,16 @@ class TorchDataHandler(DataHandler):
         filtered_dataset = dataset.filter(filter_fn)
         return filtered_dataset
 
-    @staticmethod
     def prepare_for_training(
+        self,
         dataset: DictDataset,
         batch_size: int,
         shuffle: bool = False,
-        with_ood_labels: bool = False,
-        with_labels: bool = True,
+        preprocess_fn: Callable = None,
+        augment_fn: Callable = None,
+        output_keys: list = None,
+        dict_based_fns: bool = False,
+        **kwargs,
     ) -> DataLoader:
         """Prepare a DataLoader for training
 
@@ -490,24 +493,44 @@ class TorchDataHandler(DataHandler):
             dataset (DictDataset): Dataset to prepare
             batch_size (int): Batch size
             shuffle (bool): Wether to shuffle the dataloader or not
+            preprocess_fn (Callable, optional): Preprocessing function to apply to\
+                the dataset. Defaults to None.
+            augment_fn (Callable, optional): Augment function to be used (when the\
+                returned dataset is to be used for training). Defaults to None.
+            output_keys (list): List of keys corresponding to the features that will be \
+                returned. Keep all features if None. Defaults to None.
+            dict_based_fns (bool) Wheter to use preprocess and DA functions as dict based\
+                 (if True) or as tuple based (if False). Defaults to False.
 
         Returns:
             DataLoader: dataloader
         """
+        preprocess_fn = preprocess_fn or (lambda x: x)
+        augment_fn = augment_fn or (lambda x: x)
+        output_keys = output_keys or self.get_ds_feature_keys(dataset)
 
-        def dict_to_tuple_collate_fn(batch: List[dict]):
-            keys = list(batch[0].keys())
-            if with_ood_labels is False and "ood_label" in keys:
-                keys.remove("ood_label")
-            if with_labels is False and "label" in keys:
-                keys.remove("label")
-            return tuple(default_collate([d[key] for d in batch]) for key in keys)
+        def collate_fn(batch: List[dict]):
+            if dict_based_fns:
+                # preprocess + DA: List[dict] -> List[dict]
+                batch = [augment_fn(preprocess_fn(d)) for d in batch]
+                # to tuple of batchs
+                return tuple(
+                    default_collate([d[key] for d in batch]) for key in output_keys
+                )
+            else:
+                # preprocess + DA: List[dict] -> List[tuple]
+                batch = [
+                    augment_fn(preprocess_fn(tuple(d[key] for key in output_keys)))
+                    for d in batch
+                ]
+                # to tuple of batchs
+                return default_collate(batch)
 
         loader = DataLoader(
             dataset,
             batch_size=batch_size,
             shuffle=shuffle,
-            collate_fn=dict_to_tuple_collate_fn,
+            collate_fn=collate_fn,
         )
         return loader
 
