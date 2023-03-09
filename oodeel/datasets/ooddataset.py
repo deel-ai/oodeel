@@ -55,6 +55,8 @@ class OODDataset(object):
             loaded from tensorflow_datasets. Defaults to None.
         load_kwargs (dict, optional): Additional loading kwargs when loading from
             tensorflow_datasets catalog. Defaults to {}.
+        input_key (str, optional): The key used for the feature to consider as the model input.
+            If None, taken as the first of the tf.data.Dataset elements.
     """
 
     def __init__(
@@ -64,6 +66,7 @@ class OODDataset(object):
         backend: str = "tensorflow",
         split: str = None,
         load_kwargs: dict = {},
+        input_key: str = None,
     ):
         self.backend = backend
 
@@ -113,7 +116,8 @@ class OODDataset(object):
             self.len_elem = dataset_len_elem(self.data)
 
         # Get the key of the tensor to feed the model with
-        self.input_key = self._data_handler.get_ds_feature_keys(self.data)[0]
+        if input_key is None:
+            self.input_key = self._data_handler.get_ds_feature_keys(self.data)[0]
 
     def __len__(self):
         """get the length of the dataset.
