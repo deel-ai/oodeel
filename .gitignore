@@ -23,7 +23,7 @@ oodeel_dev_env
 logs
 export-wass
 docs/build
-docs/saved_models/*
+docs/notebooks/saved_models/*
 
 # mkdocs documentation
 /site

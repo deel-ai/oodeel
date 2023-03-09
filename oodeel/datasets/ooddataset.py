@@ -34,8 +34,6 @@ from ..utils import dataset_cardinality
 from ..utils import dataset_len_elem
 from .tf_data_handler import TFDataHandler
 
-OODDataset = TypeVar("OODDataset", bound="OODDadaset")
-
 
 class OODDataset(object):
     """Class for managing loading and processing of datasets that are to be used for
@@ -118,6 +116,8 @@ class OODDataset(object):
         # Get the key of the tensor to feed the model with
         if input_key is None:
             self.input_key = self._data_handler.get_ds_feature_keys(self.data)[0]
+        else:
+            self.input_key = input_key
 
     def __len__(self):
         """get the length of the dataset.
