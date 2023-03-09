@@ -344,6 +344,7 @@ class TFDataHandler(DataHandler):
         preprocess_fn: Callable = None,
         augment_fn: Callable = None,
         output_keys: list = None,
+        dict_based_fns: bool = False,
         shuffle_buffer_size: int = None,
         prefetch_buffer_size: Optional[int] = None,
         drop_remainder: Optional[bool] = False,
@@ -375,13 +376,17 @@ class TFDataHandler(DataHandler):
         """
         # dict based to tuple based
         output_keys = output_keys or self.get_ds_feature_keys(dataset)
-        dataset = self.dict_to_tuple(dataset, output_keys)
+        if not dict_based_fns:
+            dataset = self.dict_to_tuple(dataset, output_keys)
 
         # preprocess + DA
         if preprocess_fn is not None:
             dataset = self.map_ds(dataset, preprocess_fn)
         if augment_fn is not None:
             dataset = self.map_ds(dataset, augment_fn)
+
+        if dict_based_fns:
+            dataset = self.dict_to_tuple(dataset, output_keys)
 
         dataset = dataset.cache()
 
@@ -558,31 +563,3 @@ class TFDataHandler(DataHandler):
             int: Dataset length
         """
         return dataset_cardinality(dataset)
-
-
-def keras_dataset_load(dataset_name: str, **kwargs) -> Tuple[Tuple[np.ndarray]]:
-    """Load a dataset from tensorflow.python.keras
-
-    Args:
-        dataset_name (str): identifier of keras.dataset to load
-
-    Returns:
-        Tuple[Tuple[np.ndarray]]: loaded dataset
-    """
-    assert hasattr(
-        tf.keras.datasets, dataset_name
-    ), f"{dataset_name} not available with keras.datasets"
-    (x_train, y_train), (x_test, y_test) = getattr(
-        tf.keras.datasets, dataset_name
-    ).load_data(**kwargs)
-
-    x_max = np.max(x_train)
-    x_train = x_train.astype("float32") / x_max
-    x_test = x_test.astype("float32") / x_max
-
-    if dataset_name in ["mnist", "fashion_mnist"]:
-        x_train = np.expand_dims(x_train, -1)
-        x_test = np.expand_dims(x_test, -1)
-
-    # convert class vectors to binary class matrices
-    return (x_train, y_train), (x_test, y_test)
