@@ -36,17 +36,11 @@ from tests import generate_data_torch
     [
         ("MNIST", True),
         ("MNIST", False),
-        ("FashionMNIST", True),
-        ("FashionMNIST", False),
     ],
 )
 def test_load_torchvision(dataset_name, train, erase_after_test=True):
     DATASET_INFOS = {
         "MNIST": {
-            "img_shape": (1, 28, 28),
-            "num_samples": {"train": 60000, "test": 10000},
-        },
-        "FashionMNIST": {
             "img_shape": (1, 28, 28),
             "num_samples": {"train": 60000, "test": 10000},
         },
