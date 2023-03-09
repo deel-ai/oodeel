@@ -143,7 +143,16 @@ class TFDataHandler(DataHandler):
             dataset = tf.data.Dataset.from_tensor_slices(dataset_dict)
 
         elif isinstance(dataset_id, dict):
-            dataset = tf.data.Dataset.from_tensor_slices(dataset_id)
+            if keys is not None:
+                len_elem = len(dataset_id)
+                assert (
+                    len(keys) == len_elem
+                ), "Number of keys mismatch with the number of features"
+                original_keys = list(dataset_id.keys())
+                dataset_dict = {
+                    keys[i]: dataset_id[original_keys[i]] for i in range(len_elem)
+                }
+            dataset = tf.data.Dataset.from_tensor_slices(dataset_dict)
 
         return dataset
 
@@ -162,12 +171,12 @@ class TFDataHandler(DataHandler):
         """
         # If dataset_id is a tuple based tf.data.dataset, convert it to a dict
         if not isinstance(dataset_id.element_spec, dict):
+            len_elem = len(dataset_id.element_spec)
             if keys is None:
                 print(
                     "Feature name not found, assigning 'input_i' "
                     "key to the i-th tensor and 'label' key to the last"
                 )
-                len_elem = len(dataset_id.element_spec)
                 if len_elem == 2:
                     keys = ["input", "label"]
                 else:
