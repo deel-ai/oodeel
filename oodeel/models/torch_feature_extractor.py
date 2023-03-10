@@ -25,6 +25,7 @@ from typing import Union
 
 import torch
 from torch import nn
+from torch.utils.data import Dataset
 
 from ..utils.tf_utils import get_input_from_dataset_elem
 from .feature_extractor import FeatureExtractor
@@ -120,26 +121,26 @@ class TorchFeatureExtractor(FeatureExtractor):
         # Crop model if input layer is provided
         if not (self.input_layer_id) is None:
             if isinstance(self.input_layer_id, int):
-                if isinstance(self.model, nn.Sequential):
-                    self.model = nn.Sequential(
-                        *list(self.model.modules())[self.input_layer_id :]
-                    )
-                else:
-                    raise NotImplementedError
-            elif isinstance(self.input_layer_id, str):
-                if isinstance(self.model, nn.Sequential):
-                    module_names = list(
-                        filter(
-                            lambda x: x != "",
-                            map(lambda x: x[0], self.model.named_modules()),
+                if self.input_layer_id > 0:
+                    if isinstance(self.model, nn.Sequential):
+                        self.model = nn.Sequential(
+                            *list(self.model.modules())[self.input_layer_id :]
                         )
+                    else:
+                        raise NotImplementedError
+            elif isinstance(self.input_layer_id, str):
+
+                module_names = list(
+                    filter(
+                        lambda x: x != "",
+                        map(lambda x: x[0], self.model.named_modules()),
                     )
-                    input_module_idx = module_names.index(self.input_layer_id)
-                    self.model = nn.Sequential(
-                        *list(self.model.modules())[(input_module_idx + 1) :]
-                    )
-                else:
-                    raise NotImplementedError
+                )
+                input_module_idx = module_names.index(self.input_layer_id)
+                self.model = nn.Sequential(
+                    *list(self.model.modules())[(input_module_idx + 1) :]
+                )
+
             else:
                 raise NotImplementedError
 
@@ -152,9 +153,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             x = x.to(self._device)
         _ = self.model(x)
 
-        features = [
-            self._features[layer_id].detach() for layer_id in self.output_layers_id
-        ]
+        features = [self._features[layer_id] for layer_id in self.output_layers_id]
 
         if len(features) == 1:
             features = features[0]

@@ -72,7 +72,9 @@ class DKNN(OODModel):
         Args:
             fit_dataset: input dataset (ID) to construct the index with.
         """
-        fit_projected = self.feature_extractor.predict(fit_dataset).numpy()
+        fit_projected = self.op.to_numpy(self.feature_extractor.predict(fit_dataset))
+        if fit_projected.ndim > 2:
+            fit_projected = fit_projected.reshape(fit_projected.shape[0], -1)
         norm_fit_projected = self._l2_normalization(fit_projected)
         self.index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
         self.index.add(norm_fit_projected)
@@ -91,7 +93,9 @@ class DKNN(OODModel):
             scores
         """
 
-        input_projected = self.feature_extractor(inputs).numpy()
+        input_projected = self.op.to_numpy(self.feature_extractor(inputs))
+        if input_projected.ndim > 2:
+            input_projected = input_projected.reshape(input_projected.shape[0], -1)
         norm_input_projected = self._l2_normalization(input_projected)
         scores, _ = self.index.search(norm_input_projected, self.nearest)
         return scores[:, 0]
