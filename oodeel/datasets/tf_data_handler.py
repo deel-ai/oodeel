@@ -24,16 +24,19 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+from ..types import Any
 from ..types import Callable
 from ..types import Optional
 from ..types import Tuple
 from ..types import Union
+from ..utils import dataset_cardinality
 from ..utils import dataset_len_elem
+from .data_handler import DataHandler
 
 
 def dict_only_ds(ds_handling_method: Callable) -> Callable:
     """Decorator to ensure that the dataset is a dict dataset and that the input key
-    matches one of the feature keys. Ne careful, the signature of decorated functions
+    matches one of the feature keys. The signature of decorated functions
     must be function(dataset, *args, **kwargs) with feature_key either in kwargs or
     args[0] when relevant.
 
@@ -66,21 +69,47 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
     return wrapper
 
 
-class TFDataHandler(object):
+class TFDataHandler(DataHandler):
     """
     Class to manage tf.data.Dataset. The aim is to provide a simple interface for
     working with tf.data.Datasets and manage them without having to use
     tensorflow syntax.
     """
 
+    def load_dataset(
+        self, dataset_id: Any, keys: list = None, load_kwargs: dict = {}
+    ) -> tf.data.Dataset:
+        """Load dataset from different manners, ensuring to return a dict based
+        tf.data.Dataset.
+
+        Args:
+            dataset_id (Any): dataset identification
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
+            load_kwargs (dict, optional): Additional args for loading from
+                tensorflow_datasets. Defaults to {}.
+
+        Returns:
+            tf.data.Dataset: A dict based tf.data.Dataset
+        """
+        if isinstance(dataset_id, (np.ndarray, dict, tuple)):
+            dataset = self.load_dataset_from_arrays(dataset_id, keys)
+        elif isinstance(dataset_id, tf.data.Dataset):
+            dataset = self.load_custom_dataset(dataset_id, keys)
+        elif isinstance(dataset_id, str):
+            dataset = self.load_from_tensorflow_datasets(dataset_id, load_kwargs)
+        return dataset
+
     @staticmethod
-    def load_tf_ds_from_numpy(
-        dataset_id: Union[np.ndarray, dict, tuple]
+    def load_dataset_from_arrays(
+        dataset_id: Union[np.ndarray, dict, tuple], keys: list = None
     ) -> tf.data.Dataset:
         """Load a tf.data.Dataset from a numpy array or a tuple/dict of numpy arrays
 
         Args:
             dataset_id (Union[np.ndarray, dict, tuple]): numpy array(s) to load.
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
 
         Returns:
             tf.data.Dataset
@@ -92,52 +121,71 @@ class TFDataHandler(object):
         # If dataset_id is a tuple, convert it to a dict
         elif isinstance(dataset_id, tuple):
             len_elem = len(dataset_id)
-            if len_elem == 2:
-                dataset_dict = {"input": dataset_id[0], "label": dataset_id[1]}
+            if keys is None:
+                if len_elem == 2:
+                    dataset_dict = {"input": dataset_id[0], "label": dataset_id[1]}
+                else:
+                    dataset_dict = {
+                        f"input_{i}": dataset_id[i] for i in range(len_elem - 1)
+                    }
+                    dataset_dict["label"] = dataset_id[-1]
+                print(
+                    'Loading tf.data.Dataset with elems as dicts, assigning "input_i" '
+                    'key to the i-th tuple dimension and "label" key to the last '
+                    "tuple dimension."
+                )
             else:
-                dataset_dict = {
-                    f"input_{i}": dataset_id[i] for i in range(len_elem - 1)
-                }
-                dataset_dict["label"] = dataset_id[-1]
-            print(
-                'Loading tf.data.Dataset with elems as dicts, assigning "input_i" key'
-                ' to the i-th tuple dimension and "label" key to the last '
-                "tuple dimension."
-            )
+                assert (
+                    len(keys) == len_elem
+                ), "Number of keys mismatch with the number of features"
+                dataset_dict = {keys[i]: dataset_id[i] for i in range(len_elem)}
+
             dataset = tf.data.Dataset.from_tensor_slices(dataset_dict)
 
         elif isinstance(dataset_id, dict):
-            dataset = tf.data.Dataset.from_tensor_slices(dataset_id)
+            if keys is not None:
+                len_elem = len(dataset_id)
+                assert (
+                    len(keys) == len_elem
+                ), "Number of keys mismatch with the number of features"
+                original_keys = list(dataset_id.keys())
+                dataset_dict = {
+                    keys[i]: dataset_id[original_keys[i]] for i in range(len_elem)
+                }
+            dataset = tf.data.Dataset.from_tensor_slices(dataset_dict)
 
         return dataset
 
-    def load_tf_ds(
+    def load_custom_dataset(
         self, dataset_id: tf.data.Dataset, keys: list = None
     ) -> tf.data.Dataset:
-        """Load a tf.data.Dataset from a tf.data.Dataset by ensuring it has the
-            correct format (dict-based)
+        """Load a custom Dataset by ensuring it has the correct format (dict-based)
 
         Args:
             dataset_id (tf.data.Dataset): tf.data.Dataset
-            keys (list, optional): Keys to use for features if dataset_id is
-                tuple based. Defaults to None.
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
 
         Returns:
             tf.data.Dataset
         """
         # If dataset_id is a tuple based tf.data.dataset, convert it to a dict
         if not isinstance(dataset_id.element_spec, dict):
+            len_elem = len(dataset_id.element_spec)
             if keys is None:
                 print(
                     "Feature name not found, assigning 'input_i' "
                     "key to the i-th tensor and 'label' key to the last"
                 )
-                len_elem = len(dataset_id.element_spec)
                 if len_elem == 2:
                     keys = ["input", "label"]
                 else:
                     keys = [f"input_{i}" for i in range(len_elem)]
                     keys[-1] = "label"
+            else:
+                assert (
+                    len(keys) == len_elem
+                ), "Number of keys mismatch with the number of features"
 
             dataset_id = self.tuple_to_dict(dataset_id, keys)
 
@@ -145,7 +193,7 @@ class TFDataHandler(object):
         return dataset
 
     @staticmethod
-    def load_tf_ds_from_tfds(
+    def load_from_tensorflow_datasets(
         dataset_id: str,
         load_kwargs: dict = {},
     ) -> tf.data.Dataset:
@@ -162,9 +210,8 @@ class TFDataHandler(object):
         assert (
             dataset_id in tfds.list_builders()
         ), "Dataset not available on tensorflow datasets catalog"
-        load_kwargs["with_info"] = True
-        dataset, infos = tfds.load(dataset_id, **load_kwargs)
-        return dataset, infos
+        dataset = tfds.load(dataset_id, **load_kwargs)
+        return dataset
 
     @staticmethod
     @dict_only_ds
@@ -298,21 +345,35 @@ class TFDataHandler(object):
         dataset = dataset.map(map_fn, num_parallel_calls=num_parallel_calls)
         return dataset
 
-    @staticmethod
     def prepare_for_training(
+        self,
         dataset: tf.data.Dataset,
         batch_size: int,
+        shuffle: bool = False,
+        preprocess_fn: Callable = None,
+        augment_fn: Callable = None,
+        output_keys: list = None,
+        dict_based_fns: bool = False,
         shuffle_buffer_size: int = None,
         prefetch_buffer_size: Optional[int] = None,
         drop_remainder: Optional[bool] = False,
+        **kwargs,
     ) -> tf.data.Dataset:
         """Prepare a tf.data.Dataset for training
 
         Args:
             dataset (tf.data.Dataset): tf.data.Dataset to prepare
             batch_size (int): Batch size
-            shuffle_buffer_size (int): Shuffling buffer size. If None, shuffling is not
-                performed. Defaults to None.
+            shuffle (bool, optional): To shuffle the returned dataset or not.
+                Defaults to False.
+            preprocess_fn (Callable, optional): Preprocessing function to apply to\
+                the dataset. Defaults to None.
+            augment_fn (Callable, optional): Augment function to be used (when the\
+                returned dataset is to be used for training). Defaults to None.
+            output_keys (list): List of keys corresponding to the features that will be \
+                returned. Keep all features if None. Defaults to None.
+            shuffle_buffer_size (int, optional): Size of the shuffle buffer. If None,
+                taken as the number of samples in the dataset. Defaults to None.
             prefetch_buffer_size (Optional[int], optional): Buffer size for prefetch.
                 If None, automatically chose using tf.data.experimental.AUTOTUNE.
                 Defaults to None.
@@ -322,10 +383,32 @@ class TFDataHandler(object):
         Returns:
             tf.data.Dataset: Prepared dataset
         """
+        # dict based to tuple based
+        output_keys = output_keys or self.get_ds_feature_keys(dataset)
+        if not dict_based_fns:
+            dataset = self.dict_to_tuple(dataset, output_keys)
+
+        # preprocess + DA
+        if preprocess_fn is not None:
+            dataset = self.map_ds(dataset, preprocess_fn)
+        if augment_fn is not None:
+            dataset = self.map_ds(dataset, augment_fn)
+
+        if dict_based_fns:
+            dataset = self.dict_to_tuple(dataset, output_keys)
+
         dataset = dataset.cache()
-        if shuffle_buffer_size is not None:
+
+        # shuffle
+        if shuffle:
+            num_samples = self.get_dataset_length(dataset)
+            shuffle_buffer_size = (
+                num_samples if shuffle_buffer_size is None else shuffle_buffer_size
+            )
             dataset = dataset.shuffle(shuffle_buffer_size)
+        # batch
         dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
+        # prefetch
         if prefetch_buffer_size is not None:
             prefetch_buffer_size = tf.data.experimental.AUTOTUNE
         dataset = dataset.prefetch(prefetch_buffer_size)
@@ -466,30 +549,26 @@ class TFDataHandler(object):
         dataset_to_filter = dataset_to_filter.filter(filter_fn)
         return dataset_to_filter
 
+    @staticmethod
+    def get_item_length(dataset: tf.data.Dataset) -> int:
+        """Number of elements in a dataset item
 
-def keras_dataset_load(dataset_name: str, **kwargs) -> Tuple[Tuple[np.ndarray]]:
-    """Load a dataset from tensorflow.python.keras
+        Args:
+            dataset (Any): Dataset
 
-    Args:
-        dataset_name (str): identifier of keras.dataset to load
+        Returns:
+            int: Item length
+        """
+        return dataset_len_elem(dataset)
 
-    Returns:
-        Tuple[Tuple[np.ndarray]]: loaded dataset
-    """
-    assert hasattr(
-        tf.keras.datasets, dataset_name
-    ), f"{dataset_name} not available with keras.datasets"
-    (x_train, y_train), (x_test, y_test) = getattr(
-        tf.keras.datasets, dataset_name
-    ).load_data(**kwargs)
+    @staticmethod
+    def get_dataset_length(dataset: tf.data.Dataset) -> int:
+        """Number of items in a dataset
 
-    x_max = np.max(x_train)
-    x_train = x_train.astype("float32") / x_max
-    x_test = x_test.astype("float32") / x_max
+        Args:
+            dataset (Any): Dataset
 
-    if dataset_name in ["mnist", "fashion_mnist"]:
-        x_train = np.expand_dims(x_train, -1)
-        x_test = np.expand_dims(x_test, -1)
-
-    # convert class vectors to binary class matrices
-    return (x_train, y_train), (x_test, y_test)
+        Returns:
+            int: Dataset length
+        """
+        return dataset_cardinality(dataset)
