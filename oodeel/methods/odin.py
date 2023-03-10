@@ -46,7 +46,7 @@ class ODIN(OODModel):
 
     def __init__(self, temperature: float = 1000, noise: float = 0.014):
         self.temperature = temperature
-        super().__init__(output_layers_id=[-1], input_layers_id=0)
+        super().__init__(output_layers_id=[-1], input_layers_id=None)
         self.noise = noise
         self._loss_func = tf.keras.losses.SparseCategoricalCrossentropy(
             from_logits=True, reduction="sum"

@@ -34,7 +34,7 @@ def test_gradient():
 
     x = torch.ones(input_shape)
     torch_operator = TorchOperator()
-    gradients = torch_operator.gradient(diff_fun, x)[0]
+    gradients = torch_operator.gradient(diff_fun, x)
 
     assert tuple(gradients.shape) == input_shape
     assert torch.all(gradients == torch.ones(input_shape))

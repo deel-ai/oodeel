@@ -32,7 +32,6 @@ from .operator import Operator
 
 
 class TorchOperator(Operator):
-
     @staticmethod
     def softmax(tensor: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
         """Softmax function"""
@@ -79,9 +78,8 @@ class TorchOperator(Operator):
             Gradients computed, with the same shape as the inputs.
         """
         inputs.requires_grad_(True)
-        # inputs = Variable(inputs, requires_grad=True)
         outputs = func(inputs, *args, **kwargs)
-        gradients = torch.autograd.grad(outputs, inputs)
+        gradients = torch.autograd.grad(outputs, [inputs])
         inputs.requires_grad_(False)
         return gradients[0]
 

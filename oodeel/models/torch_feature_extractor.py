@@ -25,12 +25,10 @@ from typing import Union
 
 import torch
 from torch import nn
-from torch.utils.data import Dataset, IterableDataset
-from torch.utils.data.dataset import T_co
+from torch.utils.data import Dataset
 
 from ..utils.tf_utils import get_input_from_dataset_elem
 from .feature_extractor import FeatureExtractor
-import tensorflow as tf
 
 
 class TorchFeatureExtractor(FeatureExtractor):
@@ -59,10 +57,10 @@ class TorchFeatureExtractor(FeatureExtractor):
     """
 
     def __init__(
-            self,
-            model: nn.Module,
-            output_layers_id: List[Union[int, str]] = [],
-            input_layer_id: Union[int, str] = None,
+        self,
+        model: nn.Module,
+        output_layers_id: List[Union[int, str]] = [],
+        input_layer_id: Union[int, str] = None,
     ):
         super().__init__(
             model=model,
@@ -113,20 +111,20 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     def prepare_extractor(self):
         """
-               Prepare the feature extractor for inference.
-               """
+        Prepare the feature extractor for inference.
+        """
         # Register a hook to store feature values for each considered layer.
         for layer_id in self.output_layers_id:
             layer = self.find_layer(layer_id)
             layer.register_forward_hook(self.get_features_hook(layer_id))
 
         # Crop model if input layer is provided
-        if (not (self.input_layer_id) is None):
+        if not (self.input_layer_id) is None:
             if isinstance(self.input_layer_id, int):
                 if self.input_layer_id > 0:
                     if isinstance(self.model, nn.Sequential):
                         self.model = nn.Sequential(
-                            *list(self.model.modules())[self.input_layer_id:]
+                            *list(self.model.modules())[self.input_layer_id :]
                         )
                     else:
                         raise NotImplementedError
@@ -140,7 +138,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 )
                 input_module_idx = module_names.index(self.input_layer_id)
                 self.model = nn.Sequential(
-                    *list(self.model.modules())[(input_module_idx + 1):]
+                    *list(self.model.modules())[(input_module_idx + 1) :]
                 )
 
             else:
@@ -155,9 +153,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             x = x.to(self._device)
         _ = self.model(x)
 
-        features = [
-            self._features[layer_id] for layer_id in self.output_layers_id
-        ]
+        features = [self._features[layer_id] for layer_id in self.output_layers_id]
 
         if len(features) == 1:
             features = features[0]

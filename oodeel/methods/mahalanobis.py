@@ -1,9 +1,34 @@
-from enum import IntEnum, auto
-from typing import List, Dict
+# -*- coding: utf-8 -*-
+# Copyright IRT Antoine de Saint Exupéry et Université Paul Sabatier Toulouse III - All
+# rights reserved. DEEL is a research program operated by IVADO, IRT Saint Exupéry,
+# CRIAQ and ANITI - https://www.deel.ai/
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+from enum import auto
+from enum import IntEnum
+from typing import Dict
+from typing import List
 
 import numpy as np
 from numpy.typing import ArrayLike
-from sklearn import preprocessing, covariance
+from sklearn import covariance
+from sklearn import preprocessing
 
 from oodeel.methods.base import OODModel
 
@@ -18,15 +43,18 @@ class Mahalanobis(OODModel):
     Implementation from https://github.com/pokaxpoka/deep_Mahalanobis_detector
     """
 
-    def __init__(self,
-                 input_processing_magnitude: float = 0.0,
-                 output_layers_id: List[int] = [-2],
-                 mode: str = "default"
-                 ):
+    def __init__(
+        self,
+        input_processing_magnitude: float = 0.0,
+        output_layers_id: List[int] = [-2],
+        mode: str = "default",
+    ):
         super(Mahalanobis, self).__init__(output_layers_id=output_layers_id)
 
         self.input_processing_magnitude = input_processing_magnitude
-        self.mean_covariance: covariance.EmpiricalCovariance = covariance.EmpiricalCovariance(assume_centered=True)
+        self.mean_covariance: covariance.EmpiricalCovariance = (
+            covariance.EmpiricalCovariance(assume_centered=True)
+        )
         self.by_label_preprocessing: Dict[int, preprocessing.StandardScaler] = dict()
         self.mode: MahalanobisMode = MahalanobisMode[mode]
 
@@ -45,10 +73,18 @@ class Mahalanobis(OODModel):
         if features.ndim > 2:
             features = features.reshape(features.shape[0], -1)
 
-        return np.min(np.stack(
-            [self.mean_covariance.mahalanobis(self.by_label_preprocessing[lbl].transform(features)) for lbl in
-             self.by_label_preprocessing.keys()],
-            axis=0), axis=0)
+        return np.min(
+            np.stack(
+                [
+                    self.mean_covariance.mahalanobis(
+                        self.by_label_preprocessing[lbl].transform(features)
+                    )
+                    for lbl in self.by_label_preprocessing.keys()
+                ],
+                axis=0,
+            ),
+            axis=0,
+        )
 
     def _score_tensor_default(self, inputs: ArrayLike):
 
@@ -66,8 +102,12 @@ class Mahalanobis(OODModel):
         sample_pred = gaussian_score.max(1)[1]
 
         means = self.op.stack(
-            [self.get_mean_by_label(list(self.by_label_preprocessing.keys())[s]) for s in sample_pred],
-            dim=0)
+            [
+                self.get_mean_by_label(list(self.by_label_preprocessing.keys())[s])
+                for s in sample_pred
+            ],
+            dim=0,
+        )
 
         gradient = self.op.gradient(self.loss_fn, inputs, means=means)
         gradient = self.op.sign(gradient)
@@ -90,7 +130,10 @@ class Mahalanobis(OODModel):
             batch_sample_mean = self.get_mean_by_label(lbl)
             zero_f = out_features - batch_sample_mean
             term_gau = -0.5 * self.op.diag(
-                self.op.matmul(self.op.matmul(zero_f, _precision), self.op.transpose(zero_f)))
+                self.op.matmul(
+                    self.op.matmul(zero_f, _precision), self.op.transpose(zero_f)
+                )
+            )
             gaussian_scores.append(self.op.reshape(term_gau, (-1, 1)))
         gaussian_score = self.op.cat(gaussian_scores, 1)
         return gaussian_score
@@ -106,8 +149,12 @@ class Mahalanobis(OODModel):
         # Flatten the features to 2D (n_batch, n_features)
         _out_features = self.op.flatten(_out_features)
         _zero_f = _out_features - self.op.constant(means)
-        pure_gau = -0.5 * self.op.diag(self.op.matmul(self.op.matmul(_zero_f, self.op.constant(self.get_precision())),
-                                                      self.op.transpose(_zero_f)))
+        pure_gau = -0.5 * self.op.diag(
+            self.op.matmul(
+                self.op.matmul(_zero_f, self.op.constant(self.get_precision())),
+                self.op.transpose(_zero_f),
+            )
+        )
         return self.op.mean(-pure_gau)
 
     def _fit_to_dataset(self, fit_dataset: ArrayLike):
@@ -122,9 +169,7 @@ class Mahalanobis(OODModel):
                     features_by_label[lbl] = list()
                 _feat_np = self.op.to_numpy(features[labels == lbl, ::])
                 _feat_np = _feat_np.reshape(_feat_np.shape[0], -1)
-                features_by_label[lbl].append(
-                    _feat_np
-                )
+                features_by_label[lbl].append(_feat_np)
         for lbl in features_by_label.keys():
             features_by_label[lbl] = np.vstack(features_by_label[lbl])
 
@@ -144,8 +189,16 @@ class Mahalanobis(OODModel):
         # Take the mean of the per class covariances
         self.mean_covariance = covariance.EmpiricalCovariance(assume_centered=True)
         self.mean_covariance._set_covariance(
-            np.mean(np.stack([by_label_covariance[lbl].covariance_ for lbl in by_label_covariance.keys()], axis=0),
-                    axis=0)
+            np.mean(
+                np.stack(
+                    [
+                        by_label_covariance[lbl].covariance_
+                        for lbl in by_label_covariance.keys()
+                    ],
+                    axis=0,
+                ),
+                axis=0,
+            )
         )
         labels = list(features_by_label.keys())
         self.mean_covariance.location_ = np.zeros(features_by_label[labels[0]].shape[1])

@@ -51,9 +51,9 @@ class DKNN(OODModel):
     """
 
     def __init__(
-            self,
-            nearest: int = 1,
-            output_layers_id: List[int] = [-2],
+        self,
+        nearest: int = 1,
+        output_layers_id: List[int] = [-2],
     ):
         super().__init__(
             output_layers_id=output_layers_id,
@@ -63,7 +63,7 @@ class DKNN(OODModel):
         self.nearest = nearest
 
     def _fit_to_dataset(
-            self, fit_dataset: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
+        self, fit_dataset: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
     ):
         """
         Constructs the index from ID data "fit_dataset", which will be used for
@@ -80,7 +80,7 @@ class DKNN(OODModel):
         self.index.add(norm_fit_projected)
 
     def _score_tensor(
-            self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
+        self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
     ) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on
