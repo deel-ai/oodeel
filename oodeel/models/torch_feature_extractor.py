@@ -119,13 +119,23 @@ class TorchFeatureExtractor(FeatureExtractor):
         for layer_id in self.output_layers_id:
             layer = self.find_layer(layer_id)
             layer.register_forward_hook(self.get_features_hook(layer_id))
-        if isinstance(self.model, nn.Sequential):
-            # Crop model if input layer is provided
-            if not (self.input_layer_id) is None:
-                if isinstance(self.input_layer_id, int):
-                    if isinstance(self.model, nn.Sequential):
-                        self.model = nn.Sequential(
-                            *list(self.model.modules())[self.input_layer_id:]
+
+
+        # Crop model if input layer is provided
+        if not (self.input_layer_id) is None:
+            if isinstance(self.input_layer_id, int):
+                if isinstance(self.model, nn.Sequential):
+                    self.model = nn.Sequential(
+                        *list(self.model.modules())[self.input_layer_id :]
+                    )
+                else:
+                    raise NotImplementedError
+            elif isinstance(self.input_layer_id, str):
+                if isinstance(self.model, nn.Sequential):
+                    module_names = list(
+                        filter(
+                            lambda x: x != "",
+                            map(lambda x: x[0], self.model.named_modules()),
                         )
                     else:
                         raise NotImplementedError
