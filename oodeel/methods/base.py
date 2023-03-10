@@ -213,13 +213,16 @@ class OODModel(ABC):
 
 
 def is_batched(dataset):
+    # TODO should be refactor
+    # Try to load DataLoader
     try:
         from torch.utils.data import DataLoader
-        if isinstance(dataset, DataLoader):
-            return True
-        return False
     except ImportError:
-        pass
+        DataLoader = None
+    # If dataset is a DataLoader then it is batched
+    if not (DataLoader is None) and isinstance(dataset, DataLoader):
+        return True
+    # For TF
     tensor = get_input_from_dataset_elem(dataset.element_spec)
     batch_dim = tensor.shape[0]
     return batch_dim is None
