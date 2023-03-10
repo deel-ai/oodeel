@@ -32,7 +32,7 @@ oodmodel = MLS()
 oodmodel.fit(model)
 scores = oodmodel.score(ds)
 ```
-**Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully !
+**Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully!
 
 # Table of contents
 
@@ -74,7 +74,7 @@ ds_in = OODDataset('mnist', split="test").prepare(batch_size)
 ds_out = OODDataset('fashion_mnist', split="test").prepare(batch_size)
 ```
 
-## For benchmarking with one dataset as in-distribution and another as out-of-distribution
+## For benchmarking with a class subset as in-distribution and aother subset of classes as out-of-distribution 
 
 Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (common practice of anomaly detection and open set recognition).
 
