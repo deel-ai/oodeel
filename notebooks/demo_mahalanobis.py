@@ -12,7 +12,7 @@ from torch.utils.data import IterableDataset, DataLoader
 
 from oodeel.datasets import OODDataset
 from oodeel.eval.metrics import bench_metrics
-from oodeel.methods import DKNN
+from oodeel.methods import DKNN, ODIN
 from oodeel.methods.mahalanobis import Mahalanobis
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     pp.pprint(metrics)
 
-    ### Mahalanobis
+    ## Mahalanobis
 
     oodmodel = Mahalanobis(output_layers_id=["avgpool"], input_processing_magnitude=0.0, mode="sklearn")
     oodmodel.fit(model, ds_fit_pt)
@@ -84,9 +84,13 @@ if __name__ == '__main__':
 
     pp.pprint(metrics)
 
+    oodmodel = Mahalanobis(output_layers_id=["avgpool"], input_processing_magnitude=0.0)
+    oodmodel.fit(model, ds_fit_pt)
     for mag in [0.0, 0.01, 0.005, 0.002, 0.0014, 0.001, 0.0005]:
-        oodmodel = Mahalanobis(output_layers_id=["avgpool"], input_processing_magnitude=mag)
-        oodmodel.fit(model, ds_fit_pt)
+
+        print(f"Magnitude : {mag}")
+
+        oodmodel.input_processing_magnitude = mag
         scores_in = oodmodel.score(ds_in_pt)
         scores_out = oodmodel.score(ds_out_pt)
 

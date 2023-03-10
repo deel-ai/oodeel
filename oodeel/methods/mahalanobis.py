@@ -1,16 +1,12 @@
-from enum import Enum, IntEnum, auto
+from enum import IntEnum, auto
 from typing import List, Dict
 
-import torch
+import numpy as np
 from numpy.typing import ArrayLike
 from sklearn import preprocessing, covariance
-from torch.autograd import Variable
 
 from oodeel.methods.base import OODModel
-import numpy as np
 
-
-# TODO Simplify and document input processing code
 
 class MahalanobisMode(IntEnum):
     default = auto()
@@ -44,7 +40,7 @@ class Mahalanobis(OODModel):
         Uses sklearn.covariance.EmpiricalCovariance mahalanobis distance implementation but does not apply input processing
         """
 
-        features = self.feature_extractor.predict(inputs).numpy()
+        features = self.op.to_numpy(self.feature_extractor.predict(inputs))
 
         if features.ndim > 2:
             features = features.reshape(features.shape[0], -1)
@@ -60,76 +56,59 @@ class Mahalanobis(OODModel):
         Code was taken from https://github.com/pokaxpoka/deep_Mahalanobis_detector with minimal changes
         """
 
-        magnitude = self.input_processing_magnitude
-
         # Make sure that gradient will be retained
-        data = Variable(inputs, requires_grad=True)
-        out_features = self.feature_extractor.predict(data, detach=False)
+        out_features = self.feature_extractor.predict(inputs)
         # Flatten the features to 2D (n_batch, n_features)
-        out_features = out_features.view(out_features.size(0), -1)
+        out_features = self.op.flatten(out_features)
+        gaussian_score = self.mahalanobis_score(out_features)
+
+        # Input preprocessing
+        sample_pred = gaussian_score.max(1)[1]
+
+        means = self.op.stack(
+            [self.get_mean_by_label(list(self.by_label_preprocessing.keys())[s]) for s in sample_pred],
+            dim=0)
+
+        gradient = self.op.gradient(self.loss_fn, inputs, means=means)
+        gradient = self.op.sign(gradient)
+
+        tempInputs = self.op.add(inputs, -self.input_processing_magnitude, gradient)
+        noise_out_features = self.feature_extractor.predict(tempInputs)
+        noise_out_features = self.op.flatten(noise_out_features)
+
+        noise_gaussian_score = self.mahalanobis_score(noise_out_features)
+        noise_gaussian_score, _ = self.op.max(noise_gaussian_score, axis=1)
+
+        return self.op.to_numpy(noise_gaussian_score)
+
+    def mahalanobis_score(self, out_features):
+        _precision = self.get_precision()
         # compute Mahalanobis score
         # for each class, remove the mean and compute Mahalanobis distance
-        gaussian_score = 0
+        gaussian_scores = list()
         for i, lbl in enumerate(self.by_label_preprocessing.keys()):
-            # previously : batch_sample_mean = sample_mean[layer_index][i]
-            batch_sample_mean = torch.from_numpy(self.by_label_preprocessing[lbl].mean_)
-            #
-            zero_f = out_features.data - batch_sample_mean
-            # _precision = precision[layer_index]
-            _precision = torch.from_numpy(self.mean_covariance.covariance_).double()
-            term_gau = -0.5 * torch.mm(torch.mm(zero_f, _precision), zero_f.t()).diag()
-            if i == 0:
-                gaussian_score = term_gau.view(-1, 1)
-            else:
-                gaussian_score = torch.cat((gaussian_score, term_gau.view(-1, 1)), 1)
+            batch_sample_mean = self.get_mean_by_label(lbl)
+            zero_f = out_features - batch_sample_mean
+            term_gau = -0.5 * self.op.diag(
+                self.op.matmul(self.op.matmul(zero_f, _precision), self.op.transpose(zero_f)))
+            gaussian_scores.append(self.op.reshape(term_gau, (-1, 1)))
+        gaussian_score = self.op.cat(gaussian_scores, 1)
+        return gaussian_score
 
-        # Input_processing
-        sample_pred = gaussian_score.max(1)[1]
-        # previously: batch_sample_mean = sample_mean[layer_index].index_select(0, sample_pred)
-        batch_sample_mean = torch.from_numpy(
-            np.stack(
-                [self.by_label_preprocessing[list(self.by_label_preprocessing.keys())[s]].mean_ for s in sample_pred],
-                axis=0)
-        )
-        #
-        zero_f = out_features - Variable(batch_sample_mean)
-        # previously: _precision = precision[layer_index]
-        _precision = torch.from_numpy(self.mean_covariance.covariance_).double()
-        #
-        pure_gau = -0.5 * torch.mm(torch.mm(zero_f, Variable(_precision)), zero_f.t()).diag()
-        loss = torch.mean(-pure_gau)
-        loss.backward(retain_graph=True)
+    def get_precision(self):
+        return self.op.from_numpy(self.mean_covariance.covariance_).double()
 
-        gradient = torch.ge(data.grad.data, 0)
-        gradient = (gradient.float() - 0.5) * 2
+    def get_mean_by_label(self, lbl):
+        return self.op.from_numpy(self.by_label_preprocessing[lbl].mean_)
 
-        tempInputs = torch.add(data.data, -magnitude, gradient)
-
-        noise_out_features = self.feature_extractor.predict(tempInputs)
-        noise_out_features = noise_out_features.view(noise_out_features.size(0), noise_out_features.size(1), -1)
-        noise_out_features = torch.mean(noise_out_features, 2)
-        noise_gaussian_score = 0
-        # previously
-        # for i in range(num_classes):
-        #     batch_sample_mean = sample_mean[layer_index][i]
-        #
-        for i, lbl in enumerate(self.by_label_preprocessing.keys()):
-            # previously, batch_sample_mean = sample_mean[layer_index][i]
-            batch_sample_mean = torch.from_numpy(self.by_label_preprocessing[lbl].mean_).double()
-            #
-            zero_f = noise_out_features.data - batch_sample_mean
-            # previously: _precision = precision[layer_index]
-            _precision = torch.from_numpy(self.mean_covariance.covariance_).double()
-            #
-            term_gau = -0.5 * torch.mm(torch.mm(zero_f, _precision), zero_f.t()).diag()
-            if i == 0:
-                noise_gaussian_score = term_gau.view(-1, 1)
-            else:
-                noise_gaussian_score = torch.cat((noise_gaussian_score, term_gau.view(-1, 1)), 1)
-
-        noise_gaussian_score, _ = torch.max(noise_gaussian_score, dim=1)
-
-        return noise_gaussian_score
+    def loss_fn(self, inputs: ArrayLike, means: np.ndarray):
+        _out_features = self.feature_extractor.predict(inputs)
+        # Flatten the features to 2D (n_batch, n_features)
+        _out_features = self.op.flatten(_out_features)
+        _zero_f = _out_features - self.op.constant(means)
+        pure_gau = -0.5 * self.op.diag(self.op.matmul(self.op.matmul(_zero_f, self.op.constant(self.get_precision())),
+                                                      self.op.transpose(_zero_f)))
+        return self.op.mean(-pure_gau)
 
     def _fit_to_dataset(self, fit_dataset: ArrayLike):
         # Store feature sets by label
@@ -138,10 +117,10 @@ class Mahalanobis(OODModel):
         for batch in fit_dataset:
             images, labels = batch
             features = self.feature_extractor.predict(images)
-            for lbl in np.unique(labels.numpy()):
+            for lbl in np.unique(self.op.to_numpy(labels)):
                 if not lbl in features_by_label.keys():
                     features_by_label[lbl] = list()
-                _feat_np = features[labels == lbl, ::].numpy()
+                _feat_np = self.op.to_numpy(features[labels == lbl, ::])
                 _feat_np = _feat_np.reshape(_feat_np.shape[0], -1)
                 features_by_label[lbl].append(
                     _feat_np

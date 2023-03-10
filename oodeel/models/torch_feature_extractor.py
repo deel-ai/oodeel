@@ -156,7 +156,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         _ = self.model(x)
 
         features = [
-            self._features[layer_id].detach() for layer_id in self.output_layers_id
+            self._features[layer_id] for layer_id in self.output_layers_id
         ]
 
         if len(features) == 1:
@@ -171,7 +171,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         if not isinstance(dataset, torch.utils.data.DataLoader):
             tensor = get_input_from_dataset_elem(dataset)
-            return self.predict_tensor(tensor, detach)
+            return self.predict_tensor(tensor)
 
         features = [None for i in range(len(self.output_layers_id))]
         for elem in dataset:

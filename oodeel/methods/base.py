@@ -213,6 +213,13 @@ class OODModel(ABC):
 
 
 def is_batched(dataset):
+    try:
+        from torch.utils.data import DataLoader
+        if isinstance(dataset, DataLoader):
+            return True
+        return False
+    except ImportError:
+        pass
     tensor = get_input_from_dataset_elem(dataset.element_spec)
     batch_dim = tensor.shape[0]
     return batch_dim is None
