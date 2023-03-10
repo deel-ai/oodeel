@@ -154,12 +154,12 @@ class OODDataset(object):
 
     def add_out_data(
         self,
-        out_dataset: Union[OODDataset, tf.data.Dataset],
+        out_dataset: Union["OODDataset", tf.data.Dataset],
         in_value: int = 0,
         out_value: int = 1,
         resize: Optional[bool] = False,
         shape: Optional[Tuple[int]] = None,
-    ) -> OODDataset:
+    ) -> "OODDataset":
         """Concatenate two OODDatasets. Useful for scoring on multiple datasets, or
         training with added out-of-distribution data.
 
@@ -180,7 +180,7 @@ class OODDataset(object):
 
         # Creating an OODDataset object from out_dataset if necessary and make sure
         # the two OODDatasets have compatible parameters
-        if isinstance(out_dataset, OODDataset):
+        if isinstance(out_dataset, "OODDataset"):
             out_dataset = out_dataset.data
         else:
             out_dataset = OODDataset(out_dataset).data
@@ -214,7 +214,7 @@ class OODDataset(object):
         self,
         in_labels: Optional[Union[np.ndarray, list]] = None,
         out_labels: Optional[Union[np.ndarray, list]] = None,
-    ) -> Optional[Tuple[OODDataset]]:
+    ) -> Optional[Tuple["OODDataset"]]:
         """Filter the dataset by assigning ood labels depending on labels
         value (typically, class id).
 
@@ -265,6 +265,51 @@ class OODDataset(object):
             OODDataset(out_data, backend=self.backend),
         )
 
+    def get_dataset(
+        self,
+        with_ood_labels: bool = False,
+        with_labels: bool = True,
+    ) -> tf.data.Dataset:
+        """Return the dataset in a tuple format and correct labels, without preparing for training or inference
+
+        Args:
+            with_ood_labels (bool, optional): To return the dataset with ood_labels. Defaults to False.
+            with_labels (bool, optional): To return the dataset with labels. Defaults to True.
+
+        Returns:
+            tf.data.Dataset: dataset
+        """
+        # Check if the dataset has at least one of label and ood_label
+        assert (
+            with_ood_labels or with_labels
+        ), "The dataset must have at least one of label and ood_label"
+
+        # Check if the dataset has ood_labels when asked to return with_ood_labels
+        if with_ood_labels:
+            assert (
+                self.has_ood_label
+            ), "Please assign ood labels before preparing with ood_labels"
+
+        dataset_to_prepare = self.data
+
+        # Making the dataset channel first if the backend is pytorch
+        if self.backend in ["torch", "pytorch"]:
+            dataset_to_prepare = self._data_handler.make_channel_first(
+                dataset_to_prepare
+            )
+
+        # Select the keys to be returned
+        if with_ood_labels and with_labels:
+            keys = [self.input_key, "label", "ood_label"]
+        elif with_ood_labels and not with_labels:
+            keys = [self.input_key, "ood_label"]
+        else:
+            keys = [self.input_key, "label"]
+
+        # Transform the dataset from dict to tuple
+        dataset_to_prepare = self._data_handler.dict_to_tuple(dataset_to_prepare, keys)
+        return dataset_to_prepare
+
     def prepare(
         self,
         batch_size: int = 128,
@@ -296,35 +341,9 @@ class OODDataset(object):
         Returns:
             tf.data.Dataset: prepared dataset
         """
-        # Check if the dataset has at least one of label and ood_label
-        assert (
-            with_ood_labels or with_labels
-        ), "The dataset must have at least one of label and ood_label"
-
-        # Check if the dataset has ood_labels when asked to return with_ood_labels
-        if with_ood_labels:
-            assert (
-                self.has_ood_label
-            ), "Please assign ood labels before preparing with ood_labels"
-
-        dataset_to_prepare = self.data
-
-        # Making the dataset channel first if the backend is pytorch
-        if self.backend in ["torch", "pytorch"]:
-            dataset_to_prepare = self._data_handler.make_channel_first(
-                dataset_to_prepare
-            )
-
-        # Select the keys to be returned
-        if with_ood_labels and with_labels:
-            keys = [self.input_key, "label", "ood_label"]
-        elif with_ood_labels and not with_labels:
-            keys = [self.input_key, "ood_label"]
-        else:
-            keys = [self.input_key, "label"]
-
-        # Transform the dataset from dict to tuple
-        dataset_to_prepare = self._data_handler.dict_to_tuple(dataset_to_prepare, keys)
+        dataset_to_prepare = self.get_dataset(
+            with_ood_labels=with_ood_labels, with_labels=with_labels
+        )
 
         # Apply the preprocessing and augmentation functions if necessary
         if preprocess_fn is not None:
