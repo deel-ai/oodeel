@@ -39,8 +39,8 @@ def train_keras_app(
     batch_size: int = 128,
     epochs: int = 50,
     loss: str = "sparse_categorical_crossentropy",
-    optimizer: str = "adam",
-    learning_rate: float = 1e-3,
+    optimizer: str = "SGD",
+    learning_rate: float = 1e-1,
     metrics: List[str] = ["accuracy"],
     imagenet_pretrained: bool = False,
     validation_data: Optional[tf.data.Dataset] = None,
@@ -106,32 +106,48 @@ def train_keras_app(
         ResNet18, _ = Classifiers.get("resnet18")
         model = ResNet18(input_shape, classes=num_classes, weights=None)
 
-    # Prepare data
+    n_samples = dataset_cardinality(train_data)
 
+    # Prepare data
     if not is_prepared:
+
+        def _preprocess_fn(*inputs):
+            x = inputs[0] / 255
+            return tuple([x] + list(inputs[1:]))
+
         padding = 4
         image_size = input_shape[0]
         target_size = image_size + padding * 2
+        nb_channels = input_shape[2]
 
         def _augment_fn(images, labels):
-            images = tf.image.pad_to_bounding_box(
-                images, padding, padding, target_size, target_size
-            )
-            images = tf.image.random_crop(images, (image_size, image_size, 3))
+            # images = tf.image.pad_to_bounding_box(
+            #    images, padding, padding, target_size, target_size
+            # )
+            images = tf.image.random_crop(images, (image_size, image_size, nb_channels))
             images = tf.image.random_flip_left_right(images)
             return images, labels
 
-        n_samples = len(train_data)
         train_data = (
             train_data.map(
                 _augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
             )
+            .map(_preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            .cache()
             .shuffle(n_samples)
             .batch(batch_size)
+            .prefetch(tf.data.experimental.AUTOTUNE)
         )
 
         if validation_data is not None:
-            validation_data = validation_data.batch(batch_size)
+            validation_data = (
+                validation_data.map(
+                    _preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
+                )
+                .cache()
+                .batch(batch_size)
+                .prefetch(tf.data.experimental.AUTOTUNE)
+            )
 
     # Prepare callbacks
     model_checkpoint_callback = []
@@ -152,14 +168,30 @@ def train_keras_app(
         model_checkpoint_callback = None
 
     # Prepare learning rate scheduler and optimizer
-    n_steps = dataset_cardinality(train_data) * epochs
+    n_steps = n_samples * epochs
     values = list(learning_rate * np.array([1, 0.1, 0.01]))
     boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
 
     lr_scheduler = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
         boundaries, values
     )
-    config = {"class_name": optimizer, "config": {"learning_rate": lr_scheduler}}
+    decay_steps = int(epochs * n_samples / batch_size)
+    learning_rate_fn = tf.keras.experimental.CosineDecay(
+        learning_rate, decay_steps=decay_steps
+    )
+
+    config = {
+        "class_name": optimizer,
+        "config": {
+            "learning_rate": learning_rate_fn,
+        },
+    }
+
+    if optimizer == "SGD":
+        config["config"]["momentum"] = 0.9
+        config["config"]["nesterov"] = True
+        config["config"]["decay"] = 5e-4
+
     keras_optimizer = tf.keras.optimizers.get(config)
 
     model.compile(loss=loss, optimizer=keras_optimizer, metrics=metrics)
