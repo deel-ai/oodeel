@@ -41,7 +41,7 @@ def train_convnet_classifier(
     batch_size: int = 128,
     epochs: int = 50,
     loss: str = "sparse_categorical_crossentropy",
-    optimizer: str = "adam",
+    optimizer: str = "SGD",
     learning_rate: float = 1e-3,
     metrics: List[str] = ["accuracy"],
     validation_data: Optional[tf.data.Dataset] = None,
@@ -92,12 +92,19 @@ def train_convnet_classifier(
         ]
     )
 
+    n_samples = dataset_cardinality(train_data)
+
     # Prepare data
     if not is_prepared:
+
+        def _preprocess_fn(*inputs):
+            x = inputs[0] / 255
+            return tuple([x] + list(inputs[1:]))
+
         padding = 4
         image_size = input_shape[0]
-        nb_channels = input_shape[2]
         target_size = image_size + padding * 2
+        nb_channels = input_shape[2]
 
         def _augment_fn(images, labels):
             images = tf.image.pad_to_bounding_box(
@@ -107,17 +114,26 @@ def train_convnet_classifier(
             images = tf.image.random_flip_left_right(images)
             return images, labels
 
-        n_samples = len(train_data)
         train_data = (
             train_data.map(
                 _augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
             )
+            .map(_preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            .cache()
             .shuffle(n_samples)
             .batch(batch_size)
+            .prefetch(tf.data.experimental.AUTOTUNE)
         )
 
         if validation_data is not None:
-            validation_data = validation_data.batch(batch_size)
+            validation_data = (
+                validation_data.map(
+                    _preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
+                )
+                .cache()
+                .batch(batch_size)
+                .prefetch(tf.data.experimental.AUTOTUNE)
+            )
 
     # Prepare callbacks
     model_checkpoint_callback = []
@@ -138,14 +154,26 @@ def train_convnet_classifier(
         model_checkpoint_callback = None
 
     # Prepare learning rate scheduler and optimizer
-    n_steps = dataset_cardinality(train_data) * epochs
+    n_steps = n_samples * epochs
     values = list(learning_rate * np.array([1, 0.1, 0.01]))
     boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
 
     lr_scheduler = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
         boundaries, values
     )
-    config = {"class_name": optimizer, "config": {"learning_rate": lr_scheduler}}
+
+    config = {
+        "class_name": optimizer,
+        "config": {
+            "learning_rate": lr_scheduler,
+        },
+    }
+
+    if optimizer == "SGD":
+        config["config"]["momentum"] = 0.9
+        config["config"]["nesterov"] = True
+        config["config"]["decay"] = 5e-4
+
     keras_optimizer = tf.keras.optimizers.get(config)
 
     model.compile(loss=loss, optimizer=keras_optimizer, metrics=metrics)
