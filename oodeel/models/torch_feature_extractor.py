@@ -113,48 +113,37 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     def prepare_extractor(self):
         """
-        Prepare the feature extractor for inference.
-        """
+               Prepare the feature extractor for inference.
+               """
         # Register a hook to store feature values for each considered layer.
         for layer_id in self.output_layers_id:
             layer = self.find_layer(layer_id)
             layer.register_forward_hook(self.get_features_hook(layer_id))
 
-
         # Crop model if input layer is provided
-        if not (self.input_layer_id) is None:
+        if (not (self.input_layer_id) is None) and (self.input_layer_id > 0):
             if isinstance(self.input_layer_id, int):
                 if isinstance(self.model, nn.Sequential):
                     self.model = nn.Sequential(
-                        *list(self.model.modules())[self.input_layer_id :]
+                        *list(self.model.modules())[self.input_layer_id:]
                     )
                 else:
                     raise NotImplementedError
             elif isinstance(self.input_layer_id, str):
-                if isinstance(self.model, nn.Sequential):
-                    module_names = list(
-                        filter(
-                            lambda x: x != "",
-                            map(lambda x: x[0], self.model.named_modules()),
-                        )
-                    else:
-                        raise NotImplementedError
-                elif isinstance(self.input_layer_id, str):
-                    if isinstance(self.model, nn.Sequential):
-                        module_names = list(
-                            filter(
-                                lambda x: x != "",
-                                map(lambda x: x[0], self.model.named_modules()),
-                            )
-                        )
-                        input_module_idx = module_names.index(self.input_layer_id)
-                        self.model = nn.Sequential(
-                            *list(self.model.modules())[(input_module_idx + 1):]
-                        )
-                    else:
-                        raise NotImplementedError
-                else:
-                    raise NotImplementedError
+
+                module_names = list(
+                    filter(
+                        lambda x: x != "",
+                        map(lambda x: x[0], self.model.named_modules()),
+                    )
+                )
+                input_module_idx = module_names.index(self.input_layer_id)
+                self.model = nn.Sequential(
+                    *list(self.model.modules())[(input_module_idx + 1):]
+                )
+
+            else:
+                raise NotImplementedError
 
     def predict_tensor(self, x: torch.Tensor) -> List[torch.Tensor]:
         """
