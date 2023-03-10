@@ -1,3 +1,4 @@
+from enum import Enum, IntEnum, auto
 from typing import List, Dict
 
 import torch
@@ -8,24 +9,40 @@ from torch.autograd import Variable
 from oodeel.methods.base import OODModel
 import numpy as np
 
-# TODO replace StandardScaler by computing the mean manually
+
 # TODO Simplify and document input processing code
-# TODO add the possibility to deactivate the input processing
+
+class MahalanobisMode(IntEnum):
+    default = auto()
+    sklearn = auto()
+
 
 class Mahalanobis(OODModel):
     """
     Implementation from https://github.com/pokaxpoka/deep_Mahalanobis_detector
     """
 
-    def __init__(self, input_processing_magnitude: float = 0.01, output_layers_id: List[int] = [-2], ):
+    def __init__(self,
+                 input_processing_magnitude: float = 0.0,
+                 output_layers_id: List[int] = [-2],
+                 mode: str = "default"
+                 ):
         super(Mahalanobis, self).__init__(output_layers_id=output_layers_id)
 
         self.input_processing_magnitude = input_processing_magnitude
         self.mean_covariance: covariance.EmpiricalCovariance = covariance.EmpiricalCovariance(assume_centered=True)
         self.by_label_preprocessing: Dict[int, preprocessing.StandardScaler] = dict()
-        pass
+        self.mode: MahalanobisMode = MahalanobisMode[mode]
 
-    def ___score_tensor(self, inputs: ArrayLike):
+    def _score_tensor(self, inputs: ArrayLike):
+        if self.mode == MahalanobisMode.sklearn:
+            return self._score_tensor_w_sklearn(inputs)
+        return self._score_tensor_default(inputs)
+
+    def _score_tensor_w_sklearn(self, inputs: ArrayLike):
+        """
+        Uses sklearn.covariance.EmpiricalCovariance mahalanobis distance implementation but does not apply input processing
+        """
 
         features = self.feature_extractor.predict(inputs).numpy()
 
@@ -37,7 +54,7 @@ class Mahalanobis(OODModel):
              self.by_label_preprocessing.keys()],
             axis=0), axis=0)
 
-    def _score_tensor(self, inputs: ArrayLike):
+    def _score_tensor_default(self, inputs: ArrayLike):
 
         """
         Code was taken from https://github.com/pokaxpoka/deep_Mahalanobis_detector with minimal changes
@@ -85,21 +102,7 @@ class Mahalanobis(OODModel):
 
         gradient = torch.ge(data.grad.data, 0)
         gradient = (gradient.float() - 0.5) * 2
-        # TODO find out what the following lines are doing
-        # if net_type == 'densenet':
-        #     gradient.index_copy_(1, torch.LongTensor([0]).cuda(),
-        #                          gradient.index_select(1, torch.LongTensor([0]).cuda()) / (63.0 / 255.0))
-        #     gradient.index_copy_(1, torch.LongTensor([1]).cuda(),
-        #                          gradient.index_select(1, torch.LongTensor([1]).cuda()) / (62.1 / 255.0))
-        #     gradient.index_copy_(1, torch.LongTensor([2]).cuda(),
-        #                          gradient.index_select(1, torch.LongTensor([2]).cuda()) / (66.7 / 255.0))
-        # elif net_type == 'resnet':
-        #     gradient.index_copy_(1, torch.LongTensor([0]).cuda(),
-        #                          gradient.index_select(1, torch.LongTensor([0]).cuda()) / (0.2023))
-        #     gradient.index_copy_(1, torch.LongTensor([1]).cuda(),
-        #                          gradient.index_select(1, torch.LongTensor([1]).cuda()) / (0.1994))
-        #     gradient.index_copy_(1, torch.LongTensor([2]).cuda(),
-        #                          gradient.index_select(1, torch.LongTensor([2]).cuda()) / (0.2010))
+
         tempInputs = torch.add(data.data, -magnitude, gradient)
 
         noise_out_features = self.feature_extractor.predict(tempInputs)

@@ -20,14 +20,18 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import List
+from dataclasses import dataclass
+from typing import List, Iterator
 from typing import Union
 
 import torch
 from torch import nn
+from torch.utils.data import Dataset, IterableDataset
+from torch.utils.data.dataset import T_co
 
 from ..utils.tf_utils import get_input_from_dataset_elem
 from .feature_extractor import FeatureExtractor
+import tensorflow as tf
 
 
 class TorchFeatureExtractor(FeatureExtractor):
@@ -56,10 +60,10 @@ class TorchFeatureExtractor(FeatureExtractor):
     """
 
     def __init__(
-        self,
-        model: nn.Module,
-        output_layers_id: List[Union[int, str]] = [],
-        input_layer_id: Union[int, str] = None,
+            self,
+            model: nn.Module,
+            output_layers_id: List[Union[int, str]] = [],
+            input_layer_id: Union[int, str] = None,
     ):
         super().__init__(
             model=model,
@@ -116,35 +120,34 @@ class TorchFeatureExtractor(FeatureExtractor):
         for layer_id in self.output_layers_id:
             layer = self.find_layer(layer_id)
             layer.register_forward_hook(self.get_features_hook(layer_id))
-
-        # Crop model if input layer is provided
-        if not (self.input_layer_id) is None:
-
-            if isinstance(self.input_layer_id, int):
-                if isinstance(self.model, nn.Sequential):
-                    self.model = nn.Sequential(
-                        *list(self.model.modules())[self.input_layer_id :]
-                    )
-                else:
-                    raise NotImplementedError
-            elif isinstance(self.input_layer_id, str):
-                if isinstance(self.model, nn.Sequential):
-                    module_names = list(
-                        filter(
-                            lambda x: x != "",
-                            map(lambda x: x[0], self.model.named_modules()),
+        if isinstance(self.model, nn.Sequential):
+            # Crop model if input layer is provided
+            if not (self.input_layer_id) is None:
+                if isinstance(self.input_layer_id, int):
+                    if isinstance(self.model, nn.Sequential):
+                        self.model = nn.Sequential(
+                            *list(self.model.modules())[self.input_layer_id:]
                         )
-                    )
-                    input_module_idx = module_names.index(self.input_layer_id)
-                    self.model = nn.Sequential(
-                        *list(self.model.modules())[(input_module_idx + 1) :]
-                    )
+                    else:
+                        raise NotImplementedError
+                elif isinstance(self.input_layer_id, str):
+                    if isinstance(self.model, nn.Sequential):
+                        module_names = list(
+                            filter(
+                                lambda x: x != "",
+                                map(lambda x: x[0], self.model.named_modules()),
+                            )
+                        )
+                        input_module_idx = module_names.index(self.input_layer_id)
+                        self.model = nn.Sequential(
+                            *list(self.model.modules())[(input_module_idx + 1):]
+                        )
+                    else:
+                        raise NotImplementedError
                 else:
                     raise NotImplementedError
-            else:
-                raise NotImplementedError
 
-    def predict_tensor(self, x: torch.Tensor, detach=False) -> List[torch.Tensor]:
+    def predict_tensor(self, x: torch.Tensor, detach=True) -> List[torch.Tensor]:
         """
         Get features associated with the input. Works on an in-memory tensor.
         """
@@ -165,7 +168,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         return features
 
     def predict(
-        self, dataset: torch.utils.data.DataLoader, detach=False
+            self, dataset: torch.utils.data.DataLoader, detach=True
     ) -> List[torch.Tensor]:
         """
         Extract features for a given inputs. If batch_size is specified,

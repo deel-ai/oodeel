@@ -56,20 +56,33 @@ if __name__ == '__main__':
 
     ### DKNN
 
-    # oodmodel = DKNN(nearest=10, output_layers_id=["avgpool"])
-    # oodmodel.fit(model, ds_fit_pt)
-    # scores_in = oodmodel.score(ds_in_pt)
-    # scores_out = oodmodel.score(ds_out_pt)
-    #
-    # metrics = bench_metrics(
-    #     (scores_in, scores_out),
-    #     metrics=["auroc", "fpr95tpr", accuracy_score, roc_auc_score],
-    #     threshold=None
-    # )
-    #
-    # pp.pprint(metrics)
+    oodmodel = DKNN(nearest=10, output_layers_id=["avgpool"])
+    oodmodel.fit(model, ds_fit_pt)
+    scores_in = oodmodel.score(ds_in_pt)
+    scores_out = oodmodel.score(ds_out_pt)
+
+    metrics = bench_metrics(
+        (scores_in, scores_out),
+        metrics=["auroc", "fpr95tpr", accuracy_score, roc_auc_score],
+        threshold=None
+    )
+
+    pp.pprint(metrics)
 
     ### Mahalanobis
+
+    oodmodel = Mahalanobis(output_layers_id=["avgpool"], input_processing_magnitude=0.0, mode="sklearn")
+    oodmodel.fit(model, ds_fit_pt)
+    scores_in = oodmodel.score(ds_in_pt)
+    scores_out = oodmodel.score(ds_out_pt)
+
+    metrics = bench_metrics(
+        (scores_in, scores_out),
+        metrics=["auroc", "fpr95tpr", accuracy_score, roc_auc_score],
+        threshold=None
+    )
+
+    pp.pprint(metrics)
 
     for mag in [0.0, 0.01, 0.005, 0.002, 0.0014, 0.001, 0.0005]:
         oodmodel = Mahalanobis(output_layers_id=["avgpool"], input_processing_magnitude=mag)
