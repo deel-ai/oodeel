@@ -116,9 +116,9 @@ def train_convnet_classifier(
 
         train_data = (
             train_data.map(
-                _augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
+                _preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
             )
-            .map(_preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            .map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
             .cache()
             .shuffle(n_samples)
             .batch(batch_size)
