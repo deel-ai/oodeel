@@ -121,18 +121,18 @@ def train_keras_app(
         nb_channels = input_shape[2]
 
         def _augment_fn(images, labels):
-            # images = tf.image.pad_to_bounding_box(
-            #    images, padding, padding, target_size, target_size
-            # )
+            images = tf.image.pad_to_bounding_box(
+                images, padding, padding, target_size, target_size
+            )
             images = tf.image.random_crop(images, (image_size, image_size, nb_channels))
             images = tf.image.random_flip_left_right(images)
             return images, labels
 
         train_data = (
             train_data.map(
-                _augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
+                _preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
             )
-            .map(_preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            .map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
             .cache()
             .shuffle(n_samples)
             .batch(batch_size)

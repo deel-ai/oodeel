@@ -72,6 +72,7 @@ dev_requirements = [
     "image-classifiers",
     "torch",
     "torchvision",
+    "pandas",
 ]
 
 
