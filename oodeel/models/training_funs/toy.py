@@ -119,7 +119,6 @@ def train_convnet_classifier(
                 _preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
             )
             .map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-            .cache()
             .shuffle(n_samples)
             .batch(batch_size)
             .prefetch(tf.data.experimental.AUTOTUNE)
@@ -130,7 +129,6 @@ def train_convnet_classifier(
                 validation_data.map(
                     _preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
                 )
-                .cache()
                 .batch(batch_size)
                 .prefetch(tf.data.experimental.AUTOTUNE)
             )
@@ -158,20 +156,21 @@ def train_convnet_classifier(
     values = list(learning_rate * np.array([1, 0.1, 0.01]))
     boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
 
-    lr_scheduler = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-        boundaries, values
+    # optimizer
+    decay_steps = int(epochs * n_samples / batch_size)
+    learning_rate_fn = tf.keras.experimental.CosineDecay(
+        learning_rate, decay_steps=decay_steps
     )
 
     config = {
         "class_name": optimizer,
         "config": {
-            "learning_rate": lr_scheduler,
+            "learning_rate": learning_rate_fn,
         },
     }
 
     if optimizer == "SGD":
         config["config"]["momentum"] = 0.9
-        config["config"]["nesterov"] = True
         config["config"]["decay"] = 5e-4
 
     keras_optimizer = tf.keras.optimizers.get(config)
