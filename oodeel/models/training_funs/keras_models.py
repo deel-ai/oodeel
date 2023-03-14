@@ -97,13 +97,12 @@ def train_keras_app(
         features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
         output = tf.keras.layers.Dense(
             num_classes,
-            kernel_initializer="glorot_normal",
-            bias_initializer="zeros",
             activation="softmax",
         )(features)
         model = tf.keras.Model(backbone.layers[0].input, output)
     else:
         ResNet18, _ = Classifiers.get("resnet18")
+        print("prout", input_shape, num_classes)
         model = ResNet18(input_shape, classes=num_classes, weights=None)
 
     n_samples = dataset_cardinality(train_data)
@@ -133,7 +132,6 @@ def train_keras_app(
                 _preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
             )
             .map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-            .cache()
             .shuffle(n_samples)
             .batch(batch_size)
             .prefetch(tf.data.experimental.AUTOTUNE)
@@ -144,7 +142,6 @@ def train_keras_app(
                 validation_data.map(
                     _preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
                 )
-                .cache()
                 .batch(batch_size)
                 .prefetch(tf.data.experimental.AUTOTUNE)
             )
@@ -172,9 +169,7 @@ def train_keras_app(
     values = list(learning_rate * np.array([1, 0.1, 0.01]))
     boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
 
-    lr_scheduler = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-        boundaries, values
-    )
+    # optimizer
     decay_steps = int(epochs * n_samples / batch_size)
     learning_rate_fn = tf.keras.experimental.CosineDecay(
         learning_rate, decay_steps=decay_steps
@@ -189,7 +184,6 @@ def train_keras_app(
 
     if optimizer == "SGD":
         config["config"]["momentum"] = 0.9
-        config["config"]["nesterov"] = True
         config["config"]["decay"] = 5e-4
 
     keras_optimizer = tf.keras.optimizers.get(config)
