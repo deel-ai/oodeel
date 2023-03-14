@@ -36,18 +36,11 @@ class DKNN(OODModel):
     https://arxiv.org/abs/2204.06507
     Simplified version adapted to convnet as built in ./models/train/train_mnist.py
 
-        Args:
-            nearest: number of nearest neighbors to consider.
-                Defaults to 1.
-            output_layers_id: feature space on which to compute nearest neighbors.
-                Defaults to [-2].
-            output_activation: output activation to use.
-                Defaults to None.
-            flatten: Flatten the output features or not.
-                Defaults to True.
-            batch_size: batch_size used to compute the features space
-                projection of input data.
-                Defaults to 256.
+    Args:
+        nearest: number of nearest neighbors to consider.
+            Defaults to 1.
+        output_layers_id: feature space on which to compute nearest neighbors.
+            Defaults to [-2].
     """
 
     def __init__(

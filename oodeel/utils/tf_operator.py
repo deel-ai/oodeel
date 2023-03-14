@@ -29,6 +29,8 @@ from .operator import Operator
 
 
 class TFOperator(Operator):
+    """Class to handle tensorflow operations with a unified API"""
+
     @staticmethod
     def softmax(tensor: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
         """Softmax function"""
@@ -56,19 +58,16 @@ class TFOperator(Operator):
 
     @staticmethod
     def gradient(func: Callable, inputs: tf.Tensor, *args, **kwargs) -> tf.Tensor:
-        """
-        Compute gradients for a batch of samples.
+        """Compute gradients for a batch of samples.
         Parameters
-        ----------
-        fun
-            Function used for computing gradient. Must be built with tf differentiable
-            operations only
-        inputs
-            Input samples to be explained.
-        Returns
-        -------
-        gradients
-            Gradients computed, with the same shape as the inputs.
+
+        Args:
+            func (Callable): Function used for computing gradient. Must be built with
+            torch differentiable operations only, and return a scalar.
+            inputs (tf.Tensor): Input tensor wrt which the gradients are computed
+
+        Returns:
+            tf.Tensor: Gradients computed, with the same shape as the inputs.
         """
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(inputs)

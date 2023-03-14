@@ -32,6 +32,7 @@ from ..types import List
 from ..types import Optional
 from ..types import Union
 from ..utils import get_input_from_dataset_elem
+from ..utils import is_batched
 from ..utils import is_from
 
 
@@ -210,9 +211,3 @@ class OODModel(ABC):
         Convenience wrapper for isood
         """
         return self.isood(inputs, threshold)
-
-
-def is_batched(dataset):
-    tensor = get_input_from_dataset_elem(dataset.element_spec)
-    batch_dim = tensor.shape[0]
-    return batch_dim is None

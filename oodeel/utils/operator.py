@@ -28,6 +28,8 @@ from ..types import Callable
 
 
 class Operator(ABC):
+    """Class to handle tensorflow and torch operations with a unified API"""
+
     @abstractmethod
     def softmax(tensor: Any) -> Any:
         """Softmax function"""
@@ -55,17 +57,15 @@ class Operator(ABC):
 
     @abstractmethod
     def gradient(func: Callable, inputs: Any) -> Any:
-        """
-        Compute gradients for a batch of samples.
+        """Compute gradients for a batch of samples.
         Parameters
-        ----------
-        fun
-            Function used for computing gradient.
-        inputs
-            Input samples to be explained.
-        Returns
-        -------
-        gradients
+
+        Args:
+            func (Callable): Function used for computing gradient. Must be built with
+            torch differentiable operations only, and return a scalar.
+            inputs (Any): Input tensor wrt which the gradients are computed
+
+        Returns:
             Gradients computed, with the same shape as the inputs.
         """
         raise NotImplementedError()

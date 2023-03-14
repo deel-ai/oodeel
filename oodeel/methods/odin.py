@@ -29,19 +29,13 @@ from .base import OODModel
 
 
 class ODIN(OODModel):
-    """
-    "Enhancing The Reliability of Out-of-distribution Image Detection
+    """ "Enhancing The Reliability of Out-of-distribution Image Detection
     in Neural Networks"
     http://arxiv.org/abs/1706.02690
 
-    Parameters
-    ----------
-    temperature : float, optional
-        Temperature parameter, by default 1000
-    noise : float, optional
-        Perturbation noise, by default 0.014
-    batch_size : int, optional
-        Batch size for score and perturbation computations, by default 256
+    Args:
+        temperature (float, optional): Temperature parameter. Defaults to 1000.
+        noise (float, optional): Perturbation noise. Defaults to 0.014.
     """
 
     def __init__(self, temperature: float = 1000, noise: float = 0.014):
@@ -55,8 +49,7 @@ class ODIN(OODModel):
     def _score_tensor(
         self, inputs: Union[tf.data.Dataset, tf.Tensor, np.ndarray]
     ) -> np.ndarray:
-        """
-        Computes an OOD score for input samples "inputs" based on
+        """Computes an OOD score for input samples "inputs" based on
         the distance to nearest neighbors in the feature space of self.model
 
         Args:
@@ -76,11 +69,11 @@ class ODIN(OODModel):
     def _input_perturbation(self, inputs):
         preds = self.feature_extractor.model(inputs, training=False)
         outputs = self.op.argmax(preds, axis=1)
-        gradients = self.op.gradient(self.temperature_loss, inputs, outputs)
+        gradients = self.op.gradient(self._temperature_loss, inputs, outputs)
         inputs_p = inputs - self.noise * self.op.sign(gradients)
         return inputs_p
 
-    def temperature_loss(self, inputs, labels):
+    def _temperature_loss(self, inputs, labels):
         preds = self.feature_extractor.model(inputs, training=False) / self.temperature
         loss = self._loss_func(labels, preds)
         return loss

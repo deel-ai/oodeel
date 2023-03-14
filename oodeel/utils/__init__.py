@@ -30,6 +30,7 @@ from .tf_utils import dataset_len_elem
 from .tf_utils import dataset_max_pixel
 from .tf_utils import dataset_nb_labels
 from .tf_utils import get_input_from_dataset_elem
+from .tf_utils import is_batched
 from .torch_operator import TorchOperator
 
 __all__ = [
@@ -41,6 +42,7 @@ __all__ = [
     "dataset_len_elem",
     "dataset_nb_labels",
     "get_input_from_dataset_elem",
+    "is_batched",
 ]
 
 

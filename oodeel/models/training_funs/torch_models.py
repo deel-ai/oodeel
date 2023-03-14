@@ -47,6 +47,9 @@ def run_tf_on_cpu():
 def train_torch_model(
     train_data: tf.data.Dataset,
     model_name: str = "resnet18",
+    input_shape: tuple = None,
+    num_classes: int = None,
+    is_prepared: bool = False,
     batch_size: int = 128,
     epochs: int = 50,
     loss: str = "CrossEntropyLoss",
@@ -61,17 +64,26 @@ def train_torch_model(
     Load a model from torchvision.models and train it on a tfds dataset.
 
     Args:
-        train_data: _description_
-        model_name: _description_
-        batch_size: _description_. Defaults to 128.
-        epochs: _description_. Defaults to 50.
-        loss: _description_. Defaults to "crossentropy".
-        optimizer: _description_. Defaults to "adam".
-        learning_rate: _description_. Defaults to 1e-3.
-        metrics: _description_. Defaults to ["accuracy"].
-        imagenet_pretrained: _description_. Defaults to False.
-        validation_data: _description_. Defaults to None.
-        cuda_idx: _description_. Defaults to 0.
+        train_data (tf.data.Dataset)
+        model_name (str): must be a model from torchvision.models
+        input_shape (tuple, optional): If None, infered from train_data.
+            Defaults to None.
+        num_classes (int, optional): If None, infered from train_data. Defaults to None.
+        is_prepared (bool, optional): If train_data is a pipeline already prepared
+            for training (with batch, shufle, cache etc...). Defaults to False.
+        batch_size (int, optional): Defaults to 128.
+        epochs (int, optional): Defaults to 50.
+        loss (str, optional): Defaults to
+            "CrossEntropyLoss".
+        optimizer (str, optional): Defaults to "Adam".
+        learning_rate (float, optional): Defaults to 1e-3.
+        metrics (List[str], optional): Validation metrics. Defaults to ["accuracy"].
+        imagenet_pretrained (bool, optional): Load a model pretrained on imagenet or
+            not. Defaults to False.
+        validation_data (Optional[tf.data.Dataset], optional): Defaults to None.
+        save_dir (Optional[str], optional): Directory to save the model.
+            Defaults to None.
+        cuda_idx (int): idx of cuda device to use. Defaults to 0.
 
     Returns:
         trained model
@@ -80,36 +92,41 @@ def train_torch_model(
     device = torch.device(f"cuda:{cuda_idx}" if cuda_idx is not None else "cpu")
 
     # Prepare model
-    input_shape = dataset_image_shape(train_data)
-    classes = train_data.map(lambda x, y: y).unique()
-    num_classes = len(list(classes.as_numpy_iterator()))
+    if input_shape is None:
+        input_shape = dataset_image_shape(train_data)
+    if num_classes is None:
+        classes = train_data.map(lambda x, y: y).unique()
+        num_classes = len(list(classes.as_numpy_iterator()))
 
     model = getattr(torchvision.models, model_name)(
         num_classes=num_classes, pretrained=imagenet_pretrained
     ).to(device)
 
     # Prepare data
-    padding = 4
-    image_size = input_shape[0]
-    target_size = image_size + padding * 2
+    if not is_prepared:
+        padding = 4
+        image_size = input_shape[0]
+        target_size = image_size + padding * 2
 
-    def _augment_fn(images, labels):
-        images = tf.image.pad_to_bounding_box(
-            images, padding, padding, target_size, target_size
+        def _augment_fn(images, labels):
+            images = tf.image.pad_to_bounding_box(
+                images, padding, padding, target_size, target_size
+            )
+            images = tf.image.random_crop(images, (image_size, image_size, 3))
+            images = tf.image.random_flip_left_right(images)
+            return images, labels
+
+        n_samples = len(train_data)
+        train_data = (
+            train_data.map(
+                _augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
+            )
+            .shuffle(n_samples)
+            .batch(batch_size)
         )
-        images = tf.image.random_crop(images, (image_size, image_size, 3))
-        images = tf.image.random_flip_left_right(images)
-        return images, labels
 
-    n_samples = len(train_data)
-    train_data = (
-        train_data.map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        .shuffle(n_samples)
-        .batch(batch_size)
-    )
-
-    if validation_data is not None:
-        validation_data = validation_data.batch(batch_size)
+        if validation_data is not None:
+            validation_data = validation_data.batch(batch_size)
 
     # define optimizer and learning rate scheduler
     n_steps = len(train_data) * epochs
