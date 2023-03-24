@@ -82,9 +82,10 @@ class FeatureExtractor(ABC):
     @abstractmethod
     def get_weights(self):
         """
-        Constructs the feature extractor model
+        Get the weights of a layer
 
         Returns:
+            weights matrix
         """
         raise NotImplementedError()
 

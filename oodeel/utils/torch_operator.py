@@ -63,11 +63,10 @@ class TorchOperator(Operator):
     @staticmethod
     def gradient(func: Callable, inputs: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """Compute gradients for a batch of samples.
-        Parameters
 
         Args:
             func (Callable): Function used for computing gradient. Must be built with
-            torch differentiable operations only, and return a scalar.
+                torch differentiable operations only, and return a scalar.
             inputs (torch.Tensor): Input tensor wrt which the gradients are computed
 
         Returns:

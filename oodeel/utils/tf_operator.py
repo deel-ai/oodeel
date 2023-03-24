@@ -59,11 +59,10 @@ class TFOperator(Operator):
     @staticmethod
     def gradient(func: Callable, inputs: tf.Tensor, *args, **kwargs) -> tf.Tensor:
         """Compute gradients for a batch of samples.
-        Parameters
 
         Args:
             func (Callable): Function used for computing gradient. Must be built with
-            torch differentiable operations only, and return a scalar.
+                tensorflow differentiable operations only, and return a scalar.
             inputs (tf.Tensor): Input tensor wrt which the gradients are computed
 
         Returns:
