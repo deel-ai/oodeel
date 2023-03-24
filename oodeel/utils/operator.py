@@ -58,11 +58,10 @@ class Operator(ABC):
     @abstractmethod
     def gradient(func: Callable, inputs: Any) -> Any:
         """Compute gradients for a batch of samples.
-        Parameters
 
         Args:
             func (Callable): Function used for computing gradient. Must be built with
-            torch differentiable operations only, and return a scalar.
+                differentiable operations only, and return a scalar.
             inputs (Any): Input tensor wrt which the gradients are computed
 
         Returns:

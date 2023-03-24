@@ -46,13 +46,6 @@ class TorchFeatureExtractor(FeatureExtractor):
             when working on the feature space without finetuning the bottom of
             the model).
             Defaults to None.
-        output_activation:  activation function for the last layer.
-            Defaults to None.
-        flatten: Flatten the output features or not.
-            Defaults to True.
-        batch_size: batch_size used to compute the features space
-            projection of input data.
-            Defaults to 256.
     """
 
     def __init__(
@@ -84,18 +77,13 @@ class TorchFeatureExtractor(FeatureExtractor):
         return hook
 
     def find_layer(self, layer_id: Union[str, int]) -> nn.Module:
-        """
-        Find a layer in a model either by his name or by his index.
-        Parameters
-        ----------
-        model
-            Model on which to search.
-        layer
-            Layer name or layer index
-        Returns
-        -------
-        layer
-            Layer found
+        """Find a layer in a model either by his name or by his index.
+
+        Args:
+            layer_id (Union[str, int]): layer identifier
+
+        Returns:
+            nn.Module: the corresponding layer
         """
         if isinstance(layer_id, int):
             assert isinstance(self.model, nn.Sequential), (
@@ -109,9 +97,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                     return layer
 
     def prepare_extractor(self):
-        """
-        Prepare the feature extractor for inference.
-        """
+        """Prepare the feature extractor by adding hooks to self.model"""
         # Register a hook to store feature values for each considered layer.
         for layer_id in self.output_layers_id:
             layer = self.find_layer(layer_id)
@@ -144,10 +130,14 @@ class TorchFeatureExtractor(FeatureExtractor):
                 raise NotImplementedError
 
     def predict_tensor(self, x: torch.Tensor) -> List[torch.Tensor]:
-        """
-        Get features associated with the input. Works on an in-memory tensor.
-        """
+        """Get the projection of tensor in the feature space of self.model
 
+        Args:
+            tensor (Union[tf.Tensor, np.ndarray, Tuple]): input tensor (or dataset elem)
+
+        Returns:
+            tf.Tensor: features
+        """
         if x.device != self._device:
             x = x.to(self._device)
         _ = self.model(x)
@@ -161,9 +151,13 @@ class TorchFeatureExtractor(FeatureExtractor):
         return features
 
     def predict(self, dataset: torch.utils.data.DataLoader) -> List[torch.Tensor]:
-        """
-        Extract features for a given inputs. If batch_size is specified,
-        the model is called on batches and outputs are concatenated.
+        """Get the projection of the dataset in the feature space of self.model
+
+        Args:
+            dataset (torch.utils.data.DataLoader): input dataset
+
+        Returns:
+            List[torch.Tensor]: features
         """
 
         if not isinstance(dataset, torch.utils.data.DataLoader):
@@ -186,11 +180,14 @@ class TorchFeatureExtractor(FeatureExtractor):
             features = features[0]
         return features
 
-    def get_weights(self, layer_id: Union[str, int]):
-        """
-        Constructs the feature extractor model
+    def get_weights(self, layer_id: Union[str, int]) -> torch.Tensor:
+        """Get the weights of a layer
+
+        Args:
+            layer_id (Union[int, str]): layer identifier
 
         Returns:
+            torch.Tensor: weights matrix
         """
         layer = self.find_layer(layer_id)
         return [layer.weight.detach().numpy(), layer.bias.detach().numpy()]

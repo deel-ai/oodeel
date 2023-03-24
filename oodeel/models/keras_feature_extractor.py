@@ -42,19 +42,11 @@ class KerasFeatureExtractor(FeatureExtractor):
         model: model to extract the features from
         output_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
-            If str, the name of the layer.
-            Defaults to [].
-        output_activation: activation function for the last layer.
-            Defaults to None.
+            If str, the name of the layer. Defaults to [].
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
             when working on the feature space without finetuning the bottom of the
             model).
             Defaults to None.
-        flatten: Flatten the output features or not.
-            Defaults to False.
-        batch_size: batch_size used to compute the features space
-            projection of input data.
-            Defaults to 256.
     """
 
     def __init__(
@@ -72,18 +64,16 @@ class KerasFeatureExtractor(FeatureExtractor):
         self.model.layers[-1].activation = getattr(tf.keras.activations, "linear")
 
     def find_layer(self, layer_id: Union[str, int]) -> tf.keras.layers.Layer:
-        """
-        Find a layer in a model either by his name or by his index.
-        Parameters
-        ----------
-        model
-            Model on which to search.
-        layer
-            Layer name or layer index
-        Returns
-        -------
-        layer
-            Layer found
+        """Find a layer in a model either by his name or by his index.
+
+        Args:
+            layer_id (Union[str, int]): layer identifier
+
+        Raises:
+            ValueError: if the layer is not found
+
+        Returns:
+            tf.keras.layers.Layer: the corresponding layer
         """
         if isinstance(layer_id, str):
             return self.model.get_layer(layer_id)
@@ -93,11 +83,11 @@ class KerasFeatureExtractor(FeatureExtractor):
 
     # @tf.function
     # TODO check with Thomas about @tf.function
-    def prepare_extractor(self):
-        """
-        Constructs the feature extractor model
+    def prepare_extractor(self) -> tf.keras.models.Model:
+        """Constructs the feature extractor model
 
         Returns:
+            tf.keras.models.Model: truncated model (extractor)
         """
         output_layers = [
             self.find_layer(ol_id).output for ol_id in self.output_layers_id
@@ -110,26 +100,25 @@ class KerasFeatureExtractor(FeatureExtractor):
 
     @tf.function
     def predict_tensor(self, tensor: Union[tf.Tensor, np.ndarray, Tuple]) -> tf.Tensor:
-        """
-        Projects input samples "inputs" into the feature space
+        """Get the projection of tensor in the feature space of self.model
 
         Args:
-            inputs: a tensor or a tuple of tensors
+            tensor (Union[tf.Tensor, np.ndarray, Tuple]): input tensor (or dataset elem)
 
         Returns:
-            features
+            tf.Tensor: features
         """
         features = self.extractor(tensor)
         return features
 
-    def predict(self, dataset: tf.data.Dataset):
-        """_summary_
+    def predict(self, dataset: tf.data.Dataset) -> List[tf.Tensor]:
+        """Get the projection of the dataset in the feature space of self.model
 
         Args:
-            inputs (tf.data.Dataset): _description_
+            dataset (tf.data.Dataset): input dataset
 
         Returns:
-            _type_: _description_
+            List[tf.Tensor]: features
         """
         if not isinstance(dataset, tf.data.Dataset):
             tensor = get_input_from_dataset_elem(dataset)
@@ -151,10 +140,13 @@ class KerasFeatureExtractor(FeatureExtractor):
             features = features[0]
         return features
 
-    def get_weights(self, layer_id: Union[int, str]):
-        """
-        Constructs the feature extractor model
+    def get_weights(self, layer_id: Union[int, str]) -> tf.Tensor:
+        """Get the weights of a layer
+
+        Args:
+            layer_id (Union[int, str]): layer identifier
 
         Returns:
+            tf.Tensor: weights matrix
         """
         return self.find_layer(layer_id).get_weights()
