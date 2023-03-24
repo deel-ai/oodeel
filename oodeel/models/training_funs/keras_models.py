@@ -164,14 +164,10 @@ def train_keras_app(
     if len(model_checkpoint_callback) == 0:
         model_checkpoint_callback = None
 
-    # Prepare learning rate scheduler and optimizer
-    n_steps = n_samples * epochs
-    values = list(learning_rate * np.array([1, 0.1, 0.01]))
-    boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
-
     # optimizer
-    learning_rate_fn = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-        boundaries, values
+    decay_steps = int(epochs * n_samples / batch_size)
+    learning_rate_fn = tf.keras.experimental.CosineDecay(
+        learning_rate, decay_steps=decay_steps
     )
 
     config = {
