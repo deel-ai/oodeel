@@ -40,7 +40,6 @@ plugins:
   - mkdocs-jupyter:
   #- mknotebooks:
       execute: true
-      allow_errors: true
       ignore: ["ignored_notebooks/*"]
 
 markdown_extensions:
