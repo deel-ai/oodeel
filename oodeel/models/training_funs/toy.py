@@ -22,11 +22,12 @@
 # SOFTWARE.
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras.layers import Conv2D
-from tensorflow.python.keras.layers import Dense
-from tensorflow.python.keras.layers import Dropout
-from tensorflow.python.keras.layers import Flatten
-from tensorflow.python.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.models import Sequential
 
 from ...types import List
 from ...types import Optional
@@ -79,7 +80,7 @@ def train_convnet_classifier(
         input_shape is not None
     ), "Please specify num_classes and input_shape"
 
-    model = tf.keras.Sequential(
+    model = Sequential(
         [
             # keras.Input(shape=input_shape),
             Conv2D(32, kernel_size=(3, 3), activation="relu"),
@@ -141,7 +142,7 @@ def train_convnet_classifier(
         model_checkpoint_callback.append(
             tf.keras.callbacks.ModelCheckpoint(
                 filepath=checkpoint_filepath,
-                save_weights_only=False,
+                save_weights_only=True,
                 monitor="val_accuracy",
                 mode="max",
                 save_best_only=True,
@@ -173,7 +174,6 @@ def train_convnet_classifier(
         config["config"]["decay"] = 5e-4
 
     keras_optimizer = tf.keras.optimizers.get(config)
-
     model.compile(loss=loss, optimizer=keras_optimizer, metrics=metrics)
 
     model.fit(
@@ -183,4 +183,6 @@ def train_convnet_classifier(
         callbacks=model_checkpoint_callback,
     )
 
+    model.load_weights(save_dir)
+    model.save(save_dir)
     return model
