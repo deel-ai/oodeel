@@ -68,8 +68,9 @@ class MLS(OODModel):
         """
 
         pred = self.feature_extractor(inputs)
-        if hasattr(tf.keras.activations, self.output_activation):
-            activation = getattr(tf.keras.activations, self.output_activation)
-        pred = activation(pred)
+        if self.output_activation != "linear":
+            if hasattr(tf.keras.activations, self.output_activation):
+                activation = getattr(tf.keras.activations, self.output_activation)
+            pred = activation(pred)
         scores = -np.max(pred, axis=1)
         return scores

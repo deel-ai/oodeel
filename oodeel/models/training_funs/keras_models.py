@@ -154,7 +154,7 @@ def train_keras_app(
         model_checkpoint_callback.append(
             tf.keras.callbacks.ModelCheckpoint(
                 filepath=checkpoint_filepath,
-                save_weights_only=False,
+                save_weights_only=True,
                 monitor="val_accuracy",
                 mode="max",
                 save_best_only=True,
@@ -192,4 +192,6 @@ def train_keras_app(
         callbacks=model_checkpoint_callback,
     )
 
+    model.load_weights(save_dir)
+    model.save(save_dir)
     return model
