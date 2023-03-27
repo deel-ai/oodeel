@@ -14,6 +14,7 @@ nav:
     - Get Started: notebooks/demo_experiment.ipynb
     - ODIN: notebooks/demo_odin.ipynb
     - DKNN: notebooks/demo_dknn.ipynb
+    - VIM: notebooks/demo_vim.ipynb
   - Contributing: CONTRIBUTING.md
 
 theme:
