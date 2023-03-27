@@ -36,16 +36,16 @@ class Energy(OODModel):
     https://arxiv.org/abs/2010.03759
 
     This method assumes that the model has been trained with cross entropy loss
-    :math:'CE(model(x))' where :math:'model(x)=(l_{c})_{c=1}^{C}' are the logits
-    predicted for input :math: 'x'.
+    $CE(model(x))$ where $model(x)=(l_{c})_{c=1}^{C}$ are the logits
+    predicted for input $x$.
     The implementation assumes that the logits are retreieved using the output with
     linear activation.
 
-    The energy score for input :math:'x' is given by
-    .. math:: -\log \sum_{c=0}^C \exp(l_c)
+    The energy score for input $x$ is given by
+    $$ -\log \sum_{c=0}^C \exp(l_c)$$
 
-    where 'model(x)=(l_{c})_{c=1}^{C}' are the logits predicted by the model on
-    :math:'x'.
+    where $model(x)=(l_{c})_{c=1}^{C}$ are the logits predicted by the model on
+    $x$.
     As always, training data is expected to have lower score than OOD data.
 
 
@@ -63,7 +63,7 @@ class Energy(OODModel):
     ) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on
-        energy, namey :math:'-logsumexp(logits(inputs))'.
+        energy, namey $-logsumexp(logits(inputs))$.
 
         Args:
             inputs: input samples to score
