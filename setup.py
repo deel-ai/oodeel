@@ -50,7 +50,7 @@ tensorflow_requirements = [
 torch_requirements = ["tensorflow_datasets", "timm", "torch", "torchvision"]
 
 dev_requirements = [
-    "jupytext",
+    "ipywidgets",
     "mkdocs-jupyter",
     "mkdocstrings-python",
     "flake8",
