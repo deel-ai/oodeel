@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import numpy as np
 import tensorflow as tf
 from classification_models.tfkeras import Classifiers
 
@@ -192,6 +191,7 @@ def train_keras_app(
         callbacks=model_checkpoint_callback,
     )
 
-    model.load_weights(save_dir)
-    model.save(save_dir)
+    if save_dir is not None:
+        model.load_weights(save_dir)
+        model.save(save_dir)
     return model
