@@ -28,7 +28,6 @@ import tensorflow as tf
 from ..types import Callable
 from ..types import Optional
 from ..types import Tuple
-from ..types import TypeVar
 from ..types import Union
 from ..utils import dataset_cardinality
 from ..utils import dataset_len_elem
@@ -53,8 +52,8 @@ class OODDataset(object):
             loaded from tensorflow_datasets. Defaults to None.
         load_kwargs (dict, optional): Additional loading kwargs when loading from
             tensorflow_datasets catalog. Defaults to {}.
-        input_key (str, optional): The key used for the feature to consider as the model input.
-            If None, taken as the first of the tf.data.Dataset elements.
+        input_key (str, optional): The key used for the feature to consider as the model
+            input. If None, taken as the first of the tf.data.Dataset elements.
     """
 
     def __init__(
@@ -180,7 +179,7 @@ class OODDataset(object):
 
         # Creating an OODDataset object from out_dataset if necessary and make sure
         # the two OODDatasets have compatible parameters
-        if isinstance(out_dataset, "OODDataset"):
+        if isinstance(out_dataset, type(self)):
             out_dataset = out_dataset.data
         else:
             out_dataset = OODDataset(out_dataset).data
@@ -270,11 +269,14 @@ class OODDataset(object):
         with_ood_labels: bool = False,
         with_labels: bool = True,
     ) -> tf.data.Dataset:
-        """Return the dataset in a tuple format and correct labels, without preparing for training or inference
+        """Return the dataset in a tuple format and correct labels, without preparing
+        for training or inference.
 
         Args:
-            with_ood_labels (bool, optional): To return the dataset with ood_labels. Defaults to False.
-            with_labels (bool, optional): To return the dataset with labels. Defaults to True.
+            with_ood_labels (bool, optional): To return the dataset with ood_labels.
+                Defaults to False.
+            with_labels (bool, optional): To return the dataset with labels.
+                Defaults to True.
 
         Returns:
             tf.data.Dataset: dataset

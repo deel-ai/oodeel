@@ -183,6 +183,7 @@ def train_convnet_classifier(
         callbacks=model_checkpoint_callback,
     )
 
-    model.load_weights(save_dir)
-    model.save(save_dir)
+    if save_dir is not None:
+        model.load_weights(save_dir)
+        model.save(save_dir)
     return model
