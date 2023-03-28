@@ -29,4 +29,4 @@ docs/notebooks/saved_models/*
 /site
 .env
 
-.DS_store*
+.DS_Store*
