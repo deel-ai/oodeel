@@ -1561,7 +1561,7 @@ input. If None, taken as the first of the tf.data.Dataset elements.</p></td>
 
         <span class="c1"># Creating an OODDataset object from out_dataset if necessary and make sure</span>
         <span class="c1"># the two OODDatasets have compatible parameters</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out_dataset</span><span class="p">,</span> <span class="s2">&quot;OODDataset&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out_dataset</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)):</span>
             <span class="n">out_dataset</span> <span class="o">=</span> <span class="n">out_dataset</span><span class="o">.</span><span class="n">data</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">out_dataset</span> <span class="o">=</span> <span class="n">OODDataset</span><span class="p">(</span><span class="n">out_dataset</span><span class="p">)</span><span class="o">.</span><span class="n">data</span>
@@ -2048,7 +2048,7 @@ in_dataset input tensors. Defaults to None.</p></td>
 
     <span class="c1"># Creating an OODDataset object from out_dataset if necessary and make sure</span>
     <span class="c1"># the two OODDatasets have compatible parameters</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out_dataset</span><span class="p">,</span> <span class="s2">&quot;OODDataset&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out_dataset</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)):</span>
         <span class="n">out_dataset</span> <span class="o">=</span> <span class="n">out_dataset</span><span class="o">.</span><span class="n">data</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">out_dataset</span> <span class="o">=</span> <span class="n">OODDataset</span><span class="p">(</span><span class="n">out_dataset</span><span class="p">)</span><span class="o">.</span><span class="n">data</span>
