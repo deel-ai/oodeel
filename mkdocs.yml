@@ -15,6 +15,7 @@ nav:
     - ODIN: notebooks/demo_odin.ipynb
     - DKNN: notebooks/demo_dknn.ipynb
     - VIM: notebooks/demo_vim.ipynb
+    - Energy: notebooks/demo_energy.ipynb
   - Contributing: CONTRIBUTING.md
 
 theme:
@@ -39,7 +40,6 @@ plugins:
   - search
   - mkdocstrings
   - mkdocs-jupyter:
-  #- mknotebooks:
       execute: true
       ignore: ["ignored_notebooks/*"]
 
