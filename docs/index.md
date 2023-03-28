@@ -1,8 +1,8 @@
 
 <!-- Banner section -->
 <div align="center">
-    <img src="./assets/oodeel_dark.png#only-dark" width="75%" alt="lib banner" align="center" />
-    <img src="./assets/oodeel_light.png#only-light" width="75%" alt="lib banner" align="center" />
+    <img src="./assets/oodeel_dark.png#only-dark" alt="lib banner" align="center" />
+    <img src="./assets/oodeel_light.png#only-light" alt="lib banner" align="center" />
 </div>
 <br>
 
@@ -118,13 +118,13 @@ Currently, **oodeel** includes the following baselines:
 
 |  Name   |  Link   | Venue | Status |
 | --- | --- | --- | --- |
-| MLS | [Open-Set Recognition: a Good Closed-Set Classifier is All You Need?](http://arxiv.org/abs/2110.06207) | ICLR 2022 | [avail](docs/notebooks/demo_experiment.ipynb) |
-| MSP | [A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks](http://arxiv.org/abs/1610.02136) | ICLR 2017 | [avail](docs/notebooks/demo_experiment.ipynb)  |
+| MLS | [Open-Set Recognition: a Good Closed-Set Classifier is All You Need?](http://arxiv.org/abs/2110.06207) | ICLR 2022 | [avail](./notebooks/demo_experiment.ipynb) |
+| MSP | [A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks](http://arxiv.org/abs/1610.02136) | ICLR 2017 | [avail](./notebooks/demo_experiment.ipynb)  |
 | Mahalanobis | [A Simple Unified Framework for Detecting Out-of-Distribution Samples and Adversarial Attacks](http://arxiv.org/abs/1807.03888) | NeurIPS 2018 | in dev |
-| Energy | [Energy-based Out-of-distribution Detection](http://arxiv.org/abs/2010.03759) | NeurIPS 2020 |[avail](docs/notebooks/demo_energy.ipynb)  |
-| Odin | [Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks](http://arxiv.org/abs/1706.02690) | ICLR 2018 |[avail](docs/notebooks/demo_odin.ipynb)  |
-| DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 | [avail](docs/notebooks/demo_dknn.ipynb)  |
-| VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |[avail](docs/notebooks/demo_vim.ipynb)  |
+| Energy | [Energy-based Out-of-distribution Detection](http://arxiv.org/abs/2010.03759) | NeurIPS 2020 |[avail](./notebooks/demo_energy.ipynb)  |
+| Odin | [Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks](http://arxiv.org/abs/1706.02690) | ICLR 2018 |[avail](./notebooks/demo_odin.ipynb)  |
+| DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 | [avail](./notebooks/demo_dknn.ipynb)  |
+| VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |[avail](./notebooks/demo_vim.ipynb)  |
 | GODIN | [Generalized ODIN: Detecting Out-of-Distribution Image Without Learning From Out-of-Distribution Data](https://ieeexplore.ieee.org/document/9156473/) | CVPR 2020 | planned |
 | ReAct | [ReAct: Out-of-distribution Detection With Rectified Activations](http://arxiv.org/abs/2111.12797) | NeurIPS 2021 | planned |
 | NMD | [Neural Mean Discrepancy for Efficient Out-of-Distribution Detection](https://openaccess.thecvf.com/content/CVPR2022/html/Dong_Neural_Mean_Discrepancy_for_Efficient_Out-of-Distribution_Detection_CVPR_2022_paper.html) | CVPR 2022 | planned |
