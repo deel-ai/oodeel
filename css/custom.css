@@ -25,6 +25,7 @@ html {
     font-size: 115%;
 }
 
+
 .md-header {
     background-color: var(--md-footer-bg-color);
     color: #fff;
@@ -82,9 +83,12 @@ img[alt*="Colab"] {
     width: 150px;
 }
 
-.md-typeset img,
+.md-typeset img {
+    max-width: 100%;
+}
+
 .md-typeset svg {
-    max-width: none;
+    max-width: 100%;
 }
 
 .md-typeset .task-list-control [type=checkbox]:checked+.task-list-indicator::before {
