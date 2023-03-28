@@ -33,6 +33,7 @@ scores = oodmodel.score(ds)
 
 # Table of contents
 
+- [Table of contents](#table-of-contents)
 - [Tutorials](#tutorials)
 - [Quick Start](#quick-start)
 - [What's Included](#whats-included)
@@ -45,11 +46,11 @@ scores = oodmodel.score(ds)
 
 # Tutorials
 
-We propose some tutorials to get familiar with the library and its API in the Tutorials section.
+We propose some tutorials to get familiar with the library and its API in the [notebooks directory](notebooks)
 
 # Quick Start
 
-**Oodeel** requires some stuff and several libraries including Numpy. Installation can be done using Pypi:
+**Oodeel** requires some stuff and several libraries including Numpy. Installation can be done using:
 
 ```python
 git clone https://github.com/Jingkang50/OpenOOD.git
@@ -117,15 +118,23 @@ Currently, **oodeel** includes the following baselines:
 
 |  Name   |  Link   | Venue | Status |
 | --- | --- | --- | --- |
-| MLS | [Open-Set Recognition: a Good Closed-Set Classifier is All You Need?](http://arxiv.org/abs/2110.06207) | ICLR 2022 | avail |
-| MSS | [A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks](http://arxiv.org/abs/1610.02136) | ICLR 2017 | avail |
+| MLS | [Open-Set Recognition: a Good Closed-Set Classifier is All You Need?](http://arxiv.org/abs/2110.06207) | ICLR 2022 | [avail](docs/notebooks/demo_experiment.ipynb) |
+| MSP | [A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks](http://arxiv.org/abs/1610.02136) | ICLR 2017 | [avail](docs/notebooks/demo_experiment.ipynb)  |
 | Mahalanobis | [A Simple Unified Framework for Detecting Out-of-Distribution Samples and Adversarial Attacks](http://arxiv.org/abs/1807.03888) | NeurIPS 2018 | in dev |
-| Energy | [Energy-based Out-of-distribution Detection](http://arxiv.org/abs/2010.03759) | NeurIPS 2020 |avail |
-| Odin | [Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks](http://arxiv.org/abs/1706.02690) | ICLR 2018 |avail |
-| DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 |avail |
-| VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |avail |
+| Energy | [Energy-based Out-of-distribution Detection](http://arxiv.org/abs/2010.03759) | NeurIPS 2020 |[avail](docs/notebooks/demo_energy.ipynb)  |
+| Odin | [Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks](http://arxiv.org/abs/1706.02690) | ICLR 2018 |[avail](docs/notebooks/demo_odin.ipynb)  |
+| DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 | [avail](docs/notebooks/demo_dknn.ipynb)  |
+| VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |[avail](docs/notebooks/demo_vim.ipynb)  |
+| GODIN | [Generalized ODIN: Detecting Out-of-Distribution Image Without Learning From Out-of-Distribution Data](https://ieeexplore.ieee.org/document/9156473/) | CVPR 2020 | planned |
+| ReAct | [ReAct: Out-of-distribution Detection With Rectified Activations](http://arxiv.org/abs/2111.12797) | NeurIPS 2021 | planned |
+| NMD | [Neural Mean Discrepancy for Efficient Out-of-Distribution Detection](https://openaccess.thecvf.com/content/CVPR2022/html/Dong_Neural_Mean_Discrepancy_for_Efficient_Out-of-Distribution_Detection_CVPR_2022_paper.html) | CVPR 2022 | planned |
+| DICE | [DICE: Leveraging Sparsification for Out-of-Distribution Detection](https://link.springer.com/chapter/10.1007/978-3-031-20053-3_40l) | ECCV 2022 | planned |
+| Gram | [Detecting Out-of-Distribution Examples with Gram Matrices](https://proceedings.mlr.press/v119/sastry20a.html) | ICML 2020 | planned |
+| MOOD | [MOOD: Multi-level Out-of-distribution Detection](https://arxiv.org/abs/2104.14726) | CVPR 2021 | planned |
 
-**Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for models from `keras.applications` in [training_funs](api/training_funs) directory. These functions come in handy for benchmarks like *leave-k-classes-out* that require retraining models on a subset of dataset classes.
+
+
+**Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for models from `keras.applications` in [training_funs](oodeel/models/training_funs) directory. These functions come in handy for benchmarks like *leave-k-classes-out* that require retraining models on a subset of dataset classes.
 # Development Roadmap
 
 ## Roadmap to first release:
