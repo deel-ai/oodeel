@@ -76,7 +76,7 @@ ds_out = OODDataset('fashion_mnist', split="test").prepare(batch_size)
 
 ## For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution 
 
-Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (common practice of anomaly detection and open set recognition).
+Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (a common practice of anomaly detection and open set recognition).
 
 ```python
 from oodeel.datasets import OODDataset
@@ -88,7 +88,7 @@ ds_out = oods_out.prepare(batch_size=batch_size)
 ```
 ## Run an OOD method
 
-Load an OOD method and use it on an already trained model
+Load an OOD method and use it on an already-trained model
 
 ```python
 from oodeel.methods import MLS
@@ -137,7 +137,7 @@ Currently, **oodeel** includes the following baselines:
 
 
 
-**Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for models from `keras.applications` in [training_funs](oodeel/models/training_funs) directory. These functions come in handy for benchmarks like *leave-k-classes-out* that require retraining models on a subset of dataset classes.
+**Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for models from `keras.applications` in [training_funs](oodeel/models/training_funs) directory. These functions come in handy for benchmarks like *leave-k-classes-out* that requires retraining models on a subset of dataset classes.
 # Development Roadmap
 
 ## Roadmap to first release:
@@ -148,8 +148,8 @@ Currently, **oodeel** includes the following baselines:
 - [ ] Revise docstring and type hinting
 - [ ] Set up the doc
 
-## What's next ?
-- [ ] More baselines !
+## What's next?
+- [ ] More baselines!
 - [ ] A module for thorough visualizations (result plots and feature space visualizations)
 - [ ] Integrate model loading and uploading with [hugginface's transformers](https://huggingface.co/docs/transformers/index) library for pretraining
 - [ ] Extend the library to more diverse tasks like object detection, segmentation, NLP ...

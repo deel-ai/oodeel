@@ -1,8 +1,8 @@
 # GOVERNANCE
 
-`oodeel` is developped as part of the Artificial and Natural Intelligence Toulouse Institute (DEEL/ANITI) program.
+`oodeel` is developed as part of the Artificial and Natural Intelligence Toulouse Institute (DEEL/ANITI) program.
 
-DEEL/ANITI is this repository owner and the write rights manager.
+DEEL/ANITI is the repository owner and the write rights manager.
 
 These management rules are intended to be collaborative and all those involved in the project are invited to contribute to its improvement.
 
@@ -22,23 +22,23 @@ The governance committee identifies among the contributors who by their merits c
 
 ###	Contributors
 
-A contributor is anyone who comments any aspects relating to the project: comments on an issue or pull request, documentation, architecture, code and validation tests or anybody with a merged pull request.
+A contributor is anyone who comments on any aspects relating to the project: comments on an issue or pull request, documentation, architecture, code and validation tests or anybody with a merged pull request.
 
-All governance committee membres are contributors.
+All governance committee members are contributors.
 
 ### Maintainers
 
-All contributors with write rights (commit rigths) are maintainers.
+All contributors with write rights (commit rights) are maintainers.
 
 ....
 
 ### Contributions
 
-Contributions rules are defined and devopped in here: CONTRIBUTING.md
+Contributions rules are defined and developed here: CONTRIBUTING.md
 
-Pull requests with major changes must be approved by at least by two members of governance committee.
+Pull requests with major changes must be approved by at least two members of the governance committee.
 
-Pull requests with minor changes must be approved by at least by one member of governance committee.
+Pull requests with minor changes must be approved by at least one member of the governance committee.
 .....
 
 ### Moderators

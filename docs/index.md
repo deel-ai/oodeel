@@ -29,7 +29,7 @@ oodmodel = MLS()
 oodmodel.fit(model)
 scores = oodmodel.score(ds)
 ```
-**Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully !
+**Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully!
 
 # Table of contents
 
@@ -52,8 +52,8 @@ We propose some tutorials to get familiar with the library and its API in the [n
 
 **Oodeel** requires some stuff and several libraries including Numpy. Installation can be done using:
 
-```python
-git clone https://github.com/Jingkang50/OpenOOD.git
+```bash
+git clone https://github.com/deel-ai/oodeel.git
 cd oodeel
 make prepare-dev
 ```
@@ -73,7 +73,7 @@ ds_out = OODDataset('fashion_mnist', split="test").prepare(batch_size)
 
 ## For benchmarking with one dataset as in-distribution and another as out-of-distribution
 
-Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (common practice of anomaly detection and open set recognition).
+Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (a common practice of anomaly detection and open set recognition).
 
 ```python
 from oodeel.datasets import OODDataset
@@ -85,7 +85,7 @@ ds_out = oods_out.prepare(batch_size=batch_size)
 ```
 ## Run an OOD method
 
-Load an OOD method and use it on an already trained model
+Load an OOD method and use it on an already-trained model
 
 ```python
 from oodeel.methods import MLS
@@ -118,13 +118,13 @@ Currently, **oodeel** includes the following baselines:
 
 |  Name   |  Link   | Venue | Status |
 | --- | --- | --- | --- |
-| MLS | [Open-Set Recognition: a Good Closed-Set Classifier is All You Need?](http://arxiv.org/abs/2110.06207) | ICLR 2022 | [avail](./notebooks/demo_experiment.ipynb) |
-| MSP | [A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks](http://arxiv.org/abs/1610.02136) | ICLR 2017 | [avail](./notebooks/demo_experiment.ipynb)  |
+| MLS | [Open-Set Recognition: a Good Closed-Set Classifier is All You Need?](http://arxiv.org/abs/2110.06207) | ICLR 2022 | [avail](docs/notebooks/demo_experiment.ipynb) |
+| MSP | [A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks](http://arxiv.org/abs/1610.02136) | ICLR 2017 | [avail](docs/notebooks/demo_experiment.ipynb)  |
 | Mahalanobis | [A Simple Unified Framework for Detecting Out-of-Distribution Samples and Adversarial Attacks](http://arxiv.org/abs/1807.03888) | NeurIPS 2018 | in dev |
-| Energy | [Energy-based Out-of-distribution Detection](http://arxiv.org/abs/2010.03759) | NeurIPS 2020 |[avail](./notebooks/demo_energy.ipynb)  |
-| Odin | [Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks](http://arxiv.org/abs/1706.02690) | ICLR 2018 |[avail](./notebooks/demo_odin.ipynb)  |
-| DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 | [avail](./notebooks/demo_dknn.ipynb)  |
-| VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |[avail](./notebooks/demo_vim.ipynb)  |
+| Energy | [Energy-based Out-of-distribution Detection](http://arxiv.org/abs/2010.03759) | NeurIPS 2020 |[avail](docs/notebooks/demo_energy.ipynb)  |
+| Odin | [Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks](http://arxiv.org/abs/1706.02690) | ICLR 2018 |[avail](docs/notebooks/demo_odin.ipynb)  |
+| DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 | [avail](docs/notebooks/demo_dknn.ipynb)  |
+| VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |[avail](docs/notebooks/demo_vim.ipynb)  |
 | GODIN | [Generalized ODIN: Detecting Out-of-Distribution Image Without Learning From Out-of-Distribution Data](https://ieeexplore.ieee.org/document/9156473/) | CVPR 2020 | planned |
 | ReAct | [ReAct: Out-of-distribution Detection With Rectified Activations](http://arxiv.org/abs/2111.12797) | NeurIPS 2021 | planned |
 | NMD | [Neural Mean Discrepancy for Efficient Out-of-Distribution Detection](https://openaccess.thecvf.com/content/CVPR2022/html/Dong_Neural_Mean_Discrepancy_for_Efficient_Out-of-Distribution_Detection_CVPR_2022_paper.html) | CVPR 2022 | planned |
@@ -134,7 +134,7 @@ Currently, **oodeel** includes the following baselines:
 
 
 
-**Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for models from `keras.applications` in [training_funs](oodeel/models/training_funs) directory. These functions come in handy for benchmarks like *leave-k-classes-out* that require retraining models on a subset of dataset classes.
+**Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for models from `keras.applications` in [training_funs](oodeel/models/training_funs) directory. These functions come in handy for benchmarks like *leave-k-classes-out* that requires retraining models on a subset of dataset classes.
 # Development Roadmap
 
 ## Roadmap to first release:
@@ -145,8 +145,8 @@ Currently, **oodeel** includes the following baselines:
 - [ ] Revise docstring and type hinting
 - [ ] Set up the doc
 
-## What's next ?
-- [ ] More baselines !
+## What's next?
+- [ ] More baselines!
 - [ ] A module for thorough visualizations (result plots and feature space visualizations)
 - [ ] Integrate model loading and uploading with [hugginface's transformers](https://huggingface.co/docs/transformers/index) library for pretraining
 - [ ] Extend the library to more diverse tasks like object detection, segmentation, NLP ...
@@ -176,8 +176,11 @@ More from the DEEL project:
 # Acknowledgments
 
 <div align="right">
-    <img src="./assets/deel_dark.png#only-dark" width="25%" alt="DEEL logo" align="right" />
-    <img src="./assets/deel_light.png#only-light" width="25%" alt="DEEL logo" align="right" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/deel_dark.png"  width="25%" align="right">
+    <source media="(prefers-color-scheme: light)" srcset="./assets/deel_light.png"  width="25%" align="right">
+    <img src="./assets/logo.png" alt="DEEL Logo" width="25%" align="right">
+  </picture>
 </div>
 This project received funding from the French ”Investing for the Future – PIA3” program within the Artificial and Natural Intelligence Toulouse Institute (ANITI). The authors gratefully acknowledge the support of the <a href="https://www.deel.ai/"> DEEL </a>, a research project jointly conducted in France and Quebec.
 
