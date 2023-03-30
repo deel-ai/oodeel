@@ -34,7 +34,6 @@ class DKNN(OODModel):
     """
     "Out-of-Distribution Detection with Deep Nearest Neighbors"
     https://arxiv.org/abs/2204.06507
-    Simplified version adapted to convnet as built in ./models/train/train_mnist.py
 
     Args:
         nearest: number of nearest neighbors to consider.
