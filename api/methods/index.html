@@ -1714,8 +1714,7 @@ Placeholder for now</p>
 
   
       <p>"Out-of-Distribution Detection with Deep Nearest Neighbors"
-https://arxiv.org/abs/2204.06507
-Simplified version adapted to convnet as built in ./models/train/train_mnist.py</p>
+https://arxiv.org/abs/2204.06507</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -1815,12 +1814,10 @@ Defaults to [-2].</p></td>
 <span class="normal">89</span>
 <span class="normal">90</span>
 <span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">DKNN</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
+<span class="normal">92</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">DKNN</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    &quot;Out-of-Distribution Detection with Deep Nearest Neighbors&quot;</span>
 <span class="sd">    https://arxiv.org/abs/2204.06507</span>
-<span class="sd">    Simplified version adapted to convnet as built in ./models/train/train_mnist.py</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        nearest: number of nearest neighbors to consider.</span>
@@ -2391,14 +2388,14 @@ http://arxiv.org/abs/1706.02690</p>
 <span class="sd">            scores</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tensor</span> <span class="o">=</span> <span class="n">get_input_from_dataset_elem</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_perturbation</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_perturbation</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
         <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_extractor</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span>
         <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">)</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">scores</span>
 
     <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
-    <span class="k">def</span> <span class="nf">_input_perturbation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">input_perturbation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
         <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_extractor</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">gradients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_temperature_loss</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>

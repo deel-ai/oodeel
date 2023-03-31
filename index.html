@@ -553,7 +553,7 @@
 <span class="n">oodmodel</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 <span class="n">scores</span> <span class="o">=</span> <span class="n">oodmodel</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 </code></pre></div>
-<strong>Disclaimer</strong>: It is still very much a work in progress, see issues and <a href="#development-roadmap">development roadmap</a>. Please use the lib carefully !</p>
+<strong>Disclaimer</strong>: It is still very much a work in progress, see issues and <a href="#development-roadmap">development roadmap</a>. Please use the lib carefully!</p>
 <h1 id="table-of-contents">Table of contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h1>
 <ul>
 <li><a href="#table-of-contents">Table of contents</a></li>
@@ -568,12 +568,12 @@
 <li><a href="#license">License</a></li>
 </ul>
 <h1 id="tutorials">Tutorials<a class="headerlink" href="#tutorials" title="Permanent link">&para;</a></h1>
-<p>We propose some tutorials to get familiar with the library and its API in the <a href="notebooks">notebooks directory</a></p>
+<p>We propose some tutorials to get familiar with the library and its API in the <a href="https://github.com/deel-ai/oodeel/tree/master/docs/notebooks">notebooks directory</a></p>
 <h1 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h1>
 <p><strong>Oodeel</strong> requires some stuff and several libraries including Numpy. Installation can be done using:</p>
-<div class="highlight"><pre><span></span><code><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">Jingkang50</span><span class="o">/</span><span class="n">OpenOOD</span><span class="o">.</span><span class="n">git</span>
-<span class="n">cd</span> <span class="n">oodeel</span>
-<span class="n">make</span> <span class="n">prepare</span><span class="o">-</span><span class="n">dev</span>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/deel-ai/oodeel.git
+<span class="nb">cd</span><span class="w"> </span>oodeel
+make<span class="w"> </span>prepare-dev
 </code></pre></div>
 <p>Now that <em>oodeel</em> is installed, here are some basic examples of what you can do with the available modules. See also the notebooks directory for more advanced examples.</p>
 <h2 id="for-benchmarking-with-one-dataset-as-in-distribution-and-another-as-out-of-distribution">For benchmarking with one dataset as in-distribution and another as out-of-distribution<a class="headerlink" href="#for-benchmarking-with-one-dataset-as-in-distribution-and-another-as-out-of-distribution" title="Permanent link">&para;</a></h2>
@@ -584,7 +584,7 @@
 <span class="n">ds_out</span> <span class="o">=</span> <span class="n">OODDataset</span><span class="p">(</span><span class="s1">&#39;fashion_mnist&#39;</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="for-benchmarking-with-one-dataset-as-in-distribution-and-another-as-out-of-distribution_1">For benchmarking with one dataset as in-distribution and another as out-of-distribution<a class="headerlink" href="#for-benchmarking-with-one-dataset-as-in-distribution-and-another-as-out-of-distribution_1" title="Permanent link">&para;</a></h2>
-<p>Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (common practice of anomaly detection and open set recognition).</p>
+<p>Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (a common practice of anomaly detection and open set recognition).</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">oodeel.datasets</span> <span class="kn">import</span> <span class="n">OODDataset</span>
 
 <span class="n">in_labels</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
@@ -593,7 +593,7 @@
 <span class="n">ds_out</span> <span class="o">=</span> <span class="n">oods_out</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="run-an-ood-method">Run an OOD method<a class="headerlink" href="#run-an-ood-method" title="Permanent link">&para;</a></h2>
-<p>Load an OOD method and use it on an already trained model</p>
+<p>Load an OOD method and use it on an already-trained model</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">oodeel.methods</span> <span class="kn">import</span> <span class="n">MLS</span>
 
 <span class="n">oodmodel</span> <span class="o">=</span> <span class="n">MLS</span><span class="p">()</span>
@@ -702,7 +702,7 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Oodeel</strong> also includes standard training functions with data augmentation and learning rate scheduler for models from <code>keras.applications</code> in <a href="oodeel/models/training_funs">training_funs</a> directory. These functions come in handy for benchmarks like <em>leave-k-classes-out</em> that require retraining models on a subset of dataset classes.</p>
+<p><strong>Oodeel</strong> also includes standard training functions with data augmentation and learning rate scheduler for models from <code>keras.applications</code> in <a href="https://github.com/deel-ai/oodeel/tree/master/oodeel/models/training_funs">training_funs</a> directory. These functions come in handy for benchmarks like <em>leave-k-classes-out</em> that requires retraining models on a subset of dataset classes.</p>
 <h1 id="development-roadmap">Development Roadmap<a class="headerlink" href="#development-roadmap" title="Permanent link">&para;</a></h1>
 <h2 id="roadmap-to-first-release">Roadmap to first release:<a class="headerlink" href="#roadmap-to-first-release" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
@@ -713,9 +713,9 @@
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox"/><span class="task-list-indicator"></span></label> Revise docstring and type hinting</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox"/><span class="task-list-indicator"></span></label> Set up the doc</li>
 </ul>
-<h2 id="whats-next">What's next ?<a class="headerlink" href="#whats-next" title="Permanent link">&para;</a></h2>
+<h2 id="whats-next">What's next?<a class="headerlink" href="#whats-next" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox"/><span class="task-list-indicator"></span></label> More baselines !</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox"/><span class="task-list-indicator"></span></label> More baselines!</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox"/><span class="task-list-indicator"></span></label> A module for thorough visualizations (result plots and feature space visualizations)</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox"/><span class="task-list-indicator"></span></label> Integrate model loading and uploading with <a href="https://huggingface.co/docs/transformers/index">hugginface's transformers</a> library for pretraining</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox"/><span class="task-list-indicator"></span></label> Extend the library to more diverse tasks like object detection, segmentation, NLP ...</li>
@@ -741,8 +741,11 @@
 </ul>
 <h1 id="acknowledgments">Acknowledgments<a class="headerlink" href="#acknowledgments" title="Permanent link">&para;</a></h1>
 <div align="right">
-    <img src="./assets/deel_dark.png#only-dark" width="25%" alt="DEEL logo" align="right" />
-    <img src="./assets/deel_light.png#only-light" width="25%" alt="DEEL logo" align="right" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/deel_dark.png"  width="25%" align="right">
+    <source media="(prefers-color-scheme: light)" srcset="./assets/deel_light.png"  width="25%" align="right">
+    <img src="./assets/logo.png" alt="DEEL Logo" width="25%" align="right">
+  </picture>
 </div>
 <p>This project received funding from the French ”Investing for the Future – PIA3” program within the Artificial and Natural Intelligence Toulouse Institute (ANITI). The authors gratefully acknowledge the support of the <a href="https://www.deel.ai/"> DEEL </a>, a research project jointly conducted in France and Quebec.</p>
 <h1 id="creators">Creators<a class="headerlink" href="#creators" title="Permanent link">&para;</a></h1>

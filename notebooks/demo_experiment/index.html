@@ -1720,7 +1720,7 @@ Licensed under the Apache License, Version 2.0.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="getting-started-maximum-logit-score-on-mnist">Getting started: Maximum Logit Score on MNIST<a class="anchor-link" href="#getting-started-maximum-logit-score-on-mnist">&#182;</a></h1><p>This notebooks aims at introducing the core features of <code>oodeel</code>, including :</p>
+<h1 id="getting-started-maximum-logit-score-on-mnist">Getting started: Maximum Logit Score on MNIST<a class="anchor-link" href="#getting-started-maximum-logit-score-on-mnist">&#182;</a></h1><p>This notebook aims at introducing the core features of <code>oodeel</code>, including :</p>
 <ul>
 <li>Instanciation of <code>OODDataset</code> to load a dataset from <code>tensorflow_datasets</code> catalog and to organize in-distribution and out-of-distribution data.</li>
 <li>Preparation of a <code>tf.data.Dataset</code> ready for scoring and training.</li>
@@ -2388,7 +2388,7 @@ dtype: float64
 <li>In-distribution data: MNIST (0-4)</li>
 <li>Out-of-distribution data: MNIST (5-9)</li>
 </ul>
-<p>We can repeat the procedure in an open-set-recognition or semantic OOD setting by considering a subset of MNIST lasses as in-distribution and another subset as out-of-distribution. The datasets are constructed using the <code>OODDataset</code> method <code>.assign_ood_labels_by_class</code>. First load and split the dataset.</p>
+<p>We can repeat the procedure in an open-set-recognition or semantic OOD setting by considering a subset of MNIST classes as in-distribution and another subset as out-of-distribution. The datasets are constructed using the <code>OODDataset</code> method <code>.assign_ood_labels_by_class</code>. First load and split the dataset.</p>
 
 </div>
 </div>
