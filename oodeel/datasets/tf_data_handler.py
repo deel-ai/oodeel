@@ -76,8 +76,9 @@ class TFDataHandler(DataHandler):
     tensorflow syntax.
     """
 
+    @classmethod
     def load_dataset(
-        self, dataset_id: Any, keys: list = None, load_kwargs: dict = {}
+        cls, dataset_id: Any, keys: list = None, load_kwargs: dict = {}
     ) -> tf.data.Dataset:
         """Load dataset from different manners, ensuring to return a dict based
         tf.data.Dataset.
@@ -93,11 +94,11 @@ class TFDataHandler(DataHandler):
             tf.data.Dataset: A dict based tf.data.Dataset
         """
         if isinstance(dataset_id, (np.ndarray, dict, tuple)):
-            dataset = self.load_dataset_from_arrays(dataset_id, keys)
+            dataset = cls.load_dataset_from_arrays(dataset_id, keys)
         elif isinstance(dataset_id, tf.data.Dataset):
-            dataset = self.load_custom_dataset(dataset_id, keys)
+            dataset = cls.load_custom_dataset(dataset_id, keys)
         elif isinstance(dataset_id, str):
-            dataset = self.load_from_tensorflow_datasets(dataset_id, load_kwargs)
+            dataset = cls.load_from_tensorflow_datasets(dataset_id, load_kwargs)
         return dataset
 
     @staticmethod
@@ -156,8 +157,9 @@ class TFDataHandler(DataHandler):
 
         return dataset
 
+    @classmethod
     def load_custom_dataset(
-        self, dataset_id: tf.data.Dataset, keys: list = None
+        cls, dataset_id: tf.data.Dataset, keys: list = None
     ) -> tf.data.Dataset:
         """Load a custom Dataset by ensuring it has the correct format (dict-based)
 
@@ -187,7 +189,7 @@ class TFDataHandler(DataHandler):
                     len(keys) == len_elem
                 ), "Number of keys mismatch with the number of features"
 
-            dataset_id = self.tuple_to_dict(dataset_id, keys)
+            dataset_id = cls.tuple_to_dict(dataset_id, keys)
 
         dataset = dataset_id
         return dataset
@@ -260,10 +262,10 @@ class TFDataHandler(DataHandler):
     def assign_feature_value(
         dataset: tf.data.Dataset, feature_key: str, value: int
     ) -> tf.data.Dataset:
-        """Assign a value to a feature for every samples in a tf.data.Dataset
+        """Assign a value to a feature for every sample in a tf.data.Dataset
 
         Args:
-            dataset (tf.data.Dataset): tf.data.Dataset to assigne the value to
+            dataset (tf.data.Dataset): tf.data.Dataset to assign the value to
             feature_key (str): Feature to assign the value to
             value (int): Value to assign
 
@@ -283,6 +285,10 @@ class TFDataHandler(DataHandler):
     @dict_only_ds
     def get_feature_from_ds(dataset: tf.data.Dataset, feature_key: str) -> np.ndarray:
         """Get a feature from a tf.data.Dataset
+
+        !!! note
+            This function can be a bit time consuming since it needs to iterate
+            over the whole dataset.
 
         Args:
             dataset (tf.data.Dataset): tf.data.Dataset to get the feature from
@@ -310,7 +316,7 @@ class TFDataHandler(DataHandler):
         return list(dataset.element_spec.keys())
 
     @staticmethod
-    def has_key(dataset: tf.data.Dataset, key: str) -> bool:
+    def has_feature_key(dataset: tf.data.Dataset, key: str) -> bool:
         """Check if a tf.data.Dataset has a feature denoted by key
 
         Args:
@@ -345,8 +351,9 @@ class TFDataHandler(DataHandler):
         dataset = dataset.map(map_fn, num_parallel_calls=num_parallel_calls)
         return dataset
 
+    @classmethod
     def prepare_for_training(
-        self,
+        cls,
         dataset: tf.data.Dataset,
         batch_size: int,
         shuffle: bool = False,
@@ -357,7 +364,6 @@ class TFDataHandler(DataHandler):
         shuffle_buffer_size: int = None,
         prefetch_buffer_size: Optional[int] = None,
         drop_remainder: Optional[bool] = False,
-        **kwargs,
     ) -> tf.data.Dataset:
         """Prepare a tf.data.Dataset for training
 
@@ -370,8 +376,10 @@ class TFDataHandler(DataHandler):
                 the dataset. Defaults to None.
             augment_fn (Callable, optional): Augment function to be used (when the\
                 returned dataset is to be used for training). Defaults to None.
-            output_keys (list): List of keys corresponding to the features that will be \
-                returned. Keep all features if None. Defaults to None.
+            output_keys (list, optional): List of keys corresponding to the features
+                that will be returned. Keep all features if None. Defaults to None.
+            dict_based_fns (bool, optional): If the augment and preprocess functions are
+                dict based or not. Defaults to False.
             shuffle_buffer_size (int, optional): Size of the shuffle buffer. If None,
                 taken as the number of samples in the dataset. Defaults to None.
             prefetch_buffer_size (Optional[int], optional): Buffer size for prefetch.
@@ -384,24 +392,24 @@ class TFDataHandler(DataHandler):
             tf.data.Dataset: Prepared dataset
         """
         # dict based to tuple based
-        output_keys = output_keys or self.get_ds_feature_keys(dataset)
+        output_keys = output_keys or cls.get_ds_feature_keys(dataset)
         if not dict_based_fns:
-            dataset = self.dict_to_tuple(dataset, output_keys)
+            dataset = cls.dict_to_tuple(dataset, output_keys)
 
         # preprocess + DA
         if preprocess_fn is not None:
-            dataset = self.map_ds(dataset, preprocess_fn)
+            dataset = cls.map_ds(dataset, preprocess_fn)
         if augment_fn is not None:
-            dataset = self.map_ds(dataset, augment_fn)
+            dataset = cls.map_ds(dataset, augment_fn)
 
         if dict_based_fns:
-            dataset = self.dict_to_tuple(dataset, output_keys)
+            dataset = cls.dict_to_tuple(dataset, output_keys)
 
         dataset = dataset.cache()
 
         # shuffle
         if shuffle:
-            num_samples = self.get_dataset_length(dataset)
+            num_samples = cls.get_dataset_length(dataset)
             shuffle_buffer_size = (
                 num_samples if shuffle_buffer_size is None else shuffle_buffer_size
             )
@@ -415,7 +423,7 @@ class TFDataHandler(DataHandler):
         return dataset
 
     @staticmethod
-    def make_channel_first(dataset: tf.data.Dataset) -> tf.data.Dataset:
+    def make_channel_first(input_key: str, dataset: tf.data.Dataset) -> tf.data.Dataset:
         """Make a tf.data.Dataset channel first. Make sur that the dataset is not
             already Channel first. If so, the tensor will have the format
             (batch_size, x_size, channel, y_size).
@@ -428,7 +436,8 @@ class TFDataHandler(DataHandler):
         """
 
         def channel_first(x):
-            return tf.transpose(x, perm=[2, 0, 1])
+            x[input_key] = tf.transpose(x[input_key], perm=[2, 0, 1])
+            return x
 
         dataset = dataset.map(channel_first)
         return dataset

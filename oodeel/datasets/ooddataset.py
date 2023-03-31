@@ -49,10 +49,13 @@ class OODDataset(object):
              or torch models. Defaults to "tensorflow". Alternative: "torch".
         split (str, optional): Split to use ('test' or 'train') When the dataset is
             loaded from tensorflow_datasets. Defaults to None.
+        keys (list, optional): keys to use for dataset elems. Default to None
         load_kwargs (dict, optional): Additional loading kwargs when loading from
             tensorflow_datasets catalog. Defaults to {}.
-        input_key (str, optional): The key used for the feature to consider as the model
-            input. If None, taken as the first of the tf.data.Dataset elements.
+        load_from_tensorflow_datasets (bool, optional): In the case where if the backend
+            is torch but the user still wants to import from tensorflow_datasets catalog.
+            In that case, tf.Tensor will not be loaded in VRAM and converted as
+            torch.Tensors on the fly. Defaults to False.
     """
 
     def __init__(
@@ -126,7 +129,7 @@ class OODDataset(object):
         Returns:
             bool: True if the dataset has an out-of-distribution label.
         """
-        return self._data_handler.has_key(self.data, "ood_label")
+        return self._data_handler.has_feature_key(self.data, "ood_label")
 
     def get_ood_labels(
         self,
@@ -136,7 +139,7 @@ class OODDataset(object):
         Returns:
             np.ndarray: array of labels
         """
-        assert self._data_handler.has_key(
+        assert self._data_handler.has_feature_key(
             self.data, "ood_label"
         ), "The data has no ood_labels"
         labels = self._data_handler.get_feature_from_ds(self.data, "ood_label")
@@ -355,7 +358,7 @@ class OODDataset(object):
         # Making the dataset channel first if the backend is torch
         if self.backend == "torch" and self.load_from_tensorflow_datasets:
             dataset_to_prepare = self._data_handler.make_channel_first(
-                dataset_to_prepare
+                self.input_key, dataset_to_prepare
             )
 
         # # Select the keys to be returned

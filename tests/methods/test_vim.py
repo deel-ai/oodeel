@@ -66,7 +66,7 @@ def test_vim():
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    vim = VIM()
+    vim = VIM(princ_dims=0.5)
     vim.fit(model, data_fit)
     scores = vim.score(data)
 

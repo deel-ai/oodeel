@@ -48,6 +48,43 @@ from .data_handler import DataHandler
 ArrayLike = TypeVar("ArrayLike")
 
 
+def dict_only_ds(ds_handling_method: Callable) -> Callable:
+    """Decorator to ensure that the dataset is a dict dataset and that the input key
+    matches one of the feature keys. The signature of decorated functions
+    must be function(dataset, *args, **kwargs) with feature_key either in kwargs or
+    args[0] when relevant.
+
+
+    Args:
+        ds_handling_method: method to decorate
+
+    Returns:
+        decorated method
+    """
+
+    def wrapper(dataset: Dataset, *args, **kwargs):
+        assert isinstance(
+            dataset, DictDataset
+        ), "Dataset must be an instance of DictDataset"
+
+        if "feature_key" in kwargs:
+            feature_key = kwargs["feature_key"]
+        elif len(args) > 0:
+            feature_key = args[0]
+
+        # If feature_key is provided, check that it is in the dataset feature keys
+        if (len(args) > 0) or ("feature_key" in kwargs):
+            if isinstance(feature_key, str):
+                feature_key = [feature_key]
+            for key in feature_key:
+                assert (
+                    key in dataset.output_keys
+                ), f"The input dataset has no feature names {key}"
+        return ds_handling_method(dataset, *args, **kwargs)
+
+    return wrapper
+
+
 def to_torch(array: ArrayLike):
     """Convert an array into a torch Tensor"""
     if isinstance(array, np.ndarray):
@@ -203,7 +240,8 @@ class TorchDataHandler(DataHandler):
     DEFAULT_TRANSFORM = torchvision.transforms.ToTensor()
     DEFAULT_TARGET_TRANSFORM = default_target_transform
 
-    def load_dataset(self, dataset_id: Any, keys: list = None, load_kwargs: dict = {}):
+    @classmethod
+    def load_dataset(cls, dataset_id: Any, keys: list = None, load_kwargs: dict = {}):
         """Load dataset from different manners
 
         Args:
@@ -217,11 +255,11 @@ class TorchDataHandler(DataHandler):
         """
         if isinstance(dataset_id, str):
             assert "root" in load_kwargs.keys()
-            dataset = self.load_torchvision_dataset(dataset_id, **load_kwargs)
+            dataset = cls.load_torchvision_dataset(dataset_id, **load_kwargs)
         elif isinstance(dataset_id, Dataset):
-            dataset = self.load_custom_dataset(dataset_id, keys)
+            dataset = cls.load_custom_dataset(dataset_id, keys)
         elif isinstance(dataset_id, (np.ndarray, torch.Tensor, tuple, dict)):
-            dataset = self.load_dataset_from_arrays(dataset_id, keys)
+            dataset = cls.load_dataset_from_arrays(dataset_id, keys)
         return dataset
 
     @staticmethod
@@ -312,8 +350,9 @@ class TorchDataHandler(DataHandler):
         dataset = dataset_id
         return dataset
 
-    @staticmethod
+    @classmethod
     def load_torchvision_dataset(
+        cls,
         dataset_id: str,
         root: str,
         transform: Callable = DEFAULT_TRANSFORM,
@@ -329,6 +368,10 @@ class TorchDataHandler(DataHandler):
             download (bool):  If true, downloads the dataset from the internet and puts\
                 it in root directory. If dataset is already downloaded, it is not\
                 downloaded again. Defaults to False.
+            transform (Callable, optional): Transform function to apply to the input.
+                Defaults to DEFAULT_TRANSFORM
+            target_transform (Callable, optional): Transform function to apply
+                to the target. Defaults to DEFAULT_TARGET_TRANSFORM
             load_kwargs: Loading kwargs to add to the initialization\
                 of dataset.
 
@@ -345,16 +388,16 @@ class TorchDataHandler(DataHandler):
             target_transform=target_transform,
             **load_kwargs,
         )
-        return TorchDataHandler.load_custom_dataset(dataset)
+        return cls.load_custom_dataset(dataset)
 
     @staticmethod
     def assign_feature_value(
         dataset: DictDataset, feature_key: str, value: int
     ) -> DictDataset:
-        """Assign a value to a feature for every samples in a DictDataset
+        """Assign a value to a feature for every sample in a DictDataset
 
         Args:
-            dataset (DictDataset): DictDataset to assigne the value to
+            dataset (DictDataset): DictDataset to assign the value to
             feature_key (str): Feature to assign the value to
             value (int): Value to assign
 
@@ -373,11 +416,12 @@ class TorchDataHandler(DataHandler):
         return dataset
 
     @staticmethod
+    @dict_only_ds
     def get_feature_from_ds(dataset: DictDataset, feature_key: str) -> np.ndarray:
         """Get a feature from a DictDataset
 
         !!! note
-            This function can be a bit of time consuming since it needs to iterate
+            This function can be a bit time consuming since it needs to iterate
             over the whole dataset.
 
         Args:
@@ -387,6 +431,7 @@ class TorchDataHandler(DataHandler):
         Returns:
             np.ndarray: Feature values for dataset
         """
+
         features = dataset.map(lambda x: x[feature_key])
         features = np.stack(
             [
@@ -397,6 +442,7 @@ class TorchDataHandler(DataHandler):
         return features
 
     @staticmethod
+    @dict_only_ds
     def get_ds_feature_keys(dataset: DictDataset) -> list:
         """Get the feature keys of a DictDataset
 
@@ -409,7 +455,7 @@ class TorchDataHandler(DataHandler):
         return dataset.output_keys
 
     @staticmethod
-    def has_key(dataset: DictDataset, key: str) -> bool:
+    def has_feature_key(dataset: DictDataset, key: str) -> bool:
         """Check if a DictDataset has a feature denoted by key
 
         Args:
@@ -421,7 +467,8 @@ class TorchDataHandler(DataHandler):
         """
         assert isinstance(
             dataset, DictDataset
-        ), "dataset must be an instance of DictDataset"
+        ), "Dataset must be an instance of DictDataset"
+
         return key in dataset.output_keys
 
     @staticmethod
@@ -441,6 +488,7 @@ class TorchDataHandler(DataHandler):
         return dataset.map(map_fn)
 
     @staticmethod
+    @dict_only_ds
     def filter_by_feature_value(
         dataset: DictDataset,
         feature_key: str,
@@ -463,6 +511,7 @@ class TorchDataHandler(DataHandler):
         Returns:
             DictDataset: Filtered dataset
         """
+
         if len(dataset[0][feature_key].shape) > 0:
             value_dim = dataset[0][feature_key].shape[-1]
             values = [
@@ -476,8 +525,9 @@ class TorchDataHandler(DataHandler):
         filtered_dataset = dataset.filter(filter_fn)
         return filtered_dataset
 
+    @classmethod
     def prepare_for_training(
-        self,
+        cls,
         dataset: DictDataset,
         batch_size: int,
         shuffle: bool = False,
@@ -485,7 +535,7 @@ class TorchDataHandler(DataHandler):
         augment_fn: Callable = None,
         output_keys: list = None,
         dict_based_fns: bool = False,
-        **kwargs,
+        shuffle_buffer_size: int = None,
     ) -> DataLoader:
         """Prepare a DataLoader for training
 
@@ -501,13 +551,16 @@ class TorchDataHandler(DataHandler):
                 returned. Keep all features if None. Defaults to None.
             dict_based_fns (bool) Wheter to use preprocess and DA functions as dict based\
                  (if True) or as tuple based (if False). Defaults to False.
+            shuffle_buffer_size (int, optional): Size of the shuffle buffer. Not used
+                in torch because we only rely on Map-Style datasets. Still as argument
+                for API consistency. Defaults to None.
 
         Returns:
             DataLoader: dataloader
         """
         preprocess_fn = preprocess_fn or (lambda x: x)
         augment_fn = augment_fn or (lambda x: x)
-        output_keys = output_keys or self.get_ds_feature_keys(dataset)
+        output_keys = output_keys or cls.get_ds_feature_keys(dataset)
 
         def collate_fn(batch: List[dict]):
             if dict_based_fns:

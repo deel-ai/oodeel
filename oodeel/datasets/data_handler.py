@@ -32,8 +32,15 @@ from ..types import Tuple
 
 
 class DataHandler(ABC):
+    """
+    Class to manage Datasets. The aim is to provide a simple interface
+    for working with datasets (torch, tensorflow or other...) and manage them without
+    having to use library-specific syntax.
+    """
+
+    @classmethod
     @abstractmethod
-    def load_dataset(dataset_id: Any, load_kwargs: dict = {}):
+    def load_dataset(cls, dataset_id: Any, load_kwargs: dict = {}):
         """Load dataset from different manners
 
         Args:
@@ -48,10 +55,10 @@ class DataHandler(ABC):
     @staticmethod
     @abstractmethod
     def assign_feature_value(dataset: Any, feature_key: str, value: int) -> Any:
-        """Assign a value to a feature for every samples in a Dataset
+        """Assign a value to a feature for every sample in a Dataset
 
         Args:
-            dataset (Any): Dataset to assigne the value to
+            dataset (Any): Dataset to assign the value to
             feature_key (str): Feature to assign the value to
             value (int): Value to assign
 
@@ -89,7 +96,7 @@ class DataHandler(ABC):
 
     @staticmethod
     @abstractmethod
-    def has_key(dataset: Any, key: str) -> bool:
+    def has_feature_key(dataset: Any, key: str) -> bool:
         """Check if a Dataset has a feature denoted by key
 
         Args:
@@ -162,16 +169,16 @@ class DataHandler(ABC):
         """
         raise NotImplementedError()
 
-    @staticmethod
+    @classmethod
     @abstractmethod
     def prepare_for_training(
+        cls,
         dataset: Any,
         batch_size: int,
         shuffle: bool = False,
         preprocess_fn: Callable = None,
         augment_fn: Callable = None,
         output_keys: list = ["input", "label"],
-        **kwargs
     ) -> Any:
         """Prepare a dataset for training
 
