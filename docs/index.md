@@ -46,7 +46,7 @@ scores = oodmodel.score(ds)
 
 # Tutorials
 
-We propose some tutorials to get familiar with the library and its API in the [notebooks directory](notebooks)
+We propose some tutorials to get familiar with the library and its API in the [notebooks directory](https://github.com/deel-ai/oodeel/tree/master/docs/notebooks)
 
 # Quick Start
 
@@ -134,7 +134,7 @@ Currently, **oodeel** includes the following baselines:
 
 
 
-**Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for models from `keras.applications` in [training_funs](oodeel/models/training_funs) directory. These functions come in handy for benchmarks like *leave-k-classes-out* that requires retraining models on a subset of dataset classes.
+**Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for models from `keras.applications` in [training_funs](https://github.com/deel-ai/oodeel/tree/master/oodeel/models/training_funs) directory. These functions come in handy for benchmarks like *leave-k-classes-out* that requires retraining models on a subset of dataset classes.
 # Development Roadmap
 
 ## Roadmap to first release:
@@ -191,3 +191,4 @@ The library was created by Paul Novello to streamline DEEL research on post-hoc 
 # License
 
 The package is released under [MIT license](LICENSE).
+
