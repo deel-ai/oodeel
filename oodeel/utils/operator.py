@@ -61,7 +61,7 @@ class Operator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def gradient(func: Callable, inputs: Any) -> Any:
+    def gradient(func: Callable, inputs: TensorType) -> TensorType:
         """Compute gradients for a batch of samples.
 
         Args:

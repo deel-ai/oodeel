@@ -23,6 +23,7 @@
 import numpy as np
 
 from ..types import TensorType
+from ..utils import get_input_from_dataset_elem
 from .base import OODModel
 
 
