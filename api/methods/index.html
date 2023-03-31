@@ -1021,7 +1021,28 @@ Defaults to 256.</p></td>
 <span class="normal">210</span>
 <span class="normal">211</span>
 <span class="normal">212</span>
-<span class="normal">213</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">OODModel</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">OODModel</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base Class for methods that assign a score to unseen samples.</span>
 
 <span class="sd">    Args:</span>
@@ -1048,7 +1069,7 @@ Defaults to 256.</p></td>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_layers_id</span> <span class="o">=</span> <span class="n">input_layers_id</span>
 
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes an OOD score for input samples &quot;inputs&quot;.</span>
 <span class="sd">        Method to override with child classes.</span>
 
@@ -1063,7 +1084,7 @@ Defaults to 256.</p></td>
     <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
-        <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare oodmodel for scoring:</span>
 <span class="sd">        * Constructs the feature extractor based on the model</span>
@@ -1116,7 +1137,7 @@ Defaults to 256.</p></td>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">feature_extractor</span>
 
-    <span class="k">def</span> <span class="nf">_fit_to_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_fit_to_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Fits the oodmodel to fit_dataset.</span>
 <span class="sd">        To be overrided in child classes (if needed)</span>
@@ -1131,7 +1152,7 @@ Defaults to 256.</p></td>
 
     <span class="k">def</span> <span class="nf">calibrate_threshold</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">],</span>
         <span class="n">scores</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1149,8 +1170,8 @@ Defaults to 256.</p></td>
 
     <span class="k">def</span> <span class="nf">score</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">dataset</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="n">dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes an OOD score for input samples &quot;inputs&quot;</span>
 
@@ -1163,20 +1184,24 @@ Defaults to 256.</p></td>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_extractor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Call .fit() before .score()&quot;</span>
 
         <span class="c1"># Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TensorType</span><span class="p">):</span>
             <span class="n">tensor</span> <span class="o">=</span> <span class="n">get_input_from_dataset_elem</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
         <span class="c1"># Case 2: dataset is a tf.data.Dataset or a torch.DataLoader</span>
-        <span class="k">else</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">):</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
             <span class="k">assert</span> <span class="n">is_batched</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span> <span class="s2">&quot;Please input a batched dataset.&quot;</span>
             <span class="k">for</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
                 <span class="n">tensor</span> <span class="o">=</span> <span class="n">get_input_from_dataset_elem</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
                 <span class="n">score_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
                 <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">score_batch</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;not implemented for </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">scores</span>
 
-    <span class="k">def</span> <span class="nf">isood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">isood</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">],</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns whether the input samples &quot;inputs&quot; are OOD or not, given a threshold</span>
 
@@ -1187,11 +1212,28 @@ Defaults to 256.</p></td>
 <span class="sd">        Returns:</span>
 <span class="sd">            np.array of 0 for ID samples and 1 for OOD samples</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
-        <span class="n">OODness</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">map_fn</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">threshold</span> <span class="k">else</span> <span class="mi">1</span><span class="p">,</span> <span class="n">scores</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">OODness</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_extractor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Call .fit() before .isood()&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="c1"># Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TensorType</span><span class="p">):</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">get_input_from_dataset_elem</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="c1"># Case 2: dataset is a tf.data.Dataset or a torch.DataLoader</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">):</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+            <span class="k">assert</span> <span class="n">is_batched</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span> <span class="s2">&quot;Please input a batched dataset.&quot;</span>
+            <span class="k">for</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
+                <span class="n">tensor</span> <span class="o">=</span> <span class="n">get_input_from_dataset_elem</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+                <span class="n">score_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+                <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">score_batch</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;not implemented for </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">oodness</span> <span class="o">=</span> <span class="n">scores</span> <span class="o">&lt;</span> <span class="n">threshold</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">oodness</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">],</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Convenience wrapper for isood</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1227,11 +1269,15 @@ Defaults to 256.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/methods/base.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">],</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convenience wrapper for isood</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1271,7 +1317,7 @@ Placeholder for now</p>
         <tr>
           <td><code>fit_dataset</code></td>
           <td>
-                <code><span title="oodeel.types.Any">Any</span></code>
+                <code><span title="oodeel.types.Union">Union</span>[<span title="oodeel.types.TensorType">TensorType</span>, <span title="oodeel.types.DatasetType">DatasetType</span>]</code>
           </td>
           <td><p>dataset to callibrate the threshold on</p></td>
           <td>
@@ -1329,7 +1375,7 @@ Placeholder for now</p>
 <span class="normal">162</span>
 <span class="normal">163</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">calibrate_threshold</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
-    <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">],</span>
     <span class="n">scores</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1391,7 +1437,7 @@ Placeholder for now</p>
         <tr>
           <td><code>fit_dataset</code></td>
           <td>
-                <code><span title="oodeel.types.Optional">Optional</span>[<span title="oodeel.types.Any">Any</span>]</code>
+                <code><span title="oodeel.types.Optional">Optional</span>[<span title="oodeel.types.Union">Union</span>[<span title="oodeel.types.TensorType">TensorType</span>, <span title="oodeel.types.DatasetType">DatasetType</span>]]</code>
           </td>
           <td><p>dataset to fit the oodmodel on</p></td>
           <td>
@@ -1423,7 +1469,7 @@ Placeholder for now</p>
 <span class="normal">95</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
-    <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepare oodmodel for scoring:</span>
 <span class="sd">    * Constructs the feature extractor based on the model</span>
@@ -1449,7 +1495,7 @@ Placeholder for now</p>
 
 
 <h3 id="oodeel.methods.base.OODModel.isood" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">isood</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">isood</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span></code>
 
 <a href="#oodeel.methods.base.OODModel.isood" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -1472,7 +1518,6 @@ Placeholder for now</p>
         <tr>
           <td><code>inputs</code></td>
           <td>
-                <code><span title="oodeel.types.Any">Any</span></code>
           </td>
           <td><p>input samples to score</p></td>
           <td>
@@ -1512,9 +1557,7 @@ Placeholder for now</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/methods/base.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">196</span>
 <span class="normal">197</span>
 <span class="normal">198</span>
 <span class="normal">199</span>
@@ -1525,7 +1568,28 @@ Placeholder for now</p>
 <span class="normal">204</span>
 <span class="normal">205</span>
 <span class="normal">206</span>
-<span class="normal">207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">isood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">isood</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">],</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns whether the input samples &quot;inputs&quot; are OOD or not, given a threshold</span>
 
@@ -1536,9 +1600,24 @@ Placeholder for now</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        np.array of 0 for ID samples and 1 for OOD samples</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
-    <span class="n">OODness</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">map_fn</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">threshold</span> <span class="k">else</span> <span class="mi">1</span><span class="p">,</span> <span class="n">scores</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">OODness</span>
+    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_extractor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Call .fit() before .isood()&quot;</span>
+
+    <span class="c1"># Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TensorType</span><span class="p">):</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">get_input_from_dataset_elem</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+    <span class="c1"># Case 2: dataset is a tf.data.Dataset or a torch.DataLoader</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">):</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="k">assert</span> <span class="n">is_batched</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span> <span class="s2">&quot;Please input a batched dataset.&quot;</span>
+        <span class="k">for</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">get_input_from_dataset_elem</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+            <span class="n">score_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">score_batch</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;not implemented for </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">oodness</span> <span class="o">=</span> <span class="n">scores</span> <span class="o">&lt;</span> <span class="n">threshold</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">oodness</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -1593,7 +1672,7 @@ Placeholder for now</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="oodeel.types.Union">Union</span>[<span title="oodeel.types.List">List</span>[<span title="numpy">np</span>.<span title="numpy.ndarray">ndarray</span>], <span title="numpy">np</span>.<span title="numpy.ndarray">ndarray</span>]</code>
+                <code><span title="numpy">np</span>.<span title="numpy.ndarray">ndarray</span></code>
           </td>
           <td><p>scores or list of scores (depending on the input)</p></td>
         </tr>
@@ -1629,10 +1708,12 @@ Placeholder for now</p>
 <span class="normal">189</span>
 <span class="normal">190</span>
 <span class="normal">191</span>
-<span class="normal">192</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">score</span><span class="p">(</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">score</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
-    <span class="n">dataset</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="n">dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes an OOD score for input samples &quot;inputs&quot;</span>
 
@@ -1645,17 +1726,19 @@ Placeholder for now</p>
     <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_extractor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Call .fit() before .score()&quot;</span>
 
     <span class="c1"># Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TensorType</span><span class="p">):</span>
         <span class="n">tensor</span> <span class="o">=</span> <span class="n">get_input_from_dataset_elem</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
     <span class="c1"># Case 2: dataset is a tf.data.Dataset or a torch.DataLoader</span>
-    <span class="k">else</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">):</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
         <span class="k">assert</span> <span class="n">is_batched</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span> <span class="s2">&quot;Please input a batched dataset.&quot;</span>
         <span class="k">for</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
             <span class="n">tensor</span> <span class="o">=</span> <span class="n">get_input_from_dataset_elem</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
             <span class="n">score_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">score_batch</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;not implemented for </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">scores</span>
 </code></pre></div></td></tr></table></div>
       </details>
@@ -1741,7 +1824,7 @@ Defaults to 1.</p></td>
         <tr>
           <td><code>output_layers_id</code></td>
           <td>
-                <code><span title="typing.List">List</span>[int]</code>
+                <code><span title="oodeel.types.List">List</span>[int]</code>
           </td>
           <td><p>feature space on which to compute nearest neighbors.
 Defaults to [-2].</p></td>
@@ -1810,11 +1893,7 @@ Defaults to [-2].</p></td>
 <span class="normal">85</span>
 <span class="normal">86</span>
 <span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">DKNN</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
+<span class="normal">88</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">DKNN</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    &quot;Out-of-Distribution Detection with Deep Nearest Neighbors&quot;</span>
 <span class="sd">    https://arxiv.org/abs/2204.06507</span>
@@ -1838,9 +1917,7 @@ Defaults to [-2].</p></td>
         <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nearest</span> <span class="o">=</span> <span class="n">nearest</span>
 
-    <span class="k">def</span> <span class="nf">_fit_to_dataset</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_fit_to_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Constructs the index from ID data &quot;fit_dataset&quot;, which will be used for</span>
 <span class="sd">        nearest neighbor search.</span>
@@ -1853,9 +1930,7 @@ Defaults to [-2].</p></td>
         <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">faiss</span><span class="o">.</span><span class="n">IndexFlatL2</span><span class="p">(</span><span class="n">norm_fit_projected</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">norm_fit_projected</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes an OOD score for input samples &quot;inputs&quot; based on</span>
 <span class="sd">        the distance to nearest neighbors in the feature space of self.model</span>
@@ -1955,7 +2030,9 @@ Defaults to 256.</p></td>
 
         <details class="quote">
           <summary>Source code in <code>oodeel/methods/energy.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">32</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
 <span class="normal">33</span>
 <span class="normal">34</span>
 <span class="normal">35</span>
@@ -1998,11 +2075,7 @@ Defaults to 256.</p></td>
 <span class="normal">72</span>
 <span class="normal">73</span>
 <span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Energy</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
+<span class="normal">75</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Energy</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Energy Score method for OOD detection.</span>
 <span class="sd">    &quot;Energy-based Out-of-distribution Detection&quot;</span>
@@ -2031,9 +2104,7 @@ Defaults to 256.</p></td>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">input_layers_id</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes an OOD score for input samples &quot;inputs&quot; based on</span>
 <span class="sd">        energy, namey $-logsumexp(logits(inputs))$.</span>
@@ -2136,7 +2207,8 @@ Defaults to 256.</p></td>
 
         <details class="quote">
           <summary>Source code in <code>oodeel/methods/mls.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">30</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">29</span>
+<span class="normal">30</span>
 <span class="normal">31</span>
 <span class="normal">32</span>
 <span class="normal">33</span>
@@ -2177,12 +2249,7 @@ Defaults to 256.</p></td>
 <span class="normal">68</span>
 <span class="normal">69</span>
 <span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">MLS</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
+<span class="normal">71</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">MLS</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Maximum Logit Scores method for OOD detection.</span>
 <span class="sd">    &quot;Open-Set Recognition: a Good Closed-Set Classifier is All You Need?&quot;</span>
@@ -2208,9 +2275,7 @@ Defaults to 256.</p></td>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">input_layers_id</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">output_activation</span> <span class="o">=</span> <span class="n">output_activation</span>
 
-    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes an OOD score for input samples &quot;inputs&quot; based on</span>
 <span class="sd">        the distance to nearest neighbors in the feature space of self.model</span>
@@ -2223,10 +2288,8 @@ Defaults to 256.</p></td>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_extractor</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_activation</span> <span class="o">!=</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">activations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_activation</span><span class="p">):</span>
-                <span class="n">activation</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">activations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_activation</span><span class="p">)</span>
-            <span class="n">pred</span> <span class="o">=</span> <span class="n">activation</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_activation</span> <span class="o">==</span> <span class="s2">&quot;softmax&quot;</span><span class="p">:</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">scores</span>
 </code></pre></div></td></tr></table></div>
@@ -2309,7 +2372,8 @@ http://arxiv.org/abs/1706.02690</p>
 
         <details class="quote">
           <summary>Source code in <code>oodeel/methods/odin.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">31</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">30</span>
+<span class="normal">31</span>
 <span class="normal">32</span>
 <span class="normal">33</span>
 <span class="normal">34</span>
@@ -2351,13 +2415,7 @@ http://arxiv.org/abs/1706.02690</p>
 <span class="normal">70</span>
 <span class="normal">71</span>
 <span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ODIN</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
+<span class="normal">73</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ODIN</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; &quot;Enhancing The Reliability of Out-of-distribution Image Detection</span>
 <span class="sd">    in Neural Networks&quot;</span>
 <span class="sd">    http://arxiv.org/abs/1706.02690</span>
@@ -2371,14 +2429,10 @@ http://arxiv.org/abs/1706.02690</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="n">temperature</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">input_layers_id</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_loss_func</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">losses</span><span class="o">.</span><span class="n">SparseCategoricalCrossentropy</span><span class="p">(</span>
-            <span class="n">from_logits</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span>
-        <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes an OOD score for input samples &quot;inputs&quot; based on</span>
+    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes an OOD score for input samples &quot;inputs&quot; based on</span>
 <span class="sd">        the distance to nearest neighbors in the feature space of self.model</span>
 
 <span class="sd">        Args:</span>
@@ -2394,7 +2448,6 @@ http://arxiv.org/abs/1706.02690</p>
         <span class="n">scores</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">scores</span>
 
-    <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
     <span class="k">def</span> <span class="nf">input_perturbation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
         <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_extractor</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -2404,7 +2457,7 @@ http://arxiv.org/abs/1706.02690</p>
 
     <span class="k">def</span> <span class="nf">_temperature_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
         <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_extractor</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loss_func</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">preds</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)(</span><span class="n">labels</span><span class="p">,</span> <span class="n">preds</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">loss</span>
 </code></pre></div></td></tr></table></div>
         </details>
@@ -2531,8 +2584,7 @@ Defaults to 256.</p></td>
 
         <details class="quote">
           <summary>Source code in <code>oodeel/methods/vim.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 50</span>
-<span class="normal"> 51</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 51</span>
 <span class="normal"> 52</span>
 <span class="normal"> 53</span>
 <span class="normal"> 54</span>
@@ -2748,16 +2800,7 @@ Defaults to 256.</p></td>
 <span class="normal">264</span>
 <span class="normal">265</span>
 <span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span>
-<span class="normal">269</span>
-<span class="normal">270</span>
-<span class="normal">271</span>
-<span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">VIM</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
+<span class="normal">267</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">VIM</span><span class="p">(</span><span class="n">OODModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the Virtual Matching Logit (VIM) score.</span>
 <span class="sd">    https://arxiv.org/abs/2203.10807</span>
@@ -2813,9 +2856,7 @@ Defaults to 256.</p></td>
         <span class="bp">self</span><span class="o">.</span><span class="n">_princ_dim</span> <span class="o">=</span> <span class="n">princ_dims</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pca_origin</span> <span class="o">=</span> <span class="n">pca_origin</span>
 
-    <span class="k">def</span> <span class="nf">_fit_to_dataset</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_fit_to_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes principal components of feature representations and store the residual</span>
 <span class="sd">        eigenvectors.</span>
@@ -2892,9 +2933,7 @@ Defaults to 256.</p></td>
             <span class="bp">self</span><span class="o">.</span><span class="n">_princ_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">explained_variance</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_princ_dim</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">res_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_dim</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_princ_dim</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">eigen_vectors</span><span class="p">[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_dim</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">eigen_vectors</span><span class="p">[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_dim</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
         <span class="c1"># compute residual score on training data</span>
         <span class="n">train_residual_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_residual_score_tensor</span><span class="p">(</span><span class="n">features_train</span><span class="p">)</span>
@@ -2903,7 +2942,7 @@ Defaults to 256.</p></td>
         <span class="c1"># compute scaling factor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">train_mls_scores</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">train_residual_scores</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_compute_residual_score_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_compute_residual_score_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorType</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the norm of the residual projection in the feature space.</span>
 
@@ -2913,17 +2952,13 @@ Defaults to 256.</p></td>
 <span class="sd">        Returns:</span>
 <span class="sd">            scores</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO Tensor Compatibility: use of TF tensors</span>
-        <span class="c1"># to accelerate matrix multiplication!</span>
-        <span class="n">res_coordinates</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">features</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
+        <span class="n">res_coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">features</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
         <span class="c1"># taking the norm of the coordinates, which amounts to the norm of</span>
         <span class="c1"># the projection since the eigenvectors form an orthornomal basis</span>
-        <span class="n">res_norm</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">res_coordinates</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">res_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">res_coordinates</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">res_norm</span>
 
-    <span class="k">def</span> <span class="nf">_residual_score_tensor</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_residual_score_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the residual score for input samples &quot;inputs&quot;.</span>
 
@@ -2940,9 +2975,7 @@ Defaults to 256.</p></td>
         <span class="n">res_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_residual_score_tensor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_scores</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_score_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the VIM score for input samples &quot;inputs&quot; as the sum of the energy</span>
 <span class="sd">        score and a scaled (PCA) residual norm in the feature space.</span>
