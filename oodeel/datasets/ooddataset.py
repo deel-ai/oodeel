@@ -267,7 +267,7 @@ class OODDataset(object):
         self,
         with_ood_labels: bool = False,
         with_labels: bool = True,
-    ) -> tf.data.Dataset:
+    ) -> Dataset:
         """Return the dataset in a tuple format and correct labels, without preparing
         for training or inference.
 
