@@ -40,7 +40,6 @@ plugins:
   - search
   - mkdocstrings
   - mkdocs-jupyter:
-      execute: true
       ignore: ["ignored_notebooks/*"]
 
 markdown_extensions:
