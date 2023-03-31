@@ -20,8 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import os
-import shutil
+import tempfile
 
 import numpy as np
 import pytest
@@ -43,21 +42,17 @@ def test_instanciate_from_tfds():
     assert len(dataset.data.element_spec) == 2
 
 
-def test_instanciate_from_torchvision(erase_after_test=True):
-    temp_root = "./temp_dataset"
-    os.makedirs(temp_root, exist_ok=True)
-    dataset = OODDataset(
-        dataset_id="MNIST",
-        split="test",
-        backend="torch",
-        load_kwargs=dict(root=temp_root, download=True),
-    )
+def test_instanciate_from_torchvision():
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        dataset = OODDataset(
+            dataset_id="MNIST",
+            split="test",
+            backend="torch",
+            load_kwargs=dict(root=tmpdirname, download=True),
+        )
 
-    assert len(dataset.data) == 10000
-    assert dataset.len_elem == 2
-
-    if erase_after_test:
-        shutil.rmtree(temp_root, ignore_errors=True)
+        assert len(dataset.data) == 10000
+        assert dataset.len_elem == 2
 
 
 @pytest.mark.parametrize(
