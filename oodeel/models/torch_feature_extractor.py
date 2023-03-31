@@ -26,7 +26,7 @@ from typing import Union
 import torch
 from torch import nn
 
-from ..utils.tf_utils import get_input_from_dataset_elem
+from ..datasets import TorchDataHandler
 from .feature_extractor import FeatureExtractor
 
 
@@ -166,12 +166,12 @@ class TorchFeatureExtractor(FeatureExtractor):
         """
 
         if not isinstance(dataset, torch.utils.data.DataLoader):
-            tensor = get_input_from_dataset_elem(dataset)
+            tensor = TorchDataHandler.get_input_from_dataset_elem(dataset)
             return self.predict_tensor(tensor)
 
         features = [None for i in range(len(self.output_layers_id))]
         for elem in dataset:
-            tensor = get_input_from_dataset_elem(elem)
+            tensor = TorchDataHandler.get_input_from_dataset_elem(elem)
             features_batch = self.predict_tensor(tensor)
             if len(features) == 1:
                 features_batch = [features_batch]

@@ -21,29 +21,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from ..types import Any
-from .tf_operator import TFOperator
-from .tf_utils import dataset_cardinality
-from .tf_utils import dataset_get_columns
-from .tf_utils import dataset_image_shape
-from .tf_utils import dataset_label_shape
-from .tf_utils import dataset_len_elem
-from .tf_utils import dataset_max_pixel
-from .tf_utils import dataset_nb_labels
-from .tf_utils import get_input_from_dataset_elem
-from .tf_utils import is_batched
-from .torch_operator import TorchOperator
 
-__all__ = [
-    "dataset_cardinality",
-    "dataset_get_columns",
-    "dataset_image_shape",
-    "dataset_label_shape",
-    "dataset_max_pixel",
-    "dataset_len_elem",
-    "dataset_nb_labels",
-    "get_input_from_dataset_elem",
-    "is_batched",
-]
+
+avail_lib = []
+try:
+    import tensorflow as tf
+
+    avail_lib.append("tensorflow")
+except ImportError:
+    pass
+
+try:
+    import torch
+
+    avail_lib.append("torch")
+except ImportError:
+    pass
+
+
+if len(avail_lib) == 2:
+    from .tf_operator import TFOperator
+    from .torch_operator import TorchOperator
+elif "tensorflow" in avail_lib:
+    from .tf_operator import TFOperator
+elif "torch" in avail_lib:
+    from .torch_operator import TorchOperator
 
 
 def is_from(model_or_tensor: Any, framework: str) -> str:

@@ -29,9 +29,9 @@ from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.models import Sequential
 
+from ...datasets import TFDataHandler
 from ...types import List
 from ...types import Optional
-from ...utils import dataset_cardinality
 
 
 def train_convnet_classifier(
@@ -93,7 +93,7 @@ def train_convnet_classifier(
         ]
     )
 
-    n_samples = dataset_cardinality(train_data)
+    n_samples = TFDataHandler.get_dataset_length(train_data)
 
     # Prepare data
     if not is_prepared:

@@ -636,7 +636,7 @@ class TorchDataHandler(DataHandler):
         return merged_dataset
 
     @staticmethod
-    def get_item_length(dataset: DictDataset) -> int:
+    def get_item_length(dataset: Dataset) -> int:
         """Number of elements in a dataset item
 
         Args:
@@ -648,7 +648,7 @@ class TorchDataHandler(DataHandler):
         return len(dataset[0])
 
     @staticmethod
-    def get_dataset_length(dataset: DictDataset) -> int:
+    def get_dataset_length(dataset: Dataset) -> int:
         """Number of items in a dataset
 
         Args:
@@ -658,3 +658,34 @@ class TorchDataHandler(DataHandler):
             int: Dataset length
         """
         return len(dataset)
+
+    @staticmethod
+    def get_feature_shape(dataset: Dataset, feature_key: Union[str, int]) -> tuple:
+        """Get the shape of a feature of dataset identified by feature_key
+
+        Args:
+            dataset (Dataset): a Dataset
+            feature_key (Union[str, int]): The identifier of the feature
+
+        Returns:
+            tuple: the shape of feature_id
+        """
+        return tuple(dataset[feature_key].shape)
+
+    @staticmethod
+    def get_input_from_dataset_elem(elem: Union[torch.Tensor, tuple, dict]) -> Any:
+        """Get the tensor that is to be feed as input to a model from a dataset element.
+
+        Args:
+            elem (Union[Any, tuple, dict]): dataset element to extract input from
+
+        Returns:
+            Any: Input tensor
+        """
+        if isinstance(elem, (tuple, list)):
+            tensor = elem[0]
+        elif isinstance(elem, dict):
+            tensor = elem[list(elem.keys())[0]]
+        else:
+            tensor = elem
+        return tensor
