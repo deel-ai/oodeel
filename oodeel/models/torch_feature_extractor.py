@@ -129,7 +129,9 @@ class TorchFeatureExtractor(FeatureExtractor):
             else:
                 raise NotImplementedError
 
-    def predict_tensor(self, x: torch.Tensor) -> List[torch.Tensor]:
+    def predict_tensor(
+        self, x: torch.Tensor, detach: bool = True
+    ) -> List[torch.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
@@ -142,9 +144,12 @@ class TorchFeatureExtractor(FeatureExtractor):
             x = x.to(self._device)
         _ = self.model(x)
 
-        features = [
-            self._features[layer_id].detach() for layer_id in self.output_layers_id
-        ]
+        if detach:
+            features = [
+                self._features[layer_id].detach() for layer_id in self.output_layers_id
+            ]
+        else:
+            features = [self._features[layer_id] for layer_id in self.output_layers_id]
 
         if len(features) == 1:
             features = features[0]
