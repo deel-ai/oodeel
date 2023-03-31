@@ -23,10 +23,9 @@
 import tensorflow as tf
 from classification_models.tfkeras import Classifiers
 
+from ...datasets import TFDataHandler
 from ...types import List
 from ...types import Optional
-from ...utils import dataset_cardinality
-from ...utils import dataset_image_shape
 
 
 def train_keras_app(
@@ -81,10 +80,16 @@ def train_keras_app(
         )
         num_classes = 1000
     else:
+        if isinstance(train_data.element_spec, dict):
+            input_id = "image"
+            label_id = "label"
+        else:
+            input_id = 0
+            label_id = -1
         if input_shape is None:
-            input_shape = dataset_image_shape(train_data)
+            input_shape = TFDataHandler.get_feature_shape(train_data, input_id)
         if num_classes is None:
-            classes = train_data.map(lambda x, y: y).unique()
+            classes = TFDataHandler.get_feature(train_data, label_id).unique()
             num_classes = len(list(classes.as_numpy_iterator()))
 
         if model_name != "resnet18":
@@ -104,7 +109,7 @@ def train_keras_app(
         print("prout", input_shape, num_classes)
         model = ResNet18(input_shape, classes=num_classes, weights=None)
 
-    n_samples = dataset_cardinality(train_data)
+    n_samples = TFDataHandler.get_dataset_length(train_data)
 
     # Prepare data
     if not is_prepared:

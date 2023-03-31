@@ -23,11 +23,11 @@
 import numpy as np
 import tensorflow as tf
 
+from ..datasets import TFDataHandler
 from ..types import Callable
 from ..types import List
 from ..types import Tuple
 from ..types import Union
-from ..utils.tf_utils import get_input_from_dataset_elem
 from .feature_extractor import FeatureExtractor
 
 
@@ -121,12 +121,12 @@ class KerasFeatureExtractor(FeatureExtractor):
             List[tf.Tensor]: features
         """
         if not isinstance(dataset, tf.data.Dataset):
-            tensor = get_input_from_dataset_elem(dataset)
+            tensor = TFDataHandler.get_input_from_dataset_elem(dataset)
             return self.predict_tensor(tensor)
 
         features = [None for i in range(len(self.output_layers_id))]
         for elem in dataset:
-            tensor = get_input_from_dataset_elem(elem)
+            tensor = TFDataHandler.get_input_from_dataset_elem(elem)
             features_batch = self.predict_tensor(tensor)
             if len(features) == 1:
                 features_batch = [features_batch]

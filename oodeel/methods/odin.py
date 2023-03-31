@@ -23,7 +23,6 @@
 import numpy as np
 
 from ..types import TensorType
-from ..utils import get_input_from_dataset_elem
 from .base import OODModel
 
 
@@ -53,8 +52,7 @@ class ODIN(OODModel):
         Returns:
             scores
         """
-        tensor = get_input_from_dataset_elem(inputs)
-        x = self.input_perturbation(tensor)
+        x = self.input_perturbation(inputs)
         logits = self.feature_extractor.model(x, training=False) / self.temperature
         preds = self.op.softmax(logits)
         scores = -self.op.max(preds, axis=1)

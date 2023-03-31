@@ -31,7 +31,7 @@ import torch.optim as optim
 import torchvision
 from tqdm import tqdm
 
-from ...utils import dataset_image_shape
+# from ...datasets import TorchDataHandler
 
 
 def run_tf_on_cpu():
@@ -92,8 +92,8 @@ def train_torch_model(
     device = torch.device(f"cuda:{cuda_idx}" if cuda_idx is not None else "cpu")
 
     # Prepare model
-    if input_shape is None:
-        input_shape = dataset_image_shape(train_data)
+    # if input_shape is None:
+    #   input_shape = dataset_image_shape(train_data)
     if num_classes is None:
         classes = train_data.map(lambda x, y: y).unique()
         num_classes = len(list(classes.as_numpy_iterator()))

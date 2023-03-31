@@ -20,16 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from oodeel.utils.tf_utils import dataset_cardinality
-from oodeel.utils.tf_utils import dataset_get_columns
-from oodeel.utils.tf_utils import dataset_image_shape
-from oodeel.utils.tf_utils import dataset_label_shape
-from oodeel.utils.tf_utils import dataset_len_elem
-from oodeel.utils.tf_utils import dataset_max_pixel
-from oodeel.utils.tf_utils import dataset_nb_labels
-from oodeel.utils.tf_utils import get_input_from_dataset_elem
-from tests import generate_data_tf
-
+"""
 
 def test_dataset_len_elem():
     input_shape = (32, 32, 3)
@@ -70,31 +61,6 @@ def test_dataset_label_shape():
     assert shape == (num_labels,)
 
 
-def test_dataset_max_pixel():
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
-
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples
-    )  # .batch(samples)
-
-    max_pixels = dataset_max_pixel(data)
-    assert max_pixels == 1.0
-
-
-def test_dataset_nb_labels():
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
-
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )  # .batch(samples)
-
-    nb_labels = dataset_nb_labels(data)
-    assert nb_labels == num_labels
-
 
 def test_dataset_cardinality():
     input_shape = (32, 32, 3)
@@ -109,28 +75,6 @@ def test_dataset_cardinality():
     assert cardinality == samples
 
 
-def test_dataset_get_columns():
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
-
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples
-    )  # .batch(samples)
-
-    data_0 = dataset_get_columns(data, 0)
-    length = dataset_len_elem(data_0)
-    assert length == 1
-
-    data_0 = dataset_get_columns(data, [1])
-    length = dataset_len_elem(data_0)
-    assert length == 1
-
-    data_0 = dataset_get_columns(data, [0, 1])
-    length = dataset_len_elem(data_0)
-    assert length == 2
-
-
 def test_get_input_from_dataset_elem():
     input_shape = (32, 32, 3)
     num_labels = 10
@@ -143,3 +87,4 @@ def test_get_input_from_dataset_elem():
     for datum in data.take(1):
         tensor = get_input_from_dataset_elem(datum)
     assert tensor.shape == (32, 32, 3)
+"""

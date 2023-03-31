@@ -21,5 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from .ooddataset import OODDataset
+from .tf_data_handler import TFDataHandler
+from .torch_data_handler import TorchDataHandler
 
-__all__ = ["OODDataset"]
+__all__ = ["OODDataset", "TFDataHandler", "TorchDataHandler"]

@@ -29,8 +29,6 @@ from ..types import Callable
 from ..types import Optional
 from ..types import Tuple
 from ..types import Union
-from ..utils import dataset_cardinality
-from ..utils import dataset_len_elem
 from .data_handler import DataHandler
 
 
@@ -442,8 +440,9 @@ class TFDataHandler(DataHandler):
         dataset = dataset.map(channel_first)
         return dataset
 
-    @staticmethod
+    @classmethod
     def merge(
+        cls,
         id_dataset: tf.data.Dataset,
         ood_dataset: tf.data.Dataset,
         resize: Optional[bool] = False,
@@ -465,8 +464,8 @@ class TFDataHandler(DataHandler):
         Returns:
             tf.data.Dataset: merged dataset
         """
-        len_elem_id = dataset_len_elem(id_dataset)
-        len_elem_ood = dataset_len_elem(ood_dataset)
+        len_elem_id = cls.get_item_length(id_dataset)
+        len_elem_ood = cls.get_item_length(ood_dataset)
         assert (
             len_elem_id == len_elem_ood
         ), "incompatible dataset elements (different elem dict length)"
@@ -560,24 +559,84 @@ class TFDataHandler(DataHandler):
 
     @staticmethod
     def get_item_length(dataset: tf.data.Dataset) -> int:
-        """Number of elements in a dataset item
+        """Get the length of a dataset element. If an element is a tensor, the length is
+        one and if it is a sequence (list or tuple), it is len(elem).
 
         Args:
-            dataset (Any): Dataset
+            dataset (tf.data.Dataset): Dataset to process
 
         Returns:
-            int: Item length
+            int: length of the dataset elems
         """
-        return dataset_len_elem(dataset)
+        if isinstance(dataset.element_spec, (tuple, list, dict)):
+            return len(dataset.element_spec)
+        return 1
 
     @staticmethod
     def get_dataset_length(dataset: tf.data.Dataset) -> int:
-        """Number of items in a dataset
+        """Get the length of a dataset. Try to access it with len(), and if not available,
+        with a reduce op.
 
         Args:
-            dataset (Any): Dataset
+            dataset (tf.data.Dataset): Dataset to process
 
         Returns:
-            int: Dataset length
+            int: _description_
         """
-        return dataset_cardinality(dataset)
+        try:
+            return len(dataset)
+        except TypeError:
+            cardinality = dataset.reduce(0, lambda x, _: x + 1)
+            return int(cardinality)
+
+    @staticmethod
+    def get_input_from_dataset_elem(elem: Union[tf.Tensor, tuple, dict]) -> Any:
+        """Get the tensor that is to be feed as input to a model from a dataset element.
+
+        Args:
+            elem (Union[Any, tuple, dict]): dataset element to extract input from
+
+        Returns:
+            Any: Input tensor
+        """
+        if isinstance(elem, (tuple, list)):
+            tensor = elem[0]
+        elif isinstance(elem, dict):
+            tensor = elem[list(elem.keys())[0]]
+        else:
+            tensor = elem
+        return tensor
+
+    @staticmethod
+    def get_feature_shape(
+        dataset: tf.data.Dataset, feature_key: Union[str, int]
+    ) -> tuple:
+        """Get the shape of a feature of dataset identified by feature_key
+
+        Args:
+            dataset (tf.data.Dataset): a tf.data.dataset
+            feature_key (Union[str, int]): The identifier of the feature
+
+        Returns:
+            tuple: the shape of feature_id
+        """
+        return tuple(dataset.element_spec[feature_key].shape)
+
+    @staticmethod
+    def get_feature(
+        dataset: tf.data.Dataset, feature_key: Union[str, int]
+    ) -> tf.data.Dataset:
+        """Extract a feature from a dataset
+
+        Args:
+            dataset (tf.data.Dataset): Dataset to extract the feature from
+            feature_key (Union[str, int]): feature to extract
+
+        Returns:
+            tf.data.Dataset: dataset built with the extracted feature only
+        """
+
+        def _get_feature_elem(elem):
+            return elem[feature_key]
+
+        return dataset.map(_get_feature_elem)

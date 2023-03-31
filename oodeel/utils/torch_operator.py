@@ -71,9 +71,18 @@ class TorchOperator(Operator):
         """Tensor Norm"""
         return tensor.norm(dim=axis)
 
+    @staticmethod
     def matmul(tensor_1: TensorType, tensor_2: TensorType) -> TensorType:
         """Matmul operation"""
         return torch.matmul(tensor_1, tensor_2)
+
+    @staticmethod
+    def convert_from_tensorflow(tensor: TensorType) -> torch.Tensor:
+        """Convert a tensorflow tensor into a torch tensor
+
+        Used when using a pytorch model on a dataset loaded from tensorflow datasets
+        """
+        return torch.Tensor(tensor.numpy())
 
     @staticmethod
     def gradient(func: Callable, inputs: torch.Tensor, *args, **kwargs) -> torch.Tensor:
