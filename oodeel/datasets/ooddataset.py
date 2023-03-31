@@ -56,6 +56,8 @@ class OODDataset(object):
             is torch but the user still wants to import from tensorflow_datasets catalog.
             In that case, tf.Tensor will not be loaded in VRAM and converted as
             torch.Tensors on the fly. Defaults to False.
+        input_key (str, optional): The key of the element to consider as the model input
+            tensor. If None, taken as the first key. Defaults to None.
     """
 
     def __init__(
@@ -66,6 +68,7 @@ class OODDataset(object):
         keys: list = None,
         load_kwargs: dict = {},
         load_from_tensorflow_datasets: bool = False,
+        input_key: str = None,
     ):
         self.backend = backend
         self.load_from_tensorflow_datasets = load_from_tensorflow_datasets
@@ -110,7 +113,10 @@ class OODDataset(object):
             self.len_elem -= 1
 
         # Get the key of the tensor to feed the model with
-        self.input_key = self._data_handler.get_ds_feature_keys(self.data)[0]
+        if input_key is None:
+            self.input_key = self._data_handler.get_ds_feature_keys(self.data)[0]
+        else:
+            self.input_key = input_key
 
     def __len__(self):
         """get the length of the dataset.
