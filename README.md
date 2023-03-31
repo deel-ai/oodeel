@@ -49,7 +49,7 @@ scores = oodmodel.score(ds)
 
 # Tutorials
 
-We propose some tutorials to get familiar with the library and its API in the [notebooks directory](notebooks)
+We propose some tutorials to get familiar with the library and its API in the [notebooks directory](docs/notebooks)
 
 # Quick Start
 
