@@ -39,15 +39,15 @@ class TorchOperator(Operator):
 
     @staticmethod
     def argmax(
-        tensor: Union[torch.Tensor, np.ndarray], axis: int = None
+        tensor: Union[torch.Tensor, np.ndarray], dim: int = None
     ) -> torch.Tensor:
         """Argmax function"""
-        return torch.argmax(tensor, dim=axis)
+        return torch.argmax(tensor, dim=dim)
 
     @staticmethod
-    def max(tensor: Union[torch.Tensor, np.ndarray], axis: int = None) -> torch.Tensor:
+    def max(tensor: Union[torch.Tensor, np.ndarray], dim: int = None) -> torch.Tensor:
         """Max function"""
-        return torch.max(tensor, dim=axis)
+        return torch.max(tensor, dim=dim)
 
     @staticmethod
     def one_hot(
@@ -67,9 +67,9 @@ class TorchOperator(Operator):
         return torch.nn.CrossEntropyLoss(reduction=reduction)
 
     @staticmethod
-    def norm(tensor: Union[torch.Tensor, np.ndarray], axis: int = None) -> torch.Tensor:
+    def norm(tensor: Union[torch.Tensor, np.ndarray], dim: int = None) -> torch.Tensor:
         """Tensor Norm"""
-        return tensor.norm(dim=axis)
+        return tensor.norm(dim=dim)
 
     @staticmethod
     def matmul(tensor_1: TensorType, tensor_2: TensorType) -> TensorType:
