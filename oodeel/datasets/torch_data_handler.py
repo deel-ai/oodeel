@@ -137,7 +137,7 @@ class DictDataset(Dataset):
             self._raw_output_keys
         ), "Length mismatch between dataset item and provided keys"
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int):
         """Return a dictionary of tensors corresponding to a specfic index"""
         item = self._dataset[index]
 
@@ -255,7 +255,7 @@ class TorchDataHandler(DataHandler):
         """
         if isinstance(dataset_id, str):
             assert "root" in load_kwargs.keys()
-            dataset = cls.load_torchvision_dataset(dataset_id, **load_kwargs)
+            dataset = cls.load_from_torchvision(dataset_id, **load_kwargs)
         elif isinstance(dataset_id, Dataset):
             dataset = cls.load_custom_dataset(dataset_id, keys)
         elif isinstance(dataset_id, (np.ndarray, torch.Tensor, tuple, dict)):
@@ -351,7 +351,7 @@ class TorchDataHandler(DataHandler):
         return dataset
 
     @classmethod
-    def load_torchvision_dataset(
+    def load_from_torchvision(
         cls,
         dataset_id: str,
         root: str,
@@ -670,10 +670,10 @@ class TorchDataHandler(DataHandler):
         Returns:
             tuple: the shape of feature_id
         """
-        return tuple(dataset[feature_key].shape)
+        return tuple(dataset[0][feature_key].shape)
 
     @staticmethod
-    def get_input_from_dataset_elem(elem: Union[torch.Tensor, tuple, dict]) -> Any:
+    def get_input_from_dataset_item(elem: Union[torch.Tensor, tuple, dict]) -> Any:
         """Get the tensor that is to be feed as input to a model from a dataset element.
 
         Args:
@@ -689,3 +689,20 @@ class TorchDataHandler(DataHandler):
         else:
             tensor = elem
         return tensor
+
+    @staticmethod
+    def get_feature(dataset: DictDataset, feature_key: Union[str, int]) -> DictDataset:
+        """Extract a feature from a dataset
+
+        Args:
+            dataset (tf.data.Dataset): Dataset to extract the feature from
+            feature_key (Union[str, int]): feature to extract
+
+        Returns:
+            tf.data.Dataset: dataset built with the extracted feature only
+        """
+
+        def _get_feature_item(item):
+            return item[feature_key]
+
+        return dataset.map(_get_feature_item)

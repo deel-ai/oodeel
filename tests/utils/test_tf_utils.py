@@ -75,7 +75,7 @@ def test_dataset_cardinality():
     assert cardinality == samples
 
 
-def test_get_input_from_dataset_elem():
+def test_get_input_from_dataset_item():
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
@@ -85,6 +85,6 @@ def test_get_input_from_dataset_elem():
     )  # .batch(samples)
 
     for datum in data.take(1):
-        tensor = get_input_from_dataset_elem(datum)
+        tensor = get_input_from_dataset_item(datum)
     assert tensor.shape == (32, 32, 3)
 """
