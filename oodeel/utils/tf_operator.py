@@ -38,14 +38,14 @@ class TFOperator(Operator):
         return tf.keras.activations.softmax(tensor)
 
     @staticmethod
-    def argmax(tensor: Union[tf.Tensor, np.ndarray], axis: int = None) -> tf.Tensor:
+    def argmax(tensor: Union[tf.Tensor, np.ndarray], dim: int = None) -> tf.Tensor:
         """Argmax function"""
-        return tf.argmax(tensor, axis=axis)
+        return tf.argmax(tensor, axis=dim)
 
     @staticmethod
-    def max(tensor: Union[tf.Tensor, np.ndarray], axis: int = None) -> tf.Tensor:
+    def max(tensor: Union[tf.Tensor, np.ndarray], dim: int = None) -> tf.Tensor:
         """Max function"""
-        return tf.reduce_max(tensor, axis=axis)
+        return tf.reduce_max(tensor, axis=dim)
 
     @staticmethod
     def one_hot(tensor: Union[tf.Tensor, np.ndarray], num_classes: int) -> tf.Tensor:
@@ -65,9 +65,9 @@ class TFOperator(Operator):
         )
 
     @staticmethod
-    def norm(tensor: Union[tf.Tensor, np.ndarray], axis: int = None) -> tf.Tensor:
+    def norm(tensor: Union[tf.Tensor, np.ndarray], dim: int = None) -> tf.Tensor:
         """Tensor Norm"""
-        return tf.norm(tensor, axis=axis)
+        return tf.norm(tensor, axis=dim)
 
     @staticmethod
     @tf.function
