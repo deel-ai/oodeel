@@ -56,8 +56,8 @@ class OODDataset(object):
             is torch but the user still wants to import from tensorflow_datasets catalog.
             In that case, tf.Tensor will not be loaded in VRAM and converted as
             torch.Tensors on the fly. Defaults to False.
-        input_key (str, optional): The key of the element to consider as the model input
-            tensor. If None, taken as the first key. Defaults to None.
+        input_key (str, optional): The key of the element/item to consider as the
+            model input tensor. If None, taken as the first key. Defaults to None.
     """
 
     def __init__(
@@ -107,10 +107,10 @@ class OODDataset(object):
         # Load the dataset depending on the type of dataset_id
         self.data = self._data_handler.load_dataset(dataset_id, keys, load_kwargs)
 
-        # Get the length of the elements in the dataset
-        self.len_elem = self._data_handler.get_item_length(self.data)
+        # Get the length of the elements/items in the dataset
+        self.len_item = self._data_handler.get_item_length(self.data)
         if self.has_ood_label:
-            self.len_elem -= 1
+            self.len_item -= 1
 
         # Get the key of the tensor to feed the model with
         if input_key is None:
@@ -236,7 +236,7 @@ class OODDataset(object):
         assert (in_labels is not None) or (
             out_labels is not None
         ), "specify labels to filter with"
-        assert self.len_elem >= 2, "the dataset has no labels"
+        assert self.len_item >= 2, "the dataset has no labels"
 
         # Filter the dataset depending on in_labels and out_labels given
         if (out_labels is not None) and (in_labels is not None):

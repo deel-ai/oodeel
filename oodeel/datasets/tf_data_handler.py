@@ -349,6 +349,49 @@ class TFDataHandler(DataHandler):
         dataset = dataset.map(map_fn, num_parallel_calls=num_parallel_calls)
         return dataset
 
+    @staticmethod
+    @dict_only_ds
+    def filter_by_feature_value(
+        dataset: tf.data.Dataset,
+        feature_key: str,
+        values: list,
+        excluded: bool = False,
+    ) -> tf.data.Dataset:
+        """Filter a tf.data.Dataset by checking the value of a feature is in 'values'
+
+        Args:
+            dataset (tf.data.Dataset): tf.data.Dataset to filter
+            feature_key (str): Feature name to check the value
+            values (list): Feature_key values to keep (if excluded is False)
+                or to exclude
+            excluded (bool, optional): To keep (False) or exclude (True) the samples
+                with Feature_key value included in Values. Defaults to False.
+
+        Returns:
+            tf.data.Dataset: Filtered dataset
+        """
+        # If the labels are one-hot encoded, prepare a function to get the label as int
+        if len(dataset.element_spec[feature_key].shape) > 0:
+
+            def get_label_int(elem):
+                return int(tf.argmax(elem[feature_key]))
+
+        else:
+
+            def get_label_int(elem):
+                return elem[feature_key]
+
+        def filter_fn(elem):
+            value = get_label_int(elem)
+            if excluded:
+                return not tf.reduce_any(tf.equal(value, values))
+            else:
+                return tf.reduce_any(tf.equal(value, values))
+
+        dataset_to_filter = dataset
+        dataset_to_filter = dataset_to_filter.filter(filter_fn)
+        return dataset_to_filter
+
     @classmethod
     def prepare_for_training(
         cls,
@@ -515,49 +558,6 @@ class TFDataHandler(DataHandler):
         return merged_dataset
 
     @staticmethod
-    @dict_only_ds
-    def filter_by_feature_value(
-        dataset: tf.data.Dataset,
-        feature_key: str,
-        values: list,
-        excluded: bool = False,
-    ) -> tf.data.Dataset:
-        """Filter a tf.data.Dataset by checking the value of a feature is in 'values'
-
-        Args:
-            dataset (tf.data.Dataset): tf.data.Dataset to filter
-            feature_key (str): Feature name to check the value
-            values (list): Feature_key values to keep (if excluded is False)
-                or to exclude
-            excluded (bool, optional): To keep (False) or exclude (True) the samples
-                with Feature_key value included in Values. Defaults to False.
-
-        Returns:
-            tf.data.Dataset: Filtered dataset
-        """
-        # If the labels are one-hot encoded, prepare a function to get the label as int
-        if len(dataset.element_spec[feature_key].shape) > 0:
-
-            def get_label_int(elem):
-                return int(tf.argmax(elem[feature_key]))
-
-        else:
-
-            def get_label_int(elem):
-                return elem[feature_key]
-
-        def filter_fn(elem):
-            value = get_label_int(elem)
-            if excluded:
-                return not tf.reduce_any(tf.equal(value, values))
-            else:
-                return tf.reduce_any(tf.equal(value, values))
-
-        dataset_to_filter = dataset
-        dataset_to_filter = dataset_to_filter.filter(filter_fn)
-        return dataset_to_filter
-
-    @staticmethod
     def get_item_length(dataset: tf.data.Dataset) -> int:
         """Get the length of a dataset element. If an element is a tensor, the length is
         one and if it is a sequence (list or tuple), it is len(elem).
@@ -590,7 +590,22 @@ class TFDataHandler(DataHandler):
             return int(cardinality)
 
     @staticmethod
-    def get_input_from_dataset_elem(elem: Union[tf.Tensor, tuple, dict]) -> Any:
+    def get_feature_shape(
+        dataset: tf.data.Dataset, feature_key: Union[str, int]
+    ) -> tuple:
+        """Get the shape of a feature of dataset identified by feature_key
+
+        Args:
+            dataset (tf.data.Dataset): a tf.data.dataset
+            feature_key (Union[str, int]): The identifier of the feature
+
+        Returns:
+            tuple: the shape of feature_id
+        """
+        return tuple(dataset.element_spec[feature_key].shape)
+
+    @staticmethod
+    def get_input_from_dataset_item(elem: Union[tf.Tensor, tuple, dict]) -> Any:
         """Get the tensor that is to be feed as input to a model from a dataset element.
 
         Args:
@@ -606,21 +621,6 @@ class TFDataHandler(DataHandler):
         else:
             tensor = elem
         return tensor
-
-    @staticmethod
-    def get_feature_shape(
-        dataset: tf.data.Dataset, feature_key: Union[str, int]
-    ) -> tuple:
-        """Get the shape of a feature of dataset identified by feature_key
-
-        Args:
-            dataset (tf.data.Dataset): a tf.data.dataset
-            feature_key (Union[str, int]): The identifier of the feature
-
-        Returns:
-            tuple: the shape of feature_id
-        """
-        return tuple(dataset.element_spec[feature_key].shape)
 
     @staticmethod
     def get_feature(

@@ -38,7 +38,7 @@ def test_instanciate_from_tfds():
     dataset = OODDataset(dataset_id="mnist", split="test")
 
     assert len(dataset.data) == 10000
-    assert dataset.len_elem == 2
+    assert dataset.len_item == 2
     assert len(dataset.data.element_spec) == 2
 
 
@@ -52,7 +52,7 @@ def test_instanciate_from_torchvision():
         )
 
         assert len(dataset.data) == 10000
-        assert dataset.len_elem == 2
+        assert dataset.len_item == 2
 
 
 @pytest.mark.parametrize(
@@ -89,7 +89,7 @@ def test_instanciate_ood_dataset(backend, as_supervised, expected_output):
     )
 
     assert len(dataset.data) == expected_output[0]
-    assert dataset.len_elem == expected_output[1]
+    assert dataset.len_item == expected_output[1]
     assert item_len == expected_output[2]
 
 
@@ -137,7 +137,7 @@ def test_add_ood_data(backend, ds2_from_numpy, expected_output):
         else len(dataset.data[0])
     )
     assert len(dataset.data) == expected_output[0]
-    assert dataset.len_elem == expected_output[1]
+    assert dataset.len_item == expected_output[1]
     assert item_len == expected_output[2]
     assert np.mean(ood_labels) == expected_output[3]
 

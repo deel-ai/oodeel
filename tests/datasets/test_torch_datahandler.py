@@ -20,8 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import os
-import shutil
+import tempfile
 
 import pytest
 import torch
@@ -29,6 +28,58 @@ import torch
 from oodeel.datasets.torch_data_handler import TorchDataHandler
 from tests import generate_data
 from tests import generate_data_torch
+
+
+def test_get_item_length():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_torch(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )  # .batch(samples)
+
+    length = TorchDataHandler.get_item_length(data)
+    assert length == 2
+
+
+def test_get_feature_shape():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_torch(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )  # .batch(samples)
+
+    shape = TorchDataHandler.get_feature_shape(data, 0)
+    assert shape == input_shape
+
+
+def test_get_dataset_length():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_torch(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )  # .batch(samples)
+
+    cardinality = TorchDataHandler.get_dataset_length(data)
+    assert cardinality == samples
+
+
+def test_get_input_from_dataset_item():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_torch(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )  # .batch(samples)
+
+    tensor = TorchDataHandler.get_input_from_dataset_item(data[0])
+    assert tensor.shape == (32, 32, 3)
 
 
 @pytest.mark.parametrize(
@@ -48,37 +99,31 @@ def test_load_torchvision(dataset_name, train, erase_after_test=True):
     ds_infos = DATASET_INFOS[dataset_name]
     split = ["test", "train"][int(train)]
 
-    # temp dataset root
-    temp_root = "./temp_dataset"
-    os.makedirs(temp_root, exist_ok=True)
-
     handler = TorchDataHandler()
 
-    # define dataset
-    dataset = handler.load_dataset(
-        dataset_name, load_kwargs=dict(root=temp_root, train=train, download=True)
-    )
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # define dataset
+        dataset = handler.load_dataset(
+            dataset_name, load_kwargs=dict(root=tmpdirname, train=train, download=True)
+        )
 
-    # dummy item
-    dummy_item = dataset[0]
-    dummy_keys = list(dummy_item.keys())
-    dummy_shapes = [v.shape for v in dummy_item.values()]
+        # dummy item
+        dummy_item = dataset[0]
+        dummy_keys = list(dummy_item.keys())
+        dummy_shapes = [v.shape for v in dummy_item.values()]
 
-    # check keys
-    assert dataset.output_keys == dummy_keys == ["input", "label"]
+        # check keys
+        assert dataset.output_keys == dummy_keys == ["input", "label"]
 
-    # check output shape
-    assert (
-        dataset.output_shapes
-        == dummy_shapes
-        == [torch.Size(ds_infos["img_shape"]), torch.Size([])]
-    )
+        # check output shape
+        assert (
+            dataset.output_shapes
+            == dummy_shapes
+            == [torch.Size(ds_infos["img_shape"]), torch.Size([])]
+        )
 
-    # check len of dataset
-    assert len(dataset) == ds_infos["num_samples"][split]
-
-    if erase_after_test:
-        shutil.rmtree(temp_root, ignore_errors=True)
+        # check len of dataset
+        assert len(dataset) == ds_infos["num_samples"][split]
 
 
 @pytest.mark.parametrize(

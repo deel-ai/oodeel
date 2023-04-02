@@ -20,15 +20,67 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import os
-import shutil
+import tempfile
 
 import pytest
+import tensorflow as tf
 
 from oodeel.datasets.tf_data_handler import TFDataHandler
 from tests import generate_data
 from tests import generate_data_tf
-import tensorflow as tf
+
+
+def test_get_item_length():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )  # .batch(samples)
+
+    length = TFDataHandler.get_item_length(data)
+    assert length == 2
+
+
+def test_get_feature_shape():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )  # .batch(samples)
+
+    shape = TFDataHandler.get_feature_shape(data, 0)
+    assert shape == input_shape
+
+
+def test_get_dataset_length():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )  # .batch(samples)
+
+    cardinality = TFDataHandler.get_dataset_length(data)
+    assert cardinality == samples
+
+
+def test_get_input_from_dataset_item():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )  # .batch(samples)
+
+    for datum in data.take(1):
+        tensor = TFDataHandler.get_input_from_dataset_item(datum)
+    assert tensor.shape == (32, 32, 3)
 
 
 @pytest.mark.parametrize(
@@ -38,7 +90,7 @@ import tensorflow as tf
         ("mnist", False),
     ],
 )
-def test_load_tensorflow_datasets(dataset_name, train, erase_after_test=True):
+def test_load_tensorflow_datasets(dataset_name, train):
     DATASET_INFOS = {
         "mnist": {
             "img_shape": (28, 28, 1),
@@ -48,38 +100,33 @@ def test_load_tensorflow_datasets(dataset_name, train, erase_after_test=True):
     ds_infos = DATASET_INFOS[dataset_name]
     split = ["test", "train"][int(train)]
 
-    # temp dataset root
-    temp_root = "./temp_dataset"
-    os.makedirs(temp_root, exist_ok=True)
-
     handler = TFDataHandler()
 
-    # define dataset
-    dataset = handler.load_dataset(
-        dataset_name, load_kwargs=dict(data_dir=temp_root, split=split, download=True)
-    )
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # define dataset
+        dataset = handler.load_dataset(
+            dataset_name,
+            load_kwargs=dict(data_dir=tmpdirname, split=split, download=True),
+        )
 
-    # dummy item
-    for item in dataset.take(1):
-        dummy_item = item
-    dummy_keys = list(dummy_item.keys())
-    dummy_shapes = [v.shape for v in dummy_item.values()]
+        # dummy item
+        for item in dataset.take(1):
+            dummy_item = item
+        dummy_keys = list(dummy_item.keys())
+        dummy_shapes = [v.shape for v in dummy_item.values()]
 
-    # check keys
-    assert list(dataset.element_spec.keys()) == dummy_keys == ["image", "label"]
+        # check keys
+        assert list(dataset.element_spec.keys()) == dummy_keys == ["image", "label"]
 
-    # check output shape
-    assert (
-        [dataset.element_spec[key].shape for key in dataset.element_spec.keys()]
-        == dummy_shapes
-        == [tf.TensorShape(ds_infos["img_shape"]), tf.TensorShape([])]
-    )
+        # check output shape
+        assert (
+            [dataset.element_spec[key].shape for key in dataset.element_spec.keys()]
+            == dummy_shapes
+            == [tf.TensorShape(ds_infos["img_shape"]), tf.TensorShape([])]
+        )
 
-    # check len of dataset
-    assert len(dataset) == ds_infos["num_samples"][split]
-
-    if erase_after_test:
-        shutil.rmtree(temp_root, ignore_errors=True)
+        # check len of dataset
+        assert len(dataset) == ds_infos["num_samples"][split]
 
 
 @pytest.mark.parametrize(
