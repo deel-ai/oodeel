@@ -203,7 +203,7 @@ class VIM(OODModel):
         res_coordinates = self.op.matmul(features - self.center, self.res)
         # taking the norm of the coordinates, which amounts to the norm of
         # the projection since the eigenvectors form an orthornomal basis
-        res_norm = self.op.norm(res_coordinates, axis=-1)
+        res_norm = self.op.norm(res_coordinates, dim=-1)
         return res_norm
 
     def _residual_score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -221,7 +221,7 @@ class VIM(OODModel):
 
         features = self.feature_extractor.predict(inputs)[0]
         res_scores = self._compute_residual_score_tensor(features)
-        return np.array(res_scores)
+        return self.op.convert_to_numpy(res_scores)
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
@@ -238,6 +238,7 @@ class VIM(OODModel):
 
         features, logits = self.feature_extractor(inputs)
         res_scores = self._compute_residual_score_tensor(features)
+        res_scores = self.op.convert_to_numpy(res_scores)
         energy_scores = logsumexp(logits, axis=-1)
         scores = -self.alpha * res_scores + energy_scores
         return -np.array(scores)

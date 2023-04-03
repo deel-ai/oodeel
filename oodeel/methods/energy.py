@@ -54,7 +54,7 @@ class Energy(OODModel):
     """
 
     def __init__(self):
-        super().__init__(output_layers_id=[-1], input_layers_id=0)
+        super().__init__(output_layers_id=[-1])
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
@@ -71,5 +71,6 @@ class Energy(OODModel):
         # compute logits (softmax(logits,axis=1) is the actual softmax
         # output minimized using binary cross entropy)
         logits = self.feature_extractor(inputs)
+        logits = self.op.convert_to_numpy(logits)
         scores = -logsumexp(logits, axis=1)
         return scores
