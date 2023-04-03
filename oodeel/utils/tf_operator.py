@@ -91,6 +91,10 @@ class TFOperator(Operator):
         return tf.matmul(tensor_1, tensor_2)
 
     @staticmethod
+    def convert_to_numpy(tensor: TensorType) -> np.ndarray:
+        return tensor.numpy()
+
+    @staticmethod
     @tf.function
     def gradient(func: Callable, inputs: tf.Tensor, *args, **kwargs) -> tf.Tensor:
         """Compute gradients for a batch of samples.
