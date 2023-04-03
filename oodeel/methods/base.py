@@ -54,7 +54,7 @@ class OODModel(ABC):
     def __init__(
         self,
         output_layers_id: List[int] = [-1],
-        input_layers_id: List[int] = 0,
+        input_layers_id: List[int] = None,
     ):
         self.feature_extractor = None
         self.output_layers_id = output_layers_id
@@ -104,21 +104,17 @@ class OODModel(ABC):
                 keras models saved as pb files e.g. with model.save()
         """
         if is_from(model, "keras"):
-            from ..utils import TFOperator
             from ..models.keras_feature_extractor import KerasFeatureExtractor
             from ..datasets import TFDataHandler
 
-            self.op = TFOperator()
             self.dh = TFDataHandler()
             self.backend = "tensorflow"
             FeatureExtractor = KerasFeatureExtractor
 
         elif is_from(model, "torch"):
-            from ..utils import TorchOperator
             from ..models.torch_feature_extractor import TorchFeatureExtractor
             from ..datasets import TorchDataHandler
 
-            self.op = TorchOperator()
             self.dh = TorchDataHandler()
             self.backend = "torch"
             FeatureExtractor = TorchFeatureExtractor
@@ -164,11 +160,6 @@ class OODModel(ABC):
         """
         raise NotImplementedError()
 
-    def check_adapt_tensor(self, tensor: TensorType) -> TensorType:
-        if self.backend == "torch" and is_from(tensor, "tensorflow"):
-            tensor = self.op.convert_from_tensorflow(tensor)
-        return tensor
-
     def score(
         self,
         dataset: Union[TensorType, DatasetType],
@@ -187,14 +178,12 @@ class OODModel(ABC):
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, TensorType):
             tensor = self.dh.get_input_from_dataset_item(dataset)
-            tensor = self.check_adapt_tensor(tensor)
             scores = self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         elif isinstance(dataset, DatasetType):
             scores = np.array([])
             for tensor in dataset:
                 tensor = self.dh.get_input_from_dataset_item(tensor)
-                tensor = self.check_adapt_tensor(tensor)
                 score_batch = self._score_tensor(tensor)
                 scores = np.append(scores, score_batch)
         else:
@@ -219,14 +208,12 @@ class OODModel(ABC):
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, TensorType):
             tensor = self.dh.get_input_from_dataset_item(dataset)
-            tensor = self.check_adapt_tensor(tensor)
             scores = self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         elif isinstance(dataset, DatasetType):
             scores = np.array([])
             for tensor in dataset:
                 tensor = self.dh.get_input_from_dataset_item(tensor)
-                tensor = self.check_adapt_tensor(tensor)
                 score_batch = self._score_tensor(tensor)
                 scores = np.append(scores, score_batch)
         else:

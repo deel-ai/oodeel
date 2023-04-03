@@ -49,7 +49,7 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
     def wrapper(dataset: tf.data.Dataset, *args, **kwargs):
         assert isinstance(dataset.element_spec, dict), "dataset elements must be dicts"
 
-        if "feature_key" in kwargs:
+        if "feature_key" in kwargs.keys():
             feature_key = kwargs["feature_key"]
         elif len(args) > 0:
             feature_key = args[0]
