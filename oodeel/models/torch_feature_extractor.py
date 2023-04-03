@@ -27,6 +27,7 @@ import torch
 from torch import nn
 
 from ..datasets import TorchDataHandler
+from ..utils.torch_operator import sanitize_input
 from .feature_extractor import FeatureExtractor
 
 
@@ -60,7 +61,8 @@ class TorchFeatureExtractor(FeatureExtractor):
             input_layer_id=input_layer_id,
         )
         self._device = next(model.parameters()).device
-        self._features = {layer: torch.empty(0) for layer in output_layers_id}
+        self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
+        self.backend = "torch"
 
     def get_features_hook(self, layer_id: Union[str, int]):
         """
@@ -129,6 +131,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             else:
                 raise NotImplementedError
 
+    @sanitize_input
     def predict_tensor(
         self, x: torch.Tensor, detach: bool = True
     ) -> List[torch.Tensor]:

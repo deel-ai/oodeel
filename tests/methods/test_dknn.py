@@ -20,17 +20,27 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import pytest
+
 from oodeel.methods import DKNN
 from tests import generate_data
 from tests import generate_data_tf
+from tests import generate_data_torch
 from tests import generate_model
+from tests import sequential_model
+from tests.tools_torch import ComplexNet
+from tests.tools_torch import Net
 
 
-def test_dknn():
+@pytest.mark.parametrize(
+    ("backend", "input_shape"),
+    [("tensorflow", (32, 32, 3)), ("torch", (3, 32, 32))],
+    ids=["[tf] test DKNN", "[torch] test DKNN"],
+)
+def test_dknn(backend, input_shape):
     """
     Test DKNN
     """
-    input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
 
@@ -38,17 +48,24 @@ def test_dknn():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+    if backend == "tensorflow":
+        model = generate_model(input_shape=input_shape, output_shape=num_labels)
+    elif backend == "torch":
+        data_x = generate_data_torch(
+            x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
+        )
+        model = ComplexNet()
 
-    dknn = DKNN()
+    dknn = DKNN(output_layers_id="fcs.fc2")
     dknn.fit(model, fit_dataset=data_x[:100])
     scores = dknn.score(data_x)
 
     assert scores.shape == (100,)
 
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    ).batch(samples)
-    scores = dknn.score(data)
+    if backend == "tensorflow":
+        data = generate_data_tf(
+            x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+        ).batch(samples)
+        scores = dknn.score(data)
 
-    assert scores.shape == (100,)
+        assert scores.shape == (100,)

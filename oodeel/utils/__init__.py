@@ -20,8 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from ..types import Any
-
+from .general_utils import is_from
 
 avail_lib = []
 try:
@@ -46,22 +45,3 @@ elif "tensorflow" in avail_lib:
     from .tf_operator import TFOperator
 elif "torch" in avail_lib:
     from .torch_operator import TorchOperator
-
-
-def is_from(model_or_tensor: Any, framework: str) -> str:
-    """Check wether a model or tensor belongs to a specific framework
-
-    Args:
-        model_or_tensor (Any): Neural network or Tensor
-        framework (str):  Model or tensor framework ("torch" | "keras" | "tensorflow")
-
-    Returns:
-        bool: Wether the model belongs to specified framework or not
-    """
-    keywords_list = []
-    class_parents = list(model_or_tensor.__class__.__mro__)
-    for class_id in class_parents:
-        class_list = str(class_id).split("'")[1].split(".")
-        for keyword in class_list:
-            keywords_list.append(keyword)
-    return framework in keywords_list

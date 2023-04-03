@@ -28,6 +28,7 @@ from ..types import Callable
 from ..types import List
 from ..types import Tuple
 from ..types import Union
+from ..utils.tf_operator import sanitize_input
 from .feature_extractor import FeatureExtractor
 
 
@@ -53,14 +54,17 @@ class KerasFeatureExtractor(FeatureExtractor):
         self,
         model: Callable,
         output_layers_id: List[Union[int, str]] = [-1],
-        input_layer_id: Union[int, str] = 0,
+        input_layer_id: Union[int, str] = None,
     ):
+        if input_layer_id is None:
+            input_layer_id = 0
         super().__init__(
             model=model,
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
         )
 
+        self.backend = "tensorflow"
         self.model.layers[-1].activation = getattr(tf.keras.activations, "linear")
 
     def find_layer(self, layer_id: Union[str, int]) -> tf.keras.layers.Layer:
@@ -98,6 +102,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         extractor = tf.keras.models.Model(new_input, output_layers)
         return extractor
 
+    @sanitize_input
     @tf.function
     def predict_tensor(self, tensor: Union[tf.Tensor, np.ndarray, Tuple]) -> tf.Tensor:
         """Get the projection of tensor in the feature space of self.model

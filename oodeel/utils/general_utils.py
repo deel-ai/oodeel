@@ -20,30 +20,23 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import numpy as np
-
-from oodeel.methods import MLS
-from tests import almost_equal
-from tests import generate_data_tf
-from tests import generate_model
+from ..types import Any
 
 
-def test_isood():
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
+def is_from(model_or_tensor: Any, framework: str) -> str:
+    """Check wether a model or tensor belongs to a specific framework
 
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    ).batch(samples // 2)
+    Args:
+        model_or_tensor (Any): Neural network or Tensor
+        framework (str):  Model or tensor framework ("torch" | "keras" | "tensorflow")
 
-    model = generate_model(input_shape=input_shape, output_shape=num_labels)
-
-    oodmodel = MLS()
-    oodmodel.fit(model)
-
-    isooddata = oodmodel.isood(data, threshold=-5)
-    isooddata2 = oodmodel(data, threshold=-5)
-    print(np.sum(isooddata - isooddata2))
-
-    assert almost_equal(isooddata, isooddata2)
+    Returns:
+        bool: Wether the model belongs to specified framework or not
+    """
+    keywords_list = []
+    class_parents = list(model_or_tensor.__class__.__mro__)
+    for class_id in class_parents:
+        class_list = str(class_id).split("'")[1].split(".")
+        for keyword in class_list:
+            keywords_list.append(keyword)
+    return framework in keywords_list

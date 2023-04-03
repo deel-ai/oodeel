@@ -26,7 +26,22 @@ import torch
 from ..types import Callable
 from ..types import TensorType
 from ..types import Union
+from .general_utils import is_from
 from .operator import Operator
+
+
+def sanitize_input(tensor_arg_func: Callable):
+    def wrapper(obj, tensor, *args, **kwargs):
+        if isinstance(tensor, torch.Tensor):
+            pass
+        elif is_from(tensor, "tensorflow"):
+            tensor = torch.Tensor(tensor.numpy())
+        else:
+            tensor = torch.Tensor(tensor)
+
+        return tensor_arg_func(obj, tensor, *args, **kwargs)
+
+    return wrapper
 
 
 class TorchOperator(Operator):
