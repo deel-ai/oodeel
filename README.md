@@ -12,7 +12,7 @@
 <!-- Badge section -->
 <div align="center">
     <a href="#">
-        <img src="https://img.shields.io/badge/Python-3.7, 3.8, 3.9, 3.10-efefef">
+        <img src="https://img.shields.io/badge/Python-3.8, 3.9, 3.10-efefef">
     </a>
     <a href="#">
         <img src="https://img.shields.io/badge/License-MIT-efefef">
@@ -74,7 +74,7 @@ ds_in = OODDataset('mnist', split="test").prepare(batch_size)
 ds_out = OODDataset('fashion_mnist', split="test").prepare(batch_size)
 ```
 
-## For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution 
+## For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution
 
 Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (a common practice of anomaly detection and open set recognition).
 

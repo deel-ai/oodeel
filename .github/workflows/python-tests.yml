@@ -15,7 +15,7 @@ jobs:
       max-parallel: 4
       matrix:
         include:
-          - python-version: 3.7
+          - python-version: 3.8
             tf-version: 2.4
           - python-version: 3.8
             tf-version: 2.7

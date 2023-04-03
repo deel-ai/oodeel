@@ -26,7 +26,7 @@ This command activates your virtual environment and launch the `tox` command.
 
 
 `tox` on the other hand will do the following:
-- run pytest on the tests folder with python 3.7, python 3.8, python 3.9 and python 3.10
+- run pytest on the tests folder with python 3.8, python 3.9 and python 3.10
 > Note: If you do not have those 4 interpreters the tests would be only performed with your current interpreter
 - run flake8 on the oodeel main files, with python 3.8, 3.9 and python 3.10.
 > Note: It is possible that flake8 throws false-positive errors. If the linting test failed please check first flake8 output to point out the reasons.
