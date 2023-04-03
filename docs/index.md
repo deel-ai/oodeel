@@ -9,7 +9,7 @@
 <!-- Badge section -->
 <div align="center">
     <a href="#">
-        <img src="https://img.shields.io/badge/Python-3.7, 3.8, 3.9, 3.10-efefef">
+        <img src="https://img.shields.io/badge/Python-3.8, 3.9, 3.10-efefef">
     </a>
     <a href="#">
         <img src="https://img.shields.io/badge/License-MIT-efefef">
@@ -191,4 +191,3 @@ The library was created by Paul Novello to streamline DEEL research on post-hoc 
 # License
 
 The package is released under [MIT license](LICENSE).
-
