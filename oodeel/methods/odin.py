@@ -38,7 +38,7 @@ class ODIN(OODModel):
 
     def __init__(self, temperature: float = 1000, noise: float = 0.014):
         self.temperature = temperature
-        super().__init__(output_layers_id=[-1], input_layers_id=0)
+        super().__init__(output_layers_id=[-1])
         self.noise = noise
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -54,13 +54,14 @@ class ODIN(OODModel):
         """
         x = self.input_perturbation(inputs)
         logits = self.feature_extractor.model(x, training=False) / self.temperature
-        preds = self.op.softmax(logits)
-        scores = -self.op.max(preds, axis=1)
+        pred = self.op.softmax(logits)
+        pred = self.op.convert_to_numpy(pred)
+        scores = -self.op.max(pred, dim=1)
         return scores
 
     def input_perturbation(self, inputs):
         preds = self.feature_extractor.model(inputs, training=False)
-        outputs = self.op.argmax(preds, axis=1)
+        outputs = self.op.argmax(preds, dim=1)
         gradients = self.op.gradient(self._temperature_loss, inputs, outputs)
         inputs_p = inputs - self.noise * self.op.sign(gradients)
         return inputs_p

@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from oodeel.models.training_funs import train_convnet_classifier
+from oodeel.models.training_funs import train_convnet_classifier_tf
 from oodeel.models.training_funs import train_keras_app
 from tests import generate_data_tf
 
@@ -41,7 +41,7 @@ def test_convnet_classifier():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    train_convnet_classifier(data, **train_config)
+    train_convnet_classifier_tf(data, **train_config)
 
 
 def test_train_keras_app_imagenet():

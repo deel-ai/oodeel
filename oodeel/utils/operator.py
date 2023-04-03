@@ -36,12 +36,12 @@ class Operator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def argmax(tensor: TensorType, axis: int = None) -> TensorType:
+    def argmax(tensor: TensorType, dim: int = None) -> TensorType:
         """Argmax function"""
         raise NotImplementedError()
 
     @abstractmethod
-    def max(tensor: TensorType, axis: int = None) -> TensorType:
+    def max(tensor: TensorType, dim: int = None) -> TensorType:
         """Max function"""
         raise NotImplementedError()
 

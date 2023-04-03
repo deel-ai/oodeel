@@ -49,7 +49,7 @@ class MLS(OODModel):
 
     def __init__(self, output_activation="linear"):
         # This line is not necessary but improves readability
-        super().__init__(output_layers_id=[-1], input_layers_id=0)
+        super().__init__(output_layers_id=[-1])
         self.output_activation = output_activation
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -67,5 +67,6 @@ class MLS(OODModel):
         pred = self.feature_extractor(inputs)
         if self.output_activation == "softmax":
             pred = self.op.softmax(pred)
+        pred = self.op.convert_to_numpy(pred)
         scores = -np.max(pred, axis=1)
         return scores

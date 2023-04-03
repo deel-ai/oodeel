@@ -79,7 +79,8 @@ class DKNN(OODModel):
             scores
         """
 
-        input_projected = self.feature_extractor(inputs).numpy()
+        input_projected = self.feature_extractor(inputs)
+        input_projected = self.op.convert_to_numpy(input_projected)
         norm_input_projected = self._l2_normalization(input_projected)
         scores, _ = self.index.search(norm_input_projected, self.nearest)
         return scores[:, 0]
