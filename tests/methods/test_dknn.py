@@ -24,11 +24,11 @@ import pytest
 from torch.utils.data import DataLoader
 
 from oodeel.methods import DKNN
+from tests import ComplexNet
 from tests import generate_data
 from tests import generate_data_tf
 from tests import generate_data_torch
 from tests import generate_model
-from tests import sequential_model
 
 
 @pytest.mark.parametrize(
@@ -54,7 +54,7 @@ def test_dknn(backend, input_shape):
             x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
         )
         data_x = DataLoader(data_x, batch_size=samples // 2)
-        model = sequential_model()
+        model = ComplexNet()
 
     dknn = DKNN()
     dknn.fit(model, fit_dataset=data_x)

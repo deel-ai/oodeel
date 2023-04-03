@@ -88,11 +88,16 @@ class TorchFeatureExtractor(FeatureExtractor):
             nn.Module: the corresponding layer
         """
         if isinstance(layer_id, int):
-            assert isinstance(self.model, nn.Sequential), (
-                "The model must be "
-                "subscriptable to find output layer by int identifier"
-            )
-            return self.model[layer_id]
+            if isinstance(self.model, nn.Sequential):
+                return self.model[layer_id]
+            else:
+                layers_ind = []
+                for i, layer in enumerate(self.model.named_modules()):
+                    layers_ind.append(i)
+                layer_id = layers_ind[layer_id]
+                for i, layer in enumerate(self.model.named_modules()):
+                    if i == layer_id:
+                        return layer[1]
         else:
             for layer_name, layer in self.model.named_modules():
                 if layer_name == layer_id:
