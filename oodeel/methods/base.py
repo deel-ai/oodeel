@@ -22,6 +22,7 @@
 # SOFTWARE.
 from abc import ABC
 from abc import abstractmethod
+from typing import get_args
 
 import numpy as np
 
@@ -176,11 +177,11 @@ class OODModel(ABC):
         assert self.feature_extractor is not None, "Call .fit() before .score()"
 
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
-        if isinstance(dataset, TensorType):
+        if isinstance(dataset, get_args(TensorType)):
             tensor = self.dh.get_input_from_dataset_item(dataset)
             scores = self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
-        elif isinstance(dataset, DatasetType):
+        elif isinstance(dataset, get_args(DatasetType)):
             scores = np.array([])
             for tensor in dataset:
                 tensor = self.dh.get_input_from_dataset_item(tensor)
@@ -206,11 +207,11 @@ class OODModel(ABC):
         assert self.feature_extractor is not None, "Call .fit() before .isood()"
 
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
-        if isinstance(dataset, TensorType):
+        if isinstance(dataset, get_args(TensorType)):
             tensor = self.dh.get_input_from_dataset_item(dataset)
             scores = self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
-        elif isinstance(dataset, DatasetType):
+        elif isinstance(dataset, get_args(DatasetType)):
             scores = np.array([])
             for tensor in dataset:
                 tensor = self.dh.get_input_from_dataset_item(tensor)
