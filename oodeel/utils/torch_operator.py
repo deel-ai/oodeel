@@ -100,6 +100,12 @@ class TorchOperator(Operator):
         return torch.Tensor(tensor.numpy())
 
     @staticmethod
+    def convert_to_numpy(tensor: TensorType) -> np.ndarray:
+        if tensor.device is not "cpu":
+            tensor = tensor.to("cpu")
+        return tensor.detach().numpy()
+
+    @staticmethod
     def gradient(func: Callable, inputs: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """Compute gradients for a batch of samples.
 

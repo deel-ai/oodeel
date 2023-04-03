@@ -34,16 +34,6 @@ from tqdm import tqdm
 # from ...datasets import TorchDataHandler
 
 
-def run_tf_on_cpu():
-    """Run tensorflow on cpu device.
-    It prevents tensorflow from allocating the totality of the GPU so that
-    some VRAM remain free to train torch models.
-
-    /!\\ This function needs to be called BEFORE loading the tfds dataset!
-    """
-    tf.config.set_visible_devices([], "GPU")
-
-
 def train_torch_model(
     train_data: tf.data.Dataset,
     model_name: str = "resnet18",
