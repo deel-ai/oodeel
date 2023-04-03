@@ -20,13 +20,15 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import List
-from typing import Union
+from typing import get_args
 
 import torch
 from torch import nn
 
 from ..datasets import TorchDataHandler
+from ..types import DatasetType
+from ..types import List
+from ..types import Union
 from ..utils.torch_operator import sanitize_input
 from .feature_extractor import FeatureExtractor
 
@@ -69,6 +71,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         Hook that stores features corresponding to a specific layer
         in a class dictionary.
         """
+        self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
 
         def hook(_, __, output):
             if isinstance(output, torch.Tensor):
@@ -173,7 +176,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             List[torch.Tensor]: features
         """
 
-        if not isinstance(dataset, torch.utils.data.DataLoader):
+        if not isinstance(dataset, get_args(DatasetType)):
             tensor = TorchDataHandler.get_input_from_dataset_item(dataset)
             return self.predict_tensor(tensor)
 
