@@ -101,7 +101,7 @@ class TorchOperator(Operator):
 
     @staticmethod
     def convert_to_numpy(tensor: TensorType) -> np.ndarray:
-        if tensor.device is not "cpu":
+        if tensor.device != "cpu":
             tensor = tensor.to("cpu")
         return tensor.detach().numpy()
 
