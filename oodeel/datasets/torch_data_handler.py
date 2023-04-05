@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import copy
+from typing import get_args
 from typing import TypeVar
 
 import numpy as np
@@ -37,6 +38,7 @@ from tqdm import tqdm
 
 from ..types import Any
 from ..types import Callable
+from ..types import DatasetType
 from ..types import Dict
 from ..types import List
 from ..types import Optional
