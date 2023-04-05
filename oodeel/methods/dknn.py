@@ -22,6 +22,8 @@
 # SOFTWARE.
 import faiss
 import numpy as np
+import torch
+import torch.nn.functional as F
 
 from ..types import DatasetType
 from ..types import List
@@ -62,7 +64,9 @@ class DKNN(OODModel):
         Args:
             fit_dataset: input dataset (ID) to construct the index with.
         """
-        fit_projected = self.feature_extractor.predict(fit_dataset).numpy()
+        fit_projected = self.feature_extractor.predict(fit_dataset)
+        fit_projected = F.adaptive_avg_pool2d(fit_projected, 1).squeeze()
+        fit_projected = self.op.convert_to_numpy(fit_projected)
         norm_fit_projected = self._l2_normalization(fit_projected)
         self.index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
         self.index.add(norm_fit_projected)
@@ -80,10 +84,12 @@ class DKNN(OODModel):
         """
 
         input_projected = self.feature_extractor(inputs)
+        input_projected = F.adaptive_avg_pool2d(input_projected, 1).squeeze()
+        # input_projected = torch.cat([F.adaptive_avg_pool2d(projected, 1).squeeze() for projected in input_projected], dim=1)
         input_projected = self.op.convert_to_numpy(input_projected)
         norm_input_projected = self._l2_normalization(input_projected)
         scores, _ = self.index.search(norm_input_projected, self.nearest)
-        return scores[:, 0]
+        return scores[:, -1]
 
     def _l2_normalization(self, feat: np.ndarray) -> np.ndarray:
         return feat / (np.linalg.norm(feat, ord=2, axis=-1, keepdims=True) + 1e-10)

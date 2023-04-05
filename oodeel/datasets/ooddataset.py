@@ -79,7 +79,7 @@ class OODDataset(object):
 
         # Set the load parameters for tfds / torchvision
         if backend == "torch" and not load_from_tensorflow_datasets:
-            load_kwargs["train"] = split == "train"
+            load_kwargs["split"] = split
         else:
             load_kwargs["as_supervised"] = False
             load_kwargs["split"] = split
