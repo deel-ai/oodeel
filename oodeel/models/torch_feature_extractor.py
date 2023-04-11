@@ -24,6 +24,7 @@ from typing import get_args
 
 import torch
 from torch import nn
+from tqdm import tqdm
 
 from ..datasets import TorchDataHandler
 from ..types import DatasetType
@@ -94,17 +95,9 @@ class TorchFeatureExtractor(FeatureExtractor):
             if isinstance(self.model, nn.Sequential):
                 return self.model[layer_id]
             else:
-                layers_ind = []
-                for i, layer in enumerate(self.model.named_modules()):
-                    layers_ind.append(i)
-                layer_id = layers_ind[layer_id]
-                for i, layer in enumerate(self.model.named_modules()):
-                    if i == layer_id:
-                        return layer[1]
+                return list(self.model.named_modules())[layer_id][1]
         else:
-            for layer_name, layer in self.model.named_modules():
-                if layer_name == layer_id:
-                    return layer
+            return dict(self.model.named_modules())[layer_id]
 
     def prepare_extractor(self):
         """Prepare the feature extractor by adding hooks to self.model"""
@@ -181,7 +174,9 @@ class TorchFeatureExtractor(FeatureExtractor):
             return self.predict_tensor(tensor)
 
         features = [None for i in range(len(self.output_layers_id))]
-        for elem in dataset:
+        for elem in tqdm(
+            dataset, desc="Extracting the dataset features...", total=len(dataset)
+        ):
             tensor = TorchDataHandler.get_input_from_dataset_item(elem)
             features_batch = self.predict_tensor(tensor)
             if len(features) == 1:
