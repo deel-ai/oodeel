@@ -79,7 +79,11 @@ class TorchOperator(Operator):
     @staticmethod
     def CrossEntropyLoss(reduction: str = "mean"):
         """Cross Entropy Loss from logits"""
-        return torch.nn.CrossEntropyLoss(reduction=reduction)
+
+        def sanitized_ce_loss(inputs, targets):
+            return torch.nn.CrossEntropyLoss(reduction=reduction)(inputs, targets)
+
+        return sanitized_ce_loss
 
     @staticmethod
     def norm(tensor: Union[torch.Tensor, np.ndarray], dim: int = None) -> torch.Tensor:
@@ -121,4 +125,4 @@ class TorchOperator(Operator):
         outputs = func(inputs, *args, **kwargs)
         gradients = torch.autograd.grad(outputs, inputs)
         inputs.requires_grad_(False)
-        return gradients
+        return gradients[0]
