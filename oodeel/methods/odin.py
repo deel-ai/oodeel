@@ -36,7 +36,11 @@ class ODIN(OODModel):
         noise (float, optional): Perturbation noise. Defaults to 0.014.
     """
 
-    def __init__(self, temperature: float = 1000, noise: float = 0.014):
+    def __init__(
+        self,
+        temperature: float = 1000,
+        noise: float = 0.014,
+    ):
         self.temperature = temperature
         super().__init__(output_layers_id=[-1])
         self.noise = noise
@@ -52,21 +56,23 @@ class ODIN(OODModel):
         Returns:
             scores
         """
+        if self.feature_extractor.backend == "torch":
+            inputs = inputs.to(self.feature_extractor._device)
         x = self.input_perturbation(inputs)
-        logits = self.feature_extractor.model(x, training=False) / self.temperature
+        logits = self.feature_extractor.model(x) / self.temperature
         pred = self.op.softmax(logits)
         pred = self.op.convert_to_numpy(pred)
-        scores = -self.op.max(pred, dim=1)
+        scores = -np.max(pred, axis=1)
         return scores
 
     def input_perturbation(self, inputs):
-        preds = self.feature_extractor.model(inputs, training=False)
+        preds = self.feature_extractor.model(inputs)
         outputs = self.op.argmax(preds, dim=1)
         gradients = self.op.gradient(self._temperature_loss, inputs, outputs)
         inputs_p = inputs - self.noise * self.op.sign(gradients)
         return inputs_p
 
     def _temperature_loss(self, inputs, labels):
-        preds = self.feature_extractor.model(inputs, training=False) / self.temperature
-        loss = self.op.CrossEntropyLoss(reduction="sum")(labels, preds)
+        preds = self.feature_extractor.model(inputs) / self.temperature
+        loss = self.op.CrossEntropyLoss(reduction="sum")(inputs=preds, targets=labels)
         return loss
