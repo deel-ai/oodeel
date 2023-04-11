@@ -58,6 +58,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         output_layers_id: List[Union[int, str]] = [],
         input_layer_id: Union[int, str] = None,
     ):
+        model = model.eval()
         super().__init__(
             model=model,
             output_layers_id=output_layers_id,
