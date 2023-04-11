@@ -201,4 +201,4 @@ class TorchFeatureExtractor(FeatureExtractor):
             torch.Tensor: weights matrix
         """
         layer = self.find_layer(layer_id)
-        return [layer.weight.detach().numpy(), layer.bias.detach().numpy()]
+        return [layer.weight.detach().cpu().numpy(), layer.bias.detach().cpu().numpy()]
