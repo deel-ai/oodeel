@@ -160,7 +160,9 @@ class TorchFeatureExtractor(FeatureExtractor):
             features = features[0]
         return features
 
-    def predict(self, dataset: torch.utils.data.DataLoader) -> List[torch.Tensor]:
+    def predict(
+        self, dataset: torch.utils.data.DataLoader, detach: bool = True, **kwargs
+    ) -> List[torch.Tensor]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
@@ -172,14 +174,14 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         if not isinstance(dataset, get_args(DatasetType)):
             tensor = TorchDataHandler.get_input_from_dataset_item(dataset)
-            return self.predict_tensor(tensor)
+            return self.predict_tensor(tensor, detach=detach)
 
         features = [None for i in range(len(self.output_layers_id))]
         for elem in tqdm(
             dataset, desc="Extracting the dataset features...", total=len(dataset)
         ):
             tensor = TorchDataHandler.get_input_from_dataset_item(elem)
-            features_batch = self.predict_tensor(tensor)
+            features_batch = self.predict_tensor(tensor, detach=detach)
             if len(features) == 1:
                 features_batch = [features_batch]
             for i, f in enumerate(features_batch):

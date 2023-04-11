@@ -116,7 +116,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         features = self.extractor(tensor, training=False)
         return features
 
-    def predict(self, dataset: tf.data.Dataset) -> List[tf.Tensor]:
+    def predict(self, dataset: tf.data.Dataset, **kwargs) -> List[tf.Tensor]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
