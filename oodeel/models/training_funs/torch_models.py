@@ -179,7 +179,7 @@ def _train(
         with tqdm(train_data, desc=f"Epoch {epoch + 1}/{epochs} [Train]") as iterator:
             for i, (inputs, labels) in enumerate(iterator):
                 # convert [inputs, labels] into torch tensors
-                inputs = torch.Tensor(inputs.numpy()).permute(0, 3, 1, 2).to(device)
+                inputs = torch.Tensor(inputs.numpy()).to(device)
                 labels = torch.Tensor(labels.numpy()).long().to(device)
 
                 # zero the parameter gradients
@@ -213,7 +213,7 @@ def _train(
             ) as iterator:
                 for i, (inputs, labels) in enumerate(iterator):
                     # convert [inputs, labels] into torch tensors
-                    inputs = torch.Tensor(inputs.numpy()).permute(0, 3, 1, 2).to(device)
+                    inputs = torch.Tensor(inputs.numpy()).to(device)
                     labels = torch.Tensor(labels.numpy()).long().to(device)
 
                     with torch.no_grad():

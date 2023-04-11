@@ -39,6 +39,7 @@ from tqdm import tqdm
 from ...datasets import TFDataHandler
 from ...types import List
 from ...types import Optional
+from ...types import Union
 
 
 def train_convnet_classifier_tf(
@@ -242,7 +243,7 @@ class ComplexNet(nn.Module):
 
 
 def train_convnet_classifier_torch(
-    train_data: tf.data.Dataset,
+    train_data: Union[torch.utils.data.DataLoader, tf.data.Dataset],
     input_shape: tuple = None,
     num_classes: int = None,
     is_prepared: bool = False,
@@ -299,6 +300,7 @@ def train_convnet_classifier_torch(
 
     # Prepare data
     if not is_prepared:
+        assert isinstance(train_data, tf.data.Dataset)
         padding = 4
         image_size = input_shape[1]
         target_size = image_size + padding * 2
