@@ -65,8 +65,8 @@ class DKNN(OODModel):
             fit_dataset: input dataset (ID) to construct the index with.
         """
         fit_projected = self.feature_extractor.predict(fit_dataset)
-        fit_projected = F.adaptive_avg_pool2d(fit_projected, 1).squeeze()
         fit_projected = self.op.convert_to_numpy(fit_projected)
+        fit_projected = fit_projected.reshape(fit_projected.shape[0], -1)
         norm_fit_projected = self._l2_normalization(fit_projected)
         self.index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
         self.index.add(norm_fit_projected)
@@ -84,9 +84,8 @@ class DKNN(OODModel):
         """
 
         input_projected = self.feature_extractor(inputs)
-        input_projected = F.adaptive_avg_pool2d(input_projected, 1).squeeze()
-        # input_projected = torch.cat([F.adaptive_avg_pool2d(projected, 1).squeeze() for projected in input_projected], dim=1)
         input_projected = self.op.convert_to_numpy(input_projected)
+        input_projected = input_projected.reshape(input_projected.shape[0], -1)
         norm_input_projected = self._l2_normalization(input_projected)
         scores, _ = self.index.search(norm_input_projected, self.nearest)
         return scores[:, -1]
