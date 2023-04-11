@@ -23,6 +23,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.linalg import eigh
+from scipy.linalg import norm
 from scipy.linalg import pinv
 from scipy.special import logsumexp
 from sklearn.covariance import EmpiricalCovariance
@@ -116,6 +117,8 @@ class VIM(OODModel):
             fit_dataset: input dataset (ID) to construct the index with.
         """
         features_train, logits_train = self.feature_extractor.predict(fit_dataset)
+        features_train = self.op.convert_to_numpy(features_train)
+        logits_train = self.op.convert_to_numpy(logits_train)
         self.feature_dim = features_train.shape[1]
         if self.pca_origin == "center":
             self.center = np.mean(features_train, axis=0)
@@ -200,10 +203,13 @@ class VIM(OODModel):
         Returns:
             scores
         """
-        res_coordinates = self.op.matmul(features - self.center, self.res)
+        res_coordinates = np.matmul(features - self.center, self.res)
+        # res_coordinates = self.op.matmul(features - self.center, self.res)  # TODO
         # taking the norm of the coordinates, which amounts to the norm of
         # the projection since the eigenvectors form an orthornomal basis
-        res_norm = self.op.norm(res_coordinates, dim=-1)
+        res_norm = norm(res_coordinates, axis=-1)
+        # res_norm = self.op.norm(res_coordinates, dim=-1)  # TODO
+
         return res_norm
 
     def _residual_score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -237,8 +243,10 @@ class VIM(OODModel):
         # compute predicted features
 
         features, logits = self.feature_extractor(inputs)
+        features = self.op.convert_to_numpy(features)
+        logits = self.op.convert_to_numpy(logits)
         res_scores = self._compute_residual_score_tensor(features)
-        res_scores = self.op.convert_to_numpy(res_scores)
+        # res_scores = self.op.convert_to_numpy(res_scores)
         energy_scores = logsumexp(logits, axis=-1)
         scores = -self.alpha * res_scores + energy_scores
         return -np.array(scores)
