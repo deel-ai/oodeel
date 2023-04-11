@@ -75,9 +75,13 @@ class TFOperator(Operator):
     @staticmethod
     def CrossEntropyLoss(reduction: str = "mean"):
         """Cross Entropy Loss from logits"""
-        return tf.keras.losses.SparseCategoricalCrossentropy(
-            from_logits=True, reduction=reduction
-        )
+
+        def sanitized_ce_loss(inputs, targets):
+            return tf.keras.losses.SparseCategoricalCrossentropy(
+                from_logits=True, reduction=reduction
+            )(targets, inputs)
+
+        return sanitized_ce_loss
 
     @staticmethod
     def norm(tensor: Union[tf.Tensor, np.ndarray], dim: int = None) -> tf.Tensor:
