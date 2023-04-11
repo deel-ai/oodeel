@@ -113,7 +113,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         Returns:
             tf.Tensor: features
         """
-        features = self.extractor(tensor)
+        features = self.extractor(tensor, training=False)
         return features
 
     def predict(self, dataset: tf.data.Dataset) -> List[tf.Tensor]:
