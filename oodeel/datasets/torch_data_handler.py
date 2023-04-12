@@ -237,7 +237,7 @@ class TorchDataHandler(DataHandler):
     def default_target_transform(y):
         return torch.tensor(y) if isinstance(y, (float, int)) else y
 
-    DEFAULT_TRANSFORM = torchvision.transforms.ToTensor()
+    DEFAULT_TRANSFORM = torchvision.transforms.PILToTensor()
     DEFAULT_TARGET_TRANSFORM = default_target_transform
 
     @classmethod
