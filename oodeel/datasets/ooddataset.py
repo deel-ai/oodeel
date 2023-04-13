@@ -81,7 +81,6 @@ class OODDataset(object):
         if backend == "tensorflow":
             load_kwargs["as_supervised"] = False
             load_kwargs["split"] = split
-        self.load_params = load_kwargs
 
         # Set the channel order depending on the backend
         if self.backend == "torch":
@@ -91,10 +90,13 @@ class OODDataset(object):
 
                 tf.config.set_visible_devices([], "GPU")
                 self._data_handler = TFDataHandler()
+                load_kwargs["as_supervised"] = False
+                load_kwargs["split"] = split
             else:
                 from .torch_data_handler import TorchDataHandler
 
                 self._data_handler = TorchDataHandler()
+                load_kwargs["train"] = split == "train"
             self.channel_order = "channels_first"
         else:
             from .tf_data_handler import TFDataHandler
@@ -102,6 +104,7 @@ class OODDataset(object):
             self._data_handler = TFDataHandler()
             self.channel_order = "channels_last"
 
+        self.load_params = load_kwargs
         # Load the dataset depending on the type of dataset_id
         self.data = self._data_handler.load_dataset(dataset_id, keys, load_kwargs)
 
