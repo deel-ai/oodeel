@@ -20,35 +20,21 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from oodeel.methods import ODIN
-from tests import generate_data
-from tests import generate_data_tf
-from tests import generate_model
+import torch
+
+from oodeel.utils.torch_operator import TorchOperator
 
 
-def test_odin():
-    """
-    Test ODIN
-    """
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
+def test_gradient():
+    """Test gradient."""
+    input_shape = (3, 32, 32)
 
-    data = generate_data(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )  # .batch(samples)
+    def diff_fun(x):
+        return x.sum()
 
-    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+    x = torch.ones(input_shape)
+    torch_operator = TorchOperator()
+    gradients = torch_operator.gradient(diff_fun, x)
 
-    odin = ODIN(temperature=100, noise=0.1)
-    odin.fit(model)
-    scores = odin.score(data)
-
-    assert scores.shape == (100,)
-
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    ).batch(samples)
-    scores = odin.score(data)
-
-    assert scores.shape == (100,)
+    assert tuple(gradients.shape) == input_shape
+    assert torch.all(gradients == torch.ones(input_shape))

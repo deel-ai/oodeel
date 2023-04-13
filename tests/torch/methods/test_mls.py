@@ -20,35 +20,5 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from oodeel.methods import Energy
-from tests import generate_data
-from tests import generate_data_tf
-from tests import generate_model
-
-
-def test_energy():
-    """
-    Test Energy
-    """
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
-
-    data_x, _ = generate_data(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )
-
-    model = generate_model(input_shape=input_shape, output_shape=num_labels)
-
-    energy = Energy()
-    energy.fit(model)
-    scores = energy.score(data_x)
-
-    assert scores.shape == (100,)
-
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    ).batch(samples)
-    scores = energy.score(data)
-
-    assert scores.shape == (100,)
+from oodeel.methods import MLS
+from tests.torch import generate_data

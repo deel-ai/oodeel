@@ -20,21 +20,18 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import torch
+from .tools_torch import ComplexNet
+from .tools_torch import generate_data
+from .tools_torch import generate_data_torch
+from .tools_torch import named_sequential_model
+from .tools_torch import Net
+from .tools_torch import sequential_model
 
-from oodeel.utils.torch_operator import TorchOperator
-
-
-def test_gradient():
-    """Test gradient."""
-    input_shape = (3, 32, 32)
-
-    def diff_fun(x):
-        return x.sum()
-
-    x = torch.ones(input_shape)
-    torch_operator = TorchOperator()
-    gradients = torch_operator.gradient(diff_fun, x)[0]
-
-    assert tuple(gradients.shape) == input_shape
-    assert torch.all(gradients == torch.ones(input_shape))
+__all__ = [
+    "ComplexNet",
+    "generate_data_torch",
+    "generate_data",
+    "named_sequential_model",
+    "Net",
+    "sequential_model",
+]

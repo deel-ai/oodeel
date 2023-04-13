@@ -20,62 +20,44 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import pytest
+from torch.utils.data import DataLoader
 
-from oodeel.methods import MLS
-from tests import generate_data
-from tests import generate_data_tf
-from tests import generate_model
+from oodeel.methods import DKNN
+from tests.tensorflow import generate_data
+from tests.tensorflow import generate_data_tf
+from tests.tensorflow import generate_model
 
 
-def test_mls():
-    """Test MLS"""
-    input_shape = (32, 32, 3)
+@pytest.mark.parametrize(
+    ("backend", "input_shape"),
+    [("tensorflow", (32, 32, 3))],
+    ids=["[tf] test DKNN"],
+)
+def test_dknn(backend, input_shape):
+    """
+    Test DKNN
+    """
     num_labels = 10
     samples = 100
 
     data_x, _ = generate_data(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )  # .batch(samples)
+    )
 
-    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+    if backend == "tensorflow":
+        model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    energy = MLS()
-    energy.fit(model)
-    scores = energy.score(data_x)
-
-    assert scores.shape == (100,)
-
-    data_x = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    ).batch(samples)
-
-    scores = energy.score(data_x)
+    dknn = DKNN()
+    dknn.fit(model, fit_dataset=data_x)
+    scores = dknn.score(data_x)
 
     assert scores.shape == (100,)
 
+    if backend == "tensorflow":
+        data = generate_data_tf(
+            x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+        ).batch(samples)
+        scores = dknn.score(data)
 
-def test_msp():
-    """Test MLS"""
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
-
-    data_x, _ = generate_data(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )  # .batch(samples)
-
-    model = generate_model(input_shape=input_shape, output_shape=num_labels)
-
-    energy = MLS(output_activation="softmax")
-    energy.fit(model)
-    scores = energy.score(data_x)
-
-    assert scores.shape == (100,)
-
-    data_x = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    ).batch(samples)
-
-    scores = energy.score(data_x)
-
-    assert scores.shape == (100,)
+        assert scores.shape == (100,)
