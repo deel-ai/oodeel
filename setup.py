@@ -47,7 +47,7 @@ tensorflow_requirements = [
     "image-classifiers",
 ]
 
-torch_requirements = ["tensorflow_datasets", "timm", "torch", "torchvision"]
+torch_requirements = ["timm", "torch", "torchvision"]
 
 dev_requirements = [
     "ipywidgets",
