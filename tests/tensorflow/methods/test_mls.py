@@ -20,50 +20,61 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from oodeel.models.keras_feature_extractor import KerasFeatureExtractor
-from tests import almost_equal
-from tests import generate_data_tf
-from tests import generate_model
+from oodeel.methods import MLS
+from tests.tensorflow import generate_data
+from tests.tensorflow import generate_data_tf
+from tests.tensorflow import generate_model
 
 
-def test_predict():
+def test_mls():
+    """Test MLS"""
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
 
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples
-    ).batch(samples // 2)
+    data_x, _ = generate_data(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    )  # .batch(samples)
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    feature_extractor = KerasFeatureExtractor(model, output_layers_id=[-3])
+    energy = MLS()
+    energy.fit(model)
+    scores = energy.score(data_x)
 
-    model_fe = KerasFeatureExtractor(model, output_layers_id=[-1])
+    assert scores.shape == (100,)
 
-    last_layer = KerasFeatureExtractor(model, output_layers_id=[-1], input_layer_id=-2)
+    data_x = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    ).batch(samples)
 
-    pred_model = model.predict(data)
-    pred_feature_extractor = feature_extractor.predict(data)
-    pred_model_fe = model_fe.predict(data)
-    # To obtain the exact same result, add these lines:
-    # pred_feature_extractor = tf.data.Dataset.from_tensor_slices(
-    #    pred_feature_extractor
-    # ).batch(samples // 2)
-    pred_last_layer = last_layer.predict(pred_feature_extractor)
+    scores = energy.score(data_x)
 
-    assert almost_equal(pred_model, pred_model_fe)
-    assert almost_equal(pred_model, pred_last_layer)
+    assert scores.shape == (100,)
 
 
-def test_get_weights():
+def test_msp():
+    """Test MLS"""
     input_shape = (32, 32, 3)
     num_labels = 10
+    samples = 100
+
+    data_x, _ = generate_data(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    )  # .batch(samples)
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    model_fe = KerasFeatureExtractor(model, output_layers_id=[-1])
-    W, b = model_fe.get_weights(-2)
+    energy = MLS(output_activation="softmax")
+    energy.fit(model)
+    scores = energy.score(data_x)
 
-    assert W.shape == (900, 10)
-    assert b.shape == (10,)
+    assert scores.shape == (100,)
+
+    data_x = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    ).batch(samples)
+
+    scores = energy.score(data_x)
+
+    assert scores.shape == (100,)

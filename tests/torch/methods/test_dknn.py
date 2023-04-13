@@ -24,17 +24,15 @@ import pytest
 from torch.utils.data import DataLoader
 
 from oodeel.methods import DKNN
-from tests import ComplexNet
-from tests import generate_data
-from tests import generate_data_tf
-from tests import generate_data_torch
-from tests import generate_model
+from tests.torch import ComplexNet
+from tests.torch import generate_data
+from tests.torch import generate_data_torch
 
 
 @pytest.mark.parametrize(
     ("backend", "input_shape"),
-    [("tensorflow", (32, 32, 3)), ("torch", (3, 32, 32))],
-    ids=["[tf] test DKNN", "[torch] test DKNN"],
+    [("torch", (3, 32, 32))],
+    ids=["[torch] test DKNN"],
 )
 def test_dknn(backend, input_shape):
     """
@@ -47,25 +45,14 @@ def test_dknn(backend, input_shape):
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    if backend == "tensorflow":
-        model = generate_model(input_shape=input_shape, output_shape=num_labels)
-    elif backend == "torch":
-        data_x = generate_data_torch(
-            x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
-        )
-        data_x = DataLoader(data_x, batch_size=samples // 2)
-        model = ComplexNet()
+    data_x = generate_data_torch(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
+    )
+    data_x = DataLoader(data_x, batch_size=samples // 2)
+    model = ComplexNet()
 
     dknn = DKNN()
     dknn.fit(model, fit_dataset=data_x)
     scores = dknn.score(data_x)
 
     assert scores.shape == (100,)
-
-    if backend == "tensorflow":
-        data = generate_data_tf(
-            x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-        ).batch(samples)
-        scores = dknn.score(data)
-
-        assert scores.shape == (100,)

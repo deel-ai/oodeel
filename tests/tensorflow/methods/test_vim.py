@@ -43,9 +43,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from oodeel.methods import VIM
-from tests import generate_data
-from tests import generate_data_tf
-from tests import generate_model
+from tests.tensorflow import generate_data
+from tests.tensorflow import generate_data_tf
+from tests.tensorflow import generate_model
 
 
 def test_vim():

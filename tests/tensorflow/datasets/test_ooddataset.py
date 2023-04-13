@@ -20,18 +20,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import tempfile
-
 import numpy as np
 import pytest
 import tensorflow as tf
-import torch
-import torchvision
 
 from oodeel.datasets import OODDataset
-from tests import generate_data
-from tests import generate_data_tf
-from tests import generate_data_torch
+from tests.tensorflow import generate_data
+from tests.tensorflow import generate_data_tf
 
 
 def test_instanciate_from_tfds():
@@ -42,30 +37,15 @@ def test_instanciate_from_tfds():
     assert len(dataset.data.element_spec) == 2
 
 
-def test_instanciate_from_torchvision():
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        dataset = OODDataset(
-            dataset_id="MNIST",
-            split="test",
-            backend="torch",
-            load_kwargs=dict(root=tmpdirname, download=True),
-        )
-
-        assert len(dataset.data) == 10000
-        assert dataset.len_item == 2
-
-
 @pytest.mark.parametrize(
     "backend, as_supervised, expected_output",
     [
         ("tensorflow", False, [100, 2, 2]),
         ("tensorflow", True, [100, 2, 2]),
-        ("torch", None, [100, 2, 2]),
     ],
     ids=[
         "Instanciate from tf data without supervision",
         "Instanciate from np data with supervision",
-        "Instanciate from torch data",
     ],
 )
 def test_instanciate_ood_dataset(backend, as_supervised, expected_output):
@@ -74,10 +54,6 @@ def test_instanciate_ood_dataset(backend, as_supervised, expected_output):
     if backend == "tensorflow":
         dataset_id = generate_data_tf(
             x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=as_supervised
-        )
-    elif backend == "torch":
-        dataset_id = generate_data_torch(
-            x_shape=(3, 32, 32), num_labels=10, samples=100
         )
 
     dataset = OODDataset(dataset_id=dataset_id, backend=backend)
@@ -98,23 +74,17 @@ def test_instanciate_ood_dataset(backend, as_supervised, expected_output):
     [
         ("tensorflow", True, [200, 2, 3, 0.5]),
         ("tensorflow", False, [200, 2, 3, 0.5]),
-        ("torch", True, [200, 2, 3, 0.5]),
-        ("torch", False, [200, 2, 3, 0.5]),
     ],
     ids=[
         "[tf] Concatenate two OODDatasets",
         "[tf] Concatenate a OODDataset and a numpy dataset",
-        "[torch] Concatenate two OODDatasets",
-        "[torch] Concatenate a OODDataset and a numpy dataset",
     ],
 )
 def test_add_ood_data(backend, ds2_from_numpy, expected_output):
     """Test the concatenation of OODDataset."""
 
-    generate_data_func = {"tensorflow": generate_data_tf, "torch": generate_data_torch}[
-        backend
-    ]
-    x_shape = {"tensorflow": (32, 32, 3), "torch": (3, 32, 32)}[backend]
+    generate_data_func = {"tensorflow": generate_data_tf}[backend]
+    x_shape = {"tensorflow": (32, 32, 3)}[backend]
 
     dataset1 = OODDataset(
         dataset_id=generate_data_func(x_shape=x_shape, num_labels=10, samples=100),
@@ -148,17 +118,11 @@ def test_add_ood_data(backend, ds2_from_numpy, expected_output):
         ("tensorflow", [1, 2], None, False, [100, 67, 33, 2, 1]),
         ("tensorflow", None, [1, 2], True, [100, 33, 67, 1, 2]),
         ("tensorflow", [1], [2], False, [100, 33, 34, 1, 1]),
-        ("torch", [1, 2], None, False, [100, 67, 33, 2, 1]),
-        ("torch", None, [1, 2], True, [100, 33, 67, 1, 2]),
-        ("torch", [1], [2], False, [100, 33, 34, 1, 1]),
     ],
     ids=[
         "[tf] Assign OOD labels by class with ID labels",
         "[tf] Assign OOD labels by class with OOD labels",
         "[tf] Assign OOD labels by class with ID and OOD labels",
-        "[torch] Assign OOD labels by class with ID labels",
-        "[torch] Assign OOD labels by class with OOD labels",
-        "[torch] Assign OOD labels by class with ID and OOD labels",
     ],
 )
 def test_assign_ood_labels_by_class(
@@ -226,10 +190,6 @@ def test_assign_ood_labels_by_class(
         ("tensorflow", False, False, True, [2, (32,)]),
         ("tensorflow", True, True, True, [3, (32, 10)]),
         ("tensorflow", True, True, False, [2, (32, 10)]),
-        ("torch", False, True, True, [3, (32, 10)]),
-        ("torch", False, False, True, [2, (32,)]),
-        ("torch", True, True, True, [3, (32, 10)]),
-        ("torch", True, True, False, [2, (32, 10)]),
     ],
     ids=[
         "[tf] Prepare OODDataset for scoring with labels and ood labels",
@@ -237,12 +197,6 @@ def test_assign_ood_labels_by_class(
         "[tf] Prepare OODDataset for training (with shuffle and augment_fn) with labels "
         "and ood labels",
         "[tf] Prepare OODDataset for training (with shuffle and augment_fn) "
-        "with only labels",
-        "[torch] Prepare OODDataset for scoring with labels and ood labels",
-        "[torch] Prepare OODDataset for scoring with only ood labels",
-        "[torch] Prepare OODDataset for training (with shuffle and augment_fn) with "
-        "labels and ood labels",
-        "[torch] Prepare OODDataset for training (with shuffle and augment_fn) "
         "with only labels",
     ],
 )
@@ -254,9 +208,7 @@ def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output
     samples = 100
 
     x_shape = (32, 32, 3) if backend == "tensorflow" else (3, 32, 32)
-    generate_data_fn = (
-        generate_data_tf if backend == "tensorflow" else generate_data_torch
-    )
+    generate_data_fn = generate_data_tf
 
     dataset = OODDataset(
         dataset_id=generate_data_fn(
@@ -276,16 +228,6 @@ def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output
 
         def augment_fn_(*inputs):
             x = tf.image.random_flip_left_right(inputs[0])
-            return tuple([x] + list(inputs[1:]))
-
-    else:
-
-        def preprocess_fn(inputs):
-            x = inputs[0] / 255
-            return tuple([x] + list(inputs[1:]))
-
-        def augment_fn_(inputs):
-            x = torchvision.transforms.RandomHorizontalFlip()(inputs[0])
             return tuple([x] + list(inputs[1:]))
 
     augment_fn = augment_fn_ if shuffle else None
@@ -324,16 +266,3 @@ def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output
         assert tensor1[0].shape == (batch_size, 32, 32, 3)
         assert tf.reduce_max(tensor1[0]) <= 1
         assert tf.reduce_min(tensor1[0]) >= 0
-    elif backend == "torch":
-        batch1 = next(iter(ds))
-        batch2 = next(iter(ds))
-
-        assert len(batch1) == expected_output[0]
-        if shuffle:
-            assert torch.sum(batch1[0] - batch2[0]) != 0
-        assert batch1[1].shape == torch.Size(expected_output[1])
-        if with_ood_labels and with_labels:
-            assert batch1[2].shape == torch.Size([32])
-        assert batch1[0].shape == torch.Size([batch_size, 3, 32, 32])
-        assert torch.max(batch1[0]) <= 1
-        assert torch.min(batch1[0]) >= 0

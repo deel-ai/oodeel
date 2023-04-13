@@ -20,71 +20,35 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""
+from oodeel.methods import ODIN
+from tests.tensorflow import generate_data
+from tests.tensorflow import generate_data_tf
+from tests.tensorflow import generate_model
 
-def test_dataset_len_elem():
+
+def test_odin():
+    """
+    Test ODIN
+    """
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
 
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples
+    data = generate_data(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )  # .batch(samples)
 
-    length = dataset_len_elem(data)
-    assert length == 2
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
+    odin = ODIN(temperature=100, noise=0.1)
+    odin.fit(model)
+    scores = odin.score(data)
 
-def test_dataset_image_shape():
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
-
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples
-    )  # .batch(samples)
-
-    shape = dataset_image_shape(data)
-    assert shape == input_shape
-
-
-def test_dataset_label_shape():
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
+    assert scores.shape == (100,)
 
     data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples
-    )  # .batch(samples)
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    ).batch(samples)
+    scores = odin.score(data)
 
-    shape = dataset_label_shape(data)
-    assert shape == (num_labels,)
-
-
-
-def test_dataset_cardinality():
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
-
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples
-    )  # .batch(samples)
-
-    cardinality = dataset_cardinality(data)
-    assert cardinality == samples
-
-
-def test_get_input_from_dataset_item():
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
-
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples
-    )  # .batch(samples)
-
-    for datum in data.take(1):
-        tensor = get_input_from_dataset_item(datum)
-    assert tensor.shape == (32, 32, 3)
-"""
+    assert scores.shape == (100,)
