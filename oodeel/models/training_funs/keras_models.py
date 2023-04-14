@@ -21,7 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import tensorflow as tf
-from classification_models.tfkeras import Classifiers
 
 from ...datasets import TFDataHandler
 from ...types import List
@@ -92,22 +91,12 @@ def train_keras_app(
             classes = TFDataHandler.get_feature(train_data, label_id).unique()
             num_classes = len(list(classes.as_numpy_iterator()))
 
-        if model_name != "resnet18":
-            backbone = getattr(tf.keras.applications, model_name)(
-                include_top=False, weights=None, input_shape=input_shape
-            )
-
-    if model_name != "resnet18":
-        features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
-        output = tf.keras.layers.Dense(
-            num_classes,
-            activation="softmax",
-        )(features)
-        model = tf.keras.Model(backbone.layers[0].input, output)
-    else:
-        ResNet18, _ = Classifiers.get("resnet18")
-        print("prout", input_shape, num_classes)
-        model = ResNet18(input_shape, classes=num_classes, weights=None)
+    features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
+    output = tf.keras.layers.Dense(
+        num_classes,
+        activation="softmax",
+    )(features)
+    model = tf.keras.Model(backbone.layers[0].input, output)
 
     n_samples = TFDataHandler.get_dataset_length(train_data)
 
