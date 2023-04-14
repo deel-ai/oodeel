@@ -25,8 +25,8 @@ import pytest
 import tensorflow as tf
 
 from oodeel.datasets import OODDataset
-from tests.tensorflow import generate_data
-from tests.tensorflow import generate_data_tf
+from tests.tests_tensorflow import generate_data
+from tests.tests_tensorflow import generate_data_tf
 
 
 def test_instanciate_from_tfds():

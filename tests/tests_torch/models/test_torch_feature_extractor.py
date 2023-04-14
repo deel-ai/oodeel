@@ -24,11 +24,11 @@ import pytest
 from torch.utils.data import DataLoader
 
 from oodeel.models.torch_feature_extractor import TorchFeatureExtractor
-from tests.torch import ComplexNet
-from tests.torch import generate_data_torch
-from tests.torch import named_sequential_model
-from tests.torch import Net
-from tests.torch import sequential_model
+from tests.tests_torch import ComplexNet
+from tests.tests_torch import generate_data_torch
+from tests.tests_torch import named_sequential_model
+from tests.tests_torch import Net
+from tests.tests_torch import sequential_model
 
 # From Pytorch CIFAR-10 example
 
