@@ -22,7 +22,7 @@
 # SOFTWARE.
 from oodeel.models.training_funs import train_convnet_classifier_tf
 from oodeel.models.training_funs import train_keras_app
-from tests.tensorflow import generate_data_tf
+from tests.tests_tensorflow import generate_data_tf
 
 
 def test_convnet_classifier():

@@ -28,8 +28,8 @@ import torch
 import torchvision
 
 from oodeel.datasets import OODDataset
-from tests.torch import generate_data
-from tests.torch import generate_data_torch
+from tests.tests_torch import generate_data
+from tests.tests_torch import generate_data_torch
 
 
 def test_instanciate_from_torchvision():

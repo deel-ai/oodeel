@@ -21,18 +21,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import pytest
-from torch.utils.data import DataLoader
 
 from oodeel.methods import DKNN
-from tests.torch import ComplexNet
-from tests.torch import generate_data
-from tests.torch import generate_data_torch
+from tests.tests_tensorflow import generate_data
+from tests.tests_tensorflow import generate_data_tf
+from tests.tests_tensorflow import generate_model
 
 
 @pytest.mark.parametrize(
     ("backend", "input_shape"),
-    [("torch", (3, 32, 32))],
-    ids=["[torch] test DKNN"],
+    [("tensorflow", (32, 32, 3))],
+    ids=["[tf] test DKNN"],
 )
 def test_dknn(backend, input_shape):
     """
@@ -45,14 +44,19 @@ def test_dknn(backend, input_shape):
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    data_x = generate_data_torch(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
-    )
-    data_x = DataLoader(data_x, batch_size=samples // 2)
-    model = ComplexNet()
+    if backend == "tensorflow":
+        model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
     dknn = DKNN()
     dknn.fit(model, fit_dataset=data_x)
     scores = dknn.score(data_x)
 
     assert scores.shape == (100,)
+
+    if backend == "tensorflow":
+        data = generate_data_tf(
+            x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+        ).batch(samples)
+        scores = dknn.score(data)
+
+        assert scores.shape == (100,)

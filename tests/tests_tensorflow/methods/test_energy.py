@@ -20,23 +20,17 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import pytest
-
-from oodeel.methods import DKNN
-from tests.tensorflow import generate_data
-from tests.tensorflow import generate_data_tf
-from tests.tensorflow import generate_model
+from oodeel.methods import Energy
+from tests.tests_tensorflow import generate_data
+from tests.tests_tensorflow import generate_data_tf
+from tests.tests_tensorflow import generate_model
 
 
-@pytest.mark.parametrize(
-    ("backend", "input_shape"),
-    [("tensorflow", (32, 32, 3))],
-    ids=["[tf] test DKNN"],
-)
-def test_dknn(backend, input_shape):
+def test_energy():
     """
-    Test DKNN
+    Test Energy
     """
+    input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
 
@@ -44,19 +38,17 @@ def test_dknn(backend, input_shape):
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    if backend == "tensorflow":
-        model = generate_model(input_shape=input_shape, output_shape=num_labels)
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    dknn = DKNN()
-    dknn.fit(model, fit_dataset=data_x)
-    scores = dknn.score(data_x)
+    energy = Energy()
+    energy.fit(model)
+    scores = energy.score(data_x)
 
     assert scores.shape == (100,)
 
-    if backend == "tensorflow":
-        data = generate_data_tf(
-            x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-        ).batch(samples)
-        scores = dknn.score(data)
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    ).batch(samples)
+    scores = energy.score(data)
 
-        assert scores.shape == (100,)
+    assert scores.shape == (100,)
