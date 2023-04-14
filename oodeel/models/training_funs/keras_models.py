@@ -91,6 +91,10 @@ def train_keras_app(
             classes = TFDataHandler.get_feature(train_data, label_id).unique()
             num_classes = len(list(classes.as_numpy_iterator()))
 
+        backbone = getattr(tf.keras.applications, model_name)(
+            include_top=False, weights=None, input_shape=input_shape
+        )
+
     features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
     output = tf.keras.layers.Dense(
         num_classes,
