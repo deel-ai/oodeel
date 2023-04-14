@@ -21,7 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import pytest
-from torch.utils.data import DataLoader
 
 from oodeel.methods import DKNN
 from tests.tensorflow import generate_data
