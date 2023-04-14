@@ -186,7 +186,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 features_batch = [features_batch]
             for i, f in enumerate(features_batch):
                 features[i] = (
-                    f if features[i] is None else torch.concat([features[i], f], dim=0)
+                    f if features[i] is None else torch.cat([features[i], f], dim=0)
                 )
 
         # No need to return a list when there is only one input layer

@@ -30,9 +30,9 @@ import torchvision
 from torch.utils.data import ConcatDataset
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
-from torch.utils.data import default_collate
 from torch.utils.data import Subset
 from torch.utils.data import TensorDataset
+from torch.utils.data.dataloader import default_collate
 from tqdm import tqdm
 
 from ..types import Any
