@@ -23,7 +23,7 @@
 import numpy as np
 import tensorflow as tf
 
-from ..datasets import TFDataHandler
+from ..datasets.tf_data_handler import TFDataHandler
 from ..types import Callable
 from ..types import List
 from ..types import Tuple

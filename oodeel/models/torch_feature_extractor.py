@@ -26,7 +26,7 @@ import torch
 from torch import nn
 from tqdm import tqdm
 
-from ..datasets import TorchDataHandler
+from ..datasets.torch_data_handler import TorchDataHandler
 from ..types import DatasetType
 from ..types import List
 from ..types import Union
