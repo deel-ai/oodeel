@@ -22,7 +22,6 @@
 # SOFTWARE.
 import numpy as np
 import tensorflow as tf
-from classification_models.tfkeras import Classifiers
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Dropout
@@ -30,7 +29,7 @@ from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.models import Sequential
 
-from ...datasets import TFDataHandler
+from ...datasets.tf_data_handler import TFDataHandler
 from ...types import List
 from ...types import Optional
 
@@ -120,23 +119,20 @@ def train_keras_app(
             classes = TFDataHandler.get_feature(train_data, label_id).unique()
             num_classes = len(list(classes.as_numpy_iterator()))
 
-        if model_name not in ["resnet18", "toy_convnet"]:
+        if model_name not in ["toy_convnet"]:
             backbone = getattr(tf.keras.applications, model_name)(
                 include_top=False, weights=None, input_shape=input_shape
             )
 
     if model_name == "toy_convnet":
         model = get_toy_keras_convnet(num_classes)
-    elif model_name != "resnet18":
+    else:
         features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
         output = tf.keras.layers.Dense(
             num_classes,
             activation="softmax",
         )(features)
         model = tf.keras.Model(backbone.layers[0].input, output)
-    else:
-        ResNet18, _ = Classifiers.get("resnet18")
-        model = ResNet18(input_shape, classes=num_classes, weights=None)
 
     n_samples = TFDataHandler.get_dataset_length(train_data)
 

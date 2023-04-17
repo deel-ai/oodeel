@@ -71,16 +71,11 @@ args = parser.parse_args()
 
 
 if __name__ == "__main__":
-    if args.framework == "keras":
-        from oodeel.models.training_funs import train_keras_app
+    # important: this needs to be imported before loading dataset
+    from oodeel.models.training_funs_torch import train_torch_model, run_tf_on_cpu
 
-        training_func = train_keras_app
-    elif args.framework == "torch":
-        # important: this needs to be imported before loading dataset
-        from oodeel.models.training_funs import train_torch_model, run_tf_on_cpu
-
-        training_func = train_torch_model
-        run_tf_on_cpu()
+    training_func = train_torch_model
+    run_tf_on_cpu()
 
     # cifar10
 

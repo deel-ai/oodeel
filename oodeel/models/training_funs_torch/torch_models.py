@@ -86,8 +86,8 @@ class ToyTorchConvnet(nn.Sequential):
 
 def train_torch_model(
     train_data: DataLoader,
-    num_classes: int,
     model_name: str = "resnet18",
+    num_classes: int = None,
     epochs: int = 50,
     loss: str = "CrossEntropyLoss",
     optimizer: str = "Adam",
