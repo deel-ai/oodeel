@@ -36,9 +36,8 @@ def test_instanciate_from_torchvision():
     with tempfile.TemporaryDirectory() as tmpdirname:
         dataset = OODDataset(
             dataset_id="MNIST",
-            split="test",
             backend="torch",
-            load_kwargs=dict(root=tmpdirname, download=True, train=False),
+            load_kwargs=dict(root=tmpdirname, train=False, download=True),
         )
 
         assert len(dataset.data) == 10000
