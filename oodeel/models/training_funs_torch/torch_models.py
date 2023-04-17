@@ -99,12 +99,14 @@ def train_torch_model(
     cuda_idx: int = 0,
 ) -> nn.Module:
     """
-    Load a model (toy classifier or from torchvision.models) and train it over a torch dataloader.
+    Load a model (toy classifier or from torchvision.models) and train
+    it over a torch dataloader.
 
     Args:
         train_data (DataLoader): train dataloader
         num_classes (int, optional): If None, infered from train_data. Defaults to None.
-        model_name (str): must be a model from torchvision.models or "toy_convnet". Defaults to "resnet18".
+        model_name (str): must be a model from torchvision.models or "toy_convnet".
+            Defaults to "resnet18".
         batch_size (int, optional): Defaults to 128.
         epochs (int, optional): Defaults to 50.
         loss (str, optional): Defaults to
@@ -140,6 +142,7 @@ def train_torch_model(
     # define optimizer and learning rate scheduler
     n_steps = len(train_data) * epochs
     if lr_scheduler == "cosine":
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
         lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, n_steps)
     elif lr_scheduler == "steps":
         boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
@@ -262,5 +265,6 @@ def _train(
                     os.makedirs(save_dir, exist_ok=True)
                     torch.save(model, os.path.join(save_dir, "best.pt"))
 
-    torch.save(model, os.path.join(save_dir, "last.pt"))
+    if save_dir is not None:
+        torch.save(model, os.path.join(save_dir, "last.pt"))
     return model

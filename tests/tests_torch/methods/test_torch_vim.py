@@ -20,3 +20,39 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import pytest
+from torch.utils.data import DataLoader
+
+from oodeel.methods import VIM
+from tests.tests_torch import ComplexNet
+from tests.tests_torch import generate_data
+from tests.tests_torch import generate_data_torch
+
+
+@pytest.mark.parametrize(
+    ("backend", "input_shape"),
+    [("torch", (3, 32, 32))],
+    ids=["[torch] test DKNN"],
+)
+def test_dknn(backend, input_shape):
+    """
+    Test DKNN
+    """
+    num_labels = 10
+    samples = 100
+
+    data_x, _ = generate_data(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    )
+
+    data_x = generate_data_torch(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
+    )
+    data_x = DataLoader(data_x, batch_size=samples // 2)
+    model = ComplexNet()
+
+    dknn = VIM()
+    dknn.fit(model, fit_dataset=data_x)
+    scores = dknn.score(data_x)
+
+    assert scores.shape == (100,)
