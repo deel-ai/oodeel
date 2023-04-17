@@ -96,7 +96,6 @@ class OODDataset(object):
                 from .torch_data_handler import TorchDataHandler
 
                 self._data_handler = TorchDataHandler()
-                load_kwargs["train"] = split == "train"
             self.channel_order = "channels_first"
         else:
             from .tf_data_handler import TFDataHandler
