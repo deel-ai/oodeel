@@ -38,7 +38,7 @@ def test_instanciate_from_torchvision():
             dataset_id="MNIST",
             split="test",
             backend="torch",
-            load_kwargs=dict(root=tmpdirname, download=True),
+            load_kwargs=dict(root=tmpdirname, download=True, train=False),
         )
 
         assert len(dataset.data) == 10000

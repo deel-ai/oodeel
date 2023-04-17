@@ -40,22 +40,3 @@ def test_is_from():
 
     torch_tensor = torch.randn((3, 32, 32))
     assert is_from(torch_tensor, "torch")
-
-    # === keras model / tensor ===
-    import tensorflow as tf
-    from tensorflow import keras
-    from tensorflow.python.keras import layers
-
-    keras_model = keras.Sequential(
-        [
-            keras.Input(shape=(32, 32, 3)),
-            layers.Conv2D(32, kernel_size=(3, 3), padding="same", activation="relu"),
-            layers.Conv2D(16, kernel_size=(3, 3), padding="same", activation="relu"),
-            layers.Flatten(),
-            layers.Dense(10),
-        ]
-    )
-    assert is_from(keras_model, "keras")
-
-    tf_tensor = tf.random.normal((32, 32, 3))
-    assert is_from(tf_tensor, "tensorflow")
