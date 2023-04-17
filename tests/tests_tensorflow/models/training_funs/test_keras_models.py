@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from oodeel.models.training_funs import train_keras_app
+from oodeel.models.training_funs_tf import train_keras_app
 from tests.tests_tensorflow import generate_data_tf
 
 
