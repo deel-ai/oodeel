@@ -20,11 +20,38 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import numpy as np
 import tensorflow as tf
+from classification_models.tfkeras import Classifiers
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.models import Sequential
 
 from ...datasets import TFDataHandler
 from ...types import List
 from ...types import Optional
+
+
+def get_toy_keras_convnet(num_classes: int):
+    """Basic keras convolutional classifier for toy datasets.
+
+    Args:
+        num_classes (int): Number of classes for the classification task.
+    """
+    return Sequential(
+        [
+            Conv2D(32, kernel_size=(3, 3), activation="relu"),
+            MaxPooling2D(pool_size=(2, 2)),
+            Conv2D(64, kernel_size=(3, 3), activation="relu"),
+            MaxPooling2D(pool_size=(2, 2)),
+            Flatten(),
+            Dropout(0.5),
+            Dense(num_classes, activation="softmax"),
+        ]
+    )
 
 
 def train_keras_app(
@@ -36,8 +63,9 @@ def train_keras_app(
     batch_size: int = 128,
     epochs: int = 50,
     loss: str = "sparse_categorical_crossentropy",
-    optimizer: str = "SGD",
-    learning_rate: float = 1e-1,
+    optimizer: str = "adam",
+    lr_scheduler: str = None,
+    learning_rate: float = 1e-3,
     metrics: List[str] = ["accuracy"],
     imagenet_pretrained: bool = False,
     validation_data: Optional[tf.data.Dataset] = None,
@@ -48,7 +76,7 @@ def train_keras_app(
 
     Args:
         train_data (tf.data.Dataset)
-        model_name (str): must be a model from tf.keras.applications
+        model_name (str): must be a model from tf.keras.applications or "toy_convnet"
         input_shape (tuple, optional): If None, infered from train_data.
             Defaults to None.
         num_classes (int, optional): If None, infered from train_data. Defaults to None.
@@ -59,6 +87,7 @@ def train_keras_app(
         loss (str, optional): Defaults to
             "sparse_categorical_crossentropy".
         optimizer (str, optional): Defaults to "adam".
+        lr_scheduler (str, optional): ("cosine" | "steps" | None). Defaults to None.
         learning_rate (float, optional): Defaults to 1e-3.
         metrics (List[str], optional): Validation metrics. Defaults to ["accuracy"].
         imagenet_pretrained (bool, optional): Load a model pretrained on imagenet or
@@ -91,16 +120,23 @@ def train_keras_app(
             classes = TFDataHandler.get_feature(train_data, label_id).unique()
             num_classes = len(list(classes.as_numpy_iterator()))
 
-        backbone = getattr(tf.keras.applications, model_name)(
-            include_top=False, weights=None, input_shape=input_shape
-        )
+        if model_name not in ["resnet18", "toy_convnet"]:
+            backbone = getattr(tf.keras.applications, model_name)(
+                include_top=False, weights=None, input_shape=input_shape
+            )
 
-    features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
-    output = tf.keras.layers.Dense(
-        num_classes,
-        activation="softmax",
-    )(features)
-    model = tf.keras.Model(backbone.layers[0].input, output)
+    if model_name == "toy_convnet":
+        model = get_toy_keras_convnet(num_classes)
+    elif model_name != "resnet18":
+        features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
+        output = tf.keras.layers.Dense(
+            num_classes,
+            activation="softmax",
+        )(features)
+        model = tf.keras.Model(backbone.layers[0].input, output)
+    else:
+        ResNet18, _ = Classifiers.get("resnet18")
+        model = ResNet18(input_shape, classes=num_classes, weights=None)
 
     n_samples = TFDataHandler.get_dataset_length(train_data)
 
@@ -163,9 +199,18 @@ def train_keras_app(
 
     # optimizer
     decay_steps = int(epochs * n_samples / batch_size)
-    learning_rate_fn = tf.keras.experimental.CosineDecay(
-        learning_rate, decay_steps=decay_steps
-    )
+    if lr_scheduler == "cosine":
+        learning_rate_fn = tf.keras.experimental.CosineDecay(
+            learning_rate, decay_steps=decay_steps
+        )
+    elif lr_scheduler == "steps":
+        values = list(learning_rate * np.array([1, 0.1, 0.01]))
+        boundaries = list(np.round(decay_steps * np.array([1 / 3, 2 / 3])).astype(int))
+        learning_rate_fn = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+            boundaries, values
+        )
+    else:
+        learning_rate_fn = learning_rate
 
     config = {
         "class_name": optimizer,

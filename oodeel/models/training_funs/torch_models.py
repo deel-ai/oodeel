@@ -21,110 +21,132 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import os
-from typing import Optional
+from collections import OrderedDict
 
 import numpy as np
-import tensorflow as tf
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-# from ...datasets import TorchDataHandler
+from ...types import Optional
+
+
+class ToyTorchConvnet(nn.Sequential):
+    """Basic torch convolutional classifier for toy datasets.
+
+    Args:
+        input_shape (tuple): Input data shape.
+        num_classes (int): Number of classes for the classification task.
+    """
+
+    def __init__(self, input_shape: tuple, num_classes: int):
+        self.input_shape = input_shape
+
+        # features
+        features = nn.Sequential(
+            OrderedDict(
+                [
+                    ("conv1", nn.Conv2d(input_shape[0], 32, 3)),
+                    ("relu1", nn.ReLU()),
+                    ("pool1", nn.MaxPool2d(2, 2)),
+                    ("conv2", nn.Conv2d(32, 64, 3)),
+                    ("relu2", nn.ReLU()),
+                    ("pool2", nn.MaxPool2d(2, 2)),
+                    ("flatten", nn.Flatten()),
+                ]
+            )
+        )
+
+        # fc head
+        fc_input_shape = self._calculate_fc_input_shape(features)
+        fcs = nn.Sequential(
+            OrderedDict(
+                [
+                    ("dropout", nn.Dropout(0.5)),
+                    ("fc1", nn.Linear(fc_input_shape, num_classes)),
+                ]
+            )
+        )
+
+        # Sequential class init
+        super().__init__(
+            OrderedDict([*features._modules.items(), *fcs._modules.items()])
+        )
+
+    def _calculate_fc_input_shape(self, features):
+        """Get tensor shape after passing a features network."""
+        input_tensor = torch.ones(tuple([1] + list(self.input_shape)))
+        x = features(input_tensor)
+        output_size = x.view(x.size(0), -1).size(1)
+        return output_size
 
 
 def train_torch_model(
-    train_data: tf.data.Dataset,
+    train_data: DataLoader,
+    num_classes: int,
     model_name: str = "resnet18",
-    input_shape: tuple = None,
-    num_classes: int = None,
-    is_prepared: bool = False,
-    batch_size: int = 128,
     epochs: int = 50,
     loss: str = "CrossEntropyLoss",
     optimizer: str = "Adam",
+    lr_scheduler: str = "cosine",
     learning_rate: float = 1e-3,
     imagenet_pretrained: bool = False,
-    validation_data: Optional[tf.data.Dataset] = None,
+    validation_data: DataLoader = None,
     save_dir: Optional[str] = None,
     cuda_idx: int = 0,
 ) -> nn.Module:
     """
-    Load a model from torchvision.models and train it on a tfds dataset.
+    Load a model (toy classifier or from torchvision.models) and train it over a torch dataloader.
 
     Args:
-        train_data (tf.data.Dataset)
-        model_name (str): must be a model from torchvision.models
-        input_shape (tuple, optional): If None, infered from train_data.
-            Defaults to None.
+        train_data (DataLoader): train dataloader
         num_classes (int, optional): If None, infered from train_data. Defaults to None.
-        is_prepared (bool, optional): If train_data is a pipeline already prepared
-            for training (with batch, shufle, cache etc...). Defaults to False.
+        model_name (str): must be a model from torchvision.models or "toy_convnet". Defaults to "resnet18".
         batch_size (int, optional): Defaults to 128.
         epochs (int, optional): Defaults to 50.
         loss (str, optional): Defaults to
             "CrossEntropyLoss".
         optimizer (str, optional): Defaults to "Adam".
+        lr_scheduler (str, optional): ("cosine" | "steps" | None). Defaults to None.
         learning_rate (float, optional): Defaults to 1e-3.
         metrics (List[str], optional): Validation metrics. Defaults to ["accuracy"].
         imagenet_pretrained (bool, optional): Load a model pretrained on imagenet or
             not. Defaults to False.
-        validation_data (Optional[tf.data.Dataset], optional): Defaults to None.
+        validation_data (Optional[DataLoader], optional): Defaults to None.
         save_dir (Optional[str], optional): Directory to save the model.
             Defaults to None.
         cuda_idx (int): idx of cuda device to use. Defaults to 0.
 
     Returns:
-        trained model
+        nn.Module: trained model
     """
     # device
     device = torch.device(f"cuda:{cuda_idx}" if cuda_idx is not None else "cpu")
 
     # Prepare model
-    # if input_shape is None:
-    #   input_shape = dataset_image_shape(train_data)
-    if num_classes is None:
-        classes = train_data.map(lambda x, y: y).unique()
-        num_classes = len(list(classes.as_numpy_iterator()))
-
-    model = getattr(torchvision.models, model_name)(
-        num_classes=num_classes, pretrained=imagenet_pretrained
-    ).to(device)
-
-    # Prepare data
-    if not is_prepared:
-        padding = 4
-        image_size = input_shape[0]
-        target_size = image_size + padding * 2
-
-        def _augment_fn(images, labels):
-            images = tf.image.pad_to_bounding_box(
-                images, padding, padding, target_size, target_size
-            )
-            images = tf.image.random_crop(images, (image_size, image_size, 3))
-            images = tf.image.random_flip_left_right(images)
-            return images, labels
-
-        n_samples = len(train_data)
-        train_data = (
-            train_data.map(
-                _augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
-            )
-            .shuffle(n_samples)
-            .batch(batch_size)
-        )
-
-        if validation_data is not None:
-            validation_data = validation_data.batch(batch_size)
+    if model_name == "toy_convnet":
+        # toy model
+        input_shape = next(iter(train_data))[0].shape[1:]
+        model = ToyTorchConvnet(input_shape, num_classes).to(device)
+    else:
+        # torchvision model
+        model = getattr(torchvision.models, model_name)(
+            num_classes=num_classes, pretrained=imagenet_pretrained
+        ).to(device)
 
     # define optimizer and learning rate scheduler
     n_steps = len(train_data) * epochs
-    boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    lr_scheduler = optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=boundaries, gamma=0.1
-    )
+    if lr_scheduler == "cosine":
+        lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, n_steps)
+    elif lr_scheduler == "steps":
+        boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+        lr_scheduler = optim.lr_scheduler.MultiStepLR(
+            optimizer, milestones=boundaries, gamma=0.1
+        )
 
     # define loss
     criterion = getattr(nn, loss)()
@@ -145,31 +167,32 @@ def train_torch_model(
 
 
 def _train(
-    model,
-    train_data,
-    validation_data,
-    epochs,
-    criterion,
-    optimizer,
-    lr_scheduler,
-    save_dir,
-    device,
+    model: nn.Module,
+    train_data: DataLoader,
+    epochs: int,
+    optimizer: torch.optim.Optimizer,
+    criterion: torch.nn.modules.loss._Loss,
+    device: torch.device,
+    lr_scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+    save_dir: str = None,
+    validation_data: DataLoader = None,
 ):
-    """Torch training loop over tfds dataset
+    """Torch basic training loop
 
     Args:
-        model (_type_): _description_
-        train_data (_type_): _description_
-        validation_data (_type_): _description_
-        epochs (_type_): _description_
-        criterion (_type_): _description_
-        optimizer (_type_): _description_
-        lr_scheduler (_type_): _description_
-        save_dir (_type_): _description_
-        device (_type_): _description_
+        model (nn.Module): Model to train.
+        train_data (DataLoader): Train dataloader.
+        epochs (int): Number of training epochs.
+        optimizer (torch.optim.Optimizer): Optimizer.
+        lr_scheduler (torch.optim.lr_scheduler._LRScheduler): Learning rate scheduler.
+            Defaults to None.
+        criterion (torch.nn.modules.loss._Loss): Criterion for loss.
+        device (torch.device): On which device to train (CUDA or CPU).
+        save_dir (str, optional): Where the model will be saved. Defaults to None.
+        validation_data (DataLoader, optional): Validation dataloader. Defaults to None.
 
     Returns:
-        _type_: _description_
+        nn.Module: Trained model.
     """
     best_val_acc = None
     for epoch in range(epochs):
@@ -178,9 +201,9 @@ def _train(
         running_loss, running_acc = 0.0, 0.0
         with tqdm(train_data, desc=f"Epoch {epoch + 1}/{epochs} [Train]") as iterator:
             for i, (inputs, labels) in enumerate(iterator):
-                # convert [inputs, labels] into torch tensors
-                inputs = torch.Tensor(inputs.numpy()).to(device)
-                labels = torch.Tensor(labels.numpy()).long().to(device)
+                # assign [inputs, labels] tensors to GPU
+                inputs = inputs.to(device)
+                labels = labels.long().to(device)
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
@@ -202,7 +225,9 @@ def _train(
                             "Acc": f"{running_acc / (i + 1):.3f}",
                         }
                     )
-        lr_scheduler.step()
+
+        if lr_scheduler is not None:
+            lr_scheduler.step()
 
         # validation phase
         if validation_data is not None:
@@ -212,7 +237,7 @@ def _train(
                 validation_data, desc=f"Epoch {epoch + 1}/{epochs} [Val]"
             ) as iterator:
                 for i, (inputs, labels) in enumerate(iterator):
-                    # convert [inputs, labels] into torch tensors
+                    # assign [inputs, labels] tensors to GPU
                     inputs = torch.Tensor(inputs.numpy()).to(device)
                     labels = torch.Tensor(labels.numpy()).long().to(device)
 
