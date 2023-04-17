@@ -24,7 +24,6 @@ from oodeel.utils import is_from
 
 
 def test_is_from():
-
     # === keras model / tensor ===
     import tensorflow as tf
     from tensorflow import keras
