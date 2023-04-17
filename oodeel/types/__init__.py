@@ -56,8 +56,8 @@ if len(avail_lib) == 2:
     DatasetType = Union[tf.data.Dataset, torch.utils.data.DataLoader]
     TensorType = Union[tf.Tensor, torch.Tensor, np.ndarray, tuple, dict]
 elif "tensorflow" in avail_lib:
-    DatasetType = tf.data.Dataset
+    DatasetType = Union[tf.data.Dataset, list]
     TensorType = Union[tf.Tensor, np.ndarray, tuple, dict]
 elif "torch" in avail_lib:
-    DatasetType = torch.utils.data.DataLoader
+    DatasetType = Union[torch.utils.data.DataLoader, list]
     TensorType = Union[torch.Tensor, np.ndarray, tuple, dict]

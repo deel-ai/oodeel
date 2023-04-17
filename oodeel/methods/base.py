@@ -106,7 +106,7 @@ class OODModel(ABC):
         """
         if is_from(model, "keras"):
             from ..models.keras_feature_extractor import KerasFeatureExtractor
-            from ..datasets import TFDataHandler
+            from ..datasets.tf_data_handler import TFDataHandler
             from ..utils import TFOperator
 
             self.dh = TFDataHandler()
@@ -116,7 +116,7 @@ class OODModel(ABC):
 
         elif is_from(model, "torch"):
             from ..models.torch_feature_extractor import TorchFeatureExtractor
-            from ..datasets import TorchDataHandler
+            from ..datasets.torch_data_handler import TorchDataHandler
             from ..utils import TorchOperator
 
             self.dh = TorchDataHandler()
