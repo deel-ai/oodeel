@@ -20,16 +20,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-#
-# For image-classifiers, see:
-# (https://github.com/qubvel/classification_models)
-# !pip install image-classifiers==1.0.0b1
 import argparse
 import os
 import sys
 import warnings
 
 from oodeel.datasets import OODDataset
+from oodeel.models.training_funs_torch import train_torch_model
 
 warnings.filterwarnings("ignore")
 
@@ -39,13 +36,6 @@ sys.path.append("../")
 parser = argparse.ArgumentParser(
     prog="Train CIFAR-10",
     description="Train keras or torch model on CIFAR-10 dataset",
-)
-parser.add_argument(
-    "-f",
-    "--framework",
-    type=str,
-    default="keras",
-    help="Framework name: (default: 'keras' | 'torch')",
 )
 parser.add_argument(
     "-e", "--epochs", type=int, default=200, help="Number of epochs (default: 200)"
@@ -71,23 +61,17 @@ args = parser.parse_args()
 
 
 if __name__ == "__main__":
-    # important: this needs to be imported before loading dataset
-    from oodeel.models.training_funs_torch import train_torch_model, run_tf_on_cpu
-
-    training_func = train_torch_model
-    run_tf_on_cpu()
-
     # cifar10
-
     oods_train = OODDataset("cifar10", split="train")
     oods_test = OODDataset("cifar10", split="test")
     os.makedirs(args.save_dir, exist_ok=True)
 
-    # define model
-    model = training_func(
+    # train model
+    model = train_torch_model(
         train_data=oods_train,
         validation_data=oods_test,
-        model_name="resnet18",
+        model_name=args.model_name,
+        batch_size=args.batch_size,
         epochs=args.epochs,
         save_dir=args.save_dir,
     )
