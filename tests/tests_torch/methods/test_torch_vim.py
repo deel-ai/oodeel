@@ -28,9 +28,9 @@ from tests.tests_torch import generate_data
 from tests.tests_torch import generate_data_torch
 
 
-def test_dknn():
+def test_vim():
     """
-    Test DKNN
+    Test VIM
     """
     input_shape = (3, 32, 32)
     num_labels = 10
@@ -46,8 +46,8 @@ def test_dknn():
     data_x = DataLoader(data_x, batch_size=samples // 2)
     model = ComplexNet()
 
-    dknn = VIM()
-    dknn.fit(model, fit_dataset=data_x)
-    scores = dknn.score(data_x)
+    vim = VIM()
+    vim.fit(model, fit_dataset=data_x)
+    scores = vim.score(data_x)
 
     assert scores.shape == (100,)

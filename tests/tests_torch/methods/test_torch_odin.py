@@ -28,9 +28,9 @@ from tests.tests_torch import generate_data
 from tests.tests_torch import generate_data_torch
 
 
-def test_dknn():
+def test_odin():
     """
-    Test DKNN
+    Test ODIN
     """
     input_shape = (3, 32, 32)
     num_labels = 10
@@ -46,8 +46,8 @@ def test_dknn():
     data_x = DataLoader(data_x, batch_size=samples // 2)
     model = ComplexNet()
 
-    dknn = ODIN()
-    dknn.fit(model)
-    scores = dknn.score(data_x)
+    odin = ODIN()
+    odin.fit(model)
+    scores = odin.score(data_x)
 
     assert scores.shape == (100,)
