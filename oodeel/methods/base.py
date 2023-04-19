@@ -42,8 +42,8 @@ class OODModel(ABC):
         output_layers_id (List[int]): list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [-1],
-        input_layers_id (List[int]): = list of str or int that identify the input layer of the
-            feature extractor.
+        input_layers_id (List[int]): = list of str or int that identify the input layer
+            of the feature extractor.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to None.
     """
