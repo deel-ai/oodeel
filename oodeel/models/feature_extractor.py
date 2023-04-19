@@ -70,17 +70,15 @@ class FeatureExtractor(ABC):
         self.extractor = self.prepare_extractor()
 
     @abstractmethod
-    def prepare_extractor(self):
+    def prepare_extractor(self) -> None:
         """
         prepare FeatureExtractor for feature extraction
         (the way to achieve this depends on the underlying library)
-
-        Returns:
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def get_weights(self):
+    def get_weights(self) -> List[Any]:
         """
         Get the weights of a layer
 
@@ -90,28 +88,28 @@ class FeatureExtractor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def predict_tensor(self, tensor: Any):
+    def predict_tensor(self, tensor: Any) -> Any:
         """
         Projects input samples "inputs" into the feature space
 
         Args:
-            inputs: a tensor
+            tensor (Any): input tensor
 
         Returns:
-            features
+            Any: features
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def predict(self, dataset: Any):
+    def predict(self, dataset: Any) -> Any:
         """
         Projects input samples "inputs" into the feature space for a batched dataset
 
         Args:
-            inputs: iterable of tensor batches
+            dataset (Any): iterable of tensor batches
 
         Returns:
-            features
+            Any: features
         """
         raise NotImplementedError()
 

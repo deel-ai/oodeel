@@ -40,7 +40,7 @@ class DataHandler(ABC):
 
     @classmethod
     @abstractmethod
-    def load_dataset(cls, dataset_id: Any, load_kwargs: dict = {}):
+    def load_dataset(cls, dataset_id: Any, load_kwargs: dict = {}) -> Any:
         """Load dataset from different manners
 
         Args:
@@ -129,7 +129,7 @@ class DataHandler(ABC):
         feature_key: str,
         values: list,
         excluded: bool = False,
-    ):
+    ) -> Any:
         """Filter the dataset by checking the value of a feature is in `values`
 
         Args:

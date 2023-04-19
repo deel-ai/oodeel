@@ -43,8 +43,6 @@ class OODDataset(object):
         dataset_id (Union[Dataset, tuple, dict, str]): The dataset to load.
             Can be loaded from tensorflow or torch datasets catalog when the str matches
             one of the datasets. Defaults to Union[Dataset, tuple, dict, str].
-        from_directory (bool, optional): If the dataset has to be loaded from directory,
-            when dataset_id is str. Defaults to False.
         backend (str, optional): Whether the dataset is to be used for tensorflow
              or torch models. Defaults to "tensorflow". Alternative: "torch".
         split (str, optional): Split to use ('test' or 'train') When the dataset is
@@ -129,12 +127,8 @@ class OODDataset(object):
         return self.length
 
     @property
-    def has_ood_label(self):
-        """Check if the dataset has an out-of-distribution label.
-
-        Returns:
-            bool: True if the dataset has an out-of-distribution label.
-        """
+    def has_ood_label(self) -> bool:
+        """Check if the dataset has an out-of-distribution label."""
         return self._data_handler.has_feature_key(self.data, "ood_label")
 
     def get_ood_labels(
@@ -225,7 +219,7 @@ class OODDataset(object):
         Args:
             in_labels (Optional[Union[np.ndarray, list]], optional): set of labels
                 to be considered as in-distribution. Defaults to None.
-            ood_labels (Optional[Union[np.ndarray, list]], optional): set of labels
+            out_labels (Optional[Union[np.ndarray, list]], optional): set of labels
                 to be considered as out-of-distribution. Defaults to None.
 
         Returns:

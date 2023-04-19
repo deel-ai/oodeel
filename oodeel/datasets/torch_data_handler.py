@@ -85,8 +85,15 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
     return wrapper
 
 
-def to_torch(array: ArrayLike):
-    """Convert an array into a torch Tensor"""
+def to_torch(array: ArrayLike) -> torch.Tensor:
+    """Convert an array into a torch Tensor
+
+    Args:
+        array (ArrayLike): array to convert
+
+    Returns:
+        torch.Tensor: converted array
+    """
     if isinstance(array, np.ndarray):
         return torch.Tensor(array)
     elif isinstance(array, torch.Tensor):
@@ -116,12 +123,14 @@ class DictDataset(Dataset):
         self._check_init_args()
 
     @property
-    def output_keys(self):
+    def output_keys(self) -> list:
+        """Get the list of keys in a dict-based item from the dataset"""
         dummy_item = self[0]
         return list(dummy_item.keys())
 
     @property
-    def output_shapes(self):
+    def output_shapes(self) -> list:
+        """Get a list of the tensor shapes in an item from the dataset"""
         dummy_item = self[0]
         return [dummy_item[key].shape for key in self.output_keys]
 
@@ -159,7 +168,7 @@ class DictDataset(Dataset):
             output_dict = map_fn(output_dict)
         return output_dict
 
-    def map(self, map_fn: Callable, inplace: bool = False):
+    def map(self, map_fn: Callable, inplace: bool = False) -> "DictDataset":
         """Map the dataset
 
         Args:
@@ -174,7 +183,7 @@ class DictDataset(Dataset):
         dataset.map_fns.append(map_fn)
         return dataset
 
-    def filter(self, filter_fn: Callable, inplace: bool = False):
+    def filter(self, filter_fn: Callable, inplace: bool = False) -> "DictDataset":
         """Filter the dataset
 
         Args:
@@ -194,7 +203,9 @@ class DictDataset(Dataset):
         dataset._dataset = Subset(self._dataset, indices)
         return dataset
 
-    def concatenate(self, other_dataset: Dataset, inplace: bool = False):
+    def concatenate(
+        self, other_dataset: Dataset, inplace: bool = False
+    ) -> "DictDataset":
         """Concatenate with another dataset
 
         Args:
@@ -234,14 +245,24 @@ class TorchDataHandler(DataHandler):
     torch syntax.
     """
 
-    def default_target_transform(y):
+    def _default_target_transform(y: Any) -> torch.Tensor:
+        """Format int or float item target as a torch tensor
+
+        Args:
+            y (Any): dataset item target
+
+        Returns:
+            torch.Tensor: target as a torch.Tensor
+        """
         return torch.tensor(y) if isinstance(y, (float, int)) else y
 
     DEFAULT_TRANSFORM = torchvision.transforms.PILToTensor()
-    DEFAULT_TARGET_TRANSFORM = default_target_transform
+    DEFAULT_TARGET_TRANSFORM = _default_target_transform
 
     @classmethod
-    def load_dataset(cls, dataset_id: Any, keys: list = None, load_kwargs: dict = {}):
+    def load_dataset(
+        cls, dataset_id: Any, keys: list = None, load_kwargs: dict = {}
+    ) -> DictDataset:
         """Load dataset from different manners
 
         Args:
@@ -251,7 +272,7 @@ class TorchDataHandler(DataHandler):
             load_kwargs (dict, optional): Additional loading kwargs. Defaults to {}.
 
         Returns:
-            Any: dataset
+            DictDataset: dataset
         """
         if isinstance(dataset_id, str):
             assert "root" in load_kwargs.keys()
@@ -274,11 +295,13 @@ class TorchDataHandler(DataHandler):
         """Load a torch.utils.data.Dataset from an array or a tuple/dict of arrays.
 
         Args:
-            dataset_id (ArrayLike | Dict[str, ArrayLike] | Tuple[ArrayLike]):\
+            dataset_id (ArrayLike | Dict[str, ArrayLike] | Tuple[ArrayLike]):
                 numpy / torch array(s) to load.
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
 
         Returns:
-            DictDataset
+            DictDataset: dataset
         """
         # If dataset_id is an array
         if isinstance(dataset_id, (np.ndarray, torch.Tensor)):
@@ -365,18 +388,18 @@ class TorchDataHandler(DataHandler):
         Args:
             dataset_id (str): Identifier of the dataset
             root (str): Root directory of dataset
-            download (bool):  If true, downloads the dataset from the internet and puts\
-                it in root directory. If dataset is already downloaded, it is not\
-                downloaded again. Defaults to False.
             transform (Callable, optional): Transform function to apply to the input.
-                Defaults to DEFAULT_TRANSFORM
+                Defaults to DEFAULT_TRANSFORM.
             target_transform (Callable, optional): Transform function to apply
-                to the target. Defaults to DEFAULT_TARGET_TRANSFORM
-            load_kwargs: Loading kwargs to add to the initialization\
+                to the target. Defaults to DEFAULT_TARGET_TRANSFORM.
+            download (bool):  If true, downloads the dataset from the internet and puts
+                it in root directory. If dataset is already downloaded, it is not
+                downloaded again. Defaults to False.
+            load_kwargs (dict): Loading kwargs to add to the initialization
                 of dataset.
 
         Returns:
-            DictDataset
+            DictDataset: dataset
         """
         assert (
             dataset_id in torchvision.datasets.__all__
@@ -494,7 +517,7 @@ class TorchDataHandler(DataHandler):
         feature_key: str,
         values: list,
         excluded: bool = False,
-    ):
+    ) -> DictDataset:
         """Filter the dataset by checking the value of a feature is in `values`
 
         !!! note
@@ -543,14 +566,14 @@ class TorchDataHandler(DataHandler):
             dataset (DictDataset): Dataset to prepare
             batch_size (int): Batch size
             shuffle (bool): Wether to shuffle the dataloader or not
-            preprocess_fn (Callable, optional): Preprocessing function to apply to\
+            preprocess_fn (Callable, optional): Preprocessing function to apply to
                 the dataset. Defaults to None.
-            augment_fn (Callable, optional): Augment function to be used (when the\
+            augment_fn (Callable, optional): Augment function to be used (when the
                 returned dataset is to be used for training). Defaults to None.
-            output_keys (list): List of keys corresponding to the features that will be \
+            output_keys (list): List of keys corresponding to the features that will be
                 returned. Keep all features if None. Defaults to None.
-            dict_based_fns (bool) Wheter to use preprocess and DA functions as dict based\
-                 (if True) or as tuple based (if False). Defaults to False.
+            dict_based_fns (bool) Wheter to use preprocess and DA functions as dict based
+                (if True) or as tuple based (if False). Defaults to False.
             shuffle_buffer_size (int, optional): Size of the shuffle buffer. Not used
                 in torch because we only rely on Map-Style datasets. Still as argument
                 for API consistency. Defaults to None.

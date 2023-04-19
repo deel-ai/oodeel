@@ -71,7 +71,7 @@ class VIM(OODModel):
 
     Args:
         princ_dims: number of principal dimensions of in distribution features to
-        consider.
+            consider.
             If an int, must be less than the dimension of the feature space.
             If a float, it must be in [0,1), it represents the ratio of explained
             variance to consider to determine the number of principal components.
@@ -79,18 +79,12 @@ class VIM(OODModel):
             dimensions.
             Defaults to None.
         pca_origin: either "center" for using the mean of the data in feature space, or
-        "pseudo" for using $W^{-1}b$ where $W^{-1}$ is the pseudo inverse of the final
-        linear layer applied to bias term (as in the VIM paper).
+            "pseudo" for using $W^{-1}b$ where $W^{-1}$ is the pseudo inverse of the final
+            linear layer applied to bias term (as in the VIM paper).
             Defaults to "center".
         output_layers_id: features to use for Residual and Energy score.
             Defaults to [-2,-1] (-2 the features for PCA residual, -1 the logits with
             output_activation="linear" for Energy).
-        output_activation: output activation to use.
-            Defaults to "linear".
-        batch_size: batch_size used to compute the features space
-            projection of input data.
-            Defaults to 256.
-
     """
 
     def __init__(
@@ -252,6 +246,9 @@ class VIM(OODModel):
         return -np.array(scores)
 
     def plot_spectrum(self) -> None:
+        """
+        Plot cumulated explained variance wrt the number of principal dimensions.
+        """
         if hasattr(self, "kneedle"):
             self.kneedle.plot_knee()
             plt.ylabel("Explained variance")
