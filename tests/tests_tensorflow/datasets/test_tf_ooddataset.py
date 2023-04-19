@@ -38,31 +38,26 @@ def test_instanciate_from_tfds():
 
 
 @pytest.mark.parametrize(
-    "backend, as_supervised, expected_output",
+    "as_supervised, expected_output",
     [
-        ("tensorflow", False, [100, 2, 2]),
-        ("tensorflow", True, [100, 2, 2]),
+        (False, [100, 2, 2]),
+        (True, [100, 2, 2]),
     ],
     ids=[
         "Instanciate from tf data without supervision",
         "Instanciate from np data with supervision",
     ],
 )
-def test_instanciate_ood_dataset(backend, as_supervised, expected_output):
+def test_instanciate_ood_dataset(as_supervised, expected_output):
     """Test the instanciation of OODDataset."""
 
-    if backend == "tensorflow":
-        dataset_id = generate_data_tf(
-            x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=as_supervised
-        )
-
-    dataset = OODDataset(dataset_id=dataset_id, backend=backend)
-
-    item_len = (
-        len(dataset.data.element_spec)
-        if backend == "tensorflow"
-        else len(dataset.data[0])
+    dataset_id = generate_data_tf(
+        x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=as_supervised
     )
+
+    dataset = OODDataset(dataset_id=dataset_id, backend="tensorflow")
+
+    item_len = len(dataset.data.element_spec)
 
     assert len(dataset.data) == expected_output[0]
     assert dataset.len_item == expected_output[1]
@@ -70,42 +65,37 @@ def test_instanciate_ood_dataset(backend, as_supervised, expected_output):
 
 
 @pytest.mark.parametrize(
-    "backend, ds2_from_numpy, expected_output",
+    "ds2_from_numpy, expected_output",
     [
-        ("tensorflow", True, [200, 2, 3, 0.5]),
-        ("tensorflow", False, [200, 2, 3, 0.5]),
+        (True, [200, 2, 3, 0.5]),
+        (False, [200, 2, 3, 0.5]),
     ],
     ids=[
         "[tf] Concatenate two OODDatasets",
         "[tf] Concatenate a OODDataset and a numpy dataset",
     ],
 )
-def test_add_ood_data(backend, ds2_from_numpy, expected_output):
+def test_add_ood_data(ds2_from_numpy, expected_output):
     """Test the concatenation of OODDataset."""
 
-    generate_data_func = {"tensorflow": generate_data_tf}[backend]
-    x_shape = {"tensorflow": (32, 32, 3)}[backend]
+    x_shape = (32, 32, 3)
 
     dataset1 = OODDataset(
-        dataset_id=generate_data_func(x_shape=x_shape, num_labels=10, samples=100),
-        backend=backend,
+        dataset_id=generate_data_tf(x_shape=x_shape, num_labels=10, samples=100),
+        backend="tensorflow",
     )
 
     if ds2_from_numpy:
         dataset2 = generate_data(x_shape=(38, 38, 3), num_labels=10, samples=100)
     else:
         dataset2 = OODDataset(
-            dataset_id=generate_data_func(x_shape=x_shape, num_labels=10, samples=100),
-            backend=backend,
+            dataset_id=generate_data_tf(x_shape=x_shape, num_labels=10, samples=100),
+            backend="tensorflow",
         )
 
     dataset = dataset1.add_out_data(dataset2, shape=(23, 23))
     ood_labels = dataset.get_ood_labels()
-    item_len = (
-        len(dataset.data.element_spec)
-        if backend == "tensorflow"
-        else len(dataset.data[0])
-    )
+    item_len = len(dataset.data.element_spec)
     assert len(dataset.data) == expected_output[0]
     assert dataset.len_item == expected_output[1]
     assert item_len == expected_output[2]
@@ -113,11 +103,11 @@ def test_add_ood_data(backend, ds2_from_numpy, expected_output):
 
 
 @pytest.mark.parametrize(
-    "backend, in_labels, out_labels, one_hot, expected_output",
+    "in_labels, out_labels, one_hot, expected_output",
     [
-        ("tensorflow", [1, 2], None, False, [100, 67, 33, 2, 1]),
-        ("tensorflow", None, [1, 2], True, [100, 33, 67, 1, 2]),
-        ("tensorflow", [1], [2], False, [100, 33, 34, 1, 1]),
+        ([1, 2], None, False, [100, 67, 33, 2, 1]),
+        (None, [1, 2], True, [100, 33, 67, 1, 2]),
+        ([1], [2], False, [100, 33, 34, 1, 1]),
     ],
     ids=[
         "[tf] Assign OOD labels by class with ID labels",
@@ -125,13 +115,11 @@ def test_add_ood_data(backend, ds2_from_numpy, expected_output):
         "[tf] Assign OOD labels by class with ID and OOD labels",
     ],
 )
-def test_assign_ood_labels_by_class(
-    backend, in_labels, out_labels, one_hot, expected_output
-):
+def test_assign_ood_labels_by_class(in_labels, out_labels, one_hot, expected_output):
     """Test the assign_ood_labels_by_class method."""
 
     # generate data
-    x_shape = (32, 32, 3) if backend == "tensorflow" else (3, 32, 32)
+    x_shape = (32, 32, 3)
     images, labels = generate_data(
         x_shape=x_shape,
         num_labels=3,
@@ -156,7 +144,7 @@ def test_assign_ood_labels_by_class(
             if i >= 66:
                 labels[i] = np.array([0, 0, 1])
 
-    dataset = OODDataset(dataset_id=(images, labels), backend=backend)
+    dataset = OODDataset(dataset_id=(images, labels), backend="tensorflow")
 
     in_dataset, out_dataset = dataset.assign_ood_labels_by_class(
         in_labels=in_labels,
@@ -184,12 +172,12 @@ def test_assign_ood_labels_by_class(
 
 
 @pytest.mark.parametrize(
-    "backend, shuffle, with_labels, with_ood_labels, expected_output",
+    "shuffle, with_labels, with_ood_labels, expected_output",
     [
-        ("tensorflow", False, True, True, [3, (32, 10)]),
-        ("tensorflow", False, False, True, [2, (32,)]),
-        ("tensorflow", True, True, True, [3, (32, 10)]),
-        ("tensorflow", True, True, False, [2, (32, 10)]),
+        (False, True, True, [3, (32, 10)]),
+        (False, False, True, [2, (32,)]),
+        (True, True, True, [3, (32, 10)]),
+        (True, True, False, [2, (32, 10)]),
     ],
     ids=[
         "[tf] Prepare OODDataset for scoring with labels and ood labels",
@@ -200,46 +188,43 @@ def test_assign_ood_labels_by_class(
         "with only labels",
     ],
 )
-def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output):
+def test_prepare(shuffle, with_labels, with_ood_labels, expected_output):
     """Test the prepare method."""
 
     num_labels = 10
     batch_size = 32
     samples = 100
 
-    x_shape = (32, 32, 3) if backend == "tensorflow" else (3, 32, 32)
-    generate_data_fn = generate_data_tf
+    x_shape = (32, 32, 3)
 
     dataset = OODDataset(
-        dataset_id=generate_data_fn(
+        dataset_id=generate_data_tf(
             x_shape=x_shape,
             num_labels=num_labels,
             samples=samples,
             one_hot=True,
         ),
-        backend=backend,
+        backend="tensorflow",
     )
 
-    if backend == "tensorflow":
+    def preprocess_fn(*inputs):
+        x = inputs[0] / 255
+        return tuple([x] + list(inputs[1:]))
 
-        def preprocess_fn(*inputs):
-            x = inputs[0] / 255
-            return tuple([x] + list(inputs[1:]))
-
-        def augment_fn_(*inputs):
-            x = tf.image.random_flip_left_right(inputs[0])
-            return tuple([x] + list(inputs[1:]))
+    def augment_fn_(*inputs):
+        x = tf.image.random_flip_left_right(inputs[0])
+        return tuple([x] + list(inputs[1:]))
 
     augment_fn = augment_fn_ if shuffle else None
 
     dataset2 = OODDataset(
-        dataset_id=generate_data_fn(
+        dataset_id=generate_data_tf(
             x_shape=x_shape,
             num_labels=num_labels,
             samples=samples,
             one_hot=True,
         ),
-        backend=backend,
+        backend="tensorflow",
     )
 
     dataset = dataset.add_out_data(dataset2)
@@ -253,16 +238,15 @@ def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output
         augment_fn=augment_fn,
     )
 
-    if backend == "tensorflow":
-        tensor1 = next(iter(ds.take(1)))
-        tensor2 = next(iter(ds.take(1)))
+    tensor1 = next(iter(ds.take(1)))
+    tensor2 = next(iter(ds.take(1)))
 
-        assert len(tensor1) == expected_output[0]
-        if shuffle:
-            assert np.sum(tensor1[0] - tensor2[0]) != 0
-        assert tuple(tensor1[1].shape) == expected_output[1]
-        if with_ood_labels and with_labels:
-            assert tuple(tensor1[2].shape) == (32,)
-        assert tensor1[0].shape == (batch_size, 32, 32, 3)
-        assert tf.reduce_max(tensor1[0]) <= 1
-        assert tf.reduce_min(tensor1[0]) >= 0
+    assert len(tensor1) == expected_output[0]
+    if shuffle:
+        assert np.sum(tensor1[0] - tensor2[0]) != 0
+    assert tuple(tensor1[1].shape) == expected_output[1]
+    if with_ood_labels and with_labels:
+        assert tuple(tensor1[2].shape) == (32,)
+    assert tensor1[0].shape == (batch_size, 32, 32, 3)
+    assert tf.reduce_max(tensor1[0]) <= 1
+    assert tf.reduce_min(tensor1[0]) >= 0
