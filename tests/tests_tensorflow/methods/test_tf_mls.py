@@ -38,9 +38,9 @@ def test_mls():
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    energy = MLS()
-    energy.fit(model)
-    scores = energy.score(data_x)
+    mls = MLS()
+    mls.fit(model)
+    scores = mls.score(data_x)
 
     assert scores.shape == (100,)
 
@@ -48,13 +48,13 @@ def test_mls():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     ).batch(samples)
 
-    scores = energy.score(data_x)
+    scores = mls.score(data_x)
 
     assert scores.shape == (100,)
 
 
 def test_msp():
-    """Test MLS"""
+    """Test MSP"""
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
@@ -65,9 +65,9 @@ def test_msp():
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    energy = MLS(output_activation="softmax")
-    energy.fit(model)
-    scores = energy.score(data_x)
+    msp = MLS(output_activation="softmax")
+    msp.fit(model)
+    scores = msp.score(data_x)
 
     assert scores.shape == (100,)
 
@@ -75,6 +75,6 @@ def test_msp():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     ).batch(samples)
 
-    scores = energy.score(data_x)
+    scores = msp.score(data_x)
 
     assert scores.shape == (100,)
