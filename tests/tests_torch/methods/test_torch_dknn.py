@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import pytest
 from torch.utils.data import DataLoader
 
 from oodeel.methods import DKNN
@@ -29,15 +28,11 @@ from tests.tests_torch import generate_data
 from tests.tests_torch import generate_data_torch
 
 
-@pytest.mark.parametrize(
-    ("backend", "input_shape"),
-    [("torch", (3, 32, 32))],
-    ids=["[torch] test DKNN"],
-)
-def test_dknn(backend, input_shape):
+def test_dknn():
     """
     Test DKNN
     """
+    input_shape = (3, 32, 32)
     num_labels = 10
     samples = 100
 

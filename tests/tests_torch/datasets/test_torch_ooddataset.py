@@ -45,26 +45,16 @@ def test_instanciate_from_torchvision():
 
 
 @pytest.mark.parametrize(
-    "backend, as_supervised, expected_output",
-    [
-        ("torch", None, [100, 2, 2]),
-    ],
-    ids=[
-        "Instanciate from torch data",
-    ],
+    "expected_output", [[100, 2, 2]], ids=["Instanciate from torch data"]
 )
-def test_instanciate_ood_dataset(backend, as_supervised, expected_output):
+def test_instanciate_ood_dataset(expected_output):
     """Test the instanciation of OODDataset."""
 
     dataset_id = generate_data_torch(x_shape=(3, 32, 32), num_labels=10, samples=100)
 
-    dataset = OODDataset(dataset_id=dataset_id, backend=backend)
+    dataset = OODDataset(dataset_id=dataset_id, backend="torch")
 
-    item_len = (
-        len(dataset.data.element_spec)
-        if backend == "tensorflow"
-        else len(dataset.data[0])
-    )
+    item_len = len(dataset.data[0])
 
     assert len(dataset.data) == expected_output[0]
     assert dataset.len_item == expected_output[1]
@@ -72,42 +62,37 @@ def test_instanciate_ood_dataset(backend, as_supervised, expected_output):
 
 
 @pytest.mark.parametrize(
-    "backend, ds2_from_numpy, expected_output",
+    "ds2_from_numpy, expected_output",
     [
-        ("torch", True, [200, 2, 3, 0.5]),
-        ("torch", False, [200, 2, 3, 0.5]),
+        (True, [200, 2, 3, 0.5]),
+        (False, [200, 2, 3, 0.5]),
     ],
     ids=[
         "[torch] Concatenate two OODDatasets",
         "[torch] Concatenate a OODDataset and a numpy dataset",
     ],
 )
-def test_add_ood_data(backend, ds2_from_numpy, expected_output):
+def test_add_ood_data(ds2_from_numpy, expected_output):
     """Test the concatenation of OODDataset."""
 
-    generate_data_func = {"torch": generate_data_torch}[backend]
-    x_shape = {"torch": (3, 32, 32)}[backend]
+    x_shape = (3, 32, 32)
 
     dataset1 = OODDataset(
-        dataset_id=generate_data_func(x_shape=x_shape, num_labels=10, samples=100),
-        backend=backend,
+        dataset_id=generate_data_torch(x_shape=x_shape, num_labels=10, samples=100),
+        backend="torch",
     )
 
     if ds2_from_numpy:
         dataset2 = generate_data(x_shape=(38, 38, 3), num_labels=10, samples=100)
     else:
         dataset2 = OODDataset(
-            dataset_id=generate_data_func(x_shape=x_shape, num_labels=10, samples=100),
-            backend=backend,
+            dataset_id=generate_data_torch(x_shape=x_shape, num_labels=10, samples=100),
+            backend="torch",
         )
 
     dataset = dataset1.add_out_data(dataset2, shape=(23, 23))
     ood_labels = dataset.get_ood_labels()
-    item_len = (
-        len(dataset.data.element_spec)
-        if backend == "tensorflow"
-        else len(dataset.data[0])
-    )
+    item_len = len(dataset.data[0])
     assert len(dataset.data) == expected_output[0]
     assert dataset.len_item == expected_output[1]
     assert item_len == expected_output[2]
@@ -115,11 +100,11 @@ def test_add_ood_data(backend, ds2_from_numpy, expected_output):
 
 
 @pytest.mark.parametrize(
-    "backend, in_labels, out_labels, one_hot, expected_output",
+    "in_labels, out_labels, one_hot, expected_output",
     [
-        ("torch", [1, 2], None, False, [100, 67, 33, 2, 1]),
-        ("torch", None, [1, 2], True, [100, 33, 67, 1, 2]),
-        ("torch", [1], [2], False, [100, 33, 34, 1, 1]),
+        ([1, 2], None, False, [100, 67, 33, 2, 1]),
+        (None, [1, 2], True, [100, 33, 67, 1, 2]),
+        ([1], [2], False, [100, 33, 34, 1, 1]),
     ],
     ids=[
         "[torch] Assign OOD labels by class with ID labels",
@@ -127,9 +112,7 @@ def test_add_ood_data(backend, ds2_from_numpy, expected_output):
         "[torch] Assign OOD labels by class with ID and OOD labels",
     ],
 )
-def test_assign_ood_labels_by_class(
-    backend, in_labels, out_labels, one_hot, expected_output
-):
+def test_assign_ood_labels_by_class(in_labels, out_labels, one_hot, expected_output):
     """Test the assign_ood_labels_by_class method."""
 
     # generate data
@@ -158,7 +141,7 @@ def test_assign_ood_labels_by_class(
             if i >= 66:
                 labels[i] = np.array([0, 0, 1])
 
-    dataset = OODDataset(dataset_id=(images, labels), backend=backend)
+    dataset = OODDataset(dataset_id=(images, labels), backend="torch")
 
     in_dataset, out_dataset = dataset.assign_ood_labels_by_class(
         in_labels=in_labels,
@@ -186,12 +169,12 @@ def test_assign_ood_labels_by_class(
 
 
 @pytest.mark.parametrize(
-    "backend, shuffle, with_labels, with_ood_labels, expected_output",
+    "shuffle, with_labels, with_ood_labels, expected_output",
     [
-        ("torch", False, True, True, [3, (32, 10)]),
-        ("torch", False, False, True, [2, (32,)]),
-        ("torch", True, True, True, [3, (32, 10)]),
-        ("torch", True, True, False, [2, (32, 10)]),
+        (False, True, True, [3, (32, 10)]),
+        (False, False, True, [2, (32,)]),
+        (True, True, True, [3, (32, 10)]),
+        (True, True, False, [2, (32, 10)]),
     ],
     ids=[
         "[torch] Prepare OODDataset for scoring with labels and ood labels",
@@ -202,7 +185,7 @@ def test_assign_ood_labels_by_class(
         "with only labels",
     ],
 )
-def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output):
+def test_prepare(shuffle, with_labels, with_ood_labels, expected_output):
     """Test the prepare method."""
 
     num_labels = 10
@@ -210,16 +193,15 @@ def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output
     samples = 100
 
     x_shape = (3, 32, 32)
-    generate_data_fn = generate_data_torch
 
     dataset = OODDataset(
-        dataset_id=generate_data_fn(
+        dataset_id=generate_data_torch(
             x_shape=x_shape,
             num_labels=num_labels,
             samples=samples,
             one_hot=True,
         ),
-        backend=backend,
+        backend="torch",
     )
 
     def preprocess_fn(inputs):
@@ -233,13 +215,13 @@ def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output
     augment_fn = augment_fn_ if shuffle else None
 
     dataset2 = OODDataset(
-        dataset_id=generate_data_fn(
+        dataset_id=generate_data_torch(
             x_shape=x_shape,
             num_labels=num_labels,
             samples=samples,
             one_hot=True,
         ),
-        backend=backend,
+        backend="torch",
     )
 
     dataset = dataset.add_out_data(dataset2)
@@ -253,16 +235,15 @@ def test_prepare(backend, shuffle, with_labels, with_ood_labels, expected_output
         augment_fn=augment_fn,
     )
 
-    if backend == "torch":
-        batch1 = next(iter(ds))
-        batch2 = next(iter(ds))
+    batch1 = next(iter(ds))
+    batch2 = next(iter(ds))
 
-        assert len(batch1) == expected_output[0]
-        if shuffle:
-            assert torch.sum(batch1[0] - batch2[0]) != 0
-        assert batch1[1].shape == torch.Size(expected_output[1])
-        if with_ood_labels and with_labels:
-            assert batch1[2].shape == torch.Size([32])
-        assert batch1[0].shape == torch.Size([batch_size, 3, 32, 32])
-        assert torch.max(batch1[0]) <= 1
-        assert torch.min(batch1[0]) >= 0
+    assert len(batch1) == expected_output[0]
+    if shuffle:
+        assert torch.sum(batch1[0] - batch2[0]) != 0
+    assert batch1[1].shape == torch.Size(expected_output[1])
+    if with_ood_labels and with_labels:
+        assert batch1[2].shape == torch.Size([32])
+    assert batch1[0].shape == torch.Size([batch_size, 3, 32, 32])
+    assert torch.max(batch1[0]) <= 1
+    assert torch.min(batch1[0]) >= 0
