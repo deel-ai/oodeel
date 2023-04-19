@@ -20,16 +20,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-#
-# For image-classifiers, see:
-# (https://github.com/qubvel/classification_models)
-# !pip install image-classifiers==1.0.0b1
 import argparse
 import os
 import sys
 import warnings
 
 from oodeel.datasets import OODDataset
+from oodeel.models.training_funs_tf import train_keras_app
+
 
 warnings.filterwarnings("ignore")
 
@@ -41,13 +39,6 @@ parser = argparse.ArgumentParser(
     description="Train keras or torch model on CIFAR-10 dataset",
 )
 parser.add_argument(
-    "-f",
-    "--framework",
-    type=str,
-    default="keras",
-    help="Framework name: (default: 'keras' | 'torch')",
-)
-parser.add_argument(
     "-e", "--epochs", type=int, default=200, help="Number of epochs (default: 200)"
 )
 parser.add_argument(
@@ -57,8 +48,8 @@ parser.add_argument(
     "-m",
     "--model_name",
     type=str,
-    default="resnet18",
-    help="Model name (default: 'resnet18')",
+    default="resnet50",
+    help="Model name (default: 'resnet50')",
 )
 parser.add_argument(
     "-s",
@@ -71,21 +62,17 @@ args = parser.parse_args()
 
 
 if __name__ == "__main__":
-    from oodeel.models.training_funs_tf import train_keras_app
-
-    training_func = train_keras_app
-
     # cifar10
-
     oods_train = OODDataset("cifar10", split="train")
     oods_test = OODDataset("cifar10", split="test")
     os.makedirs(args.save_dir, exist_ok=True)
 
-    # define model
-    model = training_func(
+    # train model
+    model = train_keras_app(
         train_data=oods_train,
         validation_data=oods_test,
-        model_name="resnet18",
+        model_name=args.model_name,
+        batch_size=args.batch_size,
         epochs=args.epochs,
         save_dir=args.save_dir,
     )
