@@ -34,11 +34,14 @@ from ...types import List
 from ...types import Optional
 
 
-def get_toy_keras_convnet(num_classes: int):
+def get_toy_keras_convnet(num_classes: int) -> tf.keras.Model:
     """Basic keras convolutional classifier for toy datasets.
 
     Args:
         num_classes (int): Number of classes for the classification task.
+
+    Returns:
+        tf.keras.Model: model
     """
     return Sequential(
         [
@@ -74,7 +77,7 @@ def train_keras_app(
     If the dataset is different from imagenet, trains on provided dataset.
 
     Args:
-        train_data (tf.data.Dataset)
+        train_data (tf.data.Dataset): training dataset.
         model_name (str): must be a model from tf.keras.applications or "toy_convnet"
         input_shape (tuple, optional): If None, infered from train_data.
             Defaults to None.
@@ -83,8 +86,7 @@ def train_keras_app(
             for training (with batch, shufle, cache etc...). Defaults to False.
         batch_size (int, optional): Defaults to 128.
         epochs (int, optional): Defaults to 50.
-        loss (str, optional): Defaults to
-            "sparse_categorical_crossentropy".
+        loss (str, optional): Defaults to "sparse_categorical_crossentropy".
         optimizer (str, optional): Defaults to "adam".
         lr_scheduler (str, optional): ("cosine" | "steps" | None). Defaults to None.
         learning_rate (float, optional): Defaults to 1e-3.
@@ -119,7 +121,7 @@ def train_keras_app(
             classes = TFDataHandler.get_feature(train_data, label_id).unique()
             num_classes = len(list(classes.as_numpy_iterator()))
 
-        if model_name not in ["toy_convnet"]:
+        if model_name != "toy_convnet":
             backbone = getattr(tf.keras.applications, model_name)(
                 include_top=False, weights=None, input_shape=input_shape
             )

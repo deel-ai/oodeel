@@ -51,10 +51,10 @@ class ODIN(OODModel):
         the distance to nearest neighbors in the feature space of self.model
 
         Args:
-            inputs: input samples to score
+            inputs (TensorType): input samples to score
 
         Returns:
-            scores
+            np.ndarray: scores
         """
         if self.feature_extractor.backend == "torch":
             inputs = inputs.to(self.feature_extractor._device)
@@ -65,7 +65,17 @@ class ODIN(OODModel):
         scores = -np.max(pred, axis=1)
         return scores
 
-    def input_perturbation(self, inputs):
+    def input_perturbation(self, inputs: TensorType) -> TensorType:
+        """Apply a small perturbation over inputs to increase their softmax score.
+        See ODIN paper for more information (section 3):
+        http://arxiv.org/abs/1706.02690
+
+        Args:
+            inputs (TensorType): input samples to score
+
+        Returns:
+            TensorType: Perturbed inputs
+        """
         preds = self.feature_extractor.model(inputs)
         outputs = self.op.argmax(preds, dim=1)
         gradients = self.op.gradient(self._temperature_loss, inputs, outputs)

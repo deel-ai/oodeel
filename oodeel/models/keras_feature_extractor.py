@@ -121,6 +121,7 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         Args:
             dataset (tf.data.Dataset): input dataset
+            kwargs: additional arguments not considered for prediction
 
         Returns:
             List[tf.Tensor]: features
@@ -145,13 +146,13 @@ class KerasFeatureExtractor(FeatureExtractor):
             features = features[0]
         return features
 
-    def get_weights(self, layer_id: Union[int, str]) -> tf.Tensor:
+    def get_weights(self, layer_id: Union[int, str]) -> List[tf.Tensor]:
         """Get the weights of a layer
 
         Args:
             layer_id (Union[int, str]): layer identifier
 
         Returns:
-            tf.Tensor: weights matrix
+            List[tf.Tensor]: weights and biases matrixes
         """
         return self.find_layer(layer_id).get_weights()

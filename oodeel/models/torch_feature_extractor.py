@@ -27,6 +27,7 @@ from torch import nn
 from tqdm import tqdm
 
 from ..datasets.torch_data_handler import TorchDataHandler
+from ..types import Callable
 from ..types import DatasetType
 from ..types import List
 from ..types import Union
@@ -68,10 +69,16 @@ class TorchFeatureExtractor(FeatureExtractor):
         self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
         self.backend = "torch"
 
-    def get_features_hook(self, layer_id: Union[str, int]):
+    def get_features_hook(self, layer_id: Union[str, int]) -> Callable:
         """
         Hook that stores features corresponding to a specific layer
         in a class dictionary.
+
+        Args:
+            layer_id (Union[str, int]): layer identifier
+
+        Returns:
+            Callable: hook function
         """
         self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
 
@@ -100,7 +107,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         else:
             return dict(self.model.named_modules())[layer_id]
 
-    def prepare_extractor(self):
+    def prepare_extractor(self) -> None:
         """Prepare the feature extractor by adding hooks to self.model"""
         # Register a hook to store feature values for each considered layer.
         for layer_id in self.output_layers_id:
@@ -140,10 +147,12 @@ class TorchFeatureExtractor(FeatureExtractor):
         """Get the projection of tensor in the feature space of self.model
 
         Args:
-            tensor (Union[tf.Tensor, np.ndarray, Tuple]): input tensor (or dataset elem)
+            x (Union[torch.Tensor, np.ndarray, Tuple]): input tensor (or dataset elem)
+            detach (bool): if True, return features detached from the computational graph.
+                Defaults to True.
 
         Returns:
-            tf.Tensor: features
+            List[torch.Tensor]: features
         """
         if x.device != self._device:
             x = x.to(self._device)
@@ -167,6 +176,9 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         Args:
             dataset (torch.utils.data.DataLoader): input dataset
+            detach (bool): if True, return features detached from the computational graph.
+                Defaults to True.
+            kwargs: additional arguments not considered for prediction
 
         Returns:
             List[torch.Tensor]: features
@@ -194,14 +206,14 @@ class TorchFeatureExtractor(FeatureExtractor):
             features = features[0]
         return features
 
-    def get_weights(self, layer_id: Union[str, int]) -> torch.Tensor:
+    def get_weights(self, layer_id: Union[str, int]) -> List[torch.Tensor]:
         """Get the weights of a layer
 
         Args:
             layer_id (Union[int, str]): layer identifier
 
         Returns:
-            torch.Tensor: weights matrix
+            List[torch.Tensor]: weights and biases matrixes
         """
         layer = self.find_layer(layer_id)
         return [layer.weight.detach().cpu().numpy(), layer.bias.detach().cpu().numpy()]

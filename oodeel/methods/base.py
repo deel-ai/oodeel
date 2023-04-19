@@ -39,17 +39,13 @@ class OODModel(ABC):
     """Base Class for methods that assign a score to unseen samples.
 
     Args:
-        output_layers_id: list of str or int that identify features to output.
+        output_layers_id (List[int]): list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
-            If str, the name of the layer.
-            Defaults to [].
-        output_activation: activation function for the last layer.
-            Defaults to None.
-        flatten: Flatten the output features or not.
-            Defaults to True.
-        batch_size: batch_size used to compute the features space
-            projection of input data.
-            Defaults to 256.
+            If str, the name of the layer. Defaults to [-1],
+        input_layers_id (List[int]): = list of str or int that identify the input layer of the
+            feature extractor.
+            If int, the rank of the layer in the layer list
+            If str, the name of the layer. Defaults to None.
     """
 
     def __init__(
@@ -78,7 +74,7 @@ class OODModel(ABC):
         self,
         model: Callable,
         fit_dataset: Optional[Union[TensorType, DatasetType]] = None,
-    ):
+    ) -> None:
         """Prepare oodmodel for scoring:
         * Constructs the feature extractor based on the model
         * Calibrates the oodmodel on ID data "fit_dataset" if needed,
@@ -141,9 +137,6 @@ class OODModel(ABC):
 
         Args:
             fit_dataset: dataset to fit the oodmodel on
-
-        Raises:
-            NotImplementedError: _description_
         """
         raise NotImplementedError()
 
@@ -151,7 +144,7 @@ class OODModel(ABC):
         self,
         fit_dataset: Union[TensorType, DatasetType],
         scores: np.ndarray,
-    ):
+    ) -> None:
         """
         Calibrates the model on ID data "id_dataset".
         Placeholder for now
@@ -159,9 +152,6 @@ class OODModel(ABC):
         Args:
             fit_dataset: dataset to callibrate the threshold on
             scores: scores of oodmodel
-
-        Raises:
-            NotImplementedError: _description_
         """
         raise NotImplementedError()
 
@@ -173,7 +163,7 @@ class OODModel(ABC):
         Computes an OOD score for input samples "inputs"
 
         Args:
-            inputs: Tensors, or list of tensors to score
+            dataset (Union[TensorType, DatasetType]): dataset or tensors to score
 
         Returns:
             scores or list of scores (depending on the input)
@@ -192,7 +182,9 @@ class OODModel(ABC):
                 score_batch = self._score_tensor(tensor)
                 scores = np.append(scores, score_batch)
         else:
-            raise NotImplementedError(f"not implemented for {type(dataset)}")
+            raise NotImplementedError(
+                f"OODModel.score() not implemented for {type(dataset)}"
+            )
         return scores
 
     def isood(
@@ -202,11 +194,11 @@ class OODModel(ABC):
         Returns whether the input samples "inputs" are OOD or not, given a threshold
 
         Args:
-            inputs: input samples to score
-            threshold: threshold to use for distinguishing between OOD and ID
+            dataset (dataset: Union[TensorType, DatasetType]): dataset or tensors to score
+            threshold (float): threshold to use for distinguishing between OOD and ID
 
         Returns:
-            np.array of 0 for ID samples and 1 for OOD samples
+            np.ndarray: array of 0 for ID samples and 1 for OOD samples
         """
         assert self.feature_extractor is not None, "Call .fit() before .isood()"
 
@@ -222,7 +214,9 @@ class OODModel(ABC):
                 score_batch = self._score_tensor(tensor)
                 scores = np.append(scores, score_batch)
         else:
-            raise NotImplementedError(f"not implemented for {type(dataset)}")
+            raise NotImplementedError(
+                f"OODModel.isood() not implemented for {type(dataset)}"
+            )
         oodness = scores < threshold
         return np.array(oodness, dtype=np.int8)
 

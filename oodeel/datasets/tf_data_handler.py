@@ -465,11 +465,12 @@ class TFDataHandler(DataHandler):
 
     @staticmethod
     def make_channel_first(input_key: str, dataset: tf.data.Dataset) -> tf.data.Dataset:
-        """Make a tf.data.Dataset channel first. Make sur that the dataset is not
+        """Make a tf.data.Dataset channel first. Make sure that the dataset is not
             already Channel first. If so, the tensor will have the format
             (batch_size, x_size, channel, y_size).
 
         Args:
+            input_key (str): input key of the dict-based tf.data.Dataset
             dataset (tf.data.Dataset): tf.data.Dataset to make channel first
 
         Returns:

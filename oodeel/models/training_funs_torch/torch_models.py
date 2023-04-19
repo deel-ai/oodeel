@@ -104,17 +104,14 @@ def train_torch_model(
 
     Args:
         train_data (DataLoader): train dataloader
-        num_classes (int, optional): If None, infered from train_data. Defaults to None.
         model_name (str): must be a model from torchvision.models or "toy_convnet".
             Defaults to "resnet18".
-        batch_size (int, optional): Defaults to 128.
+        num_classes (int, optional): If None, infered from train_data. Defaults to None.
         epochs (int, optional): Defaults to 50.
-        loss (str, optional): Defaults to
-            "CrossEntropyLoss".
+        loss (str, optional): Defaults to "CrossEntropyLoss".
         optimizer (str, optional): Defaults to "Adam".
         lr_scheduler (str, optional): ("cosine" | "steps" | None). Defaults to None.
         learning_rate (float, optional): Defaults to 1e-3.
-        metrics (List[str], optional): Validation metrics. Defaults to ["accuracy"].
         imagenet_pretrained (bool, optional): Load a model pretrained on imagenet or
             not. Defaults to False.
         validation_data (Optional[DataLoader], optional): Defaults to None.
@@ -187,10 +184,10 @@ def _train(
         train_data (DataLoader): Train dataloader.
         epochs (int): Number of training epochs.
         optimizer (torch.optim.Optimizer): Optimizer.
-        lr_scheduler (torch.optim.lr_scheduler._LRScheduler): Learning rate scheduler.
-            Defaults to None.
         criterion (torch.nn.modules.loss._Loss): Criterion for loss.
         device (torch.device): On which device to train (CUDA or CPU).
+        lr_scheduler (torch.optim.lr_scheduler._LRScheduler): Learning rate scheduler.
+            Defaults to None.
         save_dir (str, optional): Where the model will be saved. Defaults to None.
         validation_data (DataLoader, optional): Validation dataloader. Defaults to None.
 
