@@ -76,9 +76,11 @@ class TFOperator(Operator):
     def CrossEntropyLoss(reduction: str = "mean"):
         """Cross Entropy Loss from logits"""
 
+        tf_reduction = {"mean": "sum_over_batch_size", "sum": "sum"}[reduction]
+
         def sanitized_ce_loss(inputs, targets):
             return tf.keras.losses.SparseCategoricalCrossentropy(
-                from_logits=True, reduction=reduction
+                from_logits=True, reduction=tf_reduction
             )(targets, inputs)
 
         return sanitized_ce_loss
