@@ -105,7 +105,7 @@ class OODModel(ABC):
             from ..datasets.tf_data_handler import TFDataHandler
             from ..utils import TFOperator
 
-            self.dh = TFDataHandler()
+            self.data_handler = TFDataHandler()
             self.op = TFOperator()
             self.backend = "tensorflow"
             FeatureExtractor = KerasFeatureExtractor
@@ -115,7 +115,7 @@ class OODModel(ABC):
             from ..datasets.torch_data_handler import TorchDataHandler
             from ..utils import TorchOperator
 
-            self.dh = TorchDataHandler()
+            self.data_handler = TorchDataHandler()
             self.op = TorchOperator()
             self.backend = "torch"
             FeatureExtractor = TorchFeatureExtractor
@@ -172,13 +172,13 @@ class OODModel(ABC):
 
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, get_args(TensorType)):
-            tensor = self.dh.get_input_from_dataset_item(dataset)
+            tensor = self.data_handler.get_input_from_dataset_item(dataset)
             scores = self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         elif isinstance(dataset, get_args(DatasetType)):
             scores = np.array([])
             for tensor in dataset:
-                tensor = self.dh.get_input_from_dataset_item(tensor)
+                tensor = self.data_handler.get_input_from_dataset_item(tensor)
                 score_batch = self._score_tensor(tensor)
                 scores = np.append(scores, score_batch)
         else:
@@ -204,13 +204,13 @@ class OODModel(ABC):
 
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, get_args(TensorType)):
-            tensor = self.dh.get_input_from_dataset_item(dataset)
+            tensor = self.data_handler.get_input_from_dataset_item(dataset)
             scores = self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         elif isinstance(dataset, get_args(DatasetType)):
             scores = np.array([])
             for tensor in dataset:
-                tensor = self.dh.get_input_from_dataset_item(tensor)
+                tensor = self.data_handler.get_input_from_dataset_item(tensor)
                 score_batch = self._score_tensor(tensor)
                 scores = np.append(scores, score_batch)
         else:
@@ -218,7 +218,7 @@ class OODModel(ABC):
                 f"OODModel.isood() not implemented for {type(dataset)}"
             )
         oodness = scores < threshold
-        return np.array(oodness, dtype=np.int8)
+        return np.array(oodness, dtype=np.bool)
 
     def __call__(
         self, inputs: Union[TensorType, DatasetType], threshold: float
