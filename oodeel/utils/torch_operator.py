@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import List
+
 import numpy as np
 import torch
 
@@ -126,3 +128,45 @@ class TorchOperator(Operator):
         gradients = torch.autograd.grad(outputs, inputs)
         inputs.requires_grad_(False)
         return gradients[0]
+
+    @staticmethod
+    def stack(tensors: List[TensorType], dim: int = 0) -> TensorType:
+        "Stack tensors along a new dimension"
+        return torch.stack(tensors, dim)
+
+    @staticmethod
+    def cat(tensors: List[TensorType], dim: int = 0) -> TensorType:
+        "Concatenate tensors in a given dimension"
+        return torch.cat(tensors, dim)
+
+    @staticmethod
+    def mean(tensor: TensorType, dim: int = None, keepdim: bool = False) -> TensorType:
+        "Mean function"
+        return torch.mean(tensor, dim, keepdim)
+
+    @staticmethod
+    def flatten(tensor: TensorType) -> TensorType:
+        "Flatten function"
+        # Flatten the features to 2D (n_batch, n_features)
+        return tensor.view(tensor.size(0), -1)
+
+    @staticmethod
+    def from_numpy(arr: np.ndarray) -> TensorType:
+        "Convert a NumPy array to a tensor"
+        # TODO change dtype
+        return torch.from_numpy(arr).double()
+
+    @staticmethod
+    def transpose(tensor: TensorType) -> TensorType:
+        "Transpose function for tensor of rank 2"
+        return tensor.t()
+
+    @staticmethod
+    def diag(tensor: TensorType) -> TensorType:
+        "Diagonal function: return the diagonal of a 2D tensor"
+        return tensor.diag()
+
+    @staticmethod
+    def reshape(tensor: TensorType, shape: List[int]) -> TensorType:
+        "Reshape function"
+        return tensor.view(*shape)
