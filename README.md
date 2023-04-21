@@ -23,13 +23,13 @@
 <!-- Short description of your library -->
 
 <b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers.
-  **Works for keras models and will soon be available for pytorch models.** The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow and (soon) pytorch.
+  **Works for keras models and will soon be available for pytorch models.** The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch.
 
 ```python
 from oodeel.methods import MLS
 
 oodmodel = MLS()
-oodmodel.fit(model)
+oodmodel.fit(model) # A tensorflow or torch model
 scores = oodmodel.score(ds)
 ```
 **Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully!
@@ -143,10 +143,10 @@ Currently, **oodeel** includes the following baselines:
 ## Roadmap to first release:
 - [x] The library works for `keras` models
 - [ ] Unification of tutorial notebooks
-- [ ] Validation of all methods for pytorch using `TorchOperator`, making oodeel compatible with both tensorflow and pytorch models.
-- [ ] Integration of `TorchDataHandler` to alleviate the need of `tf.data.Dataset` when using pytorch. At this stage, oodeel will no more require any tensorflow components when using pytorch, and vice-versa.
+- [x] Validation of all methods for pytorch using `TorchOperator`, making oodeel compatible with both tensorflow and pytorch models.
+- [x] Integration of `TorchDataHandler` to alleviate the need of `tf.data.Dataset` when using pytorch. At this stage, oodeel will no more require any tensorflow components when using pytorch, and vice-versa.
 - [ ] Revise docstring and type hinting
-- [ ] Set up the doc
+- [x] Set up the doc
 
 ## What's next?
 - [ ] More baselines!
@@ -164,6 +164,7 @@ Feel free to propose your ideas or come and contribute with us on the oodeel too
 Other great tools in the field of OOD:
 
 - [OpenOOD](https://github.com/Jingkang50/OpenOOD): Benchmarking Generalized Out-of-Distribution Detection
+- [Pytorch-OOD](https://github.com/kkirchheim/pytorch-ood): Out-of-Distribution (OOD) Detection with Deep Neural Networks based on PyTorch.
 - [ADBench](https://github.com/Minqi824/ADBench): Official Implement of "ADBench: Anomaly Detection Benchmark".
 - [PyOD](https://github.com/yzhao062/pyod): A Comprehensive and Scalable Python Library for Outlier Detection (Anomaly Detection)
 - [Anomalib](https://github.com/openvinotoolkit/anomalib): An anomaly detection library comprising state-of-the-art algorithms and features such as experiment management, hyper-parameter optimization, and edge inference.
