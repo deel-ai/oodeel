@@ -49,6 +49,12 @@ def sanitize_input(tensor_arg_func: Callable):
 class TorchOperator(Operator):
     """Class to handle torch operations with a unified API"""
 
+    def __init__(self, model: torch.nn.Module = None):
+        if model is not None:
+            self._device = next(model.parameters()).device
+        else:
+            self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     @staticmethod
     def softmax(tensor: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
         """Softmax function"""
@@ -64,7 +70,7 @@ class TorchOperator(Operator):
     @staticmethod
     def max(tensor: Union[torch.Tensor, np.ndarray], dim: int = None) -> torch.Tensor:
         """Max function"""
-        return torch.max(tensor, dim=dim)
+        return torch.max(tensor, dim=dim)[0]
 
     @staticmethod
     def one_hot(
@@ -142,6 +148,7 @@ class TorchOperator(Operator):
     @staticmethod
     def mean(tensor: TensorType, dim: int = None, keepdim: bool = False) -> TensorType:
         "Mean function"
+        dim = dim or list(range(len(tensor.shape)))
         return torch.mean(tensor, dim, keepdim)
 
     @staticmethod
@@ -150,11 +157,10 @@ class TorchOperator(Operator):
         # Flatten the features to 2D (n_batch, n_features)
         return tensor.view(tensor.size(0), -1)
 
-    @staticmethod
-    def from_numpy(arr: np.ndarray) -> TensorType:
+    def from_numpy(self, arr: np.ndarray) -> TensorType:
         "Convert a NumPy array to a tensor"
         # TODO change dtype
-        return torch.from_numpy(arr).double()
+        return torch.from_numpy(arr).double().to(self._device)
 
     @staticmethod
     def transpose(tensor: TensorType) -> TensorType:

@@ -116,7 +116,7 @@ class OODModel(ABC):
             from ..utils import TorchOperator
 
             self.data_handler = TorchDataHandler()
-            self.op = TorchOperator()
+            self.op = TorchOperator(model)
             self.backend = "torch"
             FeatureExtractor = TorchFeatureExtractor
 
