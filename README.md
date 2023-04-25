@@ -29,7 +29,7 @@ from oodeel.methods import MLS
 
 oodmodel = MLS()
 oodmodel.fit(model) # A tensorflow or torch model
-scores = oodmodel.score(ds)
+scores = oodmodel.score(ds) # ds is a tf.data.Dataset or a torch.DataLoader
 ```
 **Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully!
 
@@ -95,7 +95,7 @@ from oodeel.methods import MLS
 oodmodel = MLS()
 oodmodel.fit(model)
 scores_in = oodmodel.score(ds_in)
-scores_out = oodmodel.score(ds_in)
+scores_out = oodmodel.score(ds_out)
 ```
 
 Evaluate the method
