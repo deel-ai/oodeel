@@ -57,8 +57,8 @@ class TorchOperator(Operator):
 
     @staticmethod
     def softmax(tensor: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
-        """Softmax function"""
-        return torch.nn.functional.softmax(tensor)
+        """Softmax function along the last dimension"""
+        return torch.nn.functional.softmax(tensor, dim=-1)
 
     @staticmethod
     def argmax(
@@ -70,7 +70,10 @@ class TorchOperator(Operator):
     @staticmethod
     def max(tensor: Union[torch.Tensor, np.ndarray], dim: int = None) -> torch.Tensor:
         """Max function"""
-        return torch.max(tensor, dim=dim)[0]
+        if dim is None:
+            return torch.max(tensor)
+        else:
+            return torch.max(tensor, dim)[0]
 
     @staticmethod
     def one_hot(
@@ -146,10 +149,12 @@ class TorchOperator(Operator):
         return torch.cat(tensors, dim)
 
     @staticmethod
-    def mean(tensor: TensorType, dim: int = None, keepdim: bool = False) -> TensorType:
+    def mean(tensor: TensorType, dim: int = None) -> TensorType:
         "Mean function"
-        dim = dim or list(range(len(tensor.shape)))
-        return torch.mean(tensor, dim, keepdim)
+        if dim is None:
+            return torch.mean(tensor)
+        else:
+            return torch.mean(tensor, dim)
 
     @staticmethod
     def flatten(tensor: TensorType) -> TensorType:

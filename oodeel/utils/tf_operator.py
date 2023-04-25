@@ -50,12 +50,14 @@ class TFOperator(Operator):
 
     @staticmethod
     def softmax(tensor: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
-        """Softmax function"""
-        return tf.keras.activations.softmax(tensor)
+        """Softmax function along the last dimension"""
+        return tf.keras.activations.softmax(tensor, axis=-1)
 
     @staticmethod
     def argmax(tensor: Union[tf.Tensor, np.ndarray], dim: int = None) -> tf.Tensor:
         """Argmax function"""
+        if dim is None:
+            return tf.argmax(tf.reshape(tensor, [-1]))
         return tf.argmax(tensor, axis=dim)
 
     @staticmethod
@@ -130,9 +132,9 @@ class TFOperator(Operator):
         return tf.concat(tensors, dim)
 
     @staticmethod
-    def mean(tensor: TensorType, dim: int = None, keepdim: bool = False) -> TensorType:
+    def mean(tensor: TensorType, dim: int = None) -> TensorType:
         "Mean function"
-        return tf.reduce_mean(tensor, dim, keepdim)
+        return tf.reduce_mean(tensor, dim)
 
     @staticmethod
     def flatten(tensor: TensorType) -> TensorType:

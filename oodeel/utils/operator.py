@@ -35,7 +35,7 @@ class Operator(ABC):
 
     @abstractmethod
     def softmax(tensor: TensorType) -> TensorType:
-        """Softmax function"""
+        """Softmax function along the last dimension"""
         raise NotImplementedError()
 
     @abstractmethod
@@ -103,7 +103,7 @@ class Operator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def mean(tensor: TensorType, dim: int = None, keepdim: bool = False) -> TensorType:
+    def mean(tensor: TensorType, dim: int = None) -> TensorType:
         "Mean function"
         raise NotImplementedError()
 
