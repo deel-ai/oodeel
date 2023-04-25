@@ -100,7 +100,7 @@ class Mahalanobis(OODModel):
         gaussian_score = self.mahalanobis_score(out_features)
 
         # Input preprocessing
-        sample_pred = gaussian_score.max(1)[1]
+        sample_pred = self.op.argmax(gaussian_score, dim=1)
 
         means = self.op.stack(
             [
@@ -113,14 +113,14 @@ class Mahalanobis(OODModel):
         gradient = self.op.gradient(self.loss_fn, inputs, means=means)
         gradient = self.op.sign(gradient)
 
-        tempInputs = self.op.add(inputs, -self.input_processing_magnitude, gradient)
+        tempInputs = inputs - self.input_processing_magnitude * gradient
         noise_out_features = self.feature_extractor.predict(tempInputs)
         noise_out_features = self.op.flatten(noise_out_features)
 
         noise_gaussian_score = self.mahalanobis_score(noise_out_features)
-        noise_gaussian_score, _ = self.op.max(noise_gaussian_score, dim=1)
+        noise_gaussian_score = self.op.max(noise_gaussian_score, dim=1)
 
-        return self.op.convert_to_numpy(noise_gaussian_score)
+        return -self.op.convert_to_numpy(noise_gaussian_score)
 
     def mahalanobis_score(self, out_features):
         _precision = self.get_precision()
@@ -140,19 +140,19 @@ class Mahalanobis(OODModel):
         return gaussian_score
 
     def get_precision(self):
-        return self.op.from_numpy(self.mean_covariance.covariance_)
+        return self.op.from_numpy(self.mean_covariance.precision_)
 
     def get_mean_by_label(self, lbl):
         return self.op.from_numpy(self.by_label_preprocessing[lbl].mean_)
 
-    def loss_fn(self, inputs: ArrayLike, means: np.ndarray):
+    def loss_fn(self, inputs: ArrayLike, means: ArrayLike):
         _out_features = self.feature_extractor.predict(inputs, detach=False)
         # Flatten the features to 2D (n_batch, n_features)
         _out_features = self.op.flatten(_out_features)
-        _zero_f = _out_features - self.op.from_numpy(means)
+        _zero_f = _out_features - means
         pure_gau = -0.5 * self.op.diag(
             self.op.matmul(
-                self.op.matmul(_zero_f, self.op.from_numpy(self.get_precision())),
+                self.op.matmul(_zero_f, self.get_precision()),
                 self.op.transpose(_zero_f),
             )
         )
