@@ -20,152 +20,60 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from enum import auto
-from enum import IntEnum
-from typing import Dict
-from typing import List
-
 import numpy as np
-from numpy.typing import ArrayLike
 from sklearn import covariance
 from sklearn import preprocessing
 
+from ..types import DatasetType
+from ..types import List
+from ..types import TensorType
+from ..types import Union
 from oodeel.methods.base import OODModel
-
-
-class MahalanobisMode(IntEnum):
-    default = auto()
-    sklearn = auto()
 
 
 class Mahalanobis(OODModel):
     """
-    Implementation from https://github.com/pokaxpoka/deep_Mahalanobis_detector
+    "A Simple Unified Framework for Detecting Out-of-Distribution Samples and
+    Adversarial Attacks"
+    https://arxiv.org/abs/1807.03888
+
+    Args:
+        eps (float): magnitude for gradient based input perturbation.
+            Defaults to 0.02.
+        output_layers_id (List[int]): feature space on which to compute mahalanobis
+            distance. Defaults to [-2].
     """
 
     def __init__(
         self,
-        input_processing_magnitude: float = 0.0,
+        eps: float = 0.02,
         output_layers_id: List[int] = [-2],
-        mode: str = "default",
     ):
         super(Mahalanobis, self).__init__(output_layers_id=output_layers_id)
+        self.eps = eps
 
-        self.input_processing_magnitude = input_processing_magnitude
-        self.mean_covariance: covariance.EmpiricalCovariance = (
-            covariance.EmpiricalCovariance(assume_centered=True)
-        )
-        self.by_label_preprocessing: Dict[int, preprocessing.StandardScaler] = dict()
-        self.mode: MahalanobisMode = MahalanobisMode[mode]
-
-    def _score_tensor(self, inputs: ArrayLike):
-        if self.mode == MahalanobisMode.sklearn:
-            return self._score_tensor_w_sklearn(inputs)
-        return self._score_tensor_default(inputs)
-
-    def _score_tensor_w_sklearn(self, inputs: ArrayLike):
+    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]):
         """
-        Uses sklearn.covariance.EmpiricalCovariance mahalanobis distance implementation
-        but does not apply input processing
+        Constructs the mean covariance matrix from ID data "fit_dataset", whose
+        pseudo-inverse will be used for mahalanobis distance computation.
+
+        Args:
+            fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
         """
-
-        features = self.op.convert_to_numpy(self.feature_extractor.predict(inputs))
-
-        if features.ndim > 2:
-            features = features.reshape(features.shape[0], -1)
-
-        return np.min(
-            np.stack(
-                [
-                    self.mean_covariance.mahalanobis(
-                        self.by_label_preprocessing[lbl].transform(features)
-                    )
-                    for lbl in self.by_label_preprocessing.keys()
-                ],
-                axis=0,
-            ),
-            axis=0,
-        )
-
-    def _score_tensor_default(self, inputs: ArrayLike):
-        """
-        Code was taken from https://github.com/pokaxpoka/deep_Mahalanobis_detector with
-        minimal changes
-        """
-
-        # Make sure that gradient will be retained
-        out_features = self.feature_extractor.predict(inputs)
-        # Flatten the features to 2D (n_batch, n_features)
-        out_features = self.op.flatten(out_features)
-        gaussian_score = self.mahalanobis_score(out_features)
-
-        # Input preprocessing
-        sample_pred = self.op.argmax(gaussian_score, dim=1)
-
-        means = self.op.stack(
-            [
-                self.get_mean_by_label(list(self.by_label_preprocessing.keys())[s])
-                for s in sample_pred
-            ],
-            dim=0,
-        )
-
-        gradient = self.op.gradient(self.loss_fn, inputs, means=means)
-        gradient = self.op.sign(gradient)
-
-        tempInputs = inputs - self.input_processing_magnitude * gradient
-        noise_out_features = self.feature_extractor.predict(tempInputs)
-        noise_out_features = self.op.flatten(noise_out_features)
-
-        noise_gaussian_score = self.mahalanobis_score(noise_out_features)
-        noise_gaussian_score = self.op.max(noise_gaussian_score, dim=1)
-
-        return -self.op.convert_to_numpy(noise_gaussian_score)
-
-    def mahalanobis_score(self, out_features):
-        _precision = self.get_precision()
-        # compute Mahalanobis score
-        # for each class, remove the mean and compute Mahalanobis distance
-        gaussian_scores = list()
-        for i, lbl in enumerate(self.by_label_preprocessing.keys()):
-            batch_sample_mean = self.get_mean_by_label(lbl)
-            zero_f = out_features - batch_sample_mean
-            term_gau = -0.5 * self.op.diag(
-                self.op.matmul(
-                    self.op.matmul(zero_f, _precision), self.op.transpose(zero_f)
-                )
-            )
-            gaussian_scores.append(self.op.reshape(term_gau, (-1, 1)))
-        gaussian_score = self.op.cat(gaussian_scores, 1)
-        return gaussian_score
-
-    def get_precision(self):
-        return self.op.from_numpy(self.mean_covariance.precision_)
-
-    def get_mean_by_label(self, lbl):
-        return self.op.from_numpy(self.by_label_preprocessing[lbl].mean_)
-
-    def loss_fn(self, inputs: ArrayLike, means: ArrayLike):
-        _out_features = self.feature_extractor.predict(inputs, detach=False)
-        # Flatten the features to 2D (n_batch, n_features)
-        _out_features = self.op.flatten(_out_features)
-        _zero_f = _out_features - means
-        pure_gau = -0.5 * self.op.diag(
-            self.op.matmul(
-                self.op.matmul(_zero_f, self.get_precision()),
-                self.op.transpose(_zero_f),
-            )
-        )
-        return self.op.mean(-pure_gau)
-
-    def _fit_to_dataset(self, fit_dataset: ArrayLike):
         # Store feature sets by label
-        features_by_label: Dict[int, List[np.ndarray]] = dict()
-
+        features_by_label = dict()
         for batch in fit_dataset:
             images, labels = batch
+            # if one hot encoded labels, take the argmax
+            if len(labels.shape) > 1 and labels.shape[1] > 1:
+                labels = self.op.argmax(labels.reshape(labels.shape[0], -1), 1)
+            labels = self.op.convert_to_numpy(labels)
+
+            # extract features
             features = self.feature_extractor.predict(images)
-            for lbl in np.unique(self.op.convert_to_numpy(labels)):
+
+            # store features by label
+            for lbl in labels:
                 if lbl not in features_by_label.keys():
                     features_by_label[lbl] = list()
                 _feat_np = self.op.convert_to_numpy(features[labels == lbl])
@@ -174,35 +82,139 @@ class Mahalanobis(OODModel):
         for lbl in features_by_label.keys():
             features_by_label[lbl] = np.vstack(features_by_label[lbl])
 
-        # Remove mean for each label and compute covariance
-        by_label_preprocessing = dict()
-        by_label_covariance = dict()
-        for lbl in features_by_label.keys():
+        # store labels indexes
+        self._labels_indexes = list(features_by_label.keys())
+
+        # compute centered covariances cond. to each class distribution
+        mus = dict()
+        covs = dict()
+        for lbl in self._labels_indexes:
             ss = preprocessing.StandardScaler(with_mean=True, with_std=False)
             ss.fit(features_by_label[lbl])
 
             ec = covariance.EmpiricalCovariance(assume_centered=True)
             ec.fit(ss.transform(features_by_label[lbl]))
 
-            by_label_preprocessing[lbl] = ss
-            by_label_covariance[lbl] = ec
+            mus[lbl] = ss.mean_
+            covs[lbl] = ec.covariance_
 
         # Take the mean of the per class covariances
-        self.mean_covariance = covariance.EmpiricalCovariance(assume_centered=True)
-        self.mean_covariance._set_covariance(
-            np.mean(
-                np.stack(
-                    [
-                        by_label_covariance[lbl].covariance_
-                        for lbl in by_label_covariance.keys()
-                    ],
-                    axis=0,
-                ),
-                axis=0,
+        mean_covariance = covariance.EmpiricalCovariance(assume_centered=True)
+        mean_covariance._set_covariance(
+            np.mean(np.stack(list(covs.values()), axis=0), axis=0)
+        )
+
+        # store centers and pseudo inverse of mean covariance matrix
+        self._mus = mus
+        self._pinv_cov = self.op.from_numpy(mean_covariance.precision_)
+
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+        """
+        Computes an OOD score for input samples "inputs" based on the mahalanobis
+        distance with respect to the closest class-conditional Gaussian distribution.
+
+        Args:
+            inputs (TensorType): input samples
+
+        Returns:
+            np.ndarray: ood scores
+        """
+        # input preprocessing (perturbation)
+        if self.eps > 0:
+            inputs_p = self._input_perturbation(inputs)
+
+        # mahalanobis score on perturbed inputs
+        features_p = self.feature_extractor.predict(inputs_p)
+        features_p = self.op.flatten(features_p)
+        gaussian_score_p = self._mahalanobis_score(features_p)
+
+        # take the highest score for each sample
+        gaussian_score_p = self.op.max(gaussian_score_p, dim=1)
+        return -self.op.convert_to_numpy(gaussian_score_p)
+
+    def _input_perturbation(self, inputs: TensorType) -> TensorType:
+        """
+        Apply small perturbation on inputs to make the in- and out- distribution
+        samples more separable.
+        See original paper for more information (section 2.2)
+        https://arxiv.org/abs/1807.03888
+
+        Args:
+            inputs (TensorType): input samples
+
+        Returns:
+            TensorType: Perturbed inputs
+        """
+
+        def __loss_fn(inputs: TensorType) -> TensorType:
+            """
+            Loss function for the input perturbation.
+
+            Args:
+                inputs (TensorType): input samples
+
+            Returns:
+                TensorType: loss function
+            """
+            # extract features
+            _out_features = self.feature_extractor.predict(inputs, detach=False)
+            _out_features = self.op.flatten(_out_features)
+            # get mahalanobis score for the class maximizing it
+            gaussian_score = self._mahalanobis_score(_out_features)
+            pure_gau = self.op.max(gaussian_score, dim=1)
+            return self.op.mean(-pure_gau)
+
+        # compute gradient
+        gradient = self.op.gradient(__loss_fn, inputs)
+        gradient = self.op.sign(gradient)
+
+        inputs_p = inputs - self.eps * gradient
+        return inputs_p
+
+    def _mahalanobis_score(self, out_features: TensorType) -> TensorType:
+        """
+        Mahalanobis distance-based confidence score. For each test sample, it computes
+        the Mahalanobis distance with respect to the every class-conditional Gaussian
+        distributions.
+
+        Args:
+            out_features (TensorType): test samples features
+
+        Returns:
+            TensorType: confidence scores (conditionally to each class)
+        """
+        gaussian_scores = list()
+        # compute scores conditionally to each class
+        for lbl in self._labels_indexes:
+            mus = self._get_mus_from_labels(lbl)
+            term_gau = self._log_prob_mahalanobis(out_features, mus)
+            gaussian_scores.append(self.op.reshape(term_gau, (-1, 1)))
+        # concatenate scores
+        gaussian_score = self.op.cat(gaussian_scores, 1)
+        return gaussian_score
+
+    def _log_prob_mahalanobis(
+        self, features: TensorType, mus: TensorType
+    ) -> TensorType:
+        """
+        Compute the log of the probability densities of some observations (assuming a
+        normal distribution) using the mahalanobis distance with respect to some
+        classconditional distributions.
+
+        Args:
+            features (TensorType): observations features
+            mus (TensorType): centers of classconditional distributions
+
+        Returns:
+            TensorType: log probability tensor
+        """
+        zero_f = features - mus
+        term_gau = -0.5 * self.op.diag(
+            self.op.matmul(
+                self.op.matmul(zero_f, self._pinv_cov), self.op.transpose(zero_f)
             )
         )
-        labels = list(features_by_label.keys())
-        self.mean_covariance.location_ = np.zeros(features_by_label[labels[0]].shape[1])
+        return term_gau
 
-        self.by_label_preprocessing = by_label_preprocessing
-        self.by_label_covariance = by_label_covariance
+    def _get_mus_from_labels(self, lbl: int) -> TensorType:
+        return self.op.from_numpy(self._mus[lbl])
