@@ -22,8 +22,7 @@
 
 <!-- Short description of your library -->
 
-<b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers.
-  **Works for keras models and will soon be available for pytorch models.** The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch.
+<b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch.
 
 ```python
 from oodeel.methods import MLS
