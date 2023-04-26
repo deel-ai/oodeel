@@ -30,7 +30,7 @@ from tests.tests_tensorflow import generate_data_tf
 
 
 def test_instanciate_from_tfds():
-    dataset = OODDataset(dataset_id="mnist", split="test")
+    dataset = OODDataset(dataset_id="mnist", load_kwargs={"split": "test"})
 
     assert len(dataset.data) == 10000
     assert dataset.len_item == 2
