@@ -76,7 +76,7 @@ def bench_metrics(
         scores = np.concatenate([scores_in, scores_out])
         labels = np.concatenate([scores_in * 0 + in_value, scores_out * 0 + out_value])
 
-    fpr, tpr = get_curve(scores, labels, step)
+    fpr, tpr, tnr, acc = get_curve(scores, labels, step)
 
     for metric in metrics:
         if metric == "auroc":
@@ -89,6 +89,16 @@ def bench_metrics(
                     ind = i
                     break
             metrics_dict["fpr95tpr"] = fpr[ind]
+
+        elif metric == "tnr95tpr":
+            for i, tp in enumerate(tpr):
+                if tp < 0.95:
+                    ind = i
+                    break
+            metrics_dict["tnr95tpr"] = tnr[ind]
+
+        elif metric == "detect_acc":
+            metrics_dict["detect_acc"] = np.max(acc)
 
         elif metric.__name__ in sklearn.metrics.__all__:
             if metric.__name__[:3] == "roc":
@@ -148,11 +158,13 @@ def get_curve(
 
     fpr = np.concatenate([[1.0], fpc / (fpc + tnc), [0.0]])
     tpr = np.concatenate([[1.0], tpc / (tpc + fnc), [0.0]])
+    tnr = np.concatenate([[1.0], tnc / (fpc + tnc), [0.0]])
+    acc = (tnc + tpc) / (tpc + fpc + tnc + fnc)
 
     if return_raw:
-        return (fpc, tpc, fnc, tnc), (fpr, tpr)
+        return (fpc, tpc, fnc, tnc), (fpr, tpr, tnr, acc)
     else:
-        return fpr, tpr
+        return fpr, tpr, tnr, acc
 
 
 def ftpn(scores: np.ndarray, labels: np.ndarray, threshold: float) -> Tuple[float]:
