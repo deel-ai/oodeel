@@ -23,111 +23,154 @@
 import os
 import pprint
 import warnings
-from dataclasses import dataclass
-from typing import Iterator
-
-import numpy as np
-import tensorflow as tf
-import torch
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import roc_auc_score
-from torch.utils.data import DataLoader
-from torch.utils.data import IterableDataset
-
-from oodeel.datasets import OODDataset
-from oodeel.eval.metrics import bench_metrics
-from oodeel.methods import DKNN
-from oodeel.methods.mahalanobis import Mahalanobis
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
+import tensorflow as tf
+import torch
+from torchvision import transforms
+
+from oodeel.datasets import OODDataset
+from oodeel.eval.metrics import bench_metrics
+from oodeel.methods.mahalanobis import Mahalanobis
+
 warnings.filterwarnings("ignore")
+
 
 pp = pprint.PrettyPrinter()
 
-
-@dataclass
-class TFDSPytorchConverter(IterableDataset):
-    tf_ds: tf.data.Dataset
-
-    def __iter__(self) -> Iterator:
-        for batch_x, batch_y in self.tf_ds.as_numpy_iterator():
-            for sample_idx in range(batch_x.shape[0]):
-                yield np.stack(
-                    [batch_x[sample_idx, :, :, 0] for _ in range(3)], axis=0
-                ), batch_y[sample_idx]
+model_path = os.path.expanduser("~/") + ".oodeel/saved_models"
+data_path = os.path.expanduser("~/") + ".oodeel/datasets"
+os.makedirs(model_path, exist_ok=True)
+os.makedirs(data_path, exist_ok=True)
 
 
-if __name__ == "__main__":
-    oods_in = OODDataset("mnist", split="test")
-    oods_out = OODDataset("fashion_mnist", split="test")
-    oods_fit = OODDataset("mnist", split="train")
+def torch_main(batch_size=8):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def preprocess_fn(*inputs):
+    print("=== Mahalanobis demo (torch) ===")
+    # === EXP 1 ===
+    print("--- CIFAR10 vs SVHN ---")
+    oods_in = OODDataset(
+        "CIFAR10", backend="torch", load_kwargs={"root": data_path, "train": False}
+    )
+    oods_out = OODDataset(
+        "SVHN", backend="torch", load_kwargs={"root": data_path, "split": "test"}
+    )
+    oods_fit = OODDataset(
+        "CIFAR10", backend="torch", load_kwargs={"root": data_path, "train": True}
+    )
+
+    model = torch.hub.load(
+        "chenyaofo/pytorch-cifar-models", "cifar10_resnet20", pretrained=True
+    ).to(device)
+
+    def preprocess_fn(inputs):
         x = inputs[0] / 255
+        x = transforms.Normalize(
+            mean=[0.507, 0.4865, 0.4409], std=[0.2673, 0.2564, 0.2761]
+        )(x)
         return tuple([x] + list(inputs[1:]))
 
-    batch_size = 8
     ds_in = oods_in.prepare(batch_size=batch_size, preprocess_fn=preprocess_fn)
     ds_out = oods_out.prepare(batch_size=batch_size, preprocess_fn=preprocess_fn)
     ds_fit = oods_fit.prepare(
         batch_size=batch_size, preprocess_fn=preprocess_fn, shuffle=True
     )
-
-    model = torch.hub.load(
-        "chenyaofo/pytorch-cifar-models", "cifar10_resnet20", pretrained=True
-    )
-
-    ds_fit_pt = DataLoader(TFDSPytorchConverter(ds_fit.take(1_000)), batch_size=8)
-    ds_in_pt = DataLoader(TFDSPytorchConverter(ds_in.take(500)), batch_size=8)
-    ds_out_pt = DataLoader(TFDSPytorchConverter(ds_out.take(500)), batch_size=8)
-
-    ### DKNN
-
-    oodmodel = DKNN(nearest=10, output_layers_id=["avgpool"])
-    oodmodel.fit(model, ds_fit_pt)
-    scores_in = oodmodel.score(ds_in_pt)
-    scores_out = oodmodel.score(ds_out_pt)
+    # compute mahalanobis scores
+    eps = 0.002
+    print(f"Magnitude : {eps}")
+    oodmodel = Mahalanobis(output_layers_id=["avgpool"], eps=eps)
+    oodmodel.fit(model, ds_fit)
+    scores_in = oodmodel.score(ds_in)
+    scores_out = oodmodel.score(ds_out)
 
     metrics = bench_metrics(
-        (scores_in, scores_out),
-        metrics=["auroc", "fpr95tpr", accuracy_score, roc_auc_score],
-        threshold=None,
+        (scores_in, scores_out), metrics=["auroc", "tnr95tpr", "detect_acc"]
     )
-
     pp.pprint(metrics)
 
-    ## Mahalanobis
-
-    oodmodel = Mahalanobis(
-        output_layers_id=["avgpool"], input_processing_magnitude=0.0, mode="sklearn"
+    # === EXP 2 ===
+    print("--- MNIST vs FashionMNIST ---")
+    oods_in = OODDataset(
+        "MNIST", backend="torch", load_kwargs={"root": data_path, "train": False}
     )
-    oodmodel.fit(model, ds_fit_pt)
-    scores_in = oodmodel.score(ds_in_pt)
-    scores_out = oodmodel.score(ds_out_pt)
+    oods_out = OODDataset(
+        "FashionMNIST", backend="torch", load_kwargs={"root": data_path, "train": False}
+    )
+    oods_fit = OODDataset(
+        "MNIST", backend="torch", load_kwargs={"root": data_path, "train": True}
+    )
+
+    model = torch.load(
+        os.path.join(model_path, "mnist_model/best.pt"), map_location=device
+    )
+
+    def preprocess_fn(inputs):
+        x = inputs[0] / 255
+        return tuple([x] + list(inputs[1:]))
+
+    ds_in = oods_in.prepare(batch_size=batch_size, preprocess_fn=preprocess_fn)
+    ds_out = oods_out.prepare(batch_size=batch_size, preprocess_fn=preprocess_fn)
+    ds_fit = oods_fit.prepare(
+        batch_size=batch_size, preprocess_fn=preprocess_fn, shuffle=True
+    )
+    # compute mahalanobis scores
+    eps = 0.002
+    print(f"Magnitude : {eps}")
+    oodmodel = Mahalanobis(output_layers_id=[-2], eps=eps)
+    oodmodel.fit(model, ds_fit)
+    scores_in = oodmodel.score(ds_in)
+    scores_out = oodmodel.score(ds_out)
 
     metrics = bench_metrics(
-        (scores_in, scores_out),
-        metrics=["auroc", "fpr95tpr", accuracy_score, roc_auc_score],
-        threshold=None,
+        (scores_in, scores_out), metrics=["auroc", "tnr95tpr", "detect_acc"]
     )
-
     pp.pprint(metrics)
 
-    oodmodel = Mahalanobis(output_layers_id=["avgpool"], input_processing_magnitude=0.0)
-    oodmodel.fit(model, ds_fit_pt)
-    for mag in [0.01, 0.005, 0.002, 0.0014, 0.001, 0.0005]:
 
-        print(f"Magnitude : {mag}")
+def tf_main(batch_size=8):
+    print("=== Mahalanobis demo (tensorflow) ===")
+    # === EXP 1 ===
+    print("--- MNIST vs FashionMNIST ---")
+    oods_in = OODDataset(
+        "mnist", backend="tensorflow", input_key="image", load_kwargs={"split": "test"}
+    )
+    oods_out = OODDataset(
+        "fashion_mnist",
+        backend="tensorflow",
+        input_key="image",
+        load_kwargs={"split": "test"},
+    )
+    oods_fit = OODDataset(
+        "mnist", backend="tensorflow", input_key="image", load_kwargs={"split": "train"}
+    )
 
-        oodmodel.input_processing_magnitude = mag
-        scores_in = oodmodel.score(ds_in_pt)
-        scores_out = oodmodel.score(ds_out_pt)
+    model = tf.keras.models.load_model(os.path.join(model_path, "mnist_model.h5"))
 
-        metrics = bench_metrics(
-            (scores_in, scores_out),
-            metrics=["auroc", "fpr95tpr", accuracy_score, roc_auc_score],
-            threshold=None,
-        )
+    def preprocess_fn(*inputs):
+        x = inputs[0] / 255
+        return tuple([x] + list(inputs[1:]))
 
-        pp.pprint(metrics)
+    ds_in = oods_in.prepare(batch_size=batch_size, preprocess_fn=preprocess_fn)
+    ds_out = oods_out.prepare(batch_size=batch_size, preprocess_fn=preprocess_fn)
+    ds_fit = oods_fit.prepare(
+        batch_size=batch_size, preprocess_fn=preprocess_fn, shuffle=True
+    )
+    # compute mahalanobis scores
+    eps = 0.002
+    print(f"Magnitude : {eps}")
+    oodmodel = Mahalanobis(output_layers_id=[-2], eps=eps)
+    oodmodel.fit(model, ds_fit.take(100))
+    scores_in = oodmodel.score(ds_in.take(100))
+    scores_out = oodmodel.score(ds_out.take(100))
+
+    metrics = bench_metrics(
+        (scores_in, scores_out), metrics=["auroc", "tnr95tpr", "detect_acc"]
+    )
+    pp.pprint(metrics)
+
+
+if __name__ == "__main__":
+    torch_main()
+    tf_main()
