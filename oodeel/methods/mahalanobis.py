@@ -46,7 +46,7 @@ class Mahalanobis(OODModel):
 
     def __init__(
         self,
-        eps: float = 0.02,
+        eps: float = 0.002,
         output_layers_id: List[int] = [-2],
     ):
         super(Mahalanobis, self).__init__(output_layers_id=output_layers_id)
@@ -122,6 +122,8 @@ class Mahalanobis(OODModel):
         # input preprocessing (perturbation)
         if self.eps > 0:
             inputs_p = self._input_perturbation(inputs)
+        else:
+            inputs_p = inputs
 
         # mahalanobis score on perturbed inputs
         features_p = self.feature_extractor.predict(inputs_p)
@@ -154,15 +156,15 @@ class Mahalanobis(OODModel):
                 inputs (TensorType): input samples
 
             Returns:
-                TensorType: loss function
+                TensorType: loss value
             """
             # extract features
-            _out_features = self.feature_extractor.predict(inputs, detach=False)
-            _out_features = self.op.flatten(_out_features)
+            out_features = self.feature_extractor.predict(inputs, detach=False)
+            out_features = self.op.flatten(out_features)
             # get mahalanobis score for the class maximizing it
-            gaussian_score = self._mahalanobis_score(_out_features)
-            pure_gau = self.op.max(gaussian_score, dim=1)
-            return self.op.mean(-pure_gau)
+            gaussian_score = self._mahalanobis_score(out_features)
+            log_probs_f = self.op.max(gaussian_score, dim=1)
+            return self.op.mean(-log_probs_f)
 
         # compute gradient
         gradient = self.op.gradient(__loss_fn, inputs)
@@ -174,8 +176,9 @@ class Mahalanobis(OODModel):
     def _mahalanobis_score(self, out_features: TensorType) -> TensorType:
         """
         Mahalanobis distance-based confidence score. For each test sample, it computes
-        the Mahalanobis distance with respect to the every class-conditional Gaussian
-        distributions.
+        the log of the probability densities of some observations (assuming a
+        normal distribution) using the mahalanobis distance with respect to every
+        class-conditional distributions.
 
         Args:
             out_features (TensorType): test samples features
@@ -186,35 +189,16 @@ class Mahalanobis(OODModel):
         gaussian_scores = list()
         # compute scores conditionally to each class
         for lbl in self._labels_indexes:
-            mus = self._get_mus_from_labels(lbl)
-            term_gau = self._log_prob_mahalanobis(out_features, mus)
-            gaussian_scores.append(self.op.reshape(term_gau, (-1, 1)))
+            # center features wrt class-cond dist.
+            mu = self.op.from_numpy(self._mus[lbl].reshape(1, -1))
+            zero_f = out_features - mu
+            # gaussian log prob density (mahalanobis)
+            log_probs_f = -0.5 * self.op.diag(
+                self.op.matmul(
+                    self.op.matmul(zero_f, self._pinv_cov), self.op.transpose(zero_f)
+                )
+            )
+            gaussian_scores.append(self.op.reshape(log_probs_f, (-1, 1)))
         # concatenate scores
         gaussian_score = self.op.cat(gaussian_scores, 1)
         return gaussian_score
-
-    def _log_prob_mahalanobis(
-        self, features: TensorType, mus: TensorType
-    ) -> TensorType:
-        """
-        Compute the log of the probability densities of some observations (assuming a
-        normal distribution) using the mahalanobis distance with respect to some
-        classconditional distributions.
-
-        Args:
-            features (TensorType): observations features
-            mus (TensorType): centers of classconditional distributions
-
-        Returns:
-            TensorType: log probability tensor
-        """
-        zero_f = features - mus
-        term_gau = -0.5 * self.op.diag(
-            self.op.matmul(
-                self.op.matmul(zero_f, self._pinv_cov), self.op.transpose(zero_f)
-            )
-        )
-        return term_gau
-
-    def _get_mus_from_labels(self, lbl: int) -> TensorType:
-        return self.op.from_numpy(self._mus[lbl])
