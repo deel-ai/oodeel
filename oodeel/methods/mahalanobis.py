@@ -21,8 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import numpy as np
-from sklearn import covariance
-from sklearn import preprocessing
 
 from ..types import DatasetType
 from ..types import List
@@ -60,53 +58,45 @@ class Mahalanobis(OODModel):
         Args:
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
         """
-        # Store feature sets by label
-        features_by_label = dict()
-        for batch in fit_dataset:
-            images, labels = batch
+        # extract features and labels
+        features = list()
+        labels = list()
+        for _images, _labels in fit_dataset:
             # if one hot encoded labels, take the argmax
-            if len(labels.shape) > 1 and labels.shape[1] > 1:
-                labels = self.op.argmax(labels.reshape(labels.shape[0], -1), 1)
-            labels = self.op.convert_to_numpy(labels)
+            if len(_labels.shape) > 1 and _labels.shape[1] > 1:
+                _labels = self.op.argmax(
+                    self.op.reshape(_labels, (_labels.shape[0], -1)), 1
+                )
+            # get features
+            _features = self.feature_extractor.predict(_images)
+            _features = self.op.reshape(_features, (_features.shape[0], -1))
 
-            # extract features
-            features = self.feature_extractor.predict(images)
+            labels.append(_labels)
+            features.append(_features)
+        labels = self.op.cat(labels)
+        features = self.op.cat(features)
 
-            # store features by label
-            for lbl in labels:
-                if lbl not in features_by_label.keys():
-                    features_by_label[lbl] = list()
-                _feat_np = self.op.convert_to_numpy(features[labels == lbl])
-                _feat_np = _feat_np.reshape(_feat_np.shape[0], -1)
-                features_by_label[lbl].append(_feat_np)
-        for lbl in features_by_label.keys():
-            features_by_label[lbl] = np.vstack(features_by_label[lbl])
+        # unique sorted classes
+        self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
 
-        # store labels indexes
-        self._labels_indexes = list(features_by_label.keys())
-
-        # compute centered covariances cond. to each class distribution
+        # compute mus and covs
         mus = dict()
         covs = dict()
-        for lbl in self._labels_indexes:
-            ss = preprocessing.StandardScaler(with_mean=True, with_std=False)
-            ss.fit(features_by_label[lbl])
+        for cls in self._classes:
+            indexes = self.op.equal(labels, cls)
+            _features_cls = features[indexes]
+            mus[cls] = self.op.mean(_features_cls, dim=0)
+            _zero_f_cls = _features_cls - mus[cls]
+            covs[cls] = (
+                self.op.matmul(self.op.transpose(_zero_f_cls), _zero_f_cls)
+                / _zero_f_cls.shape[0]
+            )
 
-            ec = covariance.EmpiricalCovariance(assume_centered=True)
-            ec.fit(ss.transform(features_by_label[lbl]))
+        # mean cov and its inverse
+        mean_cov = self.op.mean(self.op.stack(list(covs.values())), dim=0)
 
-            mus[lbl] = ss.mean_
-            covs[lbl] = ec.covariance_
-
-        # Take the mean of the per class covariances
-        mean_covariance = covariance.EmpiricalCovariance(assume_centered=True)
-        mean_covariance._set_covariance(
-            np.mean(np.stack(list(covs.values()), axis=0), axis=0)
-        )
-
-        # store centers and pseudo inverse of mean covariance matrix
         self._mus = mus
-        self._pinv_cov = self.op.from_numpy(mean_covariance.precision_)
+        self._pinv_cov = self.op.pinv(mean_cov)
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
@@ -188,9 +178,9 @@ class Mahalanobis(OODModel):
         """
         gaussian_scores = list()
         # compute scores conditionally to each class
-        for lbl in self._labels_indexes:
+        for cls in self._classes:
             # center features wrt class-cond dist.
-            mu = self.op.from_numpy(self._mus[lbl].reshape(1, -1))
+            mu = self._mus[cls]
             zero_f = out_features - mu
             # gaussian log prob density (mahalanobis)
             log_probs_f = -0.5 * self.op.diag(
