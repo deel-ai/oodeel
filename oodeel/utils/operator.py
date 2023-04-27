@@ -28,6 +28,7 @@ import numpy as np
 from ..types import Callable
 from ..types import List
 from ..types import TensorType
+from ..types import Union
 
 
 class Operator(ABC):
@@ -132,4 +133,14 @@ class Operator(ABC):
     @abstractmethod
     def reshape(tensor: TensorType, shape: List[int]) -> TensorType:
         "Reshape function"
+        raise NotImplementedError()
+
+    @abstractmethod
+    def equal(tensor: TensorType, other: Union[TensorType, int, float]) -> TensorType:
+        "Computes element-wise equality"
+        raise NotImplementedError()
+
+    @abstractmethod
+    def pinv(tensor: TensorType) -> TensorType:
+        "Computes the pseudoinverse (Moore-Penrose inverse) of a matrix."
         raise NotImplementedError()

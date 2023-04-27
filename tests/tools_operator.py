@@ -134,3 +134,11 @@ def check_common_operators(backend):
 
     # Reshape
     assert operator.reshape(x, (30, 2, 30)).shape == (30, 2, 30)
+
+    # Equal
+    ind = operator.equal(z, 0)
+    assert ind.shape == (2, 2, 2)
+    assert z[ind].shape == (1,)
+
+    # Pinv
+    assert operator.pinv(x[0]).shape == (6, 12)

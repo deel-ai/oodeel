@@ -181,3 +181,13 @@ class TorchOperator(Operator):
     def reshape(tensor: TensorType, shape: List[int]) -> TensorType:
         "Reshape function"
         return tensor.view(*shape)
+
+    @staticmethod
+    def equal(tensor: TensorType, other: Union[TensorType, int, float]) -> TensorType:
+        "Computes element-wise equality"
+        return torch.eq(tensor, other)
+
+    @staticmethod
+    def pinv(tensor: TensorType) -> TensorType:
+        "Computes the pseudoinverse (Moore-Penrose inverse) of a matrix."
+        return torch.linalg.pinv(tensor)

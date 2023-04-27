@@ -162,3 +162,13 @@ class TFOperator(Operator):
     def reshape(tensor: TensorType, shape: List[int]) -> TensorType:
         "Reshape function"
         return tf.reshape(tensor, shape)
+
+    @staticmethod
+    def equal(tensor: TensorType, other: Union[TensorType, int, float]) -> TensorType:
+        "Computes element-wise equality"
+        return tf.math.equal(tensor, other)
+
+    @staticmethod
+    def pinv(tensor: TensorType) -> TensorType:
+        "Computes the pseudoinverse (Moore-Penrose inverse) of a matrix."
+        return tf.linalg.pinv(tensor)
