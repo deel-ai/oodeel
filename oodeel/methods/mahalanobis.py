@@ -25,7 +25,6 @@ import numpy as np
 from ..types import DatasetType
 from ..types import List
 from ..types import TensorType
-from ..types import Union
 from oodeel.methods.base import OODModel
 
 
@@ -50,7 +49,7 @@ class Mahalanobis(OODModel):
         super(Mahalanobis, self).__init__(output_layers_id=output_layers_id)
         self.eps = eps
 
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]):
+    def _fit_to_dataset(self, fit_dataset: DatasetType):
         """
         Constructs the mean covariance matrix from ID data "fit_dataset", whose
         pseudo-inverse will be used for mahalanobis distance computation.
@@ -64,12 +63,10 @@ class Mahalanobis(OODModel):
         for _images, _labels in fit_dataset:
             # if one hot encoded labels, take the argmax
             if len(_labels.shape) > 1 and _labels.shape[1] > 1:
-                _labels = self.op.argmax(
-                    self.op.reshape(_labels, (_labels.shape[0], -1)), 1
-                )
+                _labels = self.op.argmax(self.op.flatten(_labels), 1)
             # get features
             _features = self.feature_extractor.predict(_images)
-            _features = self.op.reshape(_features, (_features.shape[0], -1))
+            _features = self.op.flatten(_features)
 
             labels.append(_labels)
             features.append(_features)
