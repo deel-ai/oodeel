@@ -38,9 +38,8 @@ def bench_metrics(
     threshold: Optional[float] = None,
     step: Optional[int] = 4,
 ) -> dict:
-    """Compute various common metrics from OODmodel scores.
-    Only AUROC for now. Also returns the
-    positive and negative mtrics curve for visualizations.
+    """Compute various common metrics from OODmodel scores:
+    AUROC, FPR95TPR, TNR95TPR, Detection accuracy and sklearn.metric metrics
 
     Args:
         scores (Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]): scores output of
@@ -55,7 +54,8 @@ def bench_metrics(
         out_value (Optional[int], optional): ood label value for out-of-distribution
             data. Defaults to 1.
         metrics (Optional[List[str]], optional): list of metrics to compute. Can pass
-            any metric name from sklearn.metric. Defaults to ["auroc", "fpr95tpr"].
+            any metric name from sklearn.metric or among "auroc", "fpr95tpr",
+            "tnr95tpr", "detect_acc". Defaults to ["auroc", "fpr95tpr"].
         threshold (Optional[float], optional): Threshold to use when using
             threshold-dependent metrics. Defaults to None.
         step (Optional[int], optional): integration step (wrt percentile).
@@ -125,11 +125,11 @@ def get_curve(
     step: Optional[int] = 4,
     return_raw: Optional[bool] = False,
 ) -> Union[Tuple[Tuple[np.ndarray], Tuple[np.ndarray]], Tuple[np.ndarray]]:
-    """Computes the number of
-        * true positives,
-        * false positives,
-        * true negatives,
-        * false negatives,
+    """Computes the
+        * true positive rate: TP / (TP + FN),
+        * false positive rate: FP / (FP + TN),
+        * true negative rate: TN / (FP + TN),
+        * accuracy: (TN + TP) / (TP + FP + TN + FN),
     for different threshold values. The values are uniformly
     distributed among the percentiles, with a step = 4 / scores.shape[0]
 
