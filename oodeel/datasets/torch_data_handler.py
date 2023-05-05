@@ -265,6 +265,7 @@ class TorchDataHandler(DataHandler):
     torch syntax.
     """
 
+    @staticmethod
     def _default_target_transform(y: Any) -> torch.Tensor:
         """Format int or float item target as a torch tensor
 
@@ -277,7 +278,7 @@ class TorchDataHandler(DataHandler):
         return torch.tensor(y) if isinstance(y, (float, int)) else y
 
     DEFAULT_TRANSFORM = torchvision.transforms.PILToTensor()
-    DEFAULT_TARGET_TRANSFORM = _default_target_transform
+    DEFAULT_TARGET_TRANSFORM = _default_target_transform.__func__
 
     @classmethod
     def load_dataset(
