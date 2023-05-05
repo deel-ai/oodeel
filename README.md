@@ -182,7 +182,7 @@ More from the DEEL project:
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/deel_dark.png"  width="25%" align="right">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/deel_light.png"  width="25%" align="right">
-    <img src="docs/assets/logo.png" alt="DEEL Logo" width="25%" align="right">
+    <img src="docs/assets/deel_light.png" alt="DEEL Logo" width="25%" align="right">
   </picture>
 </div>
 This project received funding from the French ”Investing for the Future – PIA3” program within the Artificial and Natural Intelligence Toulouse Institute (ANITI). The authors gratefully acknowledge the support of the <a href="https://www.deel.ai/"> DEEL </a>, a research project jointly conducted in France and Quebec.
