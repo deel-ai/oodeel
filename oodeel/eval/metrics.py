@@ -38,9 +38,8 @@ def bench_metrics(
     threshold: Optional[float] = None,
     step: Optional[int] = 4,
 ) -> dict:
-    """Compute various common metrics from OODmodel scores.
-    Only AUROC for now. Also returns the
-    positive and negative mtrics curve for visualizations.
+    """Compute various common metrics from OODmodel scores:
+    AUROC, FPR95TPR, TNR95TPR, Detection accuracy and sklearn.metric metrics
 
     Args:
         scores (Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]): scores output of
@@ -55,7 +54,8 @@ def bench_metrics(
         out_value (Optional[int], optional): ood label value for out-of-distribution
             data. Defaults to 1.
         metrics (Optional[List[str]], optional): list of metrics to compute. Can pass
-            any metric name from sklearn.metric. Defaults to ["auroc", "fpr95tpr"].
+            any metric name from sklearn.metric or among "auroc", "fpr95tpr",
+            "tnr95tpr", "detect_acc". Defaults to ["auroc", "fpr95tpr"].
         threshold (Optional[float], optional): Threshold to use when using
             threshold-dependent metrics. Defaults to None.
         step (Optional[int], optional): integration step (wrt percentile).
@@ -76,7 +76,7 @@ def bench_metrics(
         scores = np.concatenate([scores_in, scores_out])
         labels = np.concatenate([scores_in * 0 + in_value, scores_out * 0 + out_value])
 
-    fpr, tpr = get_curve(scores, labels, step)
+    fpr, tpr, tnr, acc = get_curve(scores, labels, step)
 
     for metric in metrics:
         if metric == "auroc":
@@ -89,6 +89,16 @@ def bench_metrics(
                     ind = i
                     break
             metrics_dict["fpr95tpr"] = fpr[ind]
+
+        elif metric == "tnr95tpr":
+            for i, tp in enumerate(tpr):
+                if tp < 0.95:
+                    ind = i
+                    break
+            metrics_dict["tnr95tpr"] = tnr[ind]
+
+        elif metric == "detect_acc":
+            metrics_dict["detect_acc"] = np.max(acc)
 
         elif metric.__name__ in sklearn.metrics.__all__:
             if metric.__name__[:3] == "roc":
@@ -115,11 +125,11 @@ def get_curve(
     step: Optional[int] = 4,
     return_raw: Optional[bool] = False,
 ) -> Union[Tuple[Tuple[np.ndarray], Tuple[np.ndarray]], Tuple[np.ndarray]]:
-    """Computes the number of
-        * true positives,
-        * false positives,
-        * true negatives,
-        * false negatives,
+    """Computes the
+        * true positive rate: TP / (TP + FN),
+        * false positive rate: FP / (FP + TN),
+        * true negative rate: TN / (FP + TN),
+        * accuracy: (TN + TP) / (TP + FP + TN + FN),
     for different threshold values. The values are uniformly
     distributed among the percentiles, with a step = 4 / scores.shape[0]
 
@@ -148,11 +158,13 @@ def get_curve(
 
     fpr = np.concatenate([[1.0], fpc / (fpc + tnc), [0.0]])
     tpr = np.concatenate([[1.0], tpc / (tpc + fnc), [0.0]])
+    tnr = np.concatenate([[1.0], tnc / (fpc + tnc), [0.0]])
+    acc = (tnc + tpc) / (tpc + fpc + tnc + fnc)
 
     if return_raw:
-        return (fpc, tpc, fnc, tnc), (fpr, tpr)
+        return (fpc, tpc, fnc, tnc), (fpr, tpr, tnr, acc)
     else:
-        return fpr, tpr
+        return fpr, tpr, tnr, acc
 
 
 def ftpn(scores: np.ndarray, labels: np.ndarray, threshold: float) -> Tuple[float]:

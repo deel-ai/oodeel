@@ -23,6 +23,7 @@
 import torch
 
 from oodeel.utils.torch_operator import TorchOperator
+from tests.tools_operator import check_common_operators
 
 
 def test_gradient():
@@ -38,3 +39,9 @@ def test_gradient():
 
     assert tuple(gradients.shape) == input_shape
     assert torch.all(gradients == torch.ones(input_shape))
+
+
+def test_common_functions():
+    """Test multiple functions"""
+
+    check_common_operators("torch")

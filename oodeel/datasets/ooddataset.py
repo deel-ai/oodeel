@@ -45,8 +45,6 @@ class OODDataset(object):
             one of the datasets. Defaults to Union[Dataset, tuple, dict, str].
         backend (str, optional): Whether the dataset is to be used for tensorflow
              or torch models. Defaults to "tensorflow". Alternative: "torch".
-        split (str, optional): Split to use ('test' or 'train') When the dataset is
-            loaded from tensorflow_datasets. Defaults to None.
         keys (list, optional): keys to use for dataset elems. Default to None
         load_kwargs (dict, optional): Additional loading kwargs when loading from
             tensorflow_datasets catalog. Defaults to {}.
@@ -62,7 +60,6 @@ class OODDataset(object):
         self,
         dataset_id: Union[Dataset, tuple, dict, str],
         backend: str = "tensorflow",
-        split: str = None,
         keys: list = None,
         load_kwargs: dict = {},
         load_from_tensorflow_datasets: bool = False,
@@ -78,8 +75,6 @@ class OODDataset(object):
         # Set the load parameters for tfds / torchvision
         if backend == "tensorflow":
             load_kwargs["as_supervised"] = False
-            load_kwargs["split"] = split
-
         # Set the channel order depending on the backend
         if self.backend == "torch":
             if load_from_tensorflow_datasets:
@@ -89,7 +84,6 @@ class OODDataset(object):
                 tf.config.set_visible_devices([], "GPU")
                 self._data_handler = TFDataHandler()
                 load_kwargs["as_supervised"] = False
-                load_kwargs["split"] = split
             else:
                 from .torch_data_handler import TorchDataHandler
 

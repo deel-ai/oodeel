@@ -20,11 +20,27 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .dknn import DKNN
-from .energy import Energy
-from .mahalanobis import Mahalanobis
-from .mls import MLS
-from .odin import ODIN
-from .vim import VIM
+from torch.utils.data import DataLoader
 
-__all__ = ["MLS", "DKNN", "ODIN", "Energy", "VIM", "Mahalanobis"]
+from oodeel.methods import Mahalanobis
+from tests.tests_torch import ComplexNet
+from tests.tests_torch import generate_data_torch
+
+
+def test_mahalanobis():
+    """
+    Test Mahalanobis
+    """
+    input_shape = (3, 32, 32)
+    num_labels = 10
+    samples = 100
+
+    dataset = generate_data_torch(input_shape, num_labels, samples, one_hot=False)
+    dataset = DataLoader(dataset, batch_size=samples // 2)
+    model = ComplexNet()
+
+    mahalanobis = Mahalanobis()
+    mahalanobis.fit(model, fit_dataset=dataset)
+    scores = mahalanobis.score(dataset)
+
+    assert scores.shape == (100,)

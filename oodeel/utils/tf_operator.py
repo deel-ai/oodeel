@@ -24,6 +24,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..types import Callable
+from ..types import List
 from ..types import TensorType
 from ..types import Union
 from .general_utils import is_from
@@ -49,12 +50,14 @@ class TFOperator(Operator):
 
     @staticmethod
     def softmax(tensor: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
-        """Softmax function"""
-        return tf.keras.activations.softmax(tensor)
+        """Softmax function along the last dimension"""
+        return tf.keras.activations.softmax(tensor, axis=-1)
 
     @staticmethod
     def argmax(tensor: Union[tf.Tensor, np.ndarray], dim: int = None) -> tf.Tensor:
         """Argmax function"""
+        if dim is None:
+            return tf.argmax(tf.reshape(tensor, [-1]))
         return tf.argmax(tensor, axis=dim)
 
     @staticmethod
@@ -117,3 +120,55 @@ class TFOperator(Operator):
             tape.watch(inputs)
             outputs = func(inputs, *args, **kwargs)
         return tape.gradient(outputs, inputs)
+
+    @staticmethod
+    def stack(tensors: List[TensorType], dim: int = 0) -> TensorType:
+        "Stack tensors along a new dimension"
+        return tf.stack(tensors, dim)
+
+    @staticmethod
+    def cat(tensors: List[TensorType], dim: int = 0) -> TensorType:
+        "Concatenate tensors in a given dimension"
+        return tf.concat(tensors, dim)
+
+    @staticmethod
+    def mean(tensor: TensorType, dim: int = None) -> TensorType:
+        "Mean function"
+        return tf.reduce_mean(tensor, dim)
+
+    @staticmethod
+    def flatten(tensor: TensorType) -> TensorType:
+        "Flatten to 2D tensor of shape (tensor.shape[0], -1)"
+        # Flatten the features to 2D (n_batch, n_features)
+        return tf.reshape(tensor, shape=[tf.shape(tensor)[0], -1])
+
+    @staticmethod
+    def from_numpy(arr: np.ndarray) -> TensorType:
+        "Convert a NumPy array to a tensor"
+        # TODO change dtype
+        return tf.constant(arr, dtype=tf.float32)
+
+    @staticmethod
+    def transpose(tensor: TensorType) -> TensorType:
+        "Transpose function for tensor of rank 2"
+        return tf.transpose(tensor)
+
+    @staticmethod
+    def diag(tensor: TensorType) -> TensorType:
+        "Diagonal function: return the diagonal of a 2D tensor"
+        return tf.linalg.diag_part(tensor)
+
+    @staticmethod
+    def reshape(tensor: TensorType, shape: List[int]) -> TensorType:
+        "Reshape function"
+        return tf.reshape(tensor, shape)
+
+    @staticmethod
+    def equal(tensor: TensorType, other: Union[TensorType, int, float]) -> TensorType:
+        "Computes element-wise equality"
+        return tf.math.equal(tensor, other)
+
+    @staticmethod
+    def pinv(tensor: TensorType) -> TensorType:
+        "Computes the pseudoinverse (Moore-Penrose inverse) of a matrix."
+        return tf.linalg.pinv(tensor)

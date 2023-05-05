@@ -20,11 +20,27 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .dknn import DKNN
-from .energy import Energy
-from .mahalanobis import Mahalanobis
-from .mls import MLS
-from .odin import ODIN
-from .vim import VIM
+from oodeel.methods import Mahalanobis
+from tests.tests_tensorflow import generate_data_tf
+from tests.tests_tensorflow import generate_model
 
-__all__ = ["MLS", "DKNN", "ODIN", "Energy", "VIM", "Mahalanobis"]
+
+def test_mahalanobis():
+    """
+    Test Mahalanobis
+    """
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    ).batch(samples)
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    mahalanobis = Mahalanobis()
+    mahalanobis.fit(model, fit_dataset=data)
+    scores = mahalanobis.score(data)
+
+    assert scores.shape == (100,)

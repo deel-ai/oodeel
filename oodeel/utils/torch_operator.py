@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import List
+
 import numpy as np
 import torch
 
@@ -47,10 +49,16 @@ def sanitize_input(tensor_arg_func: Callable):
 class TorchOperator(Operator):
     """Class to handle torch operations with a unified API"""
 
+    def __init__(self, model: torch.nn.Module = None):
+        if model is not None:
+            self._device = next(model.parameters()).device
+        else:
+            self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     @staticmethod
     def softmax(tensor: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
-        """Softmax function"""
-        return torch.nn.functional.softmax(tensor)
+        """Softmax function along the last dimension"""
+        return torch.nn.functional.softmax(tensor, dim=-1)
 
     @staticmethod
     def argmax(
@@ -62,7 +70,10 @@ class TorchOperator(Operator):
     @staticmethod
     def max(tensor: Union[torch.Tensor, np.ndarray], dim: int = None) -> torch.Tensor:
         """Max function"""
-        return torch.max(tensor, dim=dim)
+        if dim is None:
+            return torch.max(tensor)
+        else:
+            return torch.max(tensor, dim)[0]
 
     @staticmethod
     def one_hot(
@@ -126,3 +137,57 @@ class TorchOperator(Operator):
         gradients = torch.autograd.grad(outputs, inputs)
         inputs.requires_grad_(False)
         return gradients[0]
+
+    @staticmethod
+    def stack(tensors: List[TensorType], dim: int = 0) -> TensorType:
+        "Stack tensors along a new dimension"
+        return torch.stack(tensors, dim)
+
+    @staticmethod
+    def cat(tensors: List[TensorType], dim: int = 0) -> TensorType:
+        "Concatenate tensors in a given dimension"
+        return torch.cat(tensors, dim)
+
+    @staticmethod
+    def mean(tensor: TensorType, dim: int = None) -> TensorType:
+        "Mean function"
+        if dim is None:
+            return torch.mean(tensor)
+        else:
+            return torch.mean(tensor, dim)
+
+    @staticmethod
+    def flatten(tensor: TensorType) -> TensorType:
+        "Flatten function"
+        # Flatten the features to 2D (n_batch, n_features)
+        return tensor.view(tensor.size(0), -1)
+
+    def from_numpy(self, arr: np.ndarray) -> TensorType:
+        "Convert a NumPy array to a tensor"
+        # TODO change dtype
+        return torch.from_numpy(arr).double().to(self._device)
+
+    @staticmethod
+    def transpose(tensor: TensorType) -> TensorType:
+        "Transpose function for tensor of rank 2"
+        return tensor.t()
+
+    @staticmethod
+    def diag(tensor: TensorType) -> TensorType:
+        "Diagonal function: return the diagonal of a 2D tensor"
+        return tensor.diag()
+
+    @staticmethod
+    def reshape(tensor: TensorType, shape: List[int]) -> TensorType:
+        "Reshape function"
+        return tensor.view(*shape)
+
+    @staticmethod
+    def equal(tensor: TensorType, other: Union[TensorType, int, float]) -> TensorType:
+        "Computes element-wise equality"
+        return torch.eq(tensor, other)
+
+    @staticmethod
+    def pinv(tensor: TensorType) -> TensorType:
+        "Computes the pseudoinverse (Moore-Penrose inverse) of a matrix."
+        return torch.linalg.pinv(tensor)

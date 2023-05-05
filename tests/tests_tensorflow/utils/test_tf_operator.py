@@ -23,6 +23,7 @@
 import tensorflow as tf
 
 from oodeel.utils.tf_operator import TFOperator
+from tests.tools_operator import check_common_operators
 
 
 def test_gradient():
@@ -38,3 +39,9 @@ def test_gradient():
 
     assert tuple(gradients.shape) == input_shape
     assert tf.reduce_all(gradients == tf.ones(input_shape))
+
+
+def test_common_functions():
+    """Test multiple functions"""
+
+    check_common_operators("tensorflow")
