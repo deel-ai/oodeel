@@ -142,7 +142,7 @@ class DictDataset(Dataset):
         dummy_item = self[0]
         return [dummy_item[key].shape for key in self.output_keys]
 
-    def _check_init_args(self):
+    def _check_init_args(self) -> None:
         """Check validity of dataset and output keys provided at init"""
         dummy_item = self._dataset[0]
         assert isinstance(

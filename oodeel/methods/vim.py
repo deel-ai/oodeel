@@ -99,7 +99,7 @@ class VIM(OODModel):
         self._princ_dim = princ_dims
         self.pca_origin = pca_origin
 
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]):
+    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
         """
         Computes principal components of feature representations and store the residual
         eigenvectors.

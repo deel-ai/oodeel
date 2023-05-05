@@ -49,7 +49,7 @@ class Mahalanobis(OODModel):
         super(Mahalanobis, self).__init__(output_layers_id=output_layers_id)
         self.eps = eps
 
-    def _fit_to_dataset(self, fit_dataset: DatasetType):
+    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """
         Constructs the mean covariance matrix from ID data "fit_dataset", whose
         pseudo-inverse will be used for mahalanobis distance computation.

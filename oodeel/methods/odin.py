@@ -82,7 +82,16 @@ class ODIN(OODModel):
         inputs_p = inputs - self.noise * self.op.sign(gradients)
         return inputs_p
 
-    def _temperature_loss(self, inputs, labels):
+    def _temperature_loss(self, inputs: TensorType, labels: TensorType) -> TensorType:
+        """Compute the tempered cross-entropy loss.
+
+        Args:
+            inputs (TensorType): the inputs of the model.
+            labels (TensorType): the labels to fit on.
+
+        Returns:
+            TensorType: the cross-entropy loss.
+        """
         preds = self.feature_extractor.model(inputs) / self.temperature
         loss = self.op.CrossEntropyLoss(reduction="sum")(inputs=preds, targets=labels)
         return loss
