@@ -110,7 +110,7 @@ class OODDataset(object):
         else:
             self.input_key = input_key
 
-    def __len__(self):
+    def __len__(self) -> int:
         """get the length of the dataset.
 
         Returns:
@@ -122,7 +122,11 @@ class OODDataset(object):
 
     @property
     def has_ood_label(self) -> bool:
-        """Check if the dataset has an out-of-distribution label."""
+        """Check if the dataset has an out-of-distribution label.
+
+        Returns:
+            bool: True if data handler has a "ood_label" feature key.
+        """
         return self._data_handler.has_feature_key(self.data, "ood_label")
 
     def get_ood_labels(

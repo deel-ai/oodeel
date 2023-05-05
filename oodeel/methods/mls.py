@@ -36,15 +36,10 @@ class MLS(OODModel):
     in Neural Networks"
     http://arxiv.org/abs/1610.02136
 
-
-
     Args:
         output_activation: activation function for the last layer. If "linear",
             the method is MLS and if "softmax", the method is MSS.
             Defaults to "linear".
-        batch_size: batch_size used to compute the features space
-            projection of input data.
-            Defaults to 256.
     """
 
     def __init__(self, output_activation="linear"):

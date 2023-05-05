@@ -42,17 +42,10 @@ class FeatureExtractor(ABC):
             If int, the rank of the layer in the layer list
             If str, the name of the layer.
             Defaults to [].
-        output_activation: activation function for the last layer.
-            Defaults to None.
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
             when working on the feature space without finetuning the bottom of the
             model).
             Defaults to None.
-        flatten: Flatten the output features or not.
-            Defaults to False.
-        batch_size: batch_size used to compute the features space
-            projection of input data.
-            Defaults to 256.
     """
 
     def __init__(
@@ -115,6 +108,12 @@ class FeatureExtractor(ABC):
 
     def __call__(self, inputs: Any) -> Any:
         """
-        Choose to call predict or predict_tensor depending on the type of inputs
+        Convenience wrapper for predict_tensor().
+
+        Args:
+            inputs (Any): input tensor
+
+        Returns:
+            Any: features
         """
         return self.predict_tensor(inputs)

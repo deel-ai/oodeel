@@ -194,7 +194,7 @@ class OODModel(ABC):
         Returns whether the input samples "inputs" are OOD or not, given a threshold
 
         Args:
-            dataset (dataset: Union[TensorType, DatasetType]): dataset or tensors to score
+            dataset (Union[TensorType, DatasetType]): dataset or tensors to score
             threshold (float): threshold to use for distinguishing between OOD and ID
 
         Returns:
@@ -225,5 +225,12 @@ class OODModel(ABC):
     ) -> np.ndarray:
         """
         Convenience wrapper for isood
+
+        Args:
+            inputs (Union[TensorType, DatasetType]): dataset or tensors to score.
+            threshold (float): threshold to use for distinguishing between OOD and ID
+
+        Returns:
+            np.ndarray: array of 0 for ID samples and 1 for OOD samples
         """
         return self.isood(inputs, threshold)
