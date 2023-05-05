@@ -122,7 +122,7 @@ Currently, **oodeel** includes the following baselines:
 | --- | --- | --- | --- |
 | MLS | [Open-Set Recognition: a Good Closed-Set Classifier is All You Need?](http://arxiv.org/abs/2110.06207) | ICLR 2022 | [avail](docs/notebooks/demo_experiment.ipynb) |
 | MSP | [A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks](http://arxiv.org/abs/1610.02136) | ICLR 2017 | [avail](docs/notebooks/demo_experiment.ipynb)  |
-| Mahalanobis | [A Simple Unified Framework for Detecting Out-of-Distribution Samples and Adversarial Attacks](http://arxiv.org/abs/1807.03888) | NeurIPS 2018 | in dev |
+| Mahalanobis | [A Simple Unified Framework for Detecting Out-of-Distribution Samples and Adversarial Attacks](http://arxiv.org/abs/1807.03888) | NeurIPS 2018 | avail |
 | Energy | [Energy-based Out-of-distribution Detection](http://arxiv.org/abs/2010.03759) | NeurIPS 2020 |[avail](docs/notebooks/demo_energy.ipynb)  |
 | Odin | [Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks](http://arxiv.org/abs/1706.02690) | ICLR 2018 |[avail](docs/notebooks/demo_odin.ipynb)  |
 | DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 | [avail](docs/notebooks/demo_dknn.ipynb)  |
