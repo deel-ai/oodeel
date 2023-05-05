@@ -69,8 +69,8 @@ Load in-distribution and out-of-distribution datasets.
 ```python
 from oodeel.datasets import OODDataset
 
-ds_in = OODDataset('mnist', split="test").prepare(batch_size)
-ds_out = OODDataset('fashion_mnist', split="test").prepare(batch_size)
+ds_in = OODDataset('mnist', split="test", backend="tensorflow").prepare(batch_size) # use backend="torch" if you prefer torch.DataLoader 
+ds_out = OODDataset('fashion_mnist', split="test", backend="tensorflow").prepare(batch_size)
 ```
 
 ## For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution
