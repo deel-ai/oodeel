@@ -20,7 +20,27 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .keras_feature_extractor import KerasFeatureExtractor
-from .torch_feature_extractor import TorchFeatureExtractor
 
-_all_ = ["KerasFeatureExtractor", "TorchFeatureExtractor"]
+avail_lib = []
+try:
+    import tensorflow as tf
+
+    avail_lib.append("tensorflow")
+except ImportError:
+    pass
+
+try:
+    import torch
+
+    avail_lib.append("torch")
+except ImportError:
+    pass
+
+
+if len(avail_lib) == 2:
+    from .keras_feature_extractor import KerasFeatureExtractor
+    from .torch_feature_extractor import TorchFeatureExtractor
+elif "tensorflow" in avail_lib:
+    from .keras_feature_extractor import KerasFeatureExtractor
+elif "torch" in avail_lib:
+    from .torch_feature_extractor import TorchFeatureExtractor
