@@ -54,7 +54,7 @@ class DKNN(OODModel):
         self.index = None
         self.nearest = nearest
 
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]):
+    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
         """
         Constructs the index from ID data "fit_dataset", which will be used for
         nearest neighbor search.
@@ -89,4 +89,12 @@ class DKNN(OODModel):
         return scores[:, -1]
 
     def _l2_normalization(self, feat: np.ndarray) -> np.ndarray:
+        """L2 normalization of a tensor along the last dimension.
+
+        Args:
+            feat (np.ndarray): the tensor to normalize
+
+        Returns:
+            np.ndarray: the normalized tensor
+        """
         return feat / (np.linalg.norm(feat, ord=2, axis=-1, keepdims=True) + 1e-10)

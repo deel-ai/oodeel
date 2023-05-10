@@ -45,12 +45,6 @@ class Energy(OODModel):
     where $model(x)=(l_{c})_{c=1}^{C}$ are the logits predicted by the model on
     $x$.
     As always, training data is expected to have lower score than OOD data.
-
-
-    Args:
-        batch_size: batch_size used to compute the features space
-            projection of input data.
-            Defaults to 256.
     """
 
     def __init__(self):

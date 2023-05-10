@@ -124,17 +124,25 @@ class DictDataset(Dataset):
 
     @property
     def output_keys(self) -> list:
-        """Get the list of keys in a dict-based item from the dataset"""
+        """Get the list of keys in a dict-based item from the dataset.
+
+        Returns:
+            list: feature keys of the dataset.
+        """
         dummy_item = self[0]
         return list(dummy_item.keys())
 
     @property
     def output_shapes(self) -> list:
-        """Get a list of the tensor shapes in an item from the dataset"""
+        """Get a list of the tensor shapes in an item from the dataset.
+
+        Returns:
+            list: tensor shapes of an dataset item.
+        """
         dummy_item = self[0]
         return [dummy_item[key].shape for key in self.output_keys]
 
-    def _check_init_args(self):
+    def _check_init_args(self) -> None:
         """Check validity of dataset and output keys provided at init"""
         dummy_item = self._dataset[0]
         assert isinstance(
@@ -146,8 +154,15 @@ class DictDataset(Dataset):
             self._raw_output_keys
         ), "Length mismatch between dataset item and provided keys"
 
-    def __getitem__(self, index: int):
-        """Return a dictionary of tensors corresponding to a specfic index"""
+    def __getitem__(self, index: int) -> dict:
+        """Return a dictionary of tensors corresponding to a specfic index.
+
+        Args:
+            index (int): the index of the item to retrieve.
+
+        Returns:
+            dict: tensors for the item at the specific index.
+        """
         item = self._dataset[index]
 
         # convert item to a list / tuple of tensors
@@ -234,7 +249,12 @@ class DictDataset(Dataset):
             )
         return dataset
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """Return the length of the dataset, i.e. the number of items.
+
+        Returns:
+            int: length of the dataset.
+        """
         return len(self._dataset)
 
 
@@ -245,6 +265,7 @@ class TorchDataHandler(DataHandler):
     torch syntax.
     """
 
+    @staticmethod
     def _default_target_transform(y: Any) -> torch.Tensor:
         """Format int or float item target as a torch tensor
 
@@ -257,7 +278,7 @@ class TorchDataHandler(DataHandler):
         return torch.tensor(y) if isinstance(y, (float, int)) else y
 
     DEFAULT_TRANSFORM = torchvision.transforms.PILToTensor()
-    DEFAULT_TARGET_TRANSFORM = _default_target_transform
+    DEFAULT_TARGET_TRANSFORM = _default_target_transform.__func__
 
     @classmethod
     def load_dataset(

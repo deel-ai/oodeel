@@ -60,10 +60,14 @@ class OODModel(ABC):
     @abstractmethod
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """Computes an OOD score for input samples "inputs".
+
         Method to override with child classes.
 
         Args:
-            inputs: tensor to score
+            inputs (TensorType): tensor to score
+
+        Returns:
+            np.ndarray: OOD scores
 
         Raises:
             NotImplementedError: _description_
@@ -97,8 +101,10 @@ class OODModel(ABC):
         Loads feature extractor
 
         Args:
-            model : tf.keras model (for now)
-                keras models saved as pb files e.g. with model.save()
+            model: a model (Keras or PyTorch) to load.
+
+        Returns:
+            FeatureExtractor: a feature extractor instance
         """
         if is_from(model, "keras"):
             from ..models.keras_feature_extractor import KerasFeatureExtractor
@@ -130,9 +136,10 @@ class OODModel(ABC):
         )
         return feature_extractor
 
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]):
+    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
         """
         Fits the oodmodel to fit_dataset.
+
         To be overrided in child classes (if needed)
 
         Args:
@@ -194,7 +201,7 @@ class OODModel(ABC):
         Returns whether the input samples "inputs" are OOD or not, given a threshold
 
         Args:
-            dataset (dataset: Union[TensorType, DatasetType]): dataset or tensors to score
+            dataset (Union[TensorType, DatasetType]): dataset or tensors to score
             threshold (float): threshold to use for distinguishing between OOD and ID
 
         Returns:
@@ -225,5 +232,12 @@ class OODModel(ABC):
     ) -> np.ndarray:
         """
         Convenience wrapper for isood
+
+        Args:
+            inputs (Union[TensorType, DatasetType]): dataset or tensors to score.
+            threshold (float): threshold to use for distinguishing between OOD and ID
+
+        Returns:
+            np.ndarray: array of 0 for ID samples and 1 for OOD samples
         """
         return self.isood(inputs, threshold)

@@ -24,14 +24,14 @@ from ..types import Any
 
 
 def is_from(model_or_tensor: Any, framework: str) -> str:
-    """Check wether a model or tensor belongs to a specific framework
+    """Check whether a model or tensor belongs to a specific framework
 
     Args:
         model_or_tensor (Any): Neural network or Tensor
         framework (str):  Model or tensor framework ("torch" | "keras" | "tensorflow")
 
     Returns:
-        bool: Wether the model belongs to specified framework or not
+        bool: Whether the model belongs to specified framework or not
     """
     keywords_list = []
     class_parents = list(model_or_tensor.__class__.__mro__)
