@@ -3,6 +3,23 @@ site_name: OODEEL
 # Set navigation here
 nav:
   - Home: index.md
+  - Tutorials:
+    - Get Started: notebooks/demo_experiment.ipynb
+    - Important Note On Feature Extractors: pages/feature_extractor_tuto.ipynb
+    - OOD Baselines (Tensorflow):
+      - ODIN: notebooks/demo_odin.ipynb
+      - DKNN: notebooks/demo_dknn.ipynb
+      - VIM: notebooks/demo_vim.ipynb
+      - Energy: notebooks/demo_energy.ipynb
+    - OOD Baselines (Torch):
+      - ODIN: notebooks/torch/demo_odin_torch.ipynb
+      - DKNN: notebooks/torch/demo_dknn_torch.ipynb
+      - VIM: notebooks/torch/demo_vim_torch.ipynb
+      - Energy: notebooks/torch/demo_energy_torch.ipynb
+    - Advanced Topics:
+      - Seamlessly handling torch and tf datasets with DataHandler: pages/datahandler_tuto.md
+      - Seamlessly handling torch and tf Tensors with Operator: pages/operators_tuto.md
+      - Implementing your own baseline: pages/implementing_baselines_tuto.ipynb
   - API Reference:
     - OOD methods: api/methods.md
     - Metrics: api/metrics.md
@@ -13,19 +30,10 @@ nav:
     - Operators:
       - TorchOperator: api/torch_operators.md
       - TFOperator: api/tf_operators.md
+    - FeatureExtractors:
+      - KerasFeatureExtractor: api/keras_feature_extractor.md
+      - TorchFeatureExtractor: api/torch_feature_extractor.md
     - Training tools: api/training_funs.md
-  - Tutorials:
-    - Get Started: notebooks/demo_experiment.ipynb
-    - Tensorflow:
-      - ODIN: notebooks/demo_odin.ipynb
-      - DKNN: notebooks/demo_dknn.ipynb
-      - VIM: notebooks/demo_vim.ipynb
-      - Energy: notebooks/demo_energy.ipynb
-    - Torch:
-      - ODIN: notebooks/torch/demo_odin_torch.ipynb
-      - DKNN: notebooks/torch/demo_dknn_torch.ipynb
-      - VIM: notebooks/torch/demo_vim_torch.ipynb
-      - Energy: notebooks/torch/demo_energy_torch.ipynb
   - Contributing: CONTRIBUTING.md
 
 theme:
