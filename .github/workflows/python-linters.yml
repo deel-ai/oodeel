@@ -1,4 +1,4 @@
-name: oodeel linters
+name: flake8
 
 on:
   push:

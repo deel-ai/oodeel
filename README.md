@@ -12,7 +12,16 @@
 <!-- Badge section -->
 <div align="center">
     <a href="#">
-        <img src="https://img.shields.io/badge/Python-3.8, 3.9, 3.10-efefef">
+        <img src="https://img.shields.io/badge/python-3.8%2B-blue">
+    </a>
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml">
+        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml/badge.svg">
+    </a>
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
+        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml/badge.svg">
+    </a>
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
+        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml/badge.svg">
     </a>
     <a href="#">
         <img src="https://img.shields.io/badge/License-MIT-efefef">
@@ -69,7 +78,7 @@ Load in-distribution and out-of-distribution datasets.
 ```python
 from oodeel.datasets import OODDataset
 
-ds_in = OODDataset('mnist', split="test", backend="tensorflow").prepare(batch_size) # use backend="torch" if you prefer torch.DataLoader 
+ds_in = OODDataset('mnist', split="test", backend="tensorflow").prepare(batch_size) # use backend="torch" if you prefer torch.DataLoader
 ds_out = OODDataset('fashion_mnist', split="test", backend="tensorflow").prepare(batch_size)
 ```
 
