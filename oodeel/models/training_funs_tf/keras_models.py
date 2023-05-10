@@ -61,7 +61,7 @@ def train_keras_app(
     model_name: str,
     input_shape: tuple = None,
     num_classes: int = None,
-    is_prepared: bool = False,
+    is_prepared: bool = True,
     batch_size: int = 128,
     epochs: int = 50,
     loss: str = "sparse_categorical_crossentropy",
