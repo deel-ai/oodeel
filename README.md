@@ -31,7 +31,7 @@
 
 <!-- Short description of your library -->
 
-<b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch.
+<b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch. You can find the documentation [here](https://deel-ai.github.io/oodeel/).
 
 ```python
 from oodeel.methods import MLS
@@ -57,7 +57,7 @@ scores = oodmodel.score(ds) # ds is a tf.data.Dataset or a torch.DataLoader
 
 # Tutorials
 
-We propose some tutorials to get familiar with the library and its API in the [notebooks directory](docs/notebooks)
+We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the [doc](https://deel-ai.github.io/oodeel/)
 
 # Quick Start
 
@@ -78,8 +78,8 @@ Load in-distribution and out-of-distribution datasets.
 ```python
 from oodeel.datasets import OODDataset
 
-ds_in = OODDataset('mnist', split="test", backend="tensorflow").prepare(batch_size) # use backend="torch" if you prefer torch.DataLoader
-ds_out = OODDataset('fashion_mnist', split="test", backend="tensorflow").prepare(batch_size)
+ds_in = OODDataset('mnist', load_kwargs={"split":"test"}, backend="tensorflow").prepare(batch_size) # use backend="torch" if you prefer torch.DataLoader
+ds_out = OODDataset('fashion_mnist', load_kwargs={"split":"test"}, backend="tensorflow").prepare(batch_size)
 ```
 
 ## For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution
@@ -145,12 +145,12 @@ Currently, **oodeel** includes the following baselines:
 
 
 
-**Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for models from `keras.applications` in [training_funs](oodeel/models/training_funs) directory. These functions come in handy for benchmarks like *leave-k-classes-out* that requires retraining models on a subset of dataset classes.
+**Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for toy convnet models or models from `keras.applications` in [training_funs_tf](https://github.com/deel-ai/oodeel/tree/master/oodeel/models/training_funs_tf) and `torchvision.models` in [training_funs_torch](https://github.com/deel-ai/oodeel/tree/master/oodeel/models/training_funs_torch) directory. These functions come in handy for benchmarks like *leave-k-classes-out* that requires retraining models on a subset of dataset classes.
 # Development Roadmap
 
 ## Roadmap to first release:
 - [x] The library works for `keras` models
-- [ ] Unification of tutorial notebooks
+- [x] Unification of tutorial notebooks
 - [x] Validation of all methods for pytorch using `TorchOperator`, making oodeel compatible with both tensorflow and pytorch models.
 - [x] Integration of `TorchDataHandler` to alleviate the need of `tf.data.Dataset` when using pytorch. At this stage, oodeel will no more require any tensorflow components when using pytorch, and vice-versa.
 - [ ] Revise docstring and type hinting
@@ -191,7 +191,7 @@ More from the DEEL project:
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/deel_dark.png"  width="25%" align="right">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/deel_light.png"  width="25%" align="right">
-    <img src="docs/assets/deel_light.png" alt="DEEL Logo" width="25%" align="right">
+    <img src="docs/assets/deel_dark.png" alt="DEEL Logo" width="25%" align="right">
   </picture>
 </div>
 This project received funding from the French ”Investing for the Future – PIA3” program within the Artificial and Natural Intelligence Toulouse Institute (ANITI). The authors gratefully acknowledge the support of the <a href="https://www.deel.ai/"> DEEL </a>, a research project jointly conducted in France and Quebec.
