@@ -1,4 +1,4 @@
-name: oodeel tests tensorflow
+name: pytest [tensorflow]
 
 on:
   push:
