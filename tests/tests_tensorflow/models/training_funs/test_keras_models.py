@@ -35,6 +35,7 @@ def test_convnet_classifier():
         "epochs": 3,
         "input_shape": input_shape,
         "num_classes": num_labels,
+        "is_prepared": False,
     }
 
     data = generate_data_tf(
@@ -54,6 +55,7 @@ def test_train_keras_app_imagenet():
         "epochs": 3,
         "input_shape": input_shape,
         "num_classes": num_labels,
+        "is_prepared": False,
     }
 
     data = generate_data_tf(
@@ -75,6 +77,7 @@ def test_train_keras_app():
         "epochs": 3,
         "input_shape": input_shape,
         "num_classes": num_labels,
+        "is_prepared": False,
     }
 
     data = generate_data_tf(
