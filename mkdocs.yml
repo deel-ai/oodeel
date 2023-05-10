@@ -18,7 +18,7 @@ nav:
       - Energy: notebooks/torch/demo_energy_torch.ipynb
     - Advanced Topics:
       - Seamlessly handling torch and tf datasets with DataHandler: pages/datahandler_tuto.md
-      - Seamlessly handling torch and tf Tensors with Operator: pages/operators_tuto.md
+      - Seamlessly handling torch and tf Tensors with Operator: pages/operator_tuto.md
       - Implementing your own baseline: pages/implementing_baselines_tuto.ipynb
   - API Reference:
     - OOD methods: api/methods.md
@@ -28,12 +28,13 @@ nav:
       - TFDataHandler: api/tf_datahandler.md
       - TorchDataHandler: api/torch_datahandler.md
     - Operators:
-      - TorchOperator: api/torch_operators.md
-      - TFOperator: api/tf_operators.md
+      - TorchOperator: api/torch_operator.md
+      - TFOperator: api/tf_operator.md
     - FeatureExtractors:
       - KerasFeatureExtractor: api/keras_feature_extractor.md
       - TorchFeatureExtractor: api/torch_feature_extractor.md
     - Training tools: api/training_funs.md
+    - Utils: api/utils.md
   - Contributing: CONTRIBUTING.md
 
 theme:
