@@ -1,11 +1,9 @@
-::: oodeel.models.training_funs_tf
+::: oodeel.datasets.tf_data_handler
     options:
         show_root_toc_entry: True
         inherited_members: True
-        show_submodules: True
 
-::: oodeel.models.training_funs_torch
+::: oodeel.datasets.torch_data_handler
     options:
         show_root_toc_entry: True
         inherited_members: True
-        show_submodules: True

@@ -5,17 +5,27 @@ nav:
   - Home: index.md
   - API Reference:
     - OOD methods: api/methods.md
-    - OOD dataset: api/ooddataset.md
     - Metrics: api/metrics.md
+    - OOD dataset: api/ooddataset.md
+    - DataHandlers:
+      - TFDataHandler: api/tf_datahandler.md
+      - TorchDataHandler: api/torch_datahandler.md
+    - Operators:
+      - TorchOperator: api/torch_operators.md
+      - TFOperator: api/tf_operators.md
     - Training tools: api/training_funs.md
-    - Utils: api/utils.md
-    - Operators: api/operators.md
   - Tutorials:
     - Get Started: notebooks/demo_experiment.ipynb
-    - ODIN: notebooks/demo_odin.ipynb
-    - DKNN: notebooks/demo_dknn.ipynb
-    - VIM: notebooks/demo_vim.ipynb
-    - Energy: notebooks/demo_energy.ipynb
+    - Tensorflow:
+      - ODIN: notebooks/demo_odin.ipynb
+      - DKNN: notebooks/demo_dknn.ipynb
+      - VIM: notebooks/demo_vim.ipynb
+      - Energy: notebooks/demo_energy.ipynb
+    - Torch:
+      - ODIN: notebooks/torch/demo_odin_torch.ipynb
+      - DKNN: notebooks/torch/demo_dknn_torch.ipynb
+      - VIM: notebooks/torch/demo_vim_torch.ipynb
+      - Energy: notebooks/torch/demo_energy_torch.ipynb
   - Contributing: CONTRIBUTING.md
 
 theme:
