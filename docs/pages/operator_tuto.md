@@ -80,7 +80,7 @@ grads = operator.gradient(mult, tensor_1)
 ```
 
 !!! note
-    The idea is inspired by the great lib [EaerPy](https://github.com/jonasrauber/eagerpy), but we wanted to have closer control and make our own baked API to facilitate maintenance. In addition, we do not claim to reproduce the full API of tensorflow/pytorch/(soon jax ?) and implement the methods on the fly, if required by the baselines.
+    The idea is inspired by the great lib [EagerPy](https://github.com/jonasrauber/eagerpy), but we wanted to have closer control and make our own baked API to facilitate maintenance. In addition, we do not claim to reproduce the full API of tensorflow/pytorch/(soon jax ?) and implement the methods on the fly, if required by the baselines.
 
 ### Completing Operator API
 
