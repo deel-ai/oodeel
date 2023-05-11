@@ -79,14 +79,14 @@ class OODBaseDetector(ABC):
         model: Callable,
         fit_dataset: Optional[Union[TensorType, DatasetType]] = None,
     ) -> None:
-        """Prepare oodmodel for scoring:
+        """Prepare the detector for scoring:
         * Constructs the feature extractor based on the model
-        * Calibrates the oodmodel on ID data "fit_dataset" if needed,
+        * Calibrates the detector on ID data "fit_dataset" if needed,
             using self._fit_to_dataset
 
         Args:
             model: model to extract the features from
-            fit_dataset: dataset to fit the oodmodel on
+            fit_dataset: dataset to fit the detector on
         """
         self.feature_extractor = self._load_feature_extractor(model)
 
@@ -138,12 +138,12 @@ class OODBaseDetector(ABC):
 
     def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
         """
-        Fits the oodmodel to fit_dataset.
+        Fits the OOD detector to fit_dataset.
 
         To be overrided in child classes (if needed)
 
         Args:
-            fit_dataset: dataset to fit the oodmodel on
+            fit_dataset: dataset to fit the OOD detector on
         """
         raise NotImplementedError()
 
@@ -158,7 +158,7 @@ class OODBaseDetector(ABC):
 
         Args:
             fit_dataset: dataset to callibrate the threshold on
-            scores: scores of oodmodel
+            scores: scores of OOD detector
         """
         raise NotImplementedError()
 
