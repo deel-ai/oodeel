@@ -7,12 +7,14 @@ nav:
     - "Getting started: Maximum Logit Score on MNIST": pages/getting_started.ipynb
     - Important Note On Feature Extractors: pages/feature_extractor_tuto.ipynb
     - OOD Baselines (Tensorflow):
+      - MLS/MSP: pages/demo_experiment.ipynb
       - ODIN: notebooks/tensorflow/demo_odin_tf.ipynb
       - DKNN: notebooks/tensorflow/demo_dknn_tf.ipynb
       - VIM: notebooks/tensorflow/demo_vim_tf.ipynb
       - Energy: notebooks/tensorflow/demo_energy_tf.ipynb
       - Mahalanobis: notebooks/tensorflow/demo_mahalanobis_tf.ipynb
     - OOD Baselines (Torch):
+      - MLS/MSP: pages/demo_experiment.ipynb
       - ODIN: notebooks/torch/demo_odin_torch.ipynb
       - DKNN: notebooks/torch/demo_dknn_torch.ipynb
       - VIM: notebooks/torch/demo_vim_torch.ipynb
@@ -35,7 +37,7 @@ nav:
     - FeatureExtractors:
       - KerasFeatureExtractor: api/keras_feature_extractor.md
       - TorchFeatureExtractor: api/torch_feature_extractor.md
-    - Training tools: api/training_funs.md
+    - Training tools: api/training_tools.md
     - Utils: api/utils.md
   - Contributing: CONTRIBUTING.md
 

@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from oodeel.models.keras_feature_extractor import KerasFeatureExtractor
+from oodeel.extractor.keras_feature_extractor import KerasFeatureExtractor
 from tests.tests_tensorflow import almost_equal
 from tests.tests_tensorflow import generate_data_tf
 from tests.tests_tensorflow import generate_model

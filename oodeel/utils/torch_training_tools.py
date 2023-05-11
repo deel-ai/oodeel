@@ -31,7 +31,7 @@ import torchvision
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from ...types import Optional
+from ..types import Optional
 
 
 class ToyTorchConvnet(nn.Sequential):
@@ -76,15 +76,8 @@ class ToyTorchConvnet(nn.Sequential):
             OrderedDict([*features._modules.items(), *fcs._modules.items()])
         )
 
-    def _calculate_fc_input_shape(self, features: nn.Module) -> int:
-        """Get tensor shape after passing a features network.
-
-        Args:
-            features: the features network
-
-        Returns:
-            int: the output shape
-        """
+    def _calculate_fc_input_shape(self, features):
+        """Get tensor shape after passing a features network."""
         input_tensor = torch.ones(tuple([1] + list(self.input_shape)))
         x = features(input_tensor)
         output_size = x.view(x.size(0), -1).size(1)
@@ -183,7 +176,7 @@ def _train(
     lr_scheduler: torch.optim.lr_scheduler._LRScheduler = None,
     save_dir: str = None,
     validation_data: DataLoader = None,
-) -> nn.Module:
+):
     """Torch basic training loop
 
     Args:

@@ -107,7 +107,7 @@ class OODModel(ABC):
             FeatureExtractor: a feature extractor instance
         """
         if is_from(model, "keras"):
-            from ..models.keras_feature_extractor import KerasFeatureExtractor
+            from ..extractor.keras_feature_extractor import KerasFeatureExtractor
             from ..datasets.tf_data_handler import TFDataHandler
             from ..utils import TFOperator
 
@@ -117,7 +117,7 @@ class OODModel(ABC):
             FeatureExtractor = KerasFeatureExtractor
 
         elif is_from(model, "torch"):
-            from ..models.torch_feature_extractor import TorchFeatureExtractor
+            from ..extractor.torch_feature_extractor import TorchFeatureExtractor
             from ..datasets.torch_data_handler import TorchDataHandler
             from ..utils import TorchOperator
 

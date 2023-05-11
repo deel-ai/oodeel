@@ -20,77 +20,76 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from oodeel.models.training_funs_tf import train_keras_app
-from tests.tests_tensorflow import generate_data_tf
+from torch.utils.data import DataLoader
+
+from oodeel.utils.torch_training_tools import train_torch_model
+from tests.tests_torch import generate_data_torch
 
 
 def test_convnet_classifier():
-    input_shape = (32, 32, 3)
+    input_shape = (3, 32, 32)
     num_labels = 10
     samples = 100
 
     train_config = {
         "model_name": "toy_convnet",
-        "batch_size": 5,
         "epochs": 3,
-        "input_shape": input_shape,
         "num_classes": num_labels,
-        "is_prepared": False,
+        "cuda_idx": None,
     }
 
-    data = generate_data_tf(
+    data = generate_data_torch(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
+    data = DataLoader(data, batch_size=samples // 2)
+    train_torch_model(data, **train_config)
 
-    train_keras_app(data, **train_config)
 
-
-def test_train_keras_app_imagenet():
-    input_shape = (224, 224, 3)
+def test_train_torch_model_imagenet():
+    input_shape = (3, 224, 224)
     num_labels = 1000
     samples = 100
 
     train_config = {
-        "batch_size": 5,
         "epochs": 3,
-        "input_shape": input_shape,
         "num_classes": num_labels,
-        "is_prepared": False,
+        "cuda_idx": None,
     }
 
-    data = generate_data_tf(
+    data = generate_data_torch(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    train_keras_app(
-        data, model_name="MobileNet", imagenet_pretrained=True, **train_config
+    data = DataLoader(data, batch_size=samples // 2)
+    train_torch_model(
+        data, model_name="mobilenet_v2", imagenet_pretrained=True, **train_config
     )
 
 
-def test_train_keras_app():
-    input_shape = (56, 56, 3)
+def test_train_torch_model():
+    input_shape = (3, 56, 56)
     num_labels = 123
     samples = 100
 
     train_config = {
-        "batch_size": 5,
         "epochs": 3,
-        "input_shape": input_shape,
         "num_classes": num_labels,
-        "is_prepared": False,
+        "cuda_idx": None,
     }
 
-    data = generate_data_tf(
+    data = generate_data_torch(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    validation_data = generate_data_tf(
+    validation_data = generate_data_torch(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    train_keras_app(
+    data = DataLoader(data, batch_size=samples // 2)
+    validation_data = DataLoader(validation_data, batch_size=samples // 2)
+    train_torch_model(
         data,
-        model_name="MobileNet",
+        model_name="mobilenet_v2",
         imagenet_pretrained=False,
         validation_data=validation_data,
         **train_config
