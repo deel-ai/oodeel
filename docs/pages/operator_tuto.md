@@ -51,7 +51,7 @@ now it is possible to seamlessly use your `operator` to process your `tensor`:
 tensor_mean = operator.mean(tensor, dim=0)
 ```
 !!! note
-    We had to choose between Pytorch and Tensorflow syntax for `Operator`` API. This object is to be mainly used by researchers wanting to make their baseline available for the community, so since Pytorch is the main library used for research, we adopted the Pytorch syntax.
+    We had to choose between Pytorch and Tensorflow syntax for `Operator` API. This object is to be mainly used by researchers wanting to make their baseline available for the community, so since Pytorch is the main library used for research, we adopted the Pytorch syntax.
 
 ### Get gradients
 
