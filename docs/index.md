@@ -66,8 +66,12 @@ Load in-distribution and out-of-distribution datasets.
 ```python
 from oodeel.datasets import OODDataset
 
-ds_in = OODDataset('mnist', load_kwargs={"split":"test"}, backend="tensorflow").prepare(batch_size) # use backend="torch" if you prefer torch.DataLoader
-ds_out = OODDataset('fashion_mnist', load_kwargs={"split":"test"}, backend="tensorflow").prepare(batch_size)
+ds_in = OODDataset(
+  'mnist', load_kwargs={"split":"test"},
+  backend="tensorflow").prepare(batch_size) # use backend="torch" if you prefer torch.DataLoader
+ds_out = OODDataset(
+  'fashion_mnist', load_kwargs={"split":"test"},
+  backend="tensorflow").prepare(batch_size)
 ```
 
 ## For benchmarking with one dataset as in-distribution and another as out-of-distribution
@@ -117,13 +121,13 @@ Currently, **oodeel** includes the following baselines:
 
 |  Name   |  Link   | Venue | Status |
 | --- | --- | --- | --- |
-| MLS | [Open-Set Recognition: a Good Closed-Set Classifier is All You Need?](http://arxiv.org/abs/2110.06207) | ICLR 2022 | [avail](./notebooks/demo_experiment.ipynb) |
-| MSP | [A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks](http://arxiv.org/abs/1610.02136) | ICLR 2017 | [avail](./notebooks/demo_experiment.ipynb)  |
-| Mahalanobis | [A Simple Unified Framework for Detecting Out-of-Distribution Samples and Adversarial Attacks](http://arxiv.org/abs/1807.03888) | NeurIPS 2018 | in dev |
-| Energy | [Energy-based Out-of-distribution Detection](http://arxiv.org/abs/2010.03759) | NeurIPS 2020 |[avail](./notebooks/demo_energy.ipynb)  |
-| Odin | [Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks](http://arxiv.org/abs/1706.02690) | ICLR 2018 |[avail](./notebooks/demo_odin.ipynb)  |
-| DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 | [avail](./notebooks/demo_dknn.ipynb)  |
-| VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |[avail](./notebooks/demo_vim.ipynb)  |
+| MLS | [Open-Set Recognition: a Good Closed-Set Classifier is All You Need?](http://arxiv.org/abs/2110.06207) | ICLR 2022 | avail [tensorflow & torch](./pages/demo_experiment.ipynb) |
+| MSP | [A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks](http://arxiv.org/abs/1610.02136) | ICLR 2017 | avail [tensorflow & torch](./pages/demo_experiment.ipynb)|
+| Mahalanobis | [A Simple Unified Framework for Detecting Out-of-Distribution Samples and Adversarial Attacks](http://arxiv.org/abs/1807.03888) | NeurIPS 2018 | avail [tensorflow](./notebooks/tensorflow/demo_mahalanobis_tf.ipynb) or  [torch](./notebooks/torch/demo_mahalanobis_torch.ipynb)|
+| Energy | [Energy-based Out-of-distribution Detection](http://arxiv.org/abs/2010.03759) | NeurIPS 2020 |avail [tensorflow](./notebooks/tensorflow/demo_energy_tf.ipynb) or  [torch](./notebooks/torch/demo_energy_torch.ipynb)  |
+| Odin | [Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks](http://arxiv.org/abs/1706.02690) | ICLR 2018 |avail [tensorflow](./notebooks/tensorflow/demo_odin_tf.ipynb) or  [torch](./notebooks/torch/demo_odin_torch.ipynb) |
+| DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 | avail [tensorflow](./notebooks/tensorflow/demo_dknn_tf.ipynb) or  [torch](./notebooks/torch/demo_dknn_torch.ipynb) |
+| VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |avail [tensorflow](./notebooks/tensorflow/demo_vim_tf.ipynb) or  [torch](./notebooks/torch/demo_vim_torch.ipynb)  |
 | GODIN | [Generalized ODIN: Detecting Out-of-Distribution Image Without Learning From Out-of-Distribution Data](https://ieeexplore.ieee.org/document/9156473/) | CVPR 2020 | planned |
 | ReAct | [ReAct: Out-of-distribution Detection With Rectified Activations](http://arxiv.org/abs/2111.12797) | NeurIPS 2021 | planned |
 | NMD | [Neural Mean Discrepancy for Efficient Out-of-Distribution Detection](https://openaccess.thecvf.com/content/CVPR2022/html/Dong_Neural_Mean_Discrepancy_for_Efficient_Out-of-Distribution_Detection_CVPR_2022_paper.html) | CVPR 2022 | planned |
@@ -160,6 +164,7 @@ Feel free to propose your ideas or come and contribute with us on the oodeel too
 Other great tools in the field of OOD:
 
 - [OpenOOD](https://github.com/Jingkang50/OpenOOD): Benchmarking Generalized Out-of-Distribution Detection
+- [Pytorch-OOD](https://github.com/kkirchheim/pytorch-ood): Out-of-Distribution (OOD) Detection with Deep Neural Networks based on PyTorch.
 - [ADBench](https://github.com/Minqi824/ADBench): Official Implement of "ADBench: Anomaly Detection Benchmark".
 - [PyOD](https://github.com/yzhao062/pyod): A Comprehensive and Scalable Python Library for Outlier Detection (Anomaly Detection)
 - [Anomalib](https://github.com/openvinotoolkit/anomalib): An anomaly detection library comprising state-of-the-art algorithms and features such as experiment management, hyper-parameter optimization, and edge inference.
