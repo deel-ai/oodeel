@@ -32,9 +32,9 @@
 ```python
 from oodeel.methods import MLS
 
-oodmodel = MLS()
-oodmodel.fit(model)
-scores = oodmodel.score(ds)
+mls = MLS()
+mls.fit(model)
+scores = mls.score(ds)
 ```
 **Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully!
 
@@ -101,10 +101,10 @@ Load an OOD method and use it on an already-trained model
 ```python
 from oodeel.methods import MLS
 
-oodmodel = MLS()
-oodmodel.fit(model)
-scores_in = oodmodel.score(ds_in)
-scores_out = oodmodel.score(ds_in)
+mls = MLS()
+mls.fit(model)
+scores_in = mls.score(ds_in)
+scores_out = mls.score(ds_in)
 ```
 
 Evaluate the method
@@ -121,7 +121,7 @@ metrics = bench_metrics(
 
 # What's Included
 
-The library is based on a class, `OODBaseDetector`, that fits a model and then scores new samples. Some baselines use extra data, so `OODmodel` can also fit additional data if needed. The library uses `OODDataset` to properly load data from different sources and prepare it for OOD detection. It can perform OOD-specific operations like adding extra OOD data for tuning with Outlier Exposure or filters according to label values for anomaly detection or open set recognition benchmarks.
+The library is based on a class, `OODBaseDetector`, that fits a model and then scores new samples. Some baselines use extra data, so `OODBaseDetector` can also fit additional data if needed. The library uses `OODDataset` to properly load data from different sources and prepare it for OOD detection. It can perform OOD-specific operations like adding extra OOD data for tuning with Outlier Exposure or filters according to label values for anomaly detection or open set recognition benchmarks.
 
 Currently, **oodeel** includes the following baselines:
 

@@ -38,12 +38,12 @@ def bench_metrics(
     threshold: Optional[float] = None,
     step: Optional[int] = 4,
 ) -> dict:
-    """Compute various common metrics from OODmodel scores:
+    """Compute various common metrics from the OOD detector scores:
     AUROC, FPR95TPR, TNR95TPR, Detection accuracy and sklearn.metric metrics
 
     Args:
         scores (Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]): scores output of
-            oodmodel to evaluate. If a tuple is provided,
+            the OOD detector to evaluate. If a tuple is provided,
             the first array is considered in-distribution scores, and the second
             is considered out-of-distribution scores.
         labels (Optional[np.ndarray], optional): labels denoting oodness. When labels
@@ -134,7 +134,7 @@ def get_curve(
     distributed among the percentiles, with a step = 4 / scores.shape[0]
 
     Args:
-        scores (np.ndarray): scores output of oodmodel to evaluate
+        scores (np.ndarray): scores output of the OOD detector to evaluate
         labels (np.ndarray): 1 if ood else 0
         step (Optional[int], optional): integration step (wrt percentile).
             Defaults to 4.
@@ -176,7 +176,7 @@ def ftpn(scores: np.ndarray, labels: np.ndarray, threshold: float) -> Tuple[floa
     for a given threshold
 
     Args:
-        scores (np.ndarray): scores output of oodmodel to evaluate
+        scores (np.ndarray): scores output of the OOD detector to evaluate
         labels (np.ndarray): 1 if ood else 0
         threshold (float): threshold to use to consider scores
             as in-distribution or out-of-distribution
