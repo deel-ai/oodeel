@@ -1,4 +1,4 @@
-::: oodeel.models.torch_feature_extractor
+::: oodeel.extractor.torch_feature_extractor
     options:
         show_root_toc_entry: True
         inherited_members: True
