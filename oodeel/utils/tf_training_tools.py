@@ -29,9 +29,9 @@ from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.models import Sequential
 
-from ...datasets.tf_data_handler import TFDataHandler
-from ...types import List
-from ...types import Optional
+from ..datasets.tf_data_handler import TFDataHandler
+from ..types import List
+from ..types import Optional
 
 
 def get_toy_keras_convnet(num_classes: int) -> tf.keras.Model:
@@ -56,7 +56,7 @@ def get_toy_keras_convnet(num_classes: int) -> tf.keras.Model:
     )
 
 
-def train_keras_app(
+def train_tf_model(
     train_data: tf.data.Dataset,
     model_name: str,
     input_shape: tuple = None,

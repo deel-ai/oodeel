@@ -22,26 +22,16 @@
 # SOFTWARE.
 from .general_utils import is_from
 
-avail_lib = []
 try:
     import tensorflow as tf
-
-    avail_lib.append("tensorflow")
+    from .tf_operator import TFOperator
+    from .tf_training_tools import train_tf_model
 except ImportError:
     pass
 
 try:
     import torch
-
-    avail_lib.append("torch")
+    from .torch_operator import TorchOperator
+    from .torch_training_tools import train_torch_model
 except ImportError:
     pass
-
-
-if len(avail_lib) == 2:
-    from .tf_operator import TFOperator
-    from .torch_operator import TorchOperator
-elif "tensorflow" in avail_lib:
-    from .tf_operator import TFOperator
-elif "torch" in avail_lib:
-    from .torch_operator import TorchOperator

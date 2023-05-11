@@ -23,7 +23,7 @@
 import pytest
 from torch.utils.data import DataLoader
 
-from oodeel.models.torch_feature_extractor import TorchFeatureExtractor
+from oodeel.extractor.torch_feature_extractor import TorchFeatureExtractor
 from tests.tests_torch import ComplexNet
 from tests.tests_torch import generate_data_torch
 from tests.tests_torch import named_sequential_model
