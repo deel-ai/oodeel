@@ -27,10 +27,10 @@ from ..types import DatasetType
 from ..types import List
 from ..types import TensorType
 from ..types import Union
-from .base import OODModel
+from .base import OODBaseDetector
 
 
-class DKNN(OODModel):
+class DKNN(OODBaseDetector):
     """
     "Out-of-Distribution Detection with Deep Nearest Neighbors"
     https://arxiv.org/abs/2204.06507

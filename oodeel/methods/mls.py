@@ -23,10 +23,10 @@
 import numpy as np
 
 from ..types import TensorType
-from .base import OODModel
+from .base import OODBaseDetector
 
 
-class MLS(OODModel):
+class MLS(OODBaseDetector):
     """
     Maximum Logit Scores method for OOD detection.
     "Open-Set Recognition: a Good Closed-Set Classifier is All You Need?"

@@ -25,10 +25,10 @@ import numpy as np
 from ..types import DatasetType
 from ..types import List
 from ..types import TensorType
-from oodeel.methods.base import OODModel
+from oodeel.methods.base import OODBaseDetector
 
 
-class Mahalanobis(OODModel):
+class Mahalanobis(OODBaseDetector):
     """
     "A Simple Unified Framework for Detecting Out-of-Distribution Samples and
     Adversarial Attacks"

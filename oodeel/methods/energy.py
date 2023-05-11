@@ -24,10 +24,10 @@ import numpy as np
 from scipy.special import logsumexp
 
 from ..types import TensorType
-from .base import OODModel
+from .base import OODBaseDetector
 
 
-class Energy(OODModel):
+class Energy(OODBaseDetector):
     r"""
     Energy Score method for OOD detection.
     "Energy-based Out-of-distribution Detection"

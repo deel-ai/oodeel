@@ -32,7 +32,7 @@ from ..types import DatasetType
 from ..types import List
 from ..types import TensorType
 from ..types import Union
-from .base import OODModel
+from .base import OODBaseDetector
 
 
 try:
@@ -49,7 +49,7 @@ else:
     _has_kneed = True
 
 
-class VIM(OODModel):
+class VIM(OODBaseDetector):
     """
     Compute the Virtual Matching Logit (VIM) score.
     https://arxiv.org/abs/2203.10807
