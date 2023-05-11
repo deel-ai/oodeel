@@ -21,26 +21,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-avail_lib = []
 try:
     import tensorflow as tf
-
-    avail_lib.append("tensorflow")
+    from .keras_feature_extractor import KerasFeatureExtractor
 except ImportError:
     pass
 
 try:
     import torch
-
-    avail_lib.append("torch")
+    from .torch_feature_extractor import TorchFeatureExtractor
 except ImportError:
     pass
-
-
-if len(avail_lib) == 2:
-    from .keras_feature_extractor import KerasFeatureExtractor
-    from .torch_feature_extractor import TorchFeatureExtractor
-elif "tensorflow" in avail_lib:
-    from .keras_feature_extractor import KerasFeatureExtractor
-elif "torch" in avail_lib:
-    from .torch_feature_extractor import TorchFeatureExtractor
