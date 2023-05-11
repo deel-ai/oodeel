@@ -9,14 +9,22 @@
 <!-- Badge section -->
 <div align="center">
     <a href="#">
-        <img src="https://img.shields.io/badge/Python-3.8, 3.9, 3.10-efefef">
+        <img src="https://img.shields.io/badge/python-3.8%2B-blue">
+    </a>
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml">
+        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml/badge.svg">
+    </a>
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
+        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml/badge.svg">
+    </a>
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
+        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml/badge.svg">
     </a>
     <a href="#">
         <img src="https://img.shields.io/badge/License-MIT-efefef">
     </a>
 </div>
 <br>
-
 <!-- Short description of your library -->
 
 <b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch. You can find the documentation [here](https://deel-ai.github.io/oodeel/).
