@@ -3,19 +3,40 @@ site_name: OODEEL
 # Set navigation here
 nav:
   - Home: index.md
+  - Tutorials:
+    - "Getting started: Maximum Logit Score on MNIST": pages/getting_started.ipynb
+    - Important Note On Feature Extractors: pages/feature_extractor_tuto.ipynb
+    - OOD Baselines (Tensorflow):
+      - ODIN: notebooks/tensorflow/demo_odin_tf.ipynb
+      - DKNN: notebooks/tensorflow/demo_dknn_tf.ipynb
+      - VIM: notebooks/tensorflow/demo_vim_tf.ipynb
+      - Energy: notebooks/tensorflow/demo_energy_tf.ipynb
+      - Mahalanobis: notebooks/tensorflow/demo_mahalanobis_tf.ipynb
+    - OOD Baselines (Torch):
+      - ODIN: notebooks/torch/demo_odin_torch.ipynb
+      - DKNN: notebooks/torch/demo_dknn_torch.ipynb
+      - VIM: notebooks/torch/demo_vim_torch.ipynb
+      - Energy: notebooks/torch/demo_energy_torch.ipynb
+      - Mahalanobis: notebooks/torch/demo_mahalanobis_torch.ipynb
+    - Advanced Topics:
+      - Seamlessly handling torch and tf datasets with DataHandler: pages/datahandler_tuto.md
+      - Seamlessly handling torch and tf Tensors with Operator: pages/operator_tuto.md
+      - Implementing your own baseline: pages/implementing_baselines_tuto.ipynb
   - API Reference:
     - OOD methods: api/methods.md
-    - OOD dataset: api/ooddataset.md
     - Metrics: api/metrics.md
+    - OOD dataset: api/ooddataset.md
+    - DataHandlers:
+      - TFDataHandler: api/tf_datahandler.md
+      - TorchDataHandler: api/torch_datahandler.md
+    - Operators:
+      - TorchOperator: api/torch_operator.md
+      - TFOperator: api/tf_operator.md
+    - FeatureExtractors:
+      - KerasFeatureExtractor: api/keras_feature_extractor.md
+      - TorchFeatureExtractor: api/torch_feature_extractor.md
     - Training tools: api/training_funs.md
     - Utils: api/utils.md
-    - Operators: api/operators.md
-  - Tutorials:
-    - Get Started: notebooks/demo_experiment.ipynb
-    - ODIN: notebooks/demo_odin.ipynb
-    - DKNN: notebooks/demo_dknn.ipynb
-    - VIM: notebooks/demo_vim.ipynb
-    - Energy: notebooks/demo_energy.ipynb
   - Contributing: CONTRIBUTING.md
 
 theme:
@@ -41,6 +62,8 @@ plugins:
   - mkdocstrings
   - mkdocs-jupyter:
       ignore: ["ignored_notebooks/*"]
+      ignore_h1_titles: True
+      include_source: True
 
 markdown_extensions:
   - footnotes

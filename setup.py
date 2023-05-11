@@ -62,6 +62,7 @@ dev_requirements = [
     "ipykernel",
     "pytest",
     "pylint",
+    "mypy",
     "mkdocs",
     "mkdocs-material",
     "mkdocstrings",
