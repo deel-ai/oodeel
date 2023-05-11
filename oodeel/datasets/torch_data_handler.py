@@ -593,8 +593,8 @@ class TorchDataHandler(DataHandler):
                 returned dataset is to be used for training). Defaults to None.
             output_keys (list): List of keys corresponding to the features that will be
                 returned. Keep all features if None. Defaults to None.
-            dict_based_fns (bool) Wheter to use preprocess and DA functions as dict based
-                (if True) or as tuple based (if False). Defaults to False.
+            dict_based_fns (bool): Whether to use preprocess and DA functions as dict
+                based (if True) or as tuple based (if False). Defaults to False.
             shuffle_buffer_size (int, optional): Size of the shuffle buffer. Not used
                 in torch because we only rely on Map-Style datasets. Still as argument
                 for API consistency. Defaults to None.

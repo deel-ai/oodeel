@@ -4,7 +4,7 @@ site_name: OODEEL
 nav:
   - Home: index.md
   - Tutorials:
-    - "Getting started: Maximum Logit Score on MNIST": pages/demo_experiment.ipynb
+    - "Getting started: Maximum Logit Score on MNIST": pages/getting_started.ipynb
     - Important Note On Feature Extractors: pages/feature_extractor_tuto.ipynb
     - OOD Baselines (Tensorflow):
       - ODIN: notebooks/tensorflow/demo_odin_tf.ipynb

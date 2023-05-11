@@ -121,7 +121,7 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         Args:
             dataset (tf.data.Dataset): input dataset
-            kwargs: additional arguments not considered for prediction
+            kwargs (dict): additional arguments not considered for prediction
 
         Returns:
             List[tf.Tensor]: features

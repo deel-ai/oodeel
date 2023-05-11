@@ -178,7 +178,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             dataset (torch.utils.data.DataLoader): input dataset
             detach (bool): if True, return features detached from the computational graph.
                 Defaults to True.
-            kwargs: additional arguments not considered for prediction
+            kwargs (dict): additional arguments not considered for prediction
 
         Returns:
             List[torch.Tensor]: features

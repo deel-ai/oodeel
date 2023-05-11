@@ -37,7 +37,7 @@ class MLS(OODModel):
     http://arxiv.org/abs/1610.02136
 
     Args:
-        output_activation: activation function for the last layer. If "linear",
+        output_activation (str): activation function for the last layer. If "linear",
             the method is MLS and if "softmax", the method is MSS.
             Defaults to "linear".
     """
