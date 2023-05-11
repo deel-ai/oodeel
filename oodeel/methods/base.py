@@ -35,7 +35,7 @@ from ..types import Union
 from ..utils import is_from
 
 
-class OODModel(ABC):
+class OODBaseDetector(ABC):
     """Base Class for methods that assign a score to unseen samples.
 
     Args:
@@ -190,7 +190,7 @@ class OODModel(ABC):
                 scores = np.append(scores, score_batch)
         else:
             raise NotImplementedError(
-                f"OODModel.score() not implemented for {type(dataset)}"
+                f"OODBaseDetector.score() not implemented for {type(dataset)}"
             )
         return scores
 
@@ -222,7 +222,7 @@ class OODModel(ABC):
                 scores = np.append(scores, score_batch)
         else:
             raise NotImplementedError(
-                f"OODModel.isood() not implemented for {type(dataset)}"
+                f"OODBaseDetector.isood() not implemented for {type(dataset)}"
             )
         oodness = scores < threshold
         return np.array(oodness, dtype=np.bool)

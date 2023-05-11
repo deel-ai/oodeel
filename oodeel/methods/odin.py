@@ -23,10 +23,10 @@
 import numpy as np
 
 from ..types import TensorType
-from .base import OODModel
+from .base import OODBaseDetector
 
 
-class ODIN(OODModel):
+class ODIN(OODBaseDetector):
     """ "Enhancing The Reliability of Out-of-distribution Image Detection
     in Neural Networks"
     http://arxiv.org/abs/1706.02690
