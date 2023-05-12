@@ -1,10 +1,10 @@
-::: oodeel.models.training_funs_tf
+::: oodeel.utils.tf_training_tools
     options:
         show_root_toc_entry: True
         inherited_members: True
         show_submodules: True
 
-::: oodeel.models.training_funs_torch
+::: oodeel.utils.torch_training_tools
     options:
         show_root_toc_entry: True
         inherited_members: True
