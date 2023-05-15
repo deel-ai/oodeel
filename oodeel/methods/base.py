@@ -28,6 +28,7 @@ import numpy as np
 
 from ..types import Callable
 from ..types import DatasetType
+from ..types import ItemType
 from ..types import List
 from ..types import Optional
 from ..types import TensorType
@@ -77,7 +78,7 @@ class OODBaseDetector(ABC):
     def fit(
         self,
         model: Callable,
-        fit_dataset: Optional[Union[TensorType, DatasetType]] = None,
+        fit_dataset: Optional[Union[ItemType, DatasetType]] = None,
     ) -> None:
         """Prepare the detector for scoring:
         * Constructs the feature extractor based on the model
@@ -136,7 +137,7 @@ class OODBaseDetector(ABC):
         )
         return feature_extractor
 
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
+    def _fit_to_dataset(self, fit_dataset: Union[ItemType, DatasetType]) -> None:
         """
         Fits the OOD detector to fit_dataset.
 
@@ -149,7 +150,7 @@ class OODBaseDetector(ABC):
 
     def calibrate_threshold(
         self,
-        fit_dataset: Union[TensorType, DatasetType],
+        fit_dataset: Union[ItemType, DatasetType],
         scores: np.ndarray,
     ) -> None:
         """
@@ -164,13 +165,13 @@ class OODBaseDetector(ABC):
 
     def score(
         self,
-        dataset: Union[TensorType, DatasetType],
+        dataset: Union[ItemType, DatasetType],
     ) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs"
 
         Args:
-            dataset (Union[TensorType, DatasetType]): dataset or tensors to score
+            dataset (Union[ItemType, DatasetType]): dataset or tensors to score
 
         Returns:
             scores or list of scores (depending on the input)
@@ -178,7 +179,7 @@ class OODBaseDetector(ABC):
         assert self.feature_extractor is not None, "Call .fit() before .score()"
 
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
-        if isinstance(dataset, get_args(TensorType)):
+        if isinstance(dataset, get_args(ItemType)):
             tensor = self.data_handler.get_input_from_dataset_item(dataset)
             scores = self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
@@ -195,13 +196,13 @@ class OODBaseDetector(ABC):
         return scores
 
     def isood(
-        self, dataset: Union[TensorType, DatasetType], threshold: float
+        self, dataset: Union[ItemType, DatasetType], threshold: float
     ) -> np.ndarray:
         """
         Returns whether the input samples "inputs" are OOD or not, given a threshold
 
         Args:
-            dataset (Union[TensorType, DatasetType]): dataset or tensors to score
+            dataset (Union[ItemType, DatasetType]): dataset or tensors to score
             threshold (float): threshold to use for distinguishing between OOD and ID
 
         Returns:
@@ -210,7 +211,7 @@ class OODBaseDetector(ABC):
         assert self.feature_extractor is not None, "Call .fit() before .isood()"
 
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
-        if isinstance(dataset, get_args(TensorType)):
+        if isinstance(dataset, get_args(ItemType)):
             tensor = self.data_handler.get_input_from_dataset_item(dataset)
             scores = self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
@@ -228,13 +229,13 @@ class OODBaseDetector(ABC):
         return np.array(oodness, dtype=np.bool)
 
     def __call__(
-        self, inputs: Union[TensorType, DatasetType], threshold: float
+        self, inputs: Union[ItemType, DatasetType], threshold: float
     ) -> np.ndarray:
         """
         Convenience wrapper for isood
 
         Args:
-            inputs (Union[TensorType, DatasetType]): dataset or tensors to score.
+            inputs (Union[ItemType, DatasetType]): dataset or tensors to score.
             threshold (float): threshold to use for distinguishing between OOD and ID
 
         Returns:
