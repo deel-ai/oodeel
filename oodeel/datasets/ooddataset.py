@@ -20,17 +20,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import TypeVar
-
 import numpy as np
 
 from ..types import Callable
+from ..types import DatasetType
 from ..types import Optional
 from ..types import Tuple
 from ..types import Union
-
-
-Dataset = TypeVar("Dataset")
 
 
 class OODDataset(object):
@@ -40,9 +36,9 @@ class OODDataset(object):
     scoring or training with the .prepare method.
 
     Args:
-        dataset_id (Union[Dataset, tuple, dict, str]): The dataset to load.
+        dataset_id (Union[DatasetType, tuple, dict, str]): The dataset to load.
             Can be loaded from tensorflow or torch datasets catalog when the str matches
-            one of the datasets. Defaults to Union[Dataset, tuple, dict, str].
+            one of the datasets. Defaults to Union[DatasetType, tuple, dict, str].
         backend (str, optional): Whether the dataset is to be used for tensorflow
              or torch models. Defaults to "tensorflow". Alternative: "torch".
         keys (list, optional): keys to use for dataset elems. Default to None
@@ -58,12 +54,12 @@ class OODDataset(object):
 
     def __init__(
         self,
-        dataset_id: Union[Dataset, tuple, dict, str],
+        dataset_id: Union[DatasetType, tuple, dict, str],
         backend: str = "tensorflow",
-        keys: list = None,
+        keys: Optional[list] = None,
         load_kwargs: dict = {},
         load_from_tensorflow_datasets: bool = False,
-        input_key: str = None,
+        input_key: Optional[str] = None,
     ):
         self.backend = backend
         self.load_from_tensorflow_datasets = load_from_tensorflow_datasets
@@ -145,7 +141,7 @@ class OODDataset(object):
 
     def add_out_data(
         self,
-        out_dataset: Union["OODDataset", Dataset],
+        out_dataset: Union["OODDataset", DatasetType],
         in_value: int = 0,
         out_value: int = 1,
         resize: Optional[bool] = False,
@@ -155,7 +151,7 @@ class OODDataset(object):
         training with added out-of-distribution data.
 
         Args:
-            out_dataset (Union[OODDataset, Dataset]): dataset of
+            out_dataset (Union[OODDataset, DatasetType]): dataset of
                 out-of-distribution data
             in_value (int): ood label value for in-distribution data. Defaults to 0
             out_value (int): ood label value for out-of-distribution data. Defaults to 1
@@ -265,7 +261,7 @@ class OODDataset(object):
         self,
         with_ood_labels: bool = False,
         with_labels: bool = True,
-    ) -> Dataset:
+    ) -> DatasetType:
         """Return the dataset in a tuple format and correct labels, without preparing
         for training or inference.
 
@@ -276,7 +272,7 @@ class OODDataset(object):
                 Defaults to True.
 
         Returns:
-            tf.data.Dataset: dataset
+            DatasetType : dataset
         """
         # Check if the dataset has at least one of label and ood_label
         assert (
@@ -312,13 +308,13 @@ class OODDataset(object):
     def prepare(
         self,
         batch_size: int = 128,
-        preprocess_fn: Callable = None,
-        augment_fn: Callable = None,
+        preprocess_fn: Optional[Callable] = None,
+        augment_fn: Optional[Callable] = None,
         with_ood_labels: bool = False,
         with_labels: bool = True,
         shuffle: bool = False,
-        shuffle_buffer_size: int = None,
-    ) -> Dataset:
+        shuffle_buffer_size: Optional[int] = None,
+    ) -> DatasetType:
         """Prepare self.data for scoring or training
 
         Args:
@@ -338,7 +334,7 @@ class OODDataset(object):
                 If None, taken as the number of samples in the dataset. Defaults to None.
 
         Returns:
-            Dataset: prepared dataset
+            DatasetType: prepared dataset
         """
         # Check if the dataset has at least one of label and ood_label
         assert (

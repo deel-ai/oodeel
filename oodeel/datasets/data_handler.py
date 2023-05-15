@@ -176,8 +176,8 @@ class DataHandler(ABC):
         dataset: Any,
         batch_size: int,
         shuffle: bool = False,
-        preprocess_fn: Callable = None,
-        augment_fn: Callable = None,
+        preprocess_fn: Optional[Callable] = None,
+        augment_fn: Optional[Callable] = None,
         output_keys: list = ["input", "label"],
     ) -> Any:
         """Prepare a dataset for training

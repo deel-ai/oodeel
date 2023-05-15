@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from typing import get_args
+from typing import Optional
 
 import torch
 from torch import nn
@@ -57,7 +58,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         self,
         model: nn.Module,
         output_layers_id: List[Union[int, str]] = [],
-        input_layer_id: Union[int, str] = None,
+        input_layer_id: Optional[Union[int, str]] = None,
     ):
         model = model.eval()
         super().__init__(

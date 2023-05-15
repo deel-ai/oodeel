@@ -27,6 +27,7 @@ import numpy as np
 
 from ..types import Callable
 from ..types import List
+from ..types import Optional
 from ..types import TensorType
 from ..types import Union
 
@@ -40,12 +41,12 @@ class Operator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def argmax(tensor: TensorType, dim: int = None) -> TensorType:
+    def argmax(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         """Argmax function"""
         raise NotImplementedError()
 
     @abstractmethod
-    def max(tensor: TensorType, dim: int = None) -> TensorType:
+    def max(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         """Max function"""
         raise NotImplementedError()
 
@@ -65,7 +66,7 @@ class Operator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def norm(tensor: TensorType, dim: int = None) -> TensorType:
+    def norm(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         """Norm function"""
         raise NotImplementedError()
 
@@ -104,7 +105,7 @@ class Operator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def mean(tensor: TensorType, dim: int = None) -> TensorType:
+    def mean(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         "Mean function"
         raise NotImplementedError()
 

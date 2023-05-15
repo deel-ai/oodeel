@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import Optional
+
 import numpy as np
 import tensorflow as tf
 
@@ -54,7 +56,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         self,
         model: Callable,
         output_layers_id: List[Union[int, str]] = [-1],
-        input_layer_id: Union[int, str] = None,
+        input_layer_id: Optional[Union[int, str]] = None,
     ):
         if input_layer_id is None:
             input_layer_id = 0

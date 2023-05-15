@@ -74,6 +74,8 @@ dev_requirements = [
     "torch",
     "torchvision",
     "pandas",
+    "docsig",
+    "no_implicit_optional",
 ]
 
 
