@@ -87,14 +87,14 @@ class ToyTorchConvnet(nn.Sequential):
 def train_torch_model(
     train_data: DataLoader,
     model_name: str = "resnet18",
-    num_classes: int = None,
+    num_classes: Optional[int] = None,
     epochs: int = 50,
     loss: str = "CrossEntropyLoss",
     optimizer: str = "Adam",
     lr_scheduler: str = "cosine",
     learning_rate: float = 1e-3,
     imagenet_pretrained: bool = False,
-    validation_data: DataLoader = None,
+    validation_data: Optional[DataLoader] = None,
     save_dir: Optional[str] = None,
     cuda_idx: int = 0,
 ) -> nn.Module:
@@ -173,9 +173,9 @@ def _train(
     optimizer: torch.optim.Optimizer,
     criterion: torch.nn.modules.loss._Loss,
     device: torch.device,
-    lr_scheduler: torch.optim.lr_scheduler._LRScheduler = None,
-    save_dir: str = None,
-    validation_data: DataLoader = None,
+    lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+    save_dir: Optional[str] = None,
+    validation_data: Optional[DataLoader] = None,
 ):
     """Torch basic training loop
 

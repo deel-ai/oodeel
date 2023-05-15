@@ -76,7 +76,7 @@ class TFDataHandler(DataHandler):
 
     @classmethod
     def load_dataset(
-        cls, dataset_id: Any, keys: list = None, load_kwargs: dict = {}
+        cls, dataset_id: Any, keys: Optional[list] = None, load_kwargs: dict = {}
     ) -> tf.data.Dataset:
         """Load dataset from different manners, ensuring to return a dict based
         tf.data.Dataset.
@@ -101,7 +101,7 @@ class TFDataHandler(DataHandler):
 
     @staticmethod
     def load_dataset_from_arrays(
-        dataset_id: Union[np.ndarray, dict, tuple], keys: list = None
+        dataset_id: Union[np.ndarray, dict, tuple], keys: Optional[list] = None
     ) -> tf.data.Dataset:
         """Load a tf.data.Dataset from a numpy array or a tuple/dict of numpy arrays
 
@@ -157,7 +157,7 @@ class TFDataHandler(DataHandler):
 
     @classmethod
     def load_custom_dataset(
-        cls, dataset_id: tf.data.Dataset, keys: list = None
+        cls, dataset_id: tf.data.Dataset, keys: Optional[list] = None
     ) -> tf.data.Dataset:
         """Load a custom Dataset by ensuring it has the correct format (dict-based)
 
@@ -215,7 +215,9 @@ class TFDataHandler(DataHandler):
 
     @staticmethod
     @dict_only_ds
-    def dict_to_tuple(dataset: tf.data.Dataset, keys: list = None) -> tf.data.Dataset:
+    def dict_to_tuple(
+        dataset: tf.data.Dataset, keys: Optional[list] = None
+    ) -> tf.data.Dataset:
         """Turn a dict based tf.data.Dataset to a tuple based tf.data.Dataset
 
         Args:
@@ -398,11 +400,11 @@ class TFDataHandler(DataHandler):
         dataset: tf.data.Dataset,
         batch_size: int,
         shuffle: bool = False,
-        preprocess_fn: Callable = None,
-        augment_fn: Callable = None,
-        output_keys: list = None,
+        preprocess_fn: Optional[Callable] = None,
+        augment_fn: Optional[Callable] = None,
+        output_keys: Optional[list] = None,
         dict_based_fns: bool = False,
-        shuffle_buffer_size: int = None,
+        shuffle_buffer_size: Optional[int] = None,
         prefetch_buffer_size: Optional[int] = None,
         drop_remainder: Optional[bool] = False,
     ) -> tf.data.Dataset:

@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from typing import List
+from typing import Optional
 
 import numpy as np
 import torch
@@ -49,7 +50,7 @@ def sanitize_input(tensor_arg_func: Callable):
 class TorchOperator(Operator):
     """Class to handle torch operations with a unified API"""
 
-    def __init__(self, model: torch.nn.Module = None):
+    def __init__(self, model: Optional[torch.nn.Module] = None):
         if model is not None:
             self._device = next(model.parameters()).device
         else:
@@ -62,13 +63,15 @@ class TorchOperator(Operator):
 
     @staticmethod
     def argmax(
-        tensor: Union[torch.Tensor, np.ndarray], dim: int = None
+        tensor: Union[torch.Tensor, np.ndarray], dim: Optional[int] = None
     ) -> torch.Tensor:
         """Argmax function"""
         return torch.argmax(tensor, dim=dim)
 
     @staticmethod
-    def max(tensor: Union[torch.Tensor, np.ndarray], dim: int = None) -> torch.Tensor:
+    def max(
+        tensor: Union[torch.Tensor, np.ndarray], dim: Optional[int] = None
+    ) -> torch.Tensor:
         """Max function"""
         if dim is None:
             return torch.max(tensor)
@@ -97,7 +100,9 @@ class TorchOperator(Operator):
         return sanitized_ce_loss
 
     @staticmethod
-    def norm(tensor: Union[torch.Tensor, np.ndarray], dim: int = None) -> torch.Tensor:
+    def norm(
+        tensor: Union[torch.Tensor, np.ndarray], dim: Optional[int] = None
+    ) -> torch.Tensor:
         """Tensor Norm"""
         return tensor.norm(dim=dim)
 
@@ -149,7 +154,7 @@ class TorchOperator(Operator):
         return torch.cat(tensors, dim)
 
     @staticmethod
-    def mean(tensor: TensorType, dim: int = None) -> TensorType:
+    def mean(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         "Mean function"
         if dim is None:
             return torch.mean(tensor)

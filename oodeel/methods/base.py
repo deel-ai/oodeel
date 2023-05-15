@@ -51,7 +51,7 @@ class OODBaseDetector(ABC):
     def __init__(
         self,
         output_layers_id: List[int] = [-1],
-        input_layers_id: List[int] = None,
+        input_layers_id: Optional[List[int]] = None,
     ):
         self.feature_extractor = None
         self.output_layers_id = output_layers_id

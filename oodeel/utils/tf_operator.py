@@ -25,6 +25,7 @@ import tensorflow as tf
 
 from ..types import Callable
 from ..types import List
+from ..types import Optional
 from ..types import TensorType
 from ..types import Union
 from .general_utils import is_from
@@ -54,14 +55,18 @@ class TFOperator(Operator):
         return tf.keras.activations.softmax(tensor, axis=-1)
 
     @staticmethod
-    def argmax(tensor: Union[tf.Tensor, np.ndarray], dim: int = None) -> tf.Tensor:
+    def argmax(
+        tensor: Union[tf.Tensor, np.ndarray], dim: Optional[int] = None
+    ) -> tf.Tensor:
         """Argmax function"""
         if dim is None:
             return tf.argmax(tf.reshape(tensor, [-1]))
         return tf.argmax(tensor, axis=dim)
 
     @staticmethod
-    def max(tensor: Union[tf.Tensor, np.ndarray], dim: int = None) -> tf.Tensor:
+    def max(
+        tensor: Union[tf.Tensor, np.ndarray], dim: Optional[int] = None
+    ) -> tf.Tensor:
         """Max function"""
         return tf.reduce_max(tensor, axis=dim)
 
@@ -89,7 +94,9 @@ class TFOperator(Operator):
         return sanitized_ce_loss
 
     @staticmethod
-    def norm(tensor: Union[tf.Tensor, np.ndarray], dim: int = None) -> tf.Tensor:
+    def norm(
+        tensor: Union[tf.Tensor, np.ndarray], dim: Optional[int] = None
+    ) -> tf.Tensor:
         """Tensor Norm"""
         return tf.norm(tensor, axis=dim)
 
@@ -132,7 +139,7 @@ class TFOperator(Operator):
         return tf.concat(tensors, dim)
 
     @staticmethod
-    def mean(tensor: TensorType, dim: int = None) -> TensorType:
+    def mean(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         "Mean function"
         return tf.reduce_mean(tensor, dim)
 

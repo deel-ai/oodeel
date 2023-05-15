@@ -21,7 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import copy
-from typing import TypeVar
 
 import numpy as np
 import torch
@@ -40,12 +39,10 @@ from ..types import Callable
 from ..types import Dict
 from ..types import List
 from ..types import Optional
+from ..types import TensorType
 from ..types import Tuple
 from ..types import Union
 from .data_handler import DataHandler
-
-
-ArrayLike = TypeVar("ArrayLike")
 
 
 def dict_only_ds(ds_handling_method: Callable) -> Callable:
@@ -85,11 +82,11 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
     return wrapper
 
 
-def to_torch(array: ArrayLike) -> torch.Tensor:
+def to_torch(array: TensorType) -> torch.Tensor:
     """Convert an array into a torch Tensor
 
     Args:
-        array (ArrayLike): array to convert
+        array (TensorType): array to convert
 
     Returns:
         torch.Tensor: converted array
@@ -282,7 +279,7 @@ class TorchDataHandler(DataHandler):
 
     @classmethod
     def load_dataset(
-        cls, dataset_id: Any, keys: list = None, load_kwargs: dict = {}
+        cls, dataset_id: Any, keys: Optional[list] = None, load_kwargs: dict = {}
     ) -> DictDataset:
         """Load dataset from different manners
 
@@ -307,16 +304,16 @@ class TorchDataHandler(DataHandler):
     @staticmethod
     def load_dataset_from_arrays(
         dataset_id: Union[
-            ArrayLike,
-            Dict[str, ArrayLike],
-            Tuple[ArrayLike],
+            TensorType,
+            Dict[str, TensorType],
+            Tuple[TensorType],
         ],
-        keys: list = None,
+        keys: Optional[list] = None,
     ) -> DictDataset:
         """Load a torch.utils.data.Dataset from an array or a tuple/dict of arrays.
 
         Args:
-            dataset_id (ArrayLike | Dict[str, ArrayLike] | Tuple[ArrayLike]):
+            dataset_id (TensorType | Dict[str, TensorType] | Tuple[TensorType]):
                 numpy / torch array(s) to load.
             keys (list, optional): Features keys. If None, assigned as "input_i"
                 for i-th feature. Defaults to None.
@@ -359,7 +356,9 @@ class TorchDataHandler(DataHandler):
         return dataset
 
     @staticmethod
-    def load_custom_dataset(dataset_id: Dataset, keys: list = None) -> DictDataset:
+    def load_custom_dataset(
+        dataset_id: Dataset, keys: Optional[list] = None
+    ) -> DictDataset:
         """Load a custom Dataset by ensuring it has the correct format (dict-based)
 
         Args:
@@ -575,11 +574,11 @@ class TorchDataHandler(DataHandler):
         dataset: DictDataset,
         batch_size: int,
         shuffle: bool = False,
-        preprocess_fn: Callable = None,
-        augment_fn: Callable = None,
-        output_keys: list = None,
+        preprocess_fn: Optional[Callable] = None,
+        augment_fn: Optional[Callable] = None,
+        output_keys: Optional[list] = None,
         dict_based_fns: bool = False,
-        shuffle_buffer_size: int = None,
+        shuffle_buffer_size: Optional[int] = None,
     ) -> DataLoader:
         """Prepare a DataLoader for training
 
