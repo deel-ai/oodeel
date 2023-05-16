@@ -86,8 +86,8 @@ class ToyTorchConvnet(nn.Sequential):
 
 def train_torch_model(
     train_data: DataLoader,
-    model_name: str = "resnet18",
-    num_classes: Optional[int] = None,
+    model_name: str,
+    num_classes: int,
     epochs: int = 50,
     loss: str = "CrossEntropyLoss",
     optimizer: str = "Adam",
@@ -105,8 +105,7 @@ def train_torch_model(
     Args:
         train_data (DataLoader): train dataloader
         model_name (str): must be a model from torchvision.models or "toy_convnet".
-            Defaults to "resnet18".
-        num_classes (int, optional): If None, infered from train_data. Defaults to None.
+        num_classes (int): Number of output classes.
         epochs (int, optional): Defaults to 50.
         loss (str, optional): Defaults to "CrossEntropyLoss".
         optimizer (str, optional): Defaults to "Adam".
@@ -176,7 +175,7 @@ def _train(
     lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
     save_dir: Optional[str] = None,
     validation_data: Optional[DataLoader] = None,
-):
+) -> nn.Module:
     """Torch basic training loop
 
     Args:

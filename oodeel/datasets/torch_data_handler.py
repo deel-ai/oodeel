@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import copy
+from typing import get_args
 
 import numpy as np
 import torch
@@ -36,7 +37,7 @@ from tqdm import tqdm
 
 from ..types import Any
 from ..types import Callable
-from ..types import Dict
+from ..types import ItemType
 from ..types import List
 from ..types import Optional
 from ..types import TensorType
@@ -279,12 +280,15 @@ class TorchDataHandler(DataHandler):
 
     @classmethod
     def load_dataset(
-        cls, dataset_id: Any, keys: Optional[list] = None, load_kwargs: dict = {}
+        cls,
+        dataset_id: Union[Dataset, ItemType, str],
+        keys: Optional[list] = None,
+        load_kwargs: dict = {},
     ) -> DictDataset:
         """Load dataset from different manners
 
         Args:
-            dataset_id (Any): dataset identification
+            dataset_id (Union[Dataset, ItemType, str]): dataset identification
             keys (list, optional): Features keys. If None, assigned as "input_i"
                 for i-th feature. Defaults to None.
             load_kwargs (dict, optional): Additional loading kwargs. Defaults to {}.
@@ -297,23 +301,19 @@ class TorchDataHandler(DataHandler):
             dataset = cls.load_from_torchvision(dataset_id, **load_kwargs)
         elif isinstance(dataset_id, Dataset):
             dataset = cls.load_custom_dataset(dataset_id, keys)
-        elif isinstance(dataset_id, (np.ndarray, torch.Tensor, tuple, dict)):
+        elif isinstance(dataset_id, get_args(ItemType)):
             dataset = cls.load_dataset_from_arrays(dataset_id, keys)
         return dataset
 
     @staticmethod
     def load_dataset_from_arrays(
-        dataset_id: Union[
-            TensorType,
-            Dict[str, TensorType],
-            Tuple[TensorType],
-        ],
+        dataset_id: ItemType,
         keys: Optional[list] = None,
     ) -> DictDataset:
         """Load a torch.utils.data.Dataset from an array or a tuple/dict of arrays.
 
         Args:
-            dataset_id (TensorType | Dict[str, TensorType] | Tuple[TensorType]):
+            dataset_id (ItemType):
                 numpy / torch array(s) to load.
             keys (list, optional): Features keys. If None, assigned as "input_i"
                 for i-th feature. Defaults to None.
@@ -322,7 +322,7 @@ class TorchDataHandler(DataHandler):
             DictDataset: dataset
         """
         # If dataset_id is an array
-        if isinstance(dataset_id, (np.ndarray, torch.Tensor)):
+        if isinstance(dataset_id, get_args(TensorType)):
             tensors = tuple(to_torch(dataset_id))
             output_keys = keys or ["input"]
 
@@ -716,11 +716,11 @@ class TorchDataHandler(DataHandler):
         return tuple(dataset[0][feature_key].shape)
 
     @staticmethod
-    def get_input_from_dataset_item(elem: Union[torch.Tensor, tuple, dict]) -> Any:
+    def get_input_from_dataset_item(elem: ItemType) -> Any:
         """Get the tensor that is to be feed as input to a model from a dataset element.
 
         Args:
-            elem (Union[Any, tuple, dict]): dataset element to extract input from
+            elem (ItemType): dataset element to extract input from
 
         Returns:
             Any: Input tensor

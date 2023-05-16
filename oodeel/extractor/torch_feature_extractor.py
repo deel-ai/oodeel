@@ -25,12 +25,14 @@ from typing import Optional
 
 import torch
 from torch import nn
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from ..datasets.torch_data_handler import TorchDataHandler
 from ..types import Callable
-from ..types import DatasetType
+from ..types import ItemType
 from ..types import List
+from ..types import TensorType
 from ..types import Union
 from ..utils.torch_operator import sanitize_input
 from .feature_extractor import FeatureExtractor
@@ -143,12 +145,12 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     @sanitize_input
     def predict_tensor(
-        self, x: torch.Tensor, detach: bool = True
-    ) -> List[torch.Tensor]:
+        self, x: TensorType, detach: bool = True
+    ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
-            x (Union[torch.Tensor, np.ndarray, Tuple]): input tensor (or dataset elem)
+            x (TensorType): input tensor (or dataset elem)
             detach (bool): if True, return features detached from the computational graph.
                 Defaults to True.
 
@@ -171,12 +173,12 @@ class TorchFeatureExtractor(FeatureExtractor):
         return features
 
     def predict(
-        self, dataset: torch.utils.data.DataLoader, detach: bool = True, **kwargs
-    ) -> List[torch.Tensor]:
+        self, dataset: Union[DataLoader, ItemType], detach: bool = True, **kwargs
+    ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
-            dataset (torch.utils.data.DataLoader): input dataset
+            dataset (Union[DataLoader, ItemType]): input dataset
             detach (bool): if True, return features detached from the computational graph.
                 Defaults to True.
             kwargs (dict): additional arguments not considered for prediction
@@ -185,7 +187,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             List[torch.Tensor]: features
         """
 
-        if not isinstance(dataset, get_args(DatasetType)):
+        if isinstance(dataset, get_args(ItemType)):
             tensor = TorchDataHandler.get_input_from_dataset_item(dataset)
             return self.predict_tensor(tensor, detach=detach)
 

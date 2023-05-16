@@ -20,13 +20,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import get_args
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from ..types import Any
 from ..types import Callable
+from ..types import ItemType
 from ..types import Optional
+from ..types import TensorType
 from ..types import Tuple
 from ..types import Union
 from .data_handler import DataHandler
@@ -76,7 +79,10 @@ class TFDataHandler(DataHandler):
 
     @classmethod
     def load_dataset(
-        cls, dataset_id: Any, keys: Optional[list] = None, load_kwargs: dict = {}
+        cls,
+        dataset_id: Union[tf.data.Dataset, ItemType, str],
+        keys: Optional[list] = None,
+        load_kwargs: dict = {},
     ) -> tf.data.Dataset:
         """Load dataset from different manners, ensuring to return a dict based
         tf.data.Dataset.
@@ -91,7 +97,7 @@ class TFDataHandler(DataHandler):
         Returns:
             tf.data.Dataset: A dict based tf.data.Dataset
         """
-        if isinstance(dataset_id, (np.ndarray, dict, tuple)):
+        if isinstance(dataset_id, get_args(ItemType)):
             dataset = cls.load_dataset_from_arrays(dataset_id, keys)
         elif isinstance(dataset_id, tf.data.Dataset):
             dataset = cls.load_custom_dataset(dataset_id, keys)
@@ -101,12 +107,13 @@ class TFDataHandler(DataHandler):
 
     @staticmethod
     def load_dataset_from_arrays(
-        dataset_id: Union[np.ndarray, dict, tuple], keys: Optional[list] = None
+        dataset_id: ItemType, keys: Optional[list] = None
     ) -> tf.data.Dataset:
-        """Load a tf.data.Dataset from a numpy array or a tuple/dict of numpy arrays
+        """Load a tf.data.Dataset from a np.ndarray, a tf.Tensor or a tuple/dict
+        of np.ndarrays/td.Tensors.
 
         Args:
-            dataset_id (Union[np.ndarray, dict, tuple]): numpy array(s) to load.
+            dataset_id (ItemType): numpy array(s) to load.
             keys (list, optional): Features keys. If None, assigned as "input_i"
                 for i-th feature. Defaults to None.
 
@@ -114,8 +121,8 @@ class TFDataHandler(DataHandler):
             tf.data.Dataset
         """
         # If dataset_id is a numpy array, convert it to a dict
-        if isinstance(dataset_id, np.ndarray):
-            dataset = {"input": dataset_id}
+        if isinstance(dataset_id, get_args(TensorType)):
+            dataset_dict = {"input": dataset_id}
 
         # If dataset_id is a tuple, convert it to a dict
         elif isinstance(dataset_id, tuple):
@@ -139,8 +146,6 @@ class TFDataHandler(DataHandler):
                 ), "Number of keys mismatch with the number of features"
                 dataset_dict = {keys[i]: dataset_id[i] for i in range(len_elem)}
 
-            dataset = tf.data.Dataset.from_tensor_slices(dataset_dict)
-
         elif isinstance(dataset_id, dict):
             if keys is not None:
                 len_elem = len(dataset_id)
@@ -151,8 +156,8 @@ class TFDataHandler(DataHandler):
                 dataset_dict = {
                     keys[i]: dataset_id[original_keys[i]] for i in range(len_elem)
                 }
-            dataset = tf.data.Dataset.from_tensor_slices(dataset_dict)
 
+        dataset = tf.data.Dataset.from_tensor_slices(dataset_dict)
         return dataset
 
     @classmethod
@@ -327,7 +332,7 @@ class TFDataHandler(DataHandler):
             bool: If the tf.data.Dataset has a feature denoted by key
         """
         assert isinstance(dataset.element_spec, dict), "dataset elements must be dicts"
-        return 1 if (key in dataset.element_spec.keys()) else 0
+        return True if (key in dataset.element_spec.keys()) else False
 
     @staticmethod
     def map_ds(
@@ -608,14 +613,14 @@ class TFDataHandler(DataHandler):
         return tuple(dataset.element_spec[feature_key].shape)
 
     @staticmethod
-    def get_input_from_dataset_item(elem: Union[tf.Tensor, tuple, dict]) -> Any:
+    def get_input_from_dataset_item(elem: ItemType) -> TensorType:
         """Get the tensor that is to be feed as input to a model from a dataset element.
 
         Args:
-            elem (Union[Any, tuple, dict]): dataset element to extract input from
+            elem (ItemType): dataset element to extract input from
 
         Returns:
-            Any: Input tensor
+            TensorType: Input tensor
         """
         if isinstance(elem, (tuple, list)):
             tensor = elem[0]

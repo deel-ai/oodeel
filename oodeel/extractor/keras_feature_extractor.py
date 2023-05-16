@@ -20,15 +20,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import get_args
 from typing import Optional
 
-import numpy as np
 import tensorflow as tf
 
 from ..datasets.tf_data_handler import TFDataHandler
 from ..types import Callable
+from ..types import ItemType
 from ..types import List
-from ..types import Tuple
+from ..types import TensorType
 from ..types import Union
 from ..utils.tf_operator import sanitize_input
 from .feature_extractor import FeatureExtractor
@@ -106,11 +107,11 @@ class KerasFeatureExtractor(FeatureExtractor):
 
     @sanitize_input
     @tf.function
-    def predict_tensor(self, tensor: Union[tf.Tensor, np.ndarray, Tuple]) -> tf.Tensor:
+    def predict_tensor(self, tensor: TensorType) -> Union[tf.Tensor, List[tf.Tensor]]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
-            tensor (Union[tf.Tensor, np.ndarray, Tuple]): input tensor (or dataset elem)
+            tensor (TensorType): input tensor (or dataset elem)
 
         Returns:
             tf.Tensor: features
@@ -118,17 +119,19 @@ class KerasFeatureExtractor(FeatureExtractor):
         features = self.extractor(tensor, training=False)
         return features
 
-    def predict(self, dataset: tf.data.Dataset, **kwargs) -> List[tf.Tensor]:
+    def predict(
+        self, dataset: Union[ItemType, tf.data.Dataset], **kwargs
+    ) -> Union[tf.Tensor, List[tf.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
-            dataset (tf.data.Dataset): input dataset
+            dataset (Union[ItemType, tf.data.Dataset]): input dataset
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
             List[tf.Tensor]: features
         """
-        if not isinstance(dataset, tf.data.Dataset):
+        if isinstance(dataset, get_args(ItemType)):
             tensor = TFDataHandler.get_input_from_dataset_item(dataset)
             return self.predict_tensor(tensor)
 
