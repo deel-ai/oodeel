@@ -40,6 +40,7 @@ mls = MLS()
 mls.fit(model) # A tensorflow or torch model
 scores = mls.score(ds) # ds is a tf.data.Dataset or a torch.DataLoader
 ```
+
 **Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully!
 
 # Table of contents

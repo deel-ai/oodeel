@@ -36,6 +36,7 @@ mls = MLS()
 mls.fit(model)
 scores = mls.score(ds)
 ```
+
 **Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully!
 
 # Table of contents
