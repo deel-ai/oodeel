@@ -158,7 +158,7 @@ Currently, **oodeel** includes the following baselines:
 - [x] Unification of tutorial notebooks
 - [x] Validation of all methods for pytorch using `TorchOperator`, making oodeel compatible with both tensorflow and pytorch models.
 - [x] Integration of `TorchDataHandler` to alleviate the need of `tf.data.Dataset` when using pytorch. At this stage, oodeel will no more require any tensorflow components when using pytorch, and vice-versa.
-- [ ] Revise docstring and type hinting
+- [x] Revise docstring and type hinting
 - [x] Set up the doc
 
 ## What's next?
