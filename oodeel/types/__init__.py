@@ -54,14 +54,22 @@ except ImportError:
 
 
 if len(avail_lib) == 2:
-    DatasetType = Type[Union[tf.data.Dataset, torch.utils.data.DataLoader, list]]
-    ItemType = Type[Union[tf.Tensor, torch.Tensor, tuple, dict]]
+    DatasetType = Type[torch.utils.data.DataLoader]
     TensorType = Type[Union[tf.Tensor, torch.Tensor, np.ndarray]]
+    ItemType = Type[
+        Union[
+            tf.Tensor,
+            torch.Tensor,
+            np.ndarray,
+            tuple,
+            dict,
+        ]
+    ]
 elif "tensorflow" in avail_lib:
-    DatasetType = Type[Union[tf.data.Dataset, list]]
-    ItemType = Type[Union[tf.Tensor, tuple, dict]]
+    DatasetType = Type[tf.data.Dataset]
     TensorType = Type[Union[tf.Tensor, np.ndarray]]
+    ItemType = Type[Union[tf.Tensor, np.ndarray, tuple, dict]]
 elif "torch" in avail_lib:
-    DatasetType = Type[Union[torch.utils.data.DataLoader, list]]
-    ItemType = Type[Union[torch.Tensor, tuple, dict]]
+    DatasetType = Type[torch.utils.data.DataLoader]
     TensorType = Type[Union[torch.Tensor, np.ndarray]]
+    ItemType = Type[Union[torch.Tensor, np.ndarray, tuple, dict]]

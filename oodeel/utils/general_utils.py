@@ -23,7 +23,7 @@
 from ..types import Any
 
 
-def is_from(model_or_tensor: Any, framework: str) -> str:
+def is_from(model_or_tensor: Any, framework: str) -> bool:
     """Check whether a model or tensor belongs to a specific framework
 
     Args:

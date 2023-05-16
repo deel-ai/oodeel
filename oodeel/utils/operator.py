@@ -36,52 +36,52 @@ class Operator(ABC):
     """Class to handle tensorflow and torch operations with a unified API"""
 
     @abstractmethod
-    def softmax(tensor: TensorType) -> TensorType:
+    def softmax(self, tensor: TensorType) -> TensorType:
         """Softmax function along the last dimension"""
         raise NotImplementedError()
 
     @abstractmethod
-    def argmax(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
+    def argmax(self, tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         """Argmax function"""
         raise NotImplementedError()
 
     @abstractmethod
-    def max(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
+    def max(self, tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         """Max function"""
         raise NotImplementedError()
 
     @abstractmethod
-    def one_hot(tensor: TensorType, num_classes: int) -> TensorType:
+    def one_hot(self, tensor: TensorType, num_classes: int) -> TensorType:
         """One hot function"""
         raise NotImplementedError()
 
     @abstractmethod
-    def sign(tensor: TensorType) -> TensorType:
+    def sign(self, tensor: TensorType) -> TensorType:
         """Sign function"""
         raise NotImplementedError()
 
     @abstractmethod
-    def CrossEntropyLoss(reduction: str = "mean"):
+    def CrossEntropyLoss(self, reduction: str = "mean"):
         """Cross Entropy Loss from logits"""
         raise NotImplementedError()
 
     @abstractmethod
-    def norm(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
+    def norm(self, tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         """Norm function"""
         raise NotImplementedError()
 
     @abstractmethod
-    def matmul(tensor_1: TensorType, tensor_2: TensorType) -> TensorType:
+    def matmul(self, tensor_1: TensorType, tensor_2: TensorType) -> TensorType:
         """Matmul operation"""
         raise NotImplementedError()
 
     @abstractmethod
-    def convert_to_numpy(tensor: TensorType) -> np.ndarray:
+    def convert_to_numpy(self, tensor: TensorType) -> np.ndarray:
         "Convert a tensor to a NumPy array"
         raise NotImplementedError()
 
     @abstractmethod
-    def gradient(func: Callable, inputs: TensorType) -> TensorType:
+    def gradient(self, func: Callable, inputs: TensorType) -> TensorType:
         """Compute gradients for a batch of samples.
 
         Args:
@@ -95,53 +95,55 @@ class Operator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def stack(tensors: List[TensorType], dim: int = 0) -> TensorType:
+    def stack(self, tensors: List[TensorType], dim: int = 0) -> TensorType:
         "Stack tensors along a new dimension"
         raise NotImplementedError()
 
     @abstractmethod
-    def cat(tensors: List[TensorType], dim: int = 0) -> TensorType:
+    def cat(self, tensors: List[TensorType], dim: int = 0) -> TensorType:
         "Concatenate tensors in a given dimension"
         raise NotImplementedError()
 
     @abstractmethod
-    def mean(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
+    def mean(self, tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         "Mean function"
         raise NotImplementedError()
 
     @abstractmethod
-    def flatten(tensor: TensorType) -> TensorType:
+    def flatten(self, tensor: TensorType) -> TensorType:
         "Flatten to 2D tensor (batch_size, -1)"
         # Flatten the features to 2D (n_batch, n_features)
         raise NotImplementedError()
 
     @abstractmethod
-    def from_numpy(arr: np.ndarray) -> TensorType:
+    def from_numpy(self, arr: np.ndarray) -> TensorType:
         "Convert a NumPy array to a tensor"
         # TODO change dtype
         raise NotImplementedError()
 
     @abstractmethod
-    def transpose(tensor: TensorType) -> TensorType:
+    def transpose(self, tensor: TensorType) -> TensorType:
         "Transpose function for tensor of rank 2"
         raise NotImplementedError()
 
     @abstractmethod
-    def diag(tensor: TensorType) -> TensorType:
+    def diag(self, tensor: TensorType) -> TensorType:
         "Diagonal function: return the diagonal of a 2D tensor"
         raise NotImplementedError()
 
     @abstractmethod
-    def reshape(tensor: TensorType, shape: List[int]) -> TensorType:
+    def reshape(self, tensor: TensorType, shape: List[int]) -> TensorType:
         "Reshape function"
         raise NotImplementedError()
 
     @abstractmethod
-    def equal(tensor: TensorType, other: Union[TensorType, int, float]) -> TensorType:
+    def equal(
+        self, tensor: TensorType, other: Union[TensorType, int, float]
+    ) -> TensorType:
         "Computes element-wise equality"
         raise NotImplementedError()
 
     @abstractmethod
-    def pinv(tensor: TensorType) -> TensorType:
+    def pinv(self, tensor: TensorType) -> TensorType:
         "Computes the pseudoinverse (Moore-Penrose inverse) of a matrix."
         raise NotImplementedError()

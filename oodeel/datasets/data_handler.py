@@ -25,10 +25,12 @@ from abc import abstractmethod
 
 import numpy as np
 
-from ..types import Any
 from ..types import Callable
+from ..types import DatasetType
+from ..types import ItemType
 from ..types import Optional
 from ..types import Tuple
+from ..types import Union
 
 
 class DataHandler(ABC):
@@ -40,40 +42,49 @@ class DataHandler(ABC):
 
     @classmethod
     @abstractmethod
-    def load_dataset(cls, dataset_id: Any, load_kwargs: dict = {}) -> Any:
+    def load_dataset(
+        cls,
+        dataset_id: Union[ItemType, DatasetType, str],
+        keys: Optional[list] = None,
+        load_kwargs: dict = {},
+    ) -> DatasetType:
         """Load dataset from different manners
 
         Args:
-            dataset_id (Any): dataset identification
+            dataset_id (Union[ItemType, DatasetType, str]): dataset identification
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
             load_kwargs (dict, optional): Additional loading kwargs. Defaults to {}.
 
         Returns:
-            Any: dataset
+            DatasetType: dataset
         """
         raise NotImplementedError()
 
     @staticmethod
     @abstractmethod
-    def assign_feature_value(dataset: Any, feature_key: str, value: int) -> Any:
+    def assign_feature_value(
+        dataset: DatasetType, feature_key: str, value: int
+    ) -> DatasetType:
         """Assign a value to a feature for every sample in a Dataset
 
         Args:
-            dataset (Any): Dataset to assign the value to
+            dataset (DatasetType): Dataset to assign the value to
             feature_key (str): Feature to assign the value to
             value (int): Value to assign
 
         Returns:
-            Any: updated dataset
+            DatasetType: updated dataset
         """
         raise NotImplementedError()
 
     @staticmethod
     @abstractmethod
-    def get_feature_from_ds(dataset: Any, feature_key: str) -> np.ndarray:
+    def get_feature_from_ds(dataset: DatasetType, feature_key: str) -> np.ndarray:
         """Get a feature from a Dataset
 
         Args:
-            dataset (Any): Dataset to get the feature from
+            dataset (DatasetType): Dataset to get the feature from
             feature_key (str): Feature value to get
 
         Returns:
@@ -83,7 +94,7 @@ class DataHandler(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_ds_feature_keys(dataset: Any) -> list:
+    def get_ds_feature_keys(dataset: DatasetType) -> list:
         """Get the feature keys of a Dataset
 
         Args:
@@ -96,11 +107,11 @@ class DataHandler(ABC):
 
     @staticmethod
     @abstractmethod
-    def has_feature_key(dataset: Any, key: str) -> bool:
+    def has_feature_key(dataset: DatasetType, key: str) -> bool:
         """Check if a Dataset has a feature denoted by key
 
         Args:
-            dataset (Any): Dataset to check
+            dataset (DatasetType): Dataset to check
             key (str): Key to check
 
         Returns:
@@ -110,26 +121,26 @@ class DataHandler(ABC):
 
     @staticmethod
     @abstractmethod
-    def map_ds(dataset: Any, map_fn: Callable) -> Any:
+    def map_ds(dataset: DatasetType, map_fn: Callable) -> DatasetType:
         """Map a function to a Dataset
 
         Args:
-            dataset (Any): Dataset to map the function to
+            dataset (DatasetType): Dataset to map the function to
             map_fn (Callable): Function to map
 
         Returns:
-            Any: Mapped dataset
+            DatasetType: Mapped dataset
         """
         raise NotImplementedError()
 
     @staticmethod
     @abstractmethod
     def filter_by_feature_value(
-        dataset: Any,
+        dataset: DatasetType,
         feature_key: str,
         values: list,
         excluded: bool = False,
-    ) -> Any:
+    ) -> DatasetType:
         """Filter the dataset by checking the value of a feature is in `values`
 
         Args:
@@ -141,18 +152,18 @@ class DataHandler(ABC):
                 with Feature_key value included in Values. Defaults to False.
 
         Returns:
-            Any: Filtered dataset
+            DatasetType: Filtered dataset
         """
         raise NotImplementedError()
 
     @staticmethod
     @abstractmethod
     def merge(
-        id_dataset: Any,
-        ood_dataset: Any,
+        id_dataset: DatasetType,
+        ood_dataset: DatasetType,
         resize: Optional[bool] = False,
         shape: Optional[Tuple[int]] = None,
-    ) -> Any:
+    ) -> DatasetType:
         """Merge two datasets
 
         Args:
@@ -165,7 +176,7 @@ class DataHandler(ABC):
                 id_dataset input tensors. Defaults to None.
 
         Returns:
-            Any: merged dataset
+            DatasetType: merged dataset
         """
         raise NotImplementedError()
 
@@ -173,13 +184,13 @@ class DataHandler(ABC):
     @abstractmethod
     def prepare_for_training(
         cls,
-        dataset: Any,
+        dataset: DatasetType,
         batch_size: int,
         shuffle: bool = False,
         preprocess_fn: Optional[Callable] = None,
         augment_fn: Optional[Callable] = None,
         output_keys: list = ["input", "label"],
-    ) -> Any:
+    ) -> DatasetType:
         """Prepare a dataset for training
 
         Args:
@@ -194,17 +205,17 @@ class DataHandler(ABC):
                 returned. Keep all features if None. Defaults to None.
 
         Returns:
-            Any: prepared dataset / dataloader
+            DatasetType: prepared dataset / dataloader
         """
         raise NotImplementedError()
 
     @staticmethod
     @abstractmethod
-    def get_item_length(dataset: Any) -> int:
+    def get_item_length(dataset: DatasetType) -> int:
         """Number of elements in a dataset item
 
         Args:
-            dataset (Any): Dataset
+            dataset (DatasetType): Dataset
 
         Returns:
             int: Item length
@@ -213,11 +224,11 @@ class DataHandler(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_dataset_length(dataset: Any) -> int:
+    def get_dataset_length(dataset: DatasetType) -> int:
         """Number of items in a dataset
 
         Args:
-            dataset (Any): Dataset
+            dataset (DatasetType): Dataset
 
         Returns:
             int: Dataset length

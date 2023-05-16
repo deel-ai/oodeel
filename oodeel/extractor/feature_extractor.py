@@ -23,9 +23,10 @@
 from abc import ABC
 from abc import abstractmethod
 
-from ..types import Any
 from ..types import Callable
+from ..types import DatasetType
 from ..types import List
+from ..types import TensorType
 from ..types import Union
 
 
@@ -71,9 +72,12 @@ class FeatureExtractor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_weights(self) -> List[Any]:
+    def get_weights(self, layer_id: Union[str, int]) -> List[TensorType]:
         """
         Get the weights of a layer
+
+        Args:
+            layer_id (Union[int, str]): layer identifier
 
         Returns:
             weights matrix
@@ -81,39 +85,41 @@ class FeatureExtractor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def predict_tensor(self, tensor: Any) -> Any:
+    def predict_tensor(self, tensor: TensorType) -> Union[TensorType, List[TensorType]]:
         """
         Projects input samples "inputs" into the feature space
 
         Args:
-            tensor (Any): input tensor
+            tensor (TensorType): input tensor
 
         Returns:
-            Any: features
+            TensorType: features
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def predict(self, dataset: Any) -> Any:
+    def predict(
+        self, dataset: Union[DatasetType, TensorType]
+    ) -> Union[TensorType, List[TensorType]]:
         """
         Projects input samples "inputs" into the feature space for a batched dataset
 
         Args:
-            dataset (Any): iterable of tensor batches
+            dataset (Union[DatasetType, TensorType]): iterable of tensor batches
 
         Returns:
-            Any: features
+            TensorType: features
         """
         raise NotImplementedError()
 
-    def __call__(self, inputs: Any) -> Any:
+    def __call__(self, inputs: TensorType) -> TensorType:
         """
         Convenience wrapper for predict_tensor().
 
         Args:
-            inputs (Any): input tensor
+            inputs (Union[DatasetType, TensorType]): input tensor
 
         Returns:
-            Any: features
+            TensorType: features
         """
         return self.predict_tensor(inputs)

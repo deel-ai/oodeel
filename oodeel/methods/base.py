@@ -51,8 +51,8 @@ class OODBaseDetector(ABC):
 
     def __init__(
         self,
-        output_layers_id: List[int] = [-1],
-        input_layers_id: Optional[List[int]] = None,
+        output_layers_id: List[Union[int, str]] = [-1],
+        input_layers_id: Optional[Union[int, str]] = None,
     ):
         self.feature_extractor = None
         self.output_layers_id = output_layers_id
@@ -137,7 +137,7 @@ class OODBaseDetector(ABC):
         )
         return feature_extractor
 
-    def _fit_to_dataset(self, fit_dataset: Union[ItemType, DatasetType]) -> None:
+    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """
         Fits the OOD detector to fit_dataset.
 

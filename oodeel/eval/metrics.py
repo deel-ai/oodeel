@@ -23,18 +23,17 @@
 import numpy as np
 import sklearn
 
-from ..types import List
 from ..types import Optional
 from ..types import Tuple
 from ..types import Union
 
 
 def bench_metrics(
-    scores: Union[np.ndarray, Tuple[np.ndarray, np.ndarray]],
+    scores: Union[np.ndarray, tuple],
     labels: Optional[np.ndarray] = None,
     in_value: Optional[int] = 0,
     out_value: Optional[int] = 1,
-    metrics: Optional[List[str]] = ["auroc", "fpr95tpr"],
+    metrics: Optional[list] = ["auroc", "fpr95tpr"],
     threshold: Optional[float] = None,
     step: Optional[int] = 4,
 ) -> dict:
@@ -124,7 +123,7 @@ def get_curve(
     labels: np.ndarray,
     step: Optional[int] = 4,
     return_raw: Optional[bool] = False,
-) -> Union[Tuple[Tuple[np.ndarray], Tuple[np.ndarray]], Tuple[np.ndarray]]:
+) -> Union[Tuple[tuple, tuple], tuple]:
     """Computes the
         * true positive rate: TP / (TP + FN),
         * false positive rate: FP / (FP + TN),
@@ -167,7 +166,7 @@ def get_curve(
         return fpr, tpr, tnr, acc
 
 
-def ftpn(scores: np.ndarray, labels: np.ndarray, threshold: float) -> Tuple[float]:
+def ftpn(scores: np.ndarray, labels: np.ndarray, threshold: float) -> tuple:
     """Computes the number of
         * true positives,
         * false positives,

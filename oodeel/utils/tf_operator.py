@@ -33,6 +33,8 @@ from .operator import Operator
 
 
 def sanitize_input(tensor_arg_func: Callable):
+    """ensures the decorated function receives a tf.Tensor"""
+
     def wrapper(obj, tensor, *args, **kwargs):
         if isinstance(tensor, tf.Tensor):
             pass
@@ -50,33 +52,29 @@ class TFOperator(Operator):
     """Class to handle tensorflow operations with a unified API"""
 
     @staticmethod
-    def softmax(tensor: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
+    def softmax(tensor: TensorType) -> tf.Tensor:
         """Softmax function along the last dimension"""
         return tf.keras.activations.softmax(tensor, axis=-1)
 
     @staticmethod
-    def argmax(
-        tensor: Union[tf.Tensor, np.ndarray], dim: Optional[int] = None
-    ) -> tf.Tensor:
+    def argmax(tensor: TensorType, dim: Optional[int] = None) -> tf.Tensor:
         """Argmax function"""
         if dim is None:
             return tf.argmax(tf.reshape(tensor, [-1]))
         return tf.argmax(tensor, axis=dim)
 
     @staticmethod
-    def max(
-        tensor: Union[tf.Tensor, np.ndarray], dim: Optional[int] = None
-    ) -> tf.Tensor:
+    def max(tensor: TensorType, dim: Optional[int] = None) -> tf.Tensor:
         """Max function"""
         return tf.reduce_max(tensor, axis=dim)
 
     @staticmethod
-    def one_hot(tensor: Union[tf.Tensor, np.ndarray], num_classes: int) -> tf.Tensor:
+    def one_hot(tensor: TensorType, num_classes: int) -> tf.Tensor:
         """One hot function"""
         return tf.one_hot(tensor, num_classes)
 
     @staticmethod
-    def sign(tensor: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
+    def sign(tensor: TensorType) -> tf.Tensor:
         """Sign function"""
         return tf.sign(tensor)
 
@@ -94,20 +92,19 @@ class TFOperator(Operator):
         return sanitized_ce_loss
 
     @staticmethod
-    def norm(
-        tensor: Union[tf.Tensor, np.ndarray], dim: Optional[int] = None
-    ) -> tf.Tensor:
+    def norm(tensor: TensorType, dim: Optional[int] = None) -> tf.Tensor:
         """Tensor Norm"""
         return tf.norm(tensor, axis=dim)
 
     @staticmethod
     @tf.function
-    def matmul(tensor_1: TensorType, tensor_2: TensorType) -> TensorType:
+    def matmul(tensor_1: TensorType, tensor_2: TensorType) -> tf.Tensor:
         """Matmul operation"""
         return tf.matmul(tensor_1, tensor_2)
 
     @staticmethod
     def convert_to_numpy(tensor: TensorType) -> np.ndarray:
+        """Convert tensor into a np.ndarray"""
         return tensor.numpy()
 
     @staticmethod
@@ -119,6 +116,8 @@ class TFOperator(Operator):
             func (Callable): Function used for computing gradient. Must be built with
                 tensorflow differentiable operations only, and return a scalar.
             inputs (tf.Tensor): Input tensor wrt which the gradients are computed
+            *args: Additional Args for func.
+            **kwargs: Additional Kwargs for func.
 
         Returns:
             tf.Tensor: Gradients computed, with the same shape as the inputs.
@@ -129,53 +128,53 @@ class TFOperator(Operator):
         return tape.gradient(outputs, inputs)
 
     @staticmethod
-    def stack(tensors: List[TensorType], dim: int = 0) -> TensorType:
+    def stack(tensors: List[TensorType], dim: int = 0) -> tf.Tensor:
         "Stack tensors along a new dimension"
         return tf.stack(tensors, dim)
 
     @staticmethod
-    def cat(tensors: List[TensorType], dim: int = 0) -> TensorType:
+    def cat(tensors: List[TensorType], dim: int = 0) -> tf.Tensor:
         "Concatenate tensors in a given dimension"
         return tf.concat(tensors, dim)
 
     @staticmethod
-    def mean(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
+    def mean(tensor: TensorType, dim: Optional[int] = None) -> tf.Tensor:
         "Mean function"
         return tf.reduce_mean(tensor, dim)
 
     @staticmethod
-    def flatten(tensor: TensorType) -> TensorType:
+    def flatten(tensor: TensorType) -> tf.Tensor:
         "Flatten to 2D tensor of shape (tensor.shape[0], -1)"
         # Flatten the features to 2D (n_batch, n_features)
         return tf.reshape(tensor, shape=[tf.shape(tensor)[0], -1])
 
     @staticmethod
-    def from_numpy(arr: np.ndarray) -> TensorType:
+    def from_numpy(arr: np.ndarray) -> tf.Tensor:
         "Convert a NumPy array to a tensor"
         # TODO change dtype
         return tf.constant(arr, dtype=tf.float32)
 
     @staticmethod
-    def transpose(tensor: TensorType) -> TensorType:
+    def transpose(tensor: TensorType) -> tf.Tensor:
         "Transpose function for tensor of rank 2"
         return tf.transpose(tensor)
 
     @staticmethod
-    def diag(tensor: TensorType) -> TensorType:
+    def diag(tensor: TensorType) -> tf.Tensor:
         "Diagonal function: return the diagonal of a 2D tensor"
         return tf.linalg.diag_part(tensor)
 
     @staticmethod
-    def reshape(tensor: TensorType, shape: List[int]) -> TensorType:
+    def reshape(tensor: TensorType, shape: List[int]) -> tf.Tensor:
         "Reshape function"
         return tf.reshape(tensor, shape)
 
     @staticmethod
-    def equal(tensor: TensorType, other: Union[TensorType, int, float]) -> TensorType:
+    def equal(tensor: TensorType, other: Union[TensorType, int, float]) -> tf.Tensor:
         "Computes element-wise equality"
         return tf.math.equal(tensor, other)
 
     @staticmethod
-    def pinv(tensor: TensorType) -> TensorType:
+    def pinv(tensor: TensorType) -> tf.Tensor:
         "Computes the pseudoinverse (Moore-Penrose inverse) of a matrix."
         return tf.linalg.pinv(tensor)

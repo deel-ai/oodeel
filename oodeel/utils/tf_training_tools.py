@@ -59,8 +59,8 @@ def get_toy_keras_convnet(num_classes: int) -> tf.keras.Model:
 def train_tf_model(
     train_data: tf.data.Dataset,
     model_name: str,
-    input_shape: Optional[tuple] = None,
-    num_classes: Optional[int] = None,
+    input_shape: tuple,
+    num_classes: int,
     is_prepared: bool = True,
     batch_size: int = 128,
     epochs: int = 50,
@@ -79,9 +79,8 @@ def train_tf_model(
     Args:
         train_data (tf.data.Dataset): training dataset.
         model_name (str): must be a model from tf.keras.applications or "toy_convnet"
-        input_shape (tuple, optional): If None, infered from train_data.
-            Defaults to None.
-        num_classes (int, optional): If None, infered from train_data. Defaults to None.
+        input_shape (tuple): Shape of the input images.
+        num_classes (int): Number of output classes.
         is_prepared (bool, optional): If train_data is a pipeline already prepared
             for training (with batch, shufle, cache etc...). Defaults to False.
         batch_size (int, optional): Defaults to 128.
@@ -103,11 +102,9 @@ def train_tf_model(
 
     # Prepare model
     if imagenet_pretrained:
-        input_shape = (224, 224, 3)
         backbone = getattr(tf.keras.applications, model_name)(
             include_top=False, weights="imagenet", input_shape=input_shape
         )
-        num_classes = 1000
     else:
         if isinstance(train_data.element_spec, dict):
             input_id = "image"
