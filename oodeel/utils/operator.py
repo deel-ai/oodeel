@@ -35,53 +35,63 @@ from ..types import Union
 class Operator(ABC):
     """Class to handle tensorflow and torch operations with a unified API"""
 
+    @staticmethod
     @abstractmethod
-    def softmax(self, tensor: TensorType) -> TensorType:
+    def softmax(tensor: TensorType) -> TensorType:
         """Softmax function along the last dimension"""
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def argmax(self, tensor: TensorType, dim: Optional[int] = None) -> TensorType:
+    def argmax(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         """Argmax function"""
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def max(self, tensor: TensorType, dim: Optional[int] = None) -> TensorType:
+    def max(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         """Max function"""
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def one_hot(self, tensor: TensorType, num_classes: int) -> TensorType:
+    def one_hot(tensor: TensorType, num_classes: int) -> TensorType:
         """One hot function"""
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def sign(self, tensor: TensorType) -> TensorType:
+    def sign(tensor: TensorType) -> TensorType:
         """Sign function"""
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def CrossEntropyLoss(self, reduction: str = "mean"):
+    def CrossEntropyLoss(reduction: str = "mean"):
         """Cross Entropy Loss from logits"""
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def norm(self, tensor: TensorType, dim: Optional[int] = None) -> TensorType:
+    def norm(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         """Norm function"""
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def matmul(self, tensor_1: TensorType, tensor_2: TensorType) -> TensorType:
+    def matmul(tensor_1: TensorType, tensor_2: TensorType) -> TensorType:
         """Matmul operation"""
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def convert_to_numpy(self, tensor: TensorType) -> np.ndarray:
+    def convert_to_numpy(tensor: TensorType) -> np.ndarray:
         "Convert a tensor to a NumPy array"
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def gradient(self, func: Callable, inputs: TensorType) -> TensorType:
+    def gradient(func: Callable, inputs: TensorType) -> TensorType:
         """Compute gradients for a batch of samples.
 
         Args:
@@ -94,56 +104,64 @@ class Operator(ABC):
         """
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def stack(self, tensors: List[TensorType], dim: int = 0) -> TensorType:
+    def stack(tensors: List[TensorType], dim: int = 0) -> TensorType:
         "Stack tensors along a new dimension"
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def cat(self, tensors: List[TensorType], dim: int = 0) -> TensorType:
+    def cat(tensors: List[TensorType], dim: int = 0) -> TensorType:
         "Concatenate tensors in a given dimension"
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def mean(self, tensor: TensorType, dim: Optional[int] = None) -> TensorType:
+    def mean(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
         "Mean function"
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def flatten(self, tensor: TensorType) -> TensorType:
+    def flatten(tensor: TensorType) -> TensorType:
         "Flatten to 2D tensor (batch_size, -1)"
         # Flatten the features to 2D (n_batch, n_features)
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def from_numpy(self, arr: np.ndarray) -> TensorType:
+    def from_numpy(arr: np.ndarray) -> TensorType:
         "Convert a NumPy array to a tensor"
         # TODO change dtype
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def transpose(self, tensor: TensorType) -> TensorType:
+    def transpose(tensor: TensorType) -> TensorType:
         "Transpose function for tensor of rank 2"
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def diag(self, tensor: TensorType) -> TensorType:
+    def diag(tensor: TensorType) -> TensorType:
         "Diagonal function: return the diagonal of a 2D tensor"
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def reshape(self, tensor: TensorType, shape: List[int]) -> TensorType:
+    def reshape(tensor: TensorType, shape: List[int]) -> TensorType:
         "Reshape function"
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def equal(
-        self, tensor: TensorType, other: Union[TensorType, int, float]
-    ) -> TensorType:
+    def equal(tensor: TensorType, other: Union[TensorType, int, float]) -> TensorType:
         "Computes element-wise equality"
         raise NotImplementedError()
 
+    @staticmethod
     @abstractmethod
-    def pinv(self, tensor: TensorType) -> TensorType:
+    def pinv(tensor: TensorType) -> TensorType:
         "Computes the pseudoinverse (Moore-Penrose inverse) of a matrix."
         raise NotImplementedError()
