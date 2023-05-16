@@ -38,18 +38,18 @@ requirements = [
     "setuptools",
     "matplotlib",
     "kneed",
+    "pandas",
 ]
 
 tensorflow_requirements = [
     "tensorflow",
     "tensorflow_datasets",
-    "kneed",
-    "image-classifiers",
 ]
 
 torch_requirements = ["timm", "torch", "torchvision"]
 
 dev_requirements = [
+    "mypy",
     "ipywidgets",
     "mkdocs-jupyter",
     "mkdocstrings-python",
@@ -68,12 +68,6 @@ dev_requirements = [
     "mkdocstrings",
     "mknotebooks",
     "bump2version",
-    "tensorflow",
-    "tensorflow_datasets",
-    "image-classifiers",
-    "torch",
-    "torchvision",
-    "pandas",
     "docsig",
     "no_implicit_optional",
 ]
@@ -113,7 +107,9 @@ setup(
     ],
     install_requires=requirements,
     extras_require={
-        "dev": dev_requirements,
+        "dev": [dev_requirements, tensorflow_requirements, torch_requirements],
+        "tensorflow-dev": [dev_requirements, tensorflow_requirements],
+        "torch-dev": [dev_requirements, torch_requirements],
         "tensorflow": tensorflow_requirements,
         "torch": torch_requirements,
         "docs": docs_requirements,
