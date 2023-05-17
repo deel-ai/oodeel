@@ -165,3 +165,9 @@ class Operator(ABC):
     def pinv(tensor: TensorType) -> TensorType:
         "Computes the pseudoinverse (Moore-Penrose inverse) of a matrix."
         raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def eigh(tensor: TensorType) -> TensorType:
+        "Computes the eigen decomposition of a self-adjoint matrix."
+        raise NotImplementedError()
