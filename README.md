@@ -20,10 +20,10 @@
     <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
         <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml/badge.svg">
     </a>
-    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml">
         <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml/badge.svg">
     </a>
-    <a href="#">
+    <a href="https://github.com/deel-ai/oodeel/blob/master/LICENSE">
         <img src="https://img.shields.io/badge/License-MIT-efefef">
     </a>
 </div>
@@ -40,6 +40,7 @@ mls = MLS()
 mls.fit(model) # A tensorflow or torch model
 scores = mls.score(ds) # ds is a tf.data.Dataset or a torch.DataLoader
 ```
+
 **Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully!
 
 # Table of contents
