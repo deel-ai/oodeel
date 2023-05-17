@@ -24,31 +24,13 @@ from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.linalg import eigh
-from scipy.linalg import norm
-from scipy.linalg import pinv
 from scipy.special import logsumexp
-from sklearn.covariance import EmpiricalCovariance
 
 from ..types import DatasetType
 from ..types import List
 from ..types import TensorType
 from ..types import Union
 from .base import OODBaseDetector
-
-
-try:
-    from kneed import KneeLocator
-except ImportError:
-    _has_kneed = False
-    _kneed_not_found_err = ModuleNotFoundError(
-        (
-            "This function requires Kneed to be executed. Please run command "
-            "`pip install kneed` 'conda install -c conda-forge kneed'"
-        )
-    )
-else:
-    _has_kneed = True
 
 
 class VIM(OODBaseDetector):
@@ -77,9 +59,7 @@ class VIM(OODBaseDetector):
             If an int, must be less than the dimension of the feature space.
             If a float, it must be in [0,1), it represents the ratio of explained
             variance to consider to determine the number of principal components.
-            If None, the kneedle algorithm is used to determine the number of
-            dimensions.
-            Defaults to None.
+            Defaults to 0.99.
         pca_origin: either "center" for using the mean of the data in feature space, or
             "pseudo" for using $W^{-1}b$ where $W^{-1}$ is the pseudo inverse of the final
             linear layer applied to bias term (as in the VIM paper).
@@ -91,7 +71,7 @@ class VIM(OODBaseDetector):
 
     def __init__(
         self,
-        princ_dims: Optional[Union[int, float]] = None,
+        princ_dims: Optional[Union[int, float]] = 0.99,
         pca_origin: str = "center",
         output_layers_id: List[int] = [-2, -1],
     ):
@@ -112,60 +92,35 @@ class VIM(OODBaseDetector):
         Args:
             fit_dataset: input dataset (ID) to construct the index with.
         """
+        # extract features from fit dataset
         features_train, logits_train = self.feature_extractor.predict(fit_dataset)
-        features_train = self.op.convert_to_numpy(self.op.flatten(features_train))
-        logits_train = self.op.convert_to_numpy(logits_train)
+        features_train = self.op.flatten(features_train)
         self.feature_dim = features_train.shape[1]
+        logits_train = self.op.convert_to_numpy(logits_train)
+
+        # get distribution center for pca projection
         if self.pca_origin == "center":
-            self.center = np.mean(features_train, axis=0)
+            self.center = self.op.mean(features_train, dim=0)
         elif self.pca_origin == "pseudo":
             W, b = self.feature_extractor.get_weights(-1)
-            self.center = -np.matmul(pinv(W.T), b)
+            W, b = self.op.from_numpy(W), self.op.from_numpy(b)
+            self.center = -self.op.matmul(self.op.pinv(self.op.transpose(W)), b)
         else:
             raise NotImplementedError(
                 'only "center" and "pseudo" are available for argument "pca_origin"'
             )
-        ec = EmpiricalCovariance(assume_centered=True)
 
-        ec.fit(features_train - self.center)
-        # compute eigenvalues and eigenvectors of empirical covariance matrix
-        eig_vals, eigen_vectors = eigh(ec.covariance_)
-        # allow to use Kneedle to find res_dim
-        self.eigenvalues = eig_vals
+        # compute eigvalues and eigvectors of empirical covariance matrix
+        centered_features = features_train - self.center
+        emp_cov = (
+            self.op.matmul(self.op.transpose(centered_features), centered_features)
+            / centered_features.shape[0]
+        )
+        eig_vals, eigen_vectors = self.op.eigh(emp_cov)
+        self.eig_vals = self.op.convert_to_numpy(eig_vals)
 
-        if self._princ_dim is None:
-            if not _has_kneed:
-                raise _kneed_not_found_err
-            # we use kneedle to look for an elbow point to set the number of principal
-            # dimensions
-            # we apply kneedle to the function cumsum(eigvals) which maps a dimension d
-            # to the variance of the d dimensional (principal) subspace with lowest
-            # variance.
-            # since eigvals is non decreasing, cumsum(eigvals) is always convex and
-            # increasing.
-            self.kneedle = KneeLocator(
-                range(len(eig_vals)),
-                np.cumsum(eig_vals),
-                S=1.0,
-                curve="convex",
-                direction="increasing",
-            )
-            self.res_dim = self.kneedle.elbow
-            assert (
-                0 < self.res_dim and self.res_dim < self.feature_dim
-            ), f"Found invalid number of residual dimensions ({self.res_dim}) "
-            self._princ_dim = self.feature_dim - self.res_dim
-            print(
-                (
-                    f"Found an elbow point for {self.feature_dim-self.res_dim} principal "
-                    "dimensions inside the {self.feature_dim} dimensional feature space."
-                )
-            )
-            print(
-                "You can visualize this elbow by calling the method '.plot_spectrum()' "
-                "of this class"
-            )
-        elif isinstance(self._princ_dim, int):
+        # get number of residual dims for pca projection
+        if isinstance(self._princ_dim, int):
             assert self._princ_dim < self.feature_dim, (
                 f"if 'princ_dims'(={self._princ_dim}) is an int, it must be less than "
                 "feature space dimension ={self.feature_dim})"
@@ -176,11 +131,14 @@ class VIM(OODBaseDetector):
             assert (
                 0 <= self._princ_dim and self._princ_dim < 1
             ), f"if 'princ_dims'(={self._princ_dim}) is a float, it must be in [0,1)"
-            explained_variance = np.cumsum(np.flip(eig_vals) / np.sum(eig_vals))
+            explained_variance = np.cumsum(
+                np.flip(self.eig_vals) / np.sum(self.eig_vals)
+            )
             self._princ_dim = np.where(explained_variance > self._princ_dim)[0][0]
             self.res_dim = self.feature_dim - self._princ_dim
 
-        self.res = np.ascontiguousarray(eigen_vectors[:, : self.res_dim], np.float32)
+        # projector on residual space
+        self.res = eigen_vectors[:, : self.res_dim]  # asc. order with eigh
 
         # compute residual score on training data
         train_residual_scores = self._compute_residual_score_tensor(features_train)
@@ -189,7 +147,7 @@ class VIM(OODBaseDetector):
         # compute scaling factor
         self.alpha = np.mean(train_mls_scores) / np.mean(train_residual_scores)
 
-    def _compute_residual_score_tensor(self, features: TensorType) -> TensorType:
+    def _compute_residual_score_tensor(self, features: TensorType) -> np.ndarray:
         """
         Computes the norm of the residual projection in the feature space.
 
@@ -199,31 +157,11 @@ class VIM(OODBaseDetector):
         Returns:
             scores
         """
-        res_coordinates = np.matmul(features - self.center, self.res)
-        # res_coordinates = self.op.matmul(features - self.center, self.res)  # TODO
+        res_coordinates = self.op.matmul(features - self.center, self.res)
         # taking the norm of the coordinates, which amounts to the norm of
         # the projection since the eigenvectors form an orthornomal basis
-        res_norm = norm(res_coordinates, axis=-1)
-        # res_norm = self.op.norm(res_coordinates, dim=-1)  # TODO
-
-        return res_norm
-
-    def _residual_score_tensor(self, inputs: TensorType) -> np.ndarray:
-        """
-        Computes the residual score for input samples "inputs".
-
-        Args:
-            inputs: input samples to score
-
-        Returns:
-            scores
-        """
-        assert self.feature_extractor is not None, "Call .fit() before .score()"
-        # compute predicted features
-
-        features = self.feature_extractor.predict(inputs)[0]
-        res_scores = self._compute_residual_score_tensor(self.op.flatten(features))
-        return self.op.convert_to_numpy(res_scores)
+        res_norm = self.op.norm(res_coordinates, dim=-1)
+        return self.op.convert_to_numpy(res_norm)
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
@@ -236,13 +174,12 @@ class VIM(OODBaseDetector):
         Returns:
             scores
         """
-        # compute predicted features
-
+        # extract features
         features, logits = self.feature_extractor(inputs)
-        features = self.op.convert_to_numpy(self.op.flatten(features))
+        features = self.op.flatten(features)
         logits = self.op.convert_to_numpy(logits)
+        # vim score
         res_scores = self._compute_residual_score_tensor(features)
-        # res_scores = self.op.convert_to_numpy(res_scores)
         energy_scores = logsumexp(logits, axis=-1)
         scores = -self.alpha * res_scores + energy_scores
         return -np.array(scores)
@@ -251,25 +188,14 @@ class VIM(OODBaseDetector):
         """
         Plot cumulated explained variance wrt the number of principal dimensions.
         """
-        if hasattr(self, "kneedle"):
-            self.kneedle.plot_knee()
-            plt.ylabel("Explained variance")
-            plt.xlabel("Number of principal dimensions")
-            plt.title(
-                (
-                    f"Found elbow at dimension {self.kneedle.elbow}\n "
-                    f"{self.feature_dim-self.kneedle.elbow} principal dimensions"
-                )
-            )
-        else:
-            plt.plot(np.cumsum(self.eigenvalues))
-            plt.axvline(
-                x=self.res_dim,
-                color="r",
-                linestyle="--",
-                label=f"Number of principal dimensions = {self._princ_dim} ",
-            )
-            plt.legend()
-            plt.ylabel("Explained variance")
-            plt.xlabel("Number of principal dimensions")
-            plt.title("Explained variance by number of principal dimensions")
+        cumul_explained_variance = np.cumsum(self.eig_vals)[::-1]
+        plt.plot(cumul_explained_variance / np.max(cumul_explained_variance))
+        plt.axvline(
+            x=self._princ_dim,
+            color="r",
+            linestyle="--",
+            label=f"princ_dims = {self._princ_dim} ",
+        )
+        plt.legend()
+        plt.ylabel("Residual explained variance")
+        plt.xlabel("Number of principal dimensions")
