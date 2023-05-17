@@ -155,7 +155,7 @@ class VIM(OODBaseDetector):
             features: input samples to score
 
         Returns:
-            scores
+            np.ndarray: scores
         """
         res_coordinates = self.op.matmul(features - self.center, self.res)
         # taking the norm of the coordinates, which amounts to the norm of
@@ -172,7 +172,7 @@ class VIM(OODBaseDetector):
             inputs: input samples to score
 
         Returns:
-            scores
+            np.ndarray: scores
         """
         # extract features
         features, logits = self.feature_extractor(inputs)
