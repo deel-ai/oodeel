@@ -37,7 +37,6 @@ def generate_model(input_shape=(32, 32, 3), output_shape=10):
     model.add(tf.keras.layers.Dropout(0.25))
     model.add(tf.keras.layers.Flatten())
     model.add(tf.keras.layers.Dense(output_shape))
-    model.add(tf.keras.layers.Activation("softmax"))
     model.compile(loss="categorical_crossentropy", optimizer="sgd")
 
     return model

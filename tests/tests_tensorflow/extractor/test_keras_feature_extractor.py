@@ -63,7 +63,7 @@ def test_get_weights():
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
     model_fe = KerasFeatureExtractor(model, output_layers_id=[-1])
-    W, b = model_fe.get_weights(-2)
+    W, b = model_fe.get_weights(-1)
 
     assert W.shape == (900, 10)
     assert b.shape == (10,)
