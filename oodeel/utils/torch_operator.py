@@ -193,3 +193,9 @@ class TorchOperator(Operator):
     def pinv(tensor: TensorType) -> torch.Tensor:
         "Computes the pseudoinverse (Moore-Penrose inverse) of a matrix."
         return torch.linalg.pinv(tensor)
+
+    @staticmethod
+    def eigh(tensor: TensorType) -> torch.Tensor:
+        "Computes the eigen decomposition of a self-adjoint matrix."
+        eigval, eigvec = torch.linalg.eigh(tensor)
+        return eigval, eigvec

@@ -178,3 +178,9 @@ class TFOperator(Operator):
     def pinv(tensor: TensorType) -> tf.Tensor:
         "Computes the pseudoinverse (Moore-Penrose inverse) of a matrix."
         return tf.linalg.pinv(tensor)
+
+    @staticmethod
+    def eigh(tensor: TensorType) -> tf.Tensor:
+        "Computes the eigen decomposition of a self-adjoint matrix."
+        eigval, eigvec = tf.linalg.eigh(tensor)
+        return eigval, eigvec
