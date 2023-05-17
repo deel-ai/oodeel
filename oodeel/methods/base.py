@@ -26,6 +26,7 @@ from typing import get_args
 
 import numpy as np
 
+from ..extractor.feature_extractor import FeatureExtractor
 from ..types import Callable
 from ..types import DatasetType
 from ..types import ItemType
@@ -54,7 +55,7 @@ class OODBaseDetector(ABC):
         output_layers_id: List[Union[int, str]] = [-1],
         input_layers_id: Optional[Union[int, str]] = None,
     ):
-        self.feature_extractor = None
+        self.feature_extractor: FeatureExtractor = None
         self.output_layers_id = output_layers_id
         self.input_layers_id = input_layers_id
 
