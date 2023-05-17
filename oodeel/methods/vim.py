@@ -20,8 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import Optional
-
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import logsumexp
@@ -60,9 +58,9 @@ class VIM(OODBaseDetector):
             If a float, it must be in [0,1), it represents the ratio of explained
             variance to consider to determine the number of principal components.
             Defaults to 0.99.
-        pca_origin: either "center" for using the mean of the data in feature space, or
-            "pseudo" for using $W^{-1}b$ where $W^{-1}$ is the pseudo inverse of the final
-            linear layer applied to bias term (as in the VIM paper).
+        pca_origin: either "pseudo" for using $W^{-1}b$ where $W^{-1}$ is the pseudo
+            inverse of the final linear layer applied to bias term (as in the VIM
+            paper), or "center" for using the mean of the data in feature space.
             Defaults to "center".
         output_layers_id: features to use for Residual and Energy score.
             Defaults to [-2,-1] (-2 the features for PCA residual, -1 the logits with
@@ -71,8 +69,8 @@ class VIM(OODBaseDetector):
 
     def __init__(
         self,
-        princ_dims: Optional[Union[int, float]] = 0.99,
-        pca_origin: str = "center",
+        princ_dims: Union[int, float] = 0.99,
+        pca_origin: str = "pseudo",
         output_layers_id: List[int] = [-2, -1],
     ):
         super().__init__(
@@ -102,9 +100,10 @@ class VIM(OODBaseDetector):
         if self.pca_origin == "center":
             self.center = self.op.mean(features_train, dim=0)
         elif self.pca_origin == "pseudo":
-            W, b = self.feature_extractor.get_weights(-1)
-            W, b = self.op.from_numpy(W), self.op.from_numpy(b)
-            self.center = -self.op.matmul(self.op.pinv(self.op.transpose(W)), b)
+            W, b = self.feature_extractor.get_weights(self.output_layers_id[1])
+            W, b = self.op.from_numpy(W), self.op.from_numpy(b.reshape(-1, 1))
+            _W = self.op.transpose(W) if self.backend == "tensorflow" else W
+            self.center = -self.op.reshape(self.op.matmul(self.op.pinv(_W), b), (-1,))
         else:
             raise NotImplementedError(
                 'only "center" and "pseudo" are available for argument "pca_origin"'
