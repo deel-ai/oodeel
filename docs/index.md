@@ -17,10 +17,10 @@
     <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
         <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml/badge.svg">
     </a>
-    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml">
         <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml/badge.svg">
     </a>
-    <a href="#">
+    <a href="https://github.com/deel-ai/oodeel/blob/master/LICENSE">
         <img src="https://img.shields.io/badge/License-MIT-efefef">
     </a>
 </div>
