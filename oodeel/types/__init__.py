@@ -54,7 +54,7 @@ except ImportError:
 
 
 if len(avail_lib) == 2:
-    DatasetType = Type[torch.utils.data.DataLoader]
+    DatasetType = Union[tf.data.Dataset, torch.utils.data.DataLoader]
     TensorType = Union[tf.Tensor, torch.Tensor, np.ndarray]
     ItemType = Union[
         tf.Tensor,
