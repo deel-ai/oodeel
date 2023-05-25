@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import re
+
 import numpy as np
 import sklearn
 
@@ -38,7 +40,8 @@ def bench_metrics(
     step: Optional[int] = 4,
 ) -> dict:
     """Compute various common metrics from the OOD detector scores:
-    AUROC, FPR95TPR, TNR95TPR, Detection accuracy and sklearn.metric metrics
+    AUROC, FPR95TPR (or any other similar metric relative to confusion matrix),
+    Detection accuracy and sklearn.metric metrics
 
     Args:
         scores (Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]): scores output of
@@ -53,8 +56,9 @@ def bench_metrics(
         out_value (Optional[int], optional): ood label value for out-of-distribution
             data. Defaults to 1.
         metrics (Optional[List[str]], optional): list of metrics to compute. Can pass
-            any metric name from sklearn.metric or among "auroc", "fpr95tpr",
-            "tnr95tpr", "detect_acc". Defaults to ["auroc", "fpr95tpr"].
+            any metric name from sklearn.metric or among "detect_acc" and
+            "<aaa><XX><bbb>" where <aaa> and <bbb> are in ["fpr", "tpr", "tnr"] and <XX>
+            is an integer between 1 and 99. Defaults to ["auroc", "fpr95tpr"].
         threshold (Optional[float], optional): Threshold to use when using
             threshold-dependent metrics. Defaults to None.
         step (Optional[int], optional): integration step (wrt percentile).
@@ -82,19 +86,18 @@ def bench_metrics(
             auroc = -np.trapz(1.0 - fpr, tpr)
             metrics_dict["auroc"] = auroc
 
-        elif metric == "fpr95tpr":
-            for i, tp in enumerate(tpr):
-                if tp < 0.95:
+        # compute <aaa><XX><bbb> metrics (check docstring for more info)
+        elif re.search(r"(fpr|tpr|tnr)(\d{1,2})(fpr|tpr|tnr)", metric) is not None:
+            count_1_str, threshold, count_2_str = re.match(
+                pattern=r"(fpr|tpr|tnr)(\d{1,2})(fpr|tpr|tnr)", string=metric
+            ).groups()
+            threshold = int(threshold)
+            count_1, count_2 = locals()[count_1_str], locals()[count_2_str]
+            for i, c2 in enumerate(count_2):
+                if c2 < threshold / 100:
                     ind = i
                     break
-            metrics_dict["fpr95tpr"] = fpr[ind]
-
-        elif metric == "tnr95tpr":
-            for i, tp in enumerate(tpr):
-                if tp < 0.95:
-                    ind = i
-                    break
-            metrics_dict["tnr95tpr"] = tnr[ind]
+            metrics_dict[f"{count_1_str}{threshold}{count_2_str}"] = count_1[ind]
 
         elif metric == "detect_acc":
             metrics_dict["detect_acc"] = np.max(acc)
