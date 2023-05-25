@@ -199,3 +199,13 @@ class TorchOperator(Operator):
         "Computes the eigen decomposition of a self-adjoint matrix."
         eigval, eigvec = torch.linalg.eigh(tensor)
         return eigval, eigvec
+
+    @staticmethod
+    def quantile(tensor: TensorType, q: float, dim: int = None) -> torch.Tensor:
+        "Computes the quantile of a tensor's components. q in (0,1)"
+        return torch.quantile(tensor, q, dim)
+
+    @staticmethod
+    def relu(tensor: TensorType) -> torch.Tensor:
+        "Apply relu to a tensor"
+        return torch.nn.functional.relu(tensor)

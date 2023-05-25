@@ -171,3 +171,19 @@ class Operator(ABC):
     def eigh(tensor: TensorType) -> TensorType:
         "Computes the eigen decomposition of a self-adjoint matrix."
         raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def eigh(tensor: TensorType) -> TensorType:
+        "Computes the eigen decomposition of a self-adjoint matrix."
+        raise NotImplementedError()
+
+    @staticmethod
+    def quantile(tensor: TensorType, q: float, dim: int = None) -> TensorType:
+        "Computes the quantile of a tensor's components"
+        raise NotImplementedError()
+
+    @staticmethod
+    def relu(tensor: TensorType) -> TensorType:
+        "Apply relu to a tensor"
+        raise NotImplementedError()
