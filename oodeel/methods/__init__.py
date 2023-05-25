@@ -22,9 +22,10 @@
 # SOFTWARE.
 from .dknn import DKNN
 from .energy import Energy
+from .entropy import Entropy
 from .mahalanobis import Mahalanobis
 from .mls import MLS
 from .odin import ODIN
 from .vim import VIM
 
-__all__ = ["MLS", "DKNN", "ODIN", "Energy", "VIM", "Mahalanobis"]
+__all__ = ["MLS", "DKNN", "ODIN", "Energy", "VIM", "Mahalanobis", "Entropy"]
