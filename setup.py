@@ -44,6 +44,7 @@ requirements = [
 tensorflow_requirements = [
     "tensorflow",
     "tensorflow_datasets",
+    "tensorflow_probability",
 ]
 
 torch_requirements = ["timm", "torch", "torchvision"]

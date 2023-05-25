@@ -22,6 +22,7 @@
 # SOFTWARE.
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 from ..types import Callable
 from ..types import List
@@ -183,3 +184,13 @@ class TFOperator(Operator):
         "Computes the eigen decomposition of a self-adjoint matrix."
         eigval, eigvec = tf.linalg.eigh(tensor)
         return eigval, eigvec
+
+    @staticmethod
+    def quantile(tensor: TensorType, q: float, dim: int = None) -> tf.Tensor:
+        "Computes the quantile of a tensor's components. q in (0,1)"
+        return tfp.stats.percentiles(tensor, q * 100, axis=dim)
+
+    @staticmethod
+    def relu(tensor: TensorType) -> tf.Tensor:
+        "Apply relu to a tensor"
+        return tf.nn.relu(tensor)
