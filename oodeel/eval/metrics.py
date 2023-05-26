@@ -82,28 +82,32 @@ def bench_metrics(
     fpr, tpr, fnr, tnr, acc = get_curve(scores, labels, step)
 
     for metric in metrics:
-        if metric == "auroc":
-            auroc = -np.trapz(1.0 - fpr, tpr)
-            metrics_dict["auroc"] = auroc
+        if isinstance(metric, str):
+            if metric == "auroc":
+                auroc = -np.trapz(1.0 - fpr, tpr)
+                metrics_dict["auroc"] = auroc
 
-        # compute <aaa><XX><bbb> metrics (check docstring for more info)
-        elif (
-            re.search(r"^(fpr|tpr|fnr|tnr)(\d{1,2})(fpr|tpr|fnr|tnr)$", metric)
-            is not None
-        ):
-            count_1_str, threshold, count_2_str = re.match(
-                pattern=r"^(fpr|tpr|fnr|tnr)(\d{1,2})(fpr|tpr|fnr|tnr)$", string=metric
-            ).groups()
-            threshold = int(threshold)
-            count_1, count_2 = locals()[count_1_str], locals()[count_2_str]
-            for i, c2 in enumerate(count_2):
-                if c2 < threshold / 100:
-                    ind = i
-                    break
-            metrics_dict[metric] = count_1[ind]
+            elif metric == "detect_acc":
+                metrics_dict["detect_acc"] = np.max(acc)
 
-        elif metric == "detect_acc":
-            metrics_dict["detect_acc"] = np.max(acc)
+            # compute <aaa><XX><bbb> metrics (check docstring for more info)
+            elif (
+                re.search(r"^(fpr|tpr|fnr|tnr)(\d{1,2})(fpr|tpr|fnr|tnr)$", metric)
+                is not None
+            ):
+                count_1_str, thr, count_2_str = re.match(
+                    pattern=r"^(fpr|tpr|fnr|tnr)(\d{1,2})(fpr|tpr|fnr|tnr)$",
+                    string=metric,
+                ).groups()
+                thr = int(thr)
+                count_1, count_2 = locals()[count_1_str], locals()[count_2_str]
+                for i, c2 in enumerate(count_2):
+                    if (count_2_str in ["fpr", "tpr"] and c2 < thr / 100) or (
+                        count_2_str in ["tnr", "fnr"] and c2 > thr / 100
+                    ):
+                        ind = i
+                        break
+                metrics_dict[metric] = count_1[ind]
 
         elif metric.__name__ in sklearn.metrics.__all__:
             if metric.__name__[:3] == "roc":
@@ -164,8 +168,8 @@ def get_curve(
 
     fpr = np.concatenate([[1.0], fpc / (fpc + tnc), [0.0]])
     tpr = np.concatenate([[1.0], tpc / (tpc + fnc), [0.0]])
-    tnr = np.concatenate([[1.0], tnc / (fpc + tnc), [0.0]])
-    fnr = np.concatenate([[1.0], fnc / (tpc + fnc), [0.0]])
+    tnr = np.concatenate([[0.0], tnc / (fpc + tnc), [1.0]])
+    fnr = np.concatenate([[0.0], fnc / (tpc + fnc), [1.0]])
     acc = (tnc + tpc) / (tpc + fpc + tnc + fnc)
 
     if return_raw:
