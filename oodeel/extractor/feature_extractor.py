@@ -26,6 +26,7 @@ from abc import abstractmethod
 from ..types import Callable
 from ..types import DatasetType
 from ..types import List
+from ..types import Optional
 from ..types import TensorType
 from ..types import Union
 
@@ -99,7 +100,9 @@ class FeatureExtractor(ABC):
 
     @abstractmethod
     def predict(
-        self, dataset: Union[DatasetType, TensorType]
+        self,
+        dataset: Union[DatasetType, TensorType],
+        postproc_fn: Optional[Callable] = None,
     ) -> Union[TensorType, List[TensorType]]:
         """
         Projects input samples "inputs" into the feature space for a batched dataset

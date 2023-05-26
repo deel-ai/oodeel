@@ -173,7 +173,11 @@ class TorchFeatureExtractor(FeatureExtractor):
         return features
 
     def predict(
-        self, dataset: Union[DataLoader, ItemType], detach: bool = True, **kwargs
+        self,
+        dataset: Union[DataLoader, ItemType],
+        detach: bool = True,
+        postproc_fn: Optional[Callable] = None,
+        **kwargs
     ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
 
@@ -191,6 +195,11 @@ class TorchFeatureExtractor(FeatureExtractor):
             tensor = TorchDataHandler.get_input_from_dataset_item(dataset)
             return self.predict_tensor(tensor, detach=detach)
 
+        if postproc_fn is None:
+
+            def postproc_fn(x):
+                return x
+
         features = [None for i in range(len(self.output_layers_id))]
         for elem in tqdm(
             dataset, desc="Extracting the dataset features...", total=len(dataset)
@@ -201,7 +210,9 @@ class TorchFeatureExtractor(FeatureExtractor):
                 features_batch = [features_batch]
             for i, f in enumerate(features_batch):
                 features[i] = (
-                    f if features[i] is None else torch.cat([features[i], f], dim=0)
+                    postproc_fn(f)
+                    if features[i] is None
+                    else torch.cat([features[i], postproc_fn(f)], dim=0)
                 )
 
         # No need to return a list when there is only one input layer
