@@ -28,22 +28,17 @@ from .base import OODBaseDetector
 
 class Entropy(OODBaseDetector):
     r"""
-    Energy Score method for OOD detection.
-    "Energy-based Out-of-distribution Detection"
-    https://arxiv.org/abs/2010.03759
+    Entropy OOD score
 
-    This method assumes that the model has been trained with cross entropy loss
-    $CE(model(x))$ where $model(x)=(l_{c})_{c=1}^{C}$ are the logits
-    predicted for input $x$.
-    The implementation assumes that the logits are retreieved using the output with
-    linear activation.
 
-    The energy score for input $x$ is given by
-    $$ -\log \sum_{c=0}^C \exp(l_c)$$
+    The method consists in using the Entropy of the input data computed using the Entropy
+    $\sum_{c=0}^C p(y=c| x) \times log(p(y=c | x))$ where
+    $p(y=c| x) = \text{model}(x)$.
 
-    where $model(x)=(l_{c})_{c=1}^{C}$ are the logits predicted by the model on
-    $x$.
-    As always, training data is expected to have lower score than OOD data.
+    **Reference**
+    [Likelihood Ratios for Out-of-Distribution Detection](https://proceedings.neurips.cc/paper/2019/hash/1e79596878b2320cac26dd792a6c51c9-Abstract.html),
+    Neurips 2019.
+
     """
 
     def __init__(self):
