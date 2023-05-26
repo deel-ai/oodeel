@@ -36,7 +36,7 @@ class Entropy(OODBaseDetector):
     $p(y=c| x) = \text{model}(x)$.
 
     **Reference**
-    [Likelihood Ratios for Out-of-Distribution Detection](https://proceedings.neurips.cc/paper/2019/hash/1e79596878b2320cac26dd792a6c51c9-Abstract.html),
+    https://proceedings.neurips.cc/paper/2019/hash/1e79596878b2320cac26dd792a6c51c9-Abstract.html,
     Neurips 2019.
 
     """
