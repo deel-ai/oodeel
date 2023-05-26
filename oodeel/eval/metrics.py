@@ -57,8 +57,8 @@ def bench_metrics(
             data. Defaults to 1.
         metrics (Optional[List[str]], optional): list of metrics to compute. Can pass
             any metric name from sklearn.metric or among "detect_acc" and
-            "<aaa><XX><bbb>" where <aaa> and <bbb> are in ["fpr", "tpr", "tnr"] and <XX>
-            is an integer between 1 and 99. Defaults to ["auroc", "fpr95tpr"].
+            "<aaa><XX><bbb>" where <aaa> and <bbb> are in ["fpr", "tpr", "fnr", "tnr"]
+            and <XX> is an integer between 1 and 99. Defaults to ["auroc", "fpr95tpr"].
         threshold (Optional[float], optional): Threshold to use when using
             threshold-dependent metrics. Defaults to None.
         step (Optional[int], optional): integration step (wrt percentile).
@@ -79,7 +79,7 @@ def bench_metrics(
         scores = np.concatenate([scores_in, scores_out])
         labels = np.concatenate([scores_in * 0 + in_value, scores_out * 0 + out_value])
 
-    fpr, tpr, tnr, acc = get_curve(scores, labels, step)
+    fpr, tpr, fnr, tnr, acc = get_curve(scores, labels, step)
 
     for metric in metrics:
         if metric == "auroc":
@@ -87,9 +87,12 @@ def bench_metrics(
             metrics_dict["auroc"] = auroc
 
         # compute <aaa><XX><bbb> metrics (check docstring for more info)
-        elif re.search(r"(fpr|tpr|tnr)(\d{1,2})(fpr|tpr|tnr)", metric) is not None:
+        elif (
+            re.search(r"^(fpr|tpr|fnr|tnr)(\d{1,2})(fpr|tpr|fnr|tnr)$", metric)
+            is not None
+        ):
             count_1_str, threshold, count_2_str = re.match(
-                pattern=r"(fpr|tpr|tnr)(\d{1,2})(fpr|tpr|tnr)", string=metric
+                pattern=r"^(fpr|tpr|fnr|tnr)(\d{1,2})(fpr|tpr|fnr|tnr)$", string=metric
             ).groups()
             threshold = int(threshold)
             count_1, count_2 = locals()[count_1_str], locals()[count_2_str]
@@ -97,7 +100,7 @@ def bench_metrics(
                 if c2 < threshold / 100:
                     ind = i
                     break
-            metrics_dict[f"{count_1_str}{threshold}{count_2_str}"] = count_1[ind]
+            metrics_dict[metric] = count_1[ind]
 
         elif metric == "detect_acc":
             metrics_dict["detect_acc"] = np.max(acc)
@@ -131,6 +134,7 @@ def get_curve(
         * true positive rate: TP / (TP + FN),
         * false positive rate: FP / (FP + TN),
         * true negative rate: TN / (FP + TN),
+        * false negative rate: FN / (TP + FN),
         * accuracy: (TN + TP) / (TP + FP + TN + FN),
     for different threshold values. The values are uniformly
     distributed among the percentiles, with a step = 4 / scores.shape[0]
@@ -161,12 +165,13 @@ def get_curve(
     fpr = np.concatenate([[1.0], fpc / (fpc + tnc), [0.0]])
     tpr = np.concatenate([[1.0], tpc / (tpc + fnc), [0.0]])
     tnr = np.concatenate([[1.0], tnc / (fpc + tnc), [0.0]])
+    fnr = np.concatenate([[1.0], fnc / (tpc + fnc), [0.0]])
     acc = (tnc + tpc) / (tpc + fpc + tnc + fnc)
 
     if return_raw:
-        return (fpc, tpc, fnc, tnc), (fpr, tpr, tnr, acc)
+        return (fpc, tpc, fnc, tnc), (fpr, tpr, fnr, tnr, acc)
     else:
-        return fpr, tpr, tnr, acc
+        return fpr, tpr, fnr, tnr, acc
 
 
 def ftpn(scores: np.ndarray, labels: np.ndarray, threshold: float) -> tuple:
