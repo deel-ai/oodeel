@@ -47,7 +47,7 @@ class Entropy(OODBaseDetector):
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on
-        energy, namey $-logsumexp(logits(inputs))$.
+        entropy.
 
         Args:
             inputs: input samples to score
