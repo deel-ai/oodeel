@@ -1,0 +1,42 @@
+name: coverage shield
+on:
+  push:
+    branches:
+      - master
+      - docs/coverage_action
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - python-version: 3.9
+            tf-version: 2.11
+            torch-version: 1.12
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install tox
+        pip install coverage-badge
+    - name: Compute coverage (Python ${{ matrix.python-version }} - TensorFlow ${{ matrix.tf-version }} - Torch ${{ matrix.torch-version }})
+      run: tox -e py$(echo ${{ matrix.python-version }}-tf${{ matrix.tf-version }}-torch${{ matrix.torch-version }}-coverage | tr -d .)
+    - name: Generate coverage.svg
+      run: coverage-badge -o coverage_temp.svg
+    - name: Commit badge in gh-shields branch
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git fetch
+        git checkout gh-shields
+        mv coverage_temp.svg coverage.svg
+        git add coverage.svg
+        git diff-index --quiet HEAD ||  git commit -am "Update coverage.svg"
+        git push origin gh-shields
