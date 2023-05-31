@@ -20,12 +20,34 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .dknn import DKNN
-from .energy import Energy
-from .entropy import Entropy
-from .mahalanobis import Mahalanobis
-from .mls import MLS
-from .odin import ODIN
-from .vim import VIM
+from torch.utils.data import DataLoader
 
-__all__ = ["MLS", "DKNN", "ODIN", "Energy", "VIM", "Mahalanobis", "Entropy"]
+from oodeel.methods import Entropy
+from tests.tests_torch import ComplexNet
+from tests.tests_torch import generate_data
+from tests.tests_torch import generate_data_torch
+
+
+def test_entropy():
+    """
+    Test Entropy
+    """
+    input_shape = (3, 32, 32)
+    num_labels = 10
+    samples = 100
+
+    data_x, _ = generate_data(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    )
+
+    data_x = generate_data_torch(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=True
+    )
+    data_x = DataLoader(data_x, batch_size=samples // 2)
+    model = ComplexNet()
+
+    entropy = Entropy()
+    entropy.fit(model)
+    scores = entropy.score(data_x)
+
+    assert scores.shape == (100,)

@@ -128,7 +128,7 @@ Currently, **oodeel** includes the following baselines:
 
 
 
-|  Name   |  Link   | Venue | Status |
+|  Name   |  Reference   | Venue | Status |
 | --- | --- | --- | --- |
 | MLS | [Open-Set Recognition: a Good Closed-Set Classifier is All You Need?](http://arxiv.org/abs/2110.06207) | ICLR 2022 | avail [tensorflow & torch](./pages/getting_started.ipynb) |
 | MSP | [A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks](http://arxiv.org/abs/1610.02136) | ICLR 2017 | avail [tensorflow & torch](./pages/getting_started.ipynb)|
@@ -137,12 +137,11 @@ Currently, **oodeel** includes the following baselines:
 | Odin | [Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks](http://arxiv.org/abs/1706.02690) | ICLR 2018 |avail [tensorflow](./notebooks/tensorflow/demo_odin_tf.ipynb) or  [torch](./notebooks/torch/demo_odin_torch.ipynb) |
 | DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 | avail [tensorflow](./notebooks/tensorflow/demo_dknn_tf.ipynb) or  [torch](./notebooks/torch/demo_dknn_torch.ipynb) |
 | VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |avail [tensorflow](./notebooks/tensorflow/demo_vim_tf.ipynb) or  [torch](./notebooks/torch/demo_vim_torch.ipynb)  |
+| Entropy | [Likelihood Ratios for Out-of-Distribution Detection](https://proceedings.neurips.cc/paper/2019/hash/1e79596878b2320cac26dd792a6c51c9-Abstract.html) | NeurIPS 2019 |avail [tensorflow](./notebooks/tensorflow/demo_entropy_tf.ipynb) or  [torch](./notebooks/torch/demo_entropy_torch.ipynb)  |
 | GODIN | [Generalized ODIN: Detecting Out-of-Distribution Image Without Learning From Out-of-Distribution Data](https://ieeexplore.ieee.org/document/9156473/) | CVPR 2020 | planned |
 | ReAct | [ReAct: Out-of-distribution Detection With Rectified Activations](http://arxiv.org/abs/2111.12797) | NeurIPS 2021 | planned |
 | NMD | [Neural Mean Discrepancy for Efficient Out-of-Distribution Detection](https://openaccess.thecvf.com/content/CVPR2022/html/Dong_Neural_Mean_Discrepancy_for_Efficient_Out-of-Distribution_Detection_CVPR_2022_paper.html) | CVPR 2022 | planned |
-| DICE | [DICE: Leveraging Sparsification for Out-of-Distribution Detection](https://link.springer.com/chapter/10.1007/978-3-031-20053-3_40l) | ECCV 2022 | planned |
 | Gram | [Detecting Out-of-Distribution Examples with Gram Matrices](https://proceedings.mlr.press/v119/sastry20a.html) | ICML 2020 | planned |
-| MOOD | [MOOD: Multi-level Out-of-distribution Detection](https://arxiv.org/abs/2104.14726) | CVPR 2021 | planned |
 
 
 

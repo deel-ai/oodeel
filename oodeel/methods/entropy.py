@@ -20,12 +20,46 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .dknn import DKNN
-from .energy import Energy
-from .entropy import Entropy
-from .mahalanobis import Mahalanobis
-from .mls import MLS
-from .odin import ODIN
-from .vim import VIM
+import numpy as np
 
-__all__ = ["MLS", "DKNN", "ODIN", "Energy", "VIM", "Mahalanobis", "Entropy"]
+from ..types import TensorType
+from .base import OODBaseDetector
+
+
+class Entropy(OODBaseDetector):
+    r"""
+    Entropy OOD score
+
+
+    The method consists in using the Entropy of the input data computed using the Entropy
+    $\sum_{c=0}^C p(y=c| x) \times log(p(y=c | x))$ where
+    $p(y=c| x) = \text{model}(x)$.
+
+    **Reference**
+    https://proceedings.neurips.cc/paper/2019/hash/1e79596878b2320cac26dd792a6c51c9-Abstract.html,
+    Neurips 2019.
+
+    """
+
+    def __init__(self):
+        super().__init__(output_layers_id=[-1])
+
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+        """
+        Computes an OOD score for input samples "inputs" based on
+        entropy.
+
+        Args:
+            inputs: input samples to score
+
+        Returns:
+            scores
+        """
+
+        # compute logits (softmax(logits,axis=1) is the actual softmax
+        # output minimized using binary cross entropy)
+        logits = self.feature_extractor(inputs)
+        probits = self.op.softmax(logits)
+        probits = self.op.convert_to_numpy(probits)
+        scores = np.sum(probits * np.log(probits), axis=1)
+        return -scores

@@ -20,12 +20,35 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .dknn import DKNN
-from .energy import Energy
-from .entropy import Entropy
-from .mahalanobis import Mahalanobis
-from .mls import MLS
-from .odin import ODIN
-from .vim import VIM
+from oodeel.methods import Entropy
+from tests.tests_tensorflow import generate_data
+from tests.tests_tensorflow import generate_data_tf
+from tests.tests_tensorflow import generate_model
 
-__all__ = ["MLS", "DKNN", "ODIN", "Energy", "VIM", "Mahalanobis", "Entropy"]
+
+def test_entropy():
+    """
+    Test Entropy
+    """
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data_x, _ = generate_data(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    )
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    entropy = Entropy()
+    entropy.fit(model)
+    scores = entropy.score(data_x)
+
+    assert scores.shape == (100,)
+
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    ).batch(samples)
+    scores = entropy.score(data)
+
+    assert scores.shape == (100,)
