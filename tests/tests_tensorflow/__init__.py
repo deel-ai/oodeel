@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from .tf_methods_utils import eval_detector_on_mnist
 from .tools_tf import almost_equal
 from .tools_tf import generate_data
 from .tools_tf import generate_data_tf
@@ -27,6 +28,7 @@ from .tools_tf import generate_model
 from .tools_tf import generate_regression_model
 
 __all__ = [
+    "eval_detector_on_mnist",
     "almost_equal",
     "generate_data",
     "generate_data_tf",
