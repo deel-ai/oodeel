@@ -400,6 +400,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_entropy_tf/" class="md-nav__link">
+        Entropy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../notebooks/tensorflow/demo_mahalanobis_tf/" class="md-nav__link">
         Mahalanobis
       </a>
@@ -505,6 +519,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_energy_torch/" class="md-nav__link">
         Energy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_entropy_torch/" class="md-nav__link">
+        Entropy
       </a>
     </li>
   
@@ -1080,7 +1108,8 @@
   <div class="doc doc-contents ">
   
       <p>Compute various common metrics from the OOD detector scores:
-AUROC, FPR95TPR, TNR95TPR, Detection accuracy and sklearn.metric metrics</p>
+AUROC, FPR95TPR (or any other similar metric relative to confusion matrix),
+Detection accuracy and sklearn.metric metrics</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -1143,11 +1172,12 @@ data. Defaults to 1.</p></td>
         <tr>
           <td><code>metrics</code></td>
           <td>
-                <code><span title="oodeel.types.Optional">Optional</span>[<span title="oodeel.types.List">List</span>[str]]</code>
+                <code><span title="oodeel.types.Optional">Optional</span>[List[str]]</code>
           </td>
           <td><p>list of metrics to compute. Can pass
-any metric name from sklearn.metric or among "auroc", "fpr95tpr",
-"tnr95tpr", "detect_acc". Defaults to ["auroc", "fpr95tpr"].</p></td>
+any metric name from sklearn.metric or among "detect_acc" and
+"<aaa><XX><bbb>" where <aaa> and <bbb> are in ["fpr", "tpr", "fnr", "tnr"]
+and <XX> is an integer between 1 and 99. Defaults to ["auroc", "fpr95tpr"].</p></td>
           <td>
                 <code>[&#39;auroc&#39;, &#39;fpr95tpr&#39;]</code>
           </td>
@@ -1197,8 +1227,7 @@ Only used for auroc and fpr95tpr. Defaults to 4.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/eval/metrics.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 32</span>
-<span class="normal"> 33</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 33</span>
 <span class="normal"> 34</span>
 <span class="normal"> 35</span>
 <span class="normal"> 36</span>
@@ -1284,17 +1313,27 @@ Only used for auroc and fpr95tpr. Defaults to 4.</p></td>
 <span class="normal">116</span>
 <span class="normal">117</span>
 <span class="normal">118</span>
-<span class="normal">119</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">bench_metrics</span><span class="p">(</span>
-    <span class="n">scores</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]],</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">bench_metrics</span><span class="p">(</span>
+    <span class="n">scores</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">],</span>
     <span class="n">labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">in_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">out_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="n">metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;auroc&quot;</span><span class="p">,</span> <span class="s2">&quot;fpr95tpr&quot;</span><span class="p">],</span>
+    <span class="n">metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;auroc&quot;</span><span class="p">,</span> <span class="s2">&quot;fpr95tpr&quot;</span><span class="p">],</span>
     <span class="n">threshold</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute various common metrics from the OOD detector scores:</span>
-<span class="sd">    AUROC, FPR95TPR, TNR95TPR, Detection accuracy and sklearn.metric metrics</span>
+<span class="sd">    AUROC, FPR95TPR (or any other similar metric relative to confusion matrix),</span>
+<span class="sd">    Detection accuracy and sklearn.metric metrics</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        scores (Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]): scores output of</span>
@@ -1309,8 +1348,9 @@ Only used for auroc and fpr95tpr. Defaults to 4.</p></td>
 <span class="sd">        out_value (Optional[int], optional): ood label value for out-of-distribution</span>
 <span class="sd">            data. Defaults to 1.</span>
 <span class="sd">        metrics (Optional[List[str]], optional): list of metrics to compute. Can pass</span>
-<span class="sd">            any metric name from sklearn.metric or among &quot;auroc&quot;, &quot;fpr95tpr&quot;,</span>
-<span class="sd">            &quot;tnr95tpr&quot;, &quot;detect_acc&quot;. Defaults to [&quot;auroc&quot;, &quot;fpr95tpr&quot;].</span>
+<span class="sd">            any metric name from sklearn.metric or among &quot;detect_acc&quot; and</span>
+<span class="sd">            &quot;&lt;aaa&gt;&lt;XX&gt;&lt;bbb&gt;&quot; where &lt;aaa&gt; and &lt;bbb&gt; are in [&quot;fpr&quot;, &quot;tpr&quot;, &quot;fnr&quot;, &quot;tnr&quot;]</span>
+<span class="sd">            and &lt;XX&gt; is an integer between 1 and 99. Defaults to [&quot;auroc&quot;, &quot;fpr95tpr&quot;].</span>
 <span class="sd">        threshold (Optional[float], optional): Threshold to use when using</span>
 <span class="sd">            threshold-dependent metrics. Defaults to None.</span>
 <span class="sd">        step (Optional[int], optional): integration step (wrt percentile).</span>
@@ -1331,29 +1371,35 @@ Only used for auroc and fpr95tpr. Defaults to 4.</p></td>
         <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">scores_in</span><span class="p">,</span> <span class="n">scores_out</span><span class="p">])</span>
         <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">scores_in</span> <span class="o">*</span> <span class="mi">0</span> <span class="o">+</span> <span class="n">in_value</span><span class="p">,</span> <span class="n">scores_out</span> <span class="o">*</span> <span class="mi">0</span> <span class="o">+</span> <span class="n">out_value</span><span class="p">])</span>
 
-    <span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">tnr</span><span class="p">,</span> <span class="n">acc</span> <span class="o">=</span> <span class="n">get_curve</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+    <span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">fnr</span><span class="p">,</span> <span class="n">tnr</span><span class="p">,</span> <span class="n">acc</span> <span class="o">=</span> <span class="n">get_curve</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;auroc&quot;</span><span class="p">:</span>
-            <span class="n">auroc</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">)</span>
-            <span class="n">metrics_dict</span><span class="p">[</span><span class="s2">&quot;auroc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">auroc</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;auroc&quot;</span><span class="p">:</span>
+                <span class="n">auroc</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">)</span>
+                <span class="n">metrics_dict</span><span class="p">[</span><span class="s2">&quot;auroc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">auroc</span>
 
-        <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;fpr95tpr&quot;</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">tp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tpr</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">tp</span> <span class="o">&lt;</span> <span class="mf">0.95</span><span class="p">:</span>
-                    <span class="n">ind</span> <span class="o">=</span> <span class="n">i</span>
-                    <span class="k">break</span>
-            <span class="n">metrics_dict</span><span class="p">[</span><span class="s2">&quot;fpr95tpr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fpr</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;detect_acc&quot;</span><span class="p">:</span>
+                <span class="n">metrics_dict</span><span class="p">[</span><span class="s2">&quot;detect_acc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;tnr95tpr&quot;</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">tp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tpr</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">tp</span> <span class="o">&lt;</span> <span class="mf">0.95</span><span class="p">:</span>
-                    <span class="n">ind</span> <span class="o">=</span> <span class="n">i</span>
-                    <span class="k">break</span>
-            <span class="n">metrics_dict</span><span class="p">[</span><span class="s2">&quot;tnr95tpr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tnr</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
-
-        <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;detect_acc&quot;</span><span class="p">:</span>
-            <span class="n">metrics_dict</span><span class="p">[</span><span class="s2">&quot;detect_acc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
+            <span class="c1"># compute &lt;aaa&gt;&lt;XX&gt;&lt;bbb&gt; metrics (check docstring for more info)</span>
+            <span class="k">elif</span> <span class="p">(</span>
+                <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^(fpr|tpr|fnr|tnr)(\d{1,2})(fpr|tpr|fnr|tnr)$&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span>
+                <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">):</span>
+                <span class="n">count_1_str</span><span class="p">,</span> <span class="n">thr</span><span class="p">,</span> <span class="n">count_2_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span>
+                    <span class="n">pattern</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;^(fpr|tpr|fnr|tnr)(\d{1,2})(fpr|tpr|fnr|tnr)$&quot;</span><span class="p">,</span>
+                    <span class="n">string</span><span class="o">=</span><span class="n">metric</span><span class="p">,</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+                <span class="n">thr</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">thr</span><span class="p">)</span>
+                <span class="n">count_1</span><span class="p">,</span> <span class="n">count_2</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()[</span><span class="n">count_1_str</span><span class="p">],</span> <span class="nb">locals</span><span class="p">()[</span><span class="n">count_2_str</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">count_2</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">count_2_str</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;fpr&quot;</span><span class="p">,</span> <span class="s2">&quot;tpr&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">c2</span> <span class="o">&lt;</span> <span class="n">thr</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                        <span class="n">count_2_str</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;tnr&quot;</span><span class="p">,</span> <span class="s2">&quot;fnr&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">c2</span> <span class="o">&gt;</span> <span class="n">thr</span> <span class="o">/</span> <span class="mi">100</span>
+                    <span class="p">):</span>
+                        <span class="n">ind</span> <span class="o">=</span> <span class="n">i</span>
+                        <span class="k">break</span>
+                <span class="n">metrics_dict</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="n">count_1</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
 
         <span class="k">elif</span> <span class="n">metric</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">__all__</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">metric</span><span class="o">.</span><span class="vm">__name__</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;roc&quot;</span><span class="p">:</span>
@@ -1453,7 +1499,7 @@ as in-distribution or out-of-distribution</p></td>
     <tbody>
         <tr>
           <td>
-                <code><span title="oodeel.types.Tuple">Tuple</span>[float]</code>
+                <code>tuple</code>
           </td>
           <td><p>Tuple[float]: The four metrics</p></td>
         </tr>
@@ -1462,18 +1508,7 @@ as in-distribution or out-of-distribution</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/eval/metrics.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">181</span>
 <span class="normal">182</span>
 <span class="normal">183</span>
 <span class="normal">184</span>
@@ -1489,7 +1524,18 @@ as in-distribution or out-of-distribution</p></td>
 <span class="normal">194</span>
 <span class="normal">195</span>
 <span class="normal">196</span>
-<span class="normal">197</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">ftpn</span><span class="p">(</span><span class="n">scores</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">ftpn</span><span class="p">(</span><span class="n">scores</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the number of</span>
 <span class="sd">        * true positives,</span>
 <span class="sd">        * false positives,</span>
@@ -1539,6 +1585,7 @@ as in-distribution or out-of-distribution</p></td>
     * true positive rate: TP / (TP + FN),
     * false positive rate: FP / (FP + TN),
     * true negative rate: TN / (FP + TN),
+    * false negative rate: FN / (TP + FN),
     * accuracy: (TN + TP) / (TP + FP + TN + FN),
 for different threshold values. The values are uniformly
 distributed among the percentiles, with a step = 4 / scores.shape[0]</p>
@@ -1610,7 +1657,7 @@ or only the rate curves. Defaults to False.</p></td>
     <tbody>
         <tr>
           <td>
-                <code><span title="oodeel.types.Union">Union</span>[<span title="oodeel.types.Tuple">Tuple</span>[<span title="oodeel.types.Tuple">Tuple</span>[<span title="numpy">np</span>.<span title="numpy.ndarray">ndarray</span>], <span title="oodeel.types.Tuple">Tuple</span>[<span title="numpy">np</span>.<span title="numpy.ndarray">ndarray</span>]], <span title="oodeel.types.Tuple">Tuple</span>[<span title="numpy">np</span>.<span title="numpy.ndarray">ndarray</span>]]</code>
+                <code><span title="oodeel.types.Union">Union</span>[<span title="oodeel.types.Tuple">Tuple</span>[tuple, tuple], tuple]</code>
           </td>
           <td><p>Union[Tuple[Tuple[np.ndarray], Tuple[np.ndarray]], Tuple[np.ndarray]]: curves</p></td>
         </tr>
@@ -1619,16 +1666,7 @@ or only the rate curves. Defaults to False.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/eval/metrics.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">131</span>
 <span class="normal">132</span>
 <span class="normal">133</span>
 <span class="normal">134</span>
@@ -1664,16 +1702,28 @@ or only the rate curves. Defaults to False.</p></td>
 <span class="normal">164</span>
 <span class="normal">165</span>
 <span class="normal">166</span>
-<span class="normal">167</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_curve</span><span class="p">(</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_curve</span><span class="p">(</span>
     <span class="n">scores</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
     <span class="n">return_raw</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the</span>
 <span class="sd">        * true positive rate: TP / (TP + FN),</span>
 <span class="sd">        * false positive rate: FP / (FP + TN),</span>
 <span class="sd">        * true negative rate: TN / (FP + TN),</span>
+<span class="sd">        * false negative rate: FN / (TP + FN),</span>
 <span class="sd">        * accuracy: (TN + TP) / (TP + FP + TN + FN),</span>
 <span class="sd">    for different threshold values. The values are uniformly</span>
 <span class="sd">    distributed among the percentiles, with a step = 4 / scores.shape[0]</span>
@@ -1703,13 +1753,14 @@ or only the rate curves. Defaults to False.</p></td>
 
     <span class="n">fpr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">],</span> <span class="n">fpc</span> <span class="o">/</span> <span class="p">(</span><span class="n">fpc</span> <span class="o">+</span> <span class="n">tnc</span><span class="p">),</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]])</span>
     <span class="n">tpr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">],</span> <span class="n">tpc</span> <span class="o">/</span> <span class="p">(</span><span class="n">tpc</span> <span class="o">+</span> <span class="n">fnc</span><span class="p">),</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]])</span>
-    <span class="n">tnr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">],</span> <span class="n">tnc</span> <span class="o">/</span> <span class="p">(</span><span class="n">fpc</span> <span class="o">+</span> <span class="n">tnc</span><span class="p">),</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]])</span>
+    <span class="n">tnr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">],</span> <span class="n">tnc</span> <span class="o">/</span> <span class="p">(</span><span class="n">fpc</span> <span class="o">+</span> <span class="n">tnc</span><span class="p">),</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]])</span>
+    <span class="n">fnr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">],</span> <span class="n">fnc</span> <span class="o">/</span> <span class="p">(</span><span class="n">tpc</span> <span class="o">+</span> <span class="n">fnc</span><span class="p">),</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]])</span>
     <span class="n">acc</span> <span class="o">=</span> <span class="p">(</span><span class="n">tnc</span> <span class="o">+</span> <span class="n">tpc</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tpc</span> <span class="o">+</span> <span class="n">fpc</span> <span class="o">+</span> <span class="n">tnc</span> <span class="o">+</span> <span class="n">fnc</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">return_raw</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">fpc</span><span class="p">,</span> <span class="n">tpc</span><span class="p">,</span> <span class="n">fnc</span><span class="p">,</span> <span class="n">tnc</span><span class="p">),</span> <span class="p">(</span><span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">tnr</span><span class="p">,</span> <span class="n">acc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">fpc</span><span class="p">,</span> <span class="n">tpc</span><span class="p">,</span> <span class="n">fnc</span><span class="p">,</span> <span class="n">tnc</span><span class="p">),</span> <span class="p">(</span><span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">fnr</span><span class="p">,</span> <span class="n">tnr</span><span class="p">,</span> <span class="n">acc</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">tnr</span><span class="p">,</span> <span class="n">acc</span>
+        <span class="k">return</span> <span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">fnr</span><span class="p">,</span> <span class="n">tnr</span><span class="p">,</span> <span class="n">acc</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>

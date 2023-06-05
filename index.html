@@ -410,6 +410,20 @@
   
   
     <li class="md-nav__item">
+      <a href="notebooks/tensorflow/demo_entropy_tf/" class="md-nav__link">
+        Entropy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="notebooks/tensorflow/demo_mahalanobis_tf/" class="md-nav__link">
         Mahalanobis
       </a>
@@ -515,6 +529,20 @@
     <li class="md-nav__item">
       <a href="notebooks/torch/demo_energy_torch/" class="md-nav__link">
         Energy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="notebooks/torch/demo_entropy_torch/" class="md-nav__link">
+        Entropy
       </a>
     </li>
   
@@ -975,29 +1003,32 @@
         <img src="https://img.shields.io/badge/python-3.8%2B-blue">
     </a>
     <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml">
-        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml/badge.svg">
+        <img alt="Flake8" src="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml/badge.svg">
     </a>
     <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
-        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml/badge.svg">
+        <img alt="Tests tf" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml/badge.svg">
     </a>
-    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
-        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml/badge.svg">
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml">
+        <img alt="Tests torch" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml/badge.svg">
     </a>
-    <a href="#">
-        <img src="https://img.shields.io/badge/License-MIT-efefef">
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-coverage-shield.yml">
+        <img alt="Coverage" src="https://github.com/deel-ai/oodeel/raw/gh-shields/coverage.svg">
+    </a>
+    <a href="https://github.com/deel-ai/oodeel/blob/master/LICENSE">
+        <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-efefef">
     </a>
 </div>
 <p><br></p>
 <!-- Short description of your library -->
 
 <p><b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow <strong>and</strong> pytorch. You can find the documentation <a href="https://deel-ai.github.io/oodeel/">here</a>.</p>
-<p><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">oodeel.methods</span> <span class="kn">import</span> <span class="n">MLS</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">oodeel.methods</span> <span class="kn">import</span> <span class="n">MLS</span>
 
 <span class="n">mls</span> <span class="o">=</span> <span class="n">MLS</span><span class="p">()</span>
 <span class="n">mls</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 <span class="n">scores</span> <span class="o">=</span> <span class="n">mls</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 </code></pre></div>
-<strong>Disclaimer</strong>: It is still very much a work in progress, see issues and <a href="#development-roadmap">development roadmap</a>. Please use the lib carefully!</p>
+<p><strong>Disclaimer</strong>: It is still very much a work in progress, see issues and <a href="#development-roadmap">development roadmap</a>. Please use the lib carefully!</p>
 <h1 id="table-of-contents">Table of contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h1>
 <ul>
 <li><a href="#table-of-contents">Table of contents</a></li>
@@ -1064,7 +1095,7 @@ make<span class="w"> </span>prepare-dev
 <thead>
 <tr>
 <th>Name</th>
-<th>Link</th>
+<th>Reference</th>
 <th>Venue</th>
 <th>Status</th>
 </tr>
@@ -1113,6 +1144,12 @@ make<span class="w"> </span>prepare-dev
 <td>avail <a href="notebooks/tensorflow/demo_vim_tf/">tensorflow</a> or  <a href="notebooks/torch/demo_vim_torch/">torch</a></td>
 </tr>
 <tr>
+<td>Entropy</td>
+<td><a href="https://proceedings.neurips.cc/paper/2019/hash/1e79596878b2320cac26dd792a6c51c9-Abstract.html">Likelihood Ratios for Out-of-Distribution Detection</a></td>
+<td>NeurIPS 2019</td>
+<td>avail <a href="notebooks/tensorflow/demo_entropy_tf/">tensorflow</a> or  <a href="notebooks/torch/demo_entropy_torch/">torch</a></td>
+</tr>
+<tr>
 <td>GODIN</td>
 <td><a href="https://ieeexplore.ieee.org/document/9156473/">Generalized ODIN: Detecting Out-of-Distribution Image Without Learning From Out-of-Distribution Data</a></td>
 <td>CVPR 2020</td>
@@ -1131,21 +1168,9 @@ make<span class="w"> </span>prepare-dev
 <td>planned</td>
 </tr>
 <tr>
-<td>DICE</td>
-<td><a href="https://link.springer.com/chapter/10.1007/978-3-031-20053-3_40l">DICE: Leveraging Sparsification for Out-of-Distribution Detection</a></td>
-<td>ECCV 2022</td>
-<td>planned</td>
-</tr>
-<tr>
 <td>Gram</td>
 <td><a href="https://proceedings.mlr.press/v119/sastry20a.html">Detecting Out-of-Distribution Examples with Gram Matrices</a></td>
 <td>ICML 2020</td>
-<td>planned</td>
-</tr>
-<tr>
-<td>MOOD</td>
-<td><a href="https://arxiv.org/abs/2104.14726">MOOD: Multi-level Out-of-distribution Detection</a></td>
-<td>CVPR 2021</td>
 <td>planned</td>
 </tr>
 </tbody>
@@ -1158,7 +1183,7 @@ make<span class="w"> </span>prepare-dev
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" checked/><span class="task-list-indicator"></span></label> Unification of tutorial notebooks</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" checked/><span class="task-list-indicator"></span></label> Validation of all methods for pytorch using <code>TorchOperator</code>, making oodeel compatible with both tensorflow and pytorch models.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" checked/><span class="task-list-indicator"></span></label> Integration of <code>TorchDataHandler</code> to alleviate the need of <code>tf.data.Dataset</code> when using pytorch. At this stage, oodeel will no more require any tensorflow components when using pytorch, and vice-versa.</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox"/><span class="task-list-indicator"></span></label> Revise docstring and type hinting</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" checked/><span class="task-list-indicator"></span></label> Revise docstring and type hinting</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" checked/><span class="task-list-indicator"></span></label> Set up the doc</li>
 </ul>
 <h2 id="whats-next">What's next?<a class="headerlink" href="#whats-next" title="Permanent link">&para;</a></h2>

@@ -12,19 +12,23 @@
         <img src="https://img.shields.io/badge/python-3.8%2B-blue">
     </a>
     <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml">
-        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml/badge.svg">
+        <img alt="Flake8" src="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml/badge.svg">
     </a>
     <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
-        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml/badge.svg">
+        <img alt="Tests tf" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml/badge.svg">
     </a>
-    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
-        <img alt="PyLint" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml/badge.svg">
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml">
+        <img alt="Tests torch" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml/badge.svg">
     </a>
-    <a href="#">
-        <img src="https://img.shields.io/badge/License-MIT-efefef">
+    <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-coverage-shield.yml">
+        <img alt="Coverage" src="https://github.com/deel-ai/oodeel/raw/gh-shields/coverage.svg">
+    </a>
+    <a href="https://github.com/deel-ai/oodeel/blob/master/LICENSE">
+        <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-efefef">
     </a>
 </div>
 <br>
+
 <!-- Short description of your library -->
 
 <b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch. You can find the documentation [here](https://deel-ai.github.io/oodeel/).
@@ -36,6 +40,7 @@ mls = MLS()
 mls.fit(model)
 scores = mls.score(ds)
 ```
+
 **Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully!
 
 # Table of contents
@@ -127,7 +132,7 @@ Currently, **oodeel** includes the following baselines:
 
 
 
-|  Name   |  Link   | Venue | Status |
+|  Name   |  Reference   | Venue | Status |
 | --- | --- | --- | --- |
 | MLS | [Open-Set Recognition: a Good Closed-Set Classifier is All You Need?](http://arxiv.org/abs/2110.06207) | ICLR 2022 | avail [tensorflow & torch](./pages/getting_started.ipynb) |
 | MSP | [A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks](http://arxiv.org/abs/1610.02136) | ICLR 2017 | avail [tensorflow & torch](./pages/getting_started.ipynb)|
@@ -136,12 +141,11 @@ Currently, **oodeel** includes the following baselines:
 | Odin | [Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks](http://arxiv.org/abs/1706.02690) | ICLR 2018 |avail [tensorflow](./notebooks/tensorflow/demo_odin_tf.ipynb) or  [torch](./notebooks/torch/demo_odin_torch.ipynb) |
 | DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 | avail [tensorflow](./notebooks/tensorflow/demo_dknn_tf.ipynb) or  [torch](./notebooks/torch/demo_dknn_torch.ipynb) |
 | VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |avail [tensorflow](./notebooks/tensorflow/demo_vim_tf.ipynb) or  [torch](./notebooks/torch/demo_vim_torch.ipynb)  |
+| Entropy | [Likelihood Ratios for Out-of-Distribution Detection](https://proceedings.neurips.cc/paper/2019/hash/1e79596878b2320cac26dd792a6c51c9-Abstract.html) | NeurIPS 2019 |avail [tensorflow](./notebooks/tensorflow/demo_entropy_tf.ipynb) or  [torch](./notebooks/torch/demo_entropy_torch.ipynb)  |
 | GODIN | [Generalized ODIN: Detecting Out-of-Distribution Image Without Learning From Out-of-Distribution Data](https://ieeexplore.ieee.org/document/9156473/) | CVPR 2020 | planned |
 | ReAct | [ReAct: Out-of-distribution Detection With Rectified Activations](http://arxiv.org/abs/2111.12797) | NeurIPS 2021 | planned |
 | NMD | [Neural Mean Discrepancy for Efficient Out-of-Distribution Detection](https://openaccess.thecvf.com/content/CVPR2022/html/Dong_Neural_Mean_Discrepancy_for_Efficient_Out-of-Distribution_Detection_CVPR_2022_paper.html) | CVPR 2022 | planned |
-| DICE | [DICE: Leveraging Sparsification for Out-of-Distribution Detection](https://link.springer.com/chapter/10.1007/978-3-031-20053-3_40l) | ECCV 2022 | planned |
 | Gram | [Detecting Out-of-Distribution Examples with Gram Matrices](https://proceedings.mlr.press/v119/sastry20a.html) | ICML 2020 | planned |
-| MOOD | [MOOD: Multi-level Out-of-distribution Detection](https://arxiv.org/abs/2104.14726) | CVPR 2021 | planned |
 
 
 
@@ -153,7 +157,7 @@ Currently, **oodeel** includes the following baselines:
 - [x] Unification of tutorial notebooks
 - [x] Validation of all methods for pytorch using `TorchOperator`, making oodeel compatible with both tensorflow and pytorch models.
 - [x] Integration of `TorchDataHandler` to alleviate the need of `tf.data.Dataset` when using pytorch. At this stage, oodeel will no more require any tensorflow components when using pytorch, and vice-versa.
-- [ ] Revise docstring and type hinting
+- [x] Revise docstring and type hinting
 - [x] Set up the doc
 
 ## What's next?

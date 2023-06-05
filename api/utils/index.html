@@ -400,6 +400,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_entropy_tf/" class="md-nav__link">
+        Entropy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../notebooks/tensorflow/demo_mahalanobis_tf/" class="md-nav__link">
         Mahalanobis
       </a>
@@ -505,6 +519,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_energy_torch/" class="md-nav__link">
         Energy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_entropy_torch/" class="md-nav__link">
+        Entropy
       </a>
     </li>
   
@@ -1098,7 +1126,7 @@
     <tbody>
         <tr>
 <td><code>bool</code></td>          <td>
-                <code>str</code>
+                <code>bool</code>
           </td>
           <td><p>Whether the model belongs to specified framework or not</p></td>
         </tr>
@@ -1123,7 +1151,7 @@
 <span class="normal">39</span>
 <span class="normal">40</span>
 <span class="normal">41</span>
-<span class="normal">42</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_from</span><span class="p">(</span><span class="n">model_or_tensor</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">framework</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">42</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_from</span><span class="p">(</span><span class="n">model_or_tensor</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">framework</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check whether a model or tensor belongs to a specific framework</span>
 
 <span class="sd">    Args:</span>

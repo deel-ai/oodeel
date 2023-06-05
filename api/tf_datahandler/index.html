@@ -400,6 +400,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_entropy_tf/" class="md-nav__link">
+        Entropy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../notebooks/tensorflow/demo_mahalanobis_tf/" class="md-nav__link">
         Mahalanobis
       </a>
@@ -505,6 +519,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_energy_torch/" class="md-nav__link">
         Energy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_entropy_torch/" class="md-nav__link">
+        Entropy
       </a>
     </li>
   
@@ -1369,10 +1397,7 @@ tensorflow syntax.</p>
 
         <details class="quote">
           <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 70</span>
-<span class="normal"> 71</span>
-<span class="normal"> 72</span>
-<span class="normal"> 73</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 73</span>
 <span class="normal"> 74</span>
 <span class="normal"> 75</span>
 <span class="normal"> 76</span>
@@ -1942,7 +1967,14 @@ tensorflow syntax.</p>
 <span class="normal">640</span>
 <span class="normal">641</span>
 <span class="normal">642</span>
-<span class="normal">643</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TFDataHandler</span><span class="p">(</span><span class="n">DataHandler</span><span class="p">):</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TFDataHandler</span><span class="p">(</span><span class="n">DataHandler</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class to manage tf.data.Dataset. The aim is to provide a simple interface for</span>
 <span class="sd">    working with tf.data.Datasets and manage them without having to use</span>
@@ -1951,7 +1983,10 @@ tensorflow syntax.</p>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">load_dataset</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_id</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">load_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">dataset_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">ItemType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">load_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load dataset from different manners, ensuring to return a dict based</span>
 <span class="sd">        tf.data.Dataset.</span>
@@ -1966,7 +2001,7 @@ tensorflow syntax.</p>
 <span class="sd">        Returns:</span>
 <span class="sd">            tf.data.Dataset: A dict based tf.data.Dataset</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">ItemType</span><span class="p">)):</span>
             <span class="n">dataset</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">load_dataset_from_arrays</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
             <span class="n">dataset</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">load_custom_dataset</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
@@ -1976,12 +2011,13 @@ tensorflow syntax.</p>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">load_dataset_from_arrays</span><span class="p">(</span>
-        <span class="n">dataset_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">],</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">dataset_id</span><span class="p">:</span> <span class="n">ItemType</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a tf.data.Dataset from a numpy array or a tuple/dict of numpy arrays</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a tf.data.Dataset from a np.ndarray, a tf.Tensor or a tuple/dict</span>
+<span class="sd">        of np.ndarrays/td.Tensors.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            dataset_id (Union[np.ndarray, dict, tuple]): numpy array(s) to load.</span>
+<span class="sd">            dataset_id (ItemType): numpy array(s) to load.</span>
 <span class="sd">            keys (list, optional): Features keys. If None, assigned as &quot;input_i&quot;</span>
 <span class="sd">                for i-th feature. Defaults to None.</span>
 
@@ -1989,8 +2025,8 @@ tensorflow syntax.</p>
 <span class="sd">            tf.data.Dataset</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># If dataset_id is a numpy array, convert it to a dict</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="n">dataset</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="n">dataset_id</span><span class="p">}</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">TensorType</span><span class="p">)):</span>
+            <span class="n">dataset_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="n">dataset_id</span><span class="p">}</span>
 
         <span class="c1"># If dataset_id is a tuple, convert it to a dict</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
@@ -2014,8 +2050,6 @@ tensorflow syntax.</p>
                 <span class="p">),</span> <span class="s2">&quot;Number of keys mismatch with the number of features&quot;</span>
                 <span class="n">dataset_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">keys</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">dataset_id</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_elem</span><span class="p">)}</span>
 
-            <span class="n">dataset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">(</span><span class="n">dataset_dict</span><span class="p">)</span>
-
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">len_elem</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">)</span>
@@ -2026,13 +2060,13 @@ tensorflow syntax.</p>
                 <span class="n">dataset_dict</span> <span class="o">=</span> <span class="p">{</span>
                     <span class="n">keys</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">dataset_id</span><span class="p">[</span><span class="n">original_keys</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_elem</span><span class="p">)</span>
                 <span class="p">}</span>
-            <span class="n">dataset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">(</span><span class="n">dataset_dict</span><span class="p">)</span>
 
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">(</span><span class="n">dataset_dict</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">dataset</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">load_custom_dataset</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_id</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_id</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a custom Dataset by ensuring it has the correct format (dict-based)</span>
 
@@ -2090,7 +2124,9 @@ tensorflow syntax.</p>
 
     <span class="nd">@staticmethod</span>
     <span class="nd">@dict_only_ds</span>
-    <span class="k">def</span> <span class="nf">dict_to_tuple</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">dict_to_tuple</span><span class="p">(</span>
+        <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn a dict based tf.data.Dataset to a tuple based tf.data.Dataset</span>
 
 <span class="sd">        Args:</span>
@@ -2200,7 +2236,7 @@ tensorflow syntax.</p>
 <span class="sd">            bool: If the tf.data.Dataset has a feature denoted by key</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">element_spec</span><span class="p">,</span> <span class="nb">dict</span><span class="p">),</span> <span class="s2">&quot;dataset elements must be dicts&quot;</span>
-        <span class="k">return</span> <span class="mi">1</span> <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">element_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="kc">True</span> <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">element_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">else</span> <span class="kc">False</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">map_ds</span><span class="p">(</span>
@@ -2273,11 +2309,11 @@ tensorflow syntax.</p>
         <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">preprocess_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">augment_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">output_keys</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">preprocess_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">augment_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">output_keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dict_based_fns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">shuffle_buffer_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">shuffle_buffer_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">prefetch_buffer_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">drop_remainder</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
@@ -2481,14 +2517,14 @@ tensorflow syntax.</p>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">element_spec</span><span class="p">[</span><span class="n">feature_key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">get_input_from_dataset_item</span><span class="p">(</span><span class="n">elem</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">get_input_from_dataset_item</span><span class="p">(</span><span class="n">elem</span><span class="p">:</span> <span class="n">ItemType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorType</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the tensor that is to be feed as input to a model from a dataset element.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            elem (Union[Any, tuple, dict]): dataset element to extract input from</span>
+<span class="sd">            elem (ItemType): dataset element to extract input from</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Any: Input tensor</span>
+<span class="sd">            TensorType: Input tensor</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
             <span class="n">tensor</span> <span class="o">=</span> <span class="n">elem</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -2613,14 +2649,7 @@ tensorflow syntax.</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">259</span>
-<span class="normal">260</span>
-<span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span>
-<span class="normal">266</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">266</span>
 <span class="normal">267</span>
 <span class="normal">268</span>
 <span class="normal">269</span>
@@ -2634,7 +2663,14 @@ tensorflow syntax.</p>
 <span class="normal">277</span>
 <span class="normal">278</span>
 <span class="normal">279</span>
-<span class="normal">280</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">assign_feature_value</span><span class="p">(</span>
     <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">feature_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
@@ -2735,12 +2771,7 @@ tf.data.Dataset. If None, takes all the features. Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">221</span>
 <span class="normal">222</span>
 <span class="normal">223</span>
 <span class="normal">224</span>
@@ -2751,9 +2782,18 @@ tf.data.Dataset. If None, takes all the features. Defaults to None.</p></td>
 <span class="normal">229</span>
 <span class="normal">230</span>
 <span class="normal">231</span>
-<span class="normal">232</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="nd">@dict_only_ds</span>
-<span class="k">def</span> <span class="nf">dict_to_tuple</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">dict_to_tuple</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Turn a dict based tf.data.Dataset to a tuple based tf.data.Dataset</span>
 
 <span class="sd">    Args:</span>
@@ -2868,14 +2908,7 @@ with Feature_key value included in Values. Defaults to False.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">352</span>
-<span class="normal">353</span>
-<span class="normal">354</span>
-<span class="normal">355</span>
-<span class="normal">356</span>
-<span class="normal">357</span>
-<span class="normal">358</span>
-<span class="normal">359</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">359</span>
 <span class="normal">360</span>
 <span class="normal">361</span>
 <span class="normal">362</span>
@@ -2909,7 +2942,14 @@ with Feature_key value included in Values. Defaults to False.</p></td>
 <span class="normal">390</span>
 <span class="normal">391</span>
 <span class="normal">392</span>
-<span class="normal">393</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="nd">@dict_only_ds</span>
 <span class="k">def</span> <span class="nf">filter_by_feature_value</span><span class="p">(</span>
     <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
@@ -3020,14 +3060,7 @@ with a reduce op.</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">576</span>
-<span class="normal">577</span>
-<span class="normal">578</span>
-<span class="normal">579</span>
-<span class="normal">580</span>
-<span class="normal">581</span>
-<span class="normal">582</span>
-<span class="normal">583</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">583</span>
 <span class="normal">584</span>
 <span class="normal">585</span>
 <span class="normal">586</span>
@@ -3035,7 +3068,14 @@ with a reduce op.</p>
 <span class="normal">588</span>
 <span class="normal">589</span>
 <span class="normal">590</span>
-<span class="normal">591</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">get_dataset_length</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the length of a dataset. Try to access it with len(), and if not available,</span>
 <span class="sd">    with a reduce op.</span>
@@ -3119,18 +3159,18 @@ with a reduce op.</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">303</span>
-<span class="normal">304</span>
-<span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">310</span>
 <span class="normal">311</span>
 <span class="normal">312</span>
 <span class="normal">313</span>
-<span class="normal">314</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="nd">@dict_only_ds</span>
 <span class="k">def</span> <span class="nf">get_ds_feature_keys</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the feature keys of a tf.data.Dataset</span>
@@ -3220,14 +3260,7 @@ with a reduce op.</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">626</span>
-<span class="normal">627</span>
-<span class="normal">628</span>
-<span class="normal">629</span>
-<span class="normal">630</span>
-<span class="normal">631</span>
-<span class="normal">632</span>
-<span class="normal">633</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">633</span>
 <span class="normal">634</span>
 <span class="normal">635</span>
 <span class="normal">636</span>
@@ -3237,7 +3270,14 @@ with a reduce op.</p>
 <span class="normal">640</span>
 <span class="normal">641</span>
 <span class="normal">642</span>
-<span class="normal">643</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">get_feature</span><span class="p">(</span>
     <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">feature_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
@@ -3338,14 +3378,7 @@ over the whole dataset.</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span>
-<span class="normal">287</span>
-<span class="normal">288</span>
-<span class="normal">289</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">289</span>
 <span class="normal">290</span>
 <span class="normal">291</span>
 <span class="normal">292</span>
@@ -3357,7 +3390,14 @@ over the whole dataset.</p>
 <span class="normal">298</span>
 <span class="normal">299</span>
 <span class="normal">300</span>
-<span class="normal">301</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="nd">@dict_only_ds</span>
 <span class="k">def</span> <span class="nf">get_feature_from_ds</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">feature_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a feature from a tf.data.Dataset</span>
@@ -3455,20 +3495,20 @@ over the whole dataset.</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">593</span>
-<span class="normal">594</span>
-<span class="normal">595</span>
-<span class="normal">596</span>
-<span class="normal">597</span>
-<span class="normal">598</span>
-<span class="normal">599</span>
-<span class="normal">600</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">600</span>
 <span class="normal">601</span>
 <span class="normal">602</span>
 <span class="normal">603</span>
 <span class="normal">604</span>
 <span class="normal">605</span>
-<span class="normal">606</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">get_feature_shape</span><span class="p">(</span>
     <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">feature_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
@@ -3520,7 +3560,7 @@ over the whole dataset.</p>
         <tr>
           <td><code>elem</code></td>
           <td>
-                <code><span title="oodeel.types.Union">Union</span>[<span title="oodeel.types.Any">Any</span>, tuple, dict]</code>
+                <code><span title="oodeel.types.ItemType">ItemType</span></code>
           </td>
           <td><p>dataset element to extract input from</p></td>
           <td>
@@ -3540,8 +3580,8 @@ over the whole dataset.</p>
     </thead>
     <tbody>
         <tr>
-<td><code>Any</code></td>          <td>
-                <code><span title="oodeel.types.Any">Any</span></code>
+<td><code>TensorType</code></td>          <td>
+                <code><span title="oodeel.types.TensorType">TensorType</span></code>
           </td>
           <td><p>Input tensor</p></td>
         </tr>
@@ -3550,14 +3590,7 @@ over the whole dataset.</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">608</span>
-<span class="normal">609</span>
-<span class="normal">610</span>
-<span class="normal">611</span>
-<span class="normal">612</span>
-<span class="normal">613</span>
-<span class="normal">614</span>
-<span class="normal">615</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">615</span>
 <span class="normal">616</span>
 <span class="normal">617</span>
 <span class="normal">618</span>
@@ -3566,15 +3599,22 @@ over the whole dataset.</p>
 <span class="normal">621</span>
 <span class="normal">622</span>
 <span class="normal">623</span>
-<span class="normal">624</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
-<span class="k">def</span> <span class="nf">get_input_from_dataset_item</span><span class="p">(</span><span class="n">elem</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span> <span class="nf">get_input_from_dataset_item</span><span class="p">(</span><span class="n">elem</span><span class="p">:</span> <span class="n">ItemType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorType</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the tensor that is to be feed as input to a model from a dataset element.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        elem (Union[Any, tuple, dict]): dataset element to extract input from</span>
+<span class="sd">        elem (ItemType): dataset element to extract input from</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Any: Input tensor</span>
+<span class="sd">        TensorType: Input tensor</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
         <span class="n">tensor</span> <span class="o">=</span> <span class="n">elem</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -3652,20 +3692,20 @@ one and if it is a sequence (list or tuple), it is len(elem).</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">561</span>
-<span class="normal">562</span>
-<span class="normal">563</span>
-<span class="normal">564</span>
-<span class="normal">565</span>
-<span class="normal">566</span>
-<span class="normal">567</span>
-<span class="normal">568</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">568</span>
 <span class="normal">569</span>
 <span class="normal">570</span>
 <span class="normal">571</span>
 <span class="normal">572</span>
 <span class="normal">573</span>
-<span class="normal">574</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">get_item_length</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the length of a dataset element. If an element is a tensor, the length is</span>
 <span class="sd">    one and if it is a sequence (list or tuple), it is len(elem).</span>
@@ -3757,19 +3797,19 @@ one and if it is a sequence (list or tuple), it is len(elem).</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span>
-<span class="normal">322</span>
-<span class="normal">323</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">323</span>
 <span class="normal">324</span>
 <span class="normal">325</span>
 <span class="normal">326</span>
 <span class="normal">327</span>
-<span class="normal">328</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">has_feature_key</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a tf.data.Dataset has a feature denoted by key</span>
 
@@ -3781,7 +3821,7 @@ one and if it is a sequence (list or tuple), it is len(elem).</p>
 <span class="sd">        bool: If the tf.data.Dataset has a feature denoted by key</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">element_spec</span><span class="p">,</span> <span class="nb">dict</span><span class="p">),</span> <span class="s2">&quot;dataset elements must be dicts&quot;</span>
-    <span class="k">return</span> <span class="mi">1</span> <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">element_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="kc">True</span> <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">element_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">else</span> <span class="kc">False</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -3861,12 +3901,7 @@ for i-th feature. Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">163</span>
 <span class="normal">164</span>
 <span class="normal">165</span>
 <span class="normal">166</span>
@@ -3896,9 +3931,14 @@ for i-th feature. Defaults to None.</p></td>
 <span class="normal">190</span>
 <span class="normal">191</span>
 <span class="normal">192</span>
-<span class="normal">193</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">load_custom_dataset</span><span class="p">(</span>
-    <span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_id</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_id</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a custom Dataset by ensuring it has the correct format (dict-based)</span>
 
@@ -3971,7 +4011,7 @@ tf.data.Dataset.</p>
         <tr>
           <td><code>dataset_id</code></td>
           <td>
-                <code><span title="oodeel.types.Any">Any</span></code>
+                <code>Any</code>
           </td>
           <td><p>dataset identification</p></td>
           <td>
@@ -4023,10 +4063,7 @@ tensorflow_datasets. Defaults to {}.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 77</span>
-<span class="normal"> 78</span>
-<span class="normal"> 79</span>
-<span class="normal"> 80</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 80</span>
 <span class="normal"> 81</span>
 <span class="normal"> 82</span>
 <span class="normal"> 83</span>
@@ -4046,9 +4083,18 @@ tensorflow_datasets. Defaults to {}.</p></td>
 <span class="normal"> 97</span>
 <span class="normal"> 98</span>
 <span class="normal"> 99</span>
-<span class="normal">100</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">load_dataset</span><span class="p">(</span>
-    <span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_id</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">load_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="bp">cls</span><span class="p">,</span>
+    <span class="n">dataset_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">ItemType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+    <span class="n">keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">load_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load dataset from different manners, ensuring to return a dict based</span>
 <span class="sd">    tf.data.Dataset.</span>
@@ -4063,7 +4109,7 @@ tensorflow_datasets. Defaults to {}.</p></td>
 <span class="sd">    Returns:</span>
 <span class="sd">        tf.data.Dataset: A dict based tf.data.Dataset</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">ItemType</span><span class="p">)):</span>
         <span class="n">dataset</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">load_dataset_from_arrays</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
         <span class="n">dataset</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">load_custom_dataset</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
@@ -4092,7 +4138,8 @@ tensorflow_datasets. Defaults to {}.</p></td>
 
   <div class="doc doc-contents ">
   
-      <p>Load a tf.data.Dataset from a numpy array or a tuple/dict of numpy arrays</p>
+      <p>Load a tf.data.Dataset from a np.ndarray, a tf.Tensor or a tuple/dict
+of np.ndarrays/td.Tensors.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4108,7 +4155,7 @@ tensorflow_datasets. Defaults to {}.</p></td>
         <tr>
           <td><code>dataset_id</code></td>
           <td>
-                <code><span title="oodeel.types.Union">Union</span>[<span title="numpy">np</span>.<span title="numpy.ndarray">ndarray</span>, dict, tuple]</code>
+                <code><span title="oodeel.types.ItemType">ItemType</span></code>
           </td>
           <td><p>numpy array(s) to load.</p></td>
           <td>
@@ -4149,13 +4196,7 @@ for i-th feature. Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">108</span>
 <span class="normal">109</span>
 <span class="normal">110</span>
 <span class="normal">111</span>
@@ -4203,14 +4244,20 @@ for i-th feature. Defaults to None.</p></td>
 <span class="normal">153</span>
 <span class="normal">154</span>
 <span class="normal">155</span>
-<span class="normal">156</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">load_dataset_from_arrays</span><span class="p">(</span>
-    <span class="n">dataset_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">],</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">dataset_id</span><span class="p">:</span> <span class="n">ItemType</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a tf.data.Dataset from a numpy array or a tuple/dict of numpy arrays</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a tf.data.Dataset from a np.ndarray, a tf.Tensor or a tuple/dict</span>
+<span class="sd">    of np.ndarrays/td.Tensors.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        dataset_id (Union[np.ndarray, dict, tuple]): numpy array(s) to load.</span>
+<span class="sd">        dataset_id (ItemType): numpy array(s) to load.</span>
 <span class="sd">        keys (list, optional): Features keys. If None, assigned as &quot;input_i&quot;</span>
 <span class="sd">            for i-th feature. Defaults to None.</span>
 
@@ -4218,8 +4265,8 @@ for i-th feature. Defaults to None.</p></td>
 <span class="sd">        tf.data.Dataset</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># If dataset_id is a numpy array, convert it to a dict</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-        <span class="n">dataset</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="n">dataset_id</span><span class="p">}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">TensorType</span><span class="p">)):</span>
+        <span class="n">dataset_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="n">dataset_id</span><span class="p">}</span>
 
     <span class="c1"># If dataset_id is a tuple, convert it to a dict</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
@@ -4243,8 +4290,6 @@ for i-th feature. Defaults to None.</p></td>
             <span class="p">),</span> <span class="s2">&quot;Number of keys mismatch with the number of features&quot;</span>
             <span class="n">dataset_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">keys</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">dataset_id</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_elem</span><span class="p">)}</span>
 
-        <span class="n">dataset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">(</span><span class="n">dataset_dict</span><span class="p">)</span>
-
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">len_elem</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">)</span>
@@ -4255,8 +4300,8 @@ for i-th feature. Defaults to None.</p></td>
             <span class="n">dataset_dict</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="n">keys</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">dataset_id</span><span class="p">[</span><span class="n">original_keys</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_elem</span><span class="p">)</span>
             <span class="p">}</span>
-        <span class="n">dataset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">(</span><span class="n">dataset_dict</span><span class="p">)</span>
 
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">(</span><span class="n">dataset_dict</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">dataset</span>
 </code></pre></div></td></tr></table></div>
       </details>
@@ -4337,12 +4382,7 @@ Defaults to {}.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span>
-<span class="normal">199</span>
-<span class="normal">200</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">200</span>
 <span class="normal">201</span>
 <span class="normal">202</span>
 <span class="normal">203</span>
@@ -4356,7 +4396,12 @@ Defaults to {}.</p></td>
 <span class="normal">211</span>
 <span class="normal">212</span>
 <span class="normal">213</span>
-<span class="normal">214</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">load_from_tensorflow_datasets</span><span class="p">(</span>
     <span class="n">dataset_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">load_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
@@ -4456,14 +4501,7 @@ Defaults to {}.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">466</span>
-<span class="normal">467</span>
-<span class="normal">468</span>
-<span class="normal">469</span>
-<span class="normal">470</span>
-<span class="normal">471</span>
-<span class="normal">472</span>
-<span class="normal">473</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">473</span>
 <span class="normal">474</span>
 <span class="normal">475</span>
 <span class="normal">476</span>
@@ -4475,7 +4513,14 @@ Defaults to {}.</p></td>
 <span class="normal">482</span>
 <span class="normal">483</span>
 <span class="normal">484</span>
-<span class="normal">485</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">make_channel_first</span><span class="p">(</span><span class="n">input_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a tf.data.Dataset channel first. Make sure that the dataset is not</span>
 <span class="sd">        already Channel first. If so, the tensor will have the format</span>
@@ -4584,14 +4629,7 @@ to use. Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">330</span>
-<span class="normal">331</span>
-<span class="normal">332</span>
-<span class="normal">333</span>
-<span class="normal">334</span>
-<span class="normal">335</span>
-<span class="normal">336</span>
-<span class="normal">337</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">337</span>
 <span class="normal">338</span>
 <span class="normal">339</span>
 <span class="normal">340</span>
@@ -4604,7 +4642,14 @@ to use. Defaults to None.</p></td>
 <span class="normal">347</span>
 <span class="normal">348</span>
 <span class="normal">349</span>
-<span class="normal">350</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">map_ds</span><span class="p">(</span>
     <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
     <span class="n">map_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
@@ -4736,14 +4781,7 @@ id_dataset input tensors. Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">487</span>
-<span class="normal">488</span>
-<span class="normal">489</span>
-<span class="normal">490</span>
-<span class="normal">491</span>
-<span class="normal">492</span>
-<span class="normal">493</span>
-<span class="normal">494</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">494</span>
 <span class="normal">495</span>
 <span class="normal">496</span>
 <span class="normal">497</span>
@@ -4808,7 +4846,14 @@ id_dataset input tensors. Defaults to None.</p></td>
 <span class="normal">556</span>
 <span class="normal">557</span>
 <span class="normal">558</span>
-<span class="normal">559</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">merge</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">id_dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
@@ -5046,14 +5091,7 @@ its size is lower than batch_size. Defaults to False.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">395</span>
-<span class="normal">396</span>
-<span class="normal">397</span>
-<span class="normal">398</span>
-<span class="normal">399</span>
-<span class="normal">400</span>
-<span class="normal">401</span>
-<span class="normal">402</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">402</span>
 <span class="normal">403</span>
 <span class="normal">404</span>
 <span class="normal">405</span>
@@ -5115,17 +5153,24 @@ its size is lower than batch_size. Defaults to False.</p></td>
 <span class="normal">461</span>
 <span class="normal">462</span>
 <span class="normal">463</span>
-<span class="normal">464</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">prepare_for_training</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">preprocess_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">augment_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">output_keys</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">preprocess_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">augment_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">output_keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">dict_based_fns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">shuffle_buffer_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">shuffle_buffer_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">prefetch_buffer_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">drop_remainder</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
@@ -5263,14 +5308,7 @@ its size is lower than batch_size. Defaults to False.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span>
-<span class="normal">238</span>
-<span class="normal">239</span>
-<span class="normal">240</span>
-<span class="normal">241</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">241</span>
 <span class="normal">242</span>
 <span class="normal">243</span>
 <span class="normal">244</span>
@@ -5286,7 +5324,14 @@ its size is lower than batch_size. Defaults to False.</p></td>
 <span class="normal">254</span>
 <span class="normal">255</span>
 <span class="normal">256</span>
-<span class="normal">257</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">tuple_to_dict</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Turn a tuple based tf.data.Dataset to a dict based tf.data.Dataset</span>
 
@@ -5386,10 +5431,7 @@ args[0] when relevant.</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">38</span>
 <span class="normal">39</span>
 <span class="normal">40</span>
 <span class="normal">41</span>
@@ -5418,7 +5460,10 @@ args[0] when relevant.</p>
 <span class="normal">64</span>
 <span class="normal">65</span>
 <span class="normal">66</span>
-<span class="normal">67</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dict_only_ds</span><span class="p">(</span><span class="n">ds_handling_method</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dict_only_ds</span><span class="p">(</span><span class="n">ds_handling_method</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to ensure that the dataset is a dict dataset and that the input key</span>
 <span class="sd">    matches one of the feature keys. The signature of decorated functions</span>
 <span class="sd">    must be function(dataset, *args, **kwargs) with feature_key either in kwargs or</span>

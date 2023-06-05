@@ -400,6 +400,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_entropy_tf/" class="md-nav__link">
+        Entropy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../notebooks/tensorflow/demo_mahalanobis_tf/" class="md-nav__link">
         Mahalanobis
       </a>
@@ -505,6 +519,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_energy_torch/" class="md-nav__link">
         Energy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_entropy_torch/" class="md-nav__link">
+        Entropy
       </a>
     </li>
   
@@ -1179,7 +1207,7 @@ If str, the name of the layer. Defaults to [].</p></td>
         <tr>
           <td><code>input_layer_id</code></td>
           <td>
-                <code><span title="oodeel.types.Union">Union</span>[int, str]</code>
+                <code><span title="typing.Optional">Optional</span>[<span title="oodeel.types.Union">Union</span>[int, str]]</code>
           </td>
           <td><p>input layer of the feature extractor (to avoid useless forwards
 when working on the feature space without finetuning the bottom of the
@@ -1195,10 +1223,7 @@ Defaults to None.</p></td>
 
         <details class="quote">
           <summary>Source code in <code>oodeel/extractor/keras_feature_extractor.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 35</span>
-<span class="normal"> 36</span>
-<span class="normal"> 37</span>
-<span class="normal"> 38</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 38</span>
 <span class="normal"> 39</span>
 <span class="normal"> 40</span>
 <span class="normal"> 41</span>
@@ -1318,7 +1343,12 @@ Defaults to None.</p></td>
 <span class="normal">155</span>
 <span class="normal">156</span>
 <span class="normal">157</span>
-<span class="normal">158</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">KerasFeatureExtractor</span><span class="p">(</span><span class="n">FeatureExtractor</span><span class="p">):</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">KerasFeatureExtractor</span><span class="p">(</span><span class="n">FeatureExtractor</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Feature extractor based on &quot;model&quot; to construct a feature space</span>
 <span class="sd">    on which OOD detection is performed. The features can be the output</span>
@@ -1340,7 +1370,7 @@ Defaults to None.</p></td>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
         <span class="n">output_layers_id</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
-        <span class="n">input_layer_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">input_layer_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">input_layer_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">input_layer_id</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1390,11 +1420,11 @@ Defaults to None.</p></td>
 
     <span class="nd">@sanitize_input</span>
     <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
-    <span class="k">def</span> <span class="nf">predict_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">predict_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the projection of tensor in the feature space of self.model</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            tensor (Union[tf.Tensor, np.ndarray, Tuple]): input tensor (or dataset elem)</span>
+<span class="sd">            tensor (TensorType): input tensor (or dataset elem)</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            tf.Tensor: features</span>
@@ -1402,17 +1432,19 @@ Defaults to None.</p></td>
         <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">features</span>
 
-    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ItemType</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the projection of the dataset in the feature space of self.model</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            dataset (tf.data.Dataset): input dataset</span>
+<span class="sd">            dataset (Union[ItemType, tf.data.Dataset]): input dataset</span>
 <span class="sd">            kwargs (dict): additional arguments not considered for prediction</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[tf.Tensor]: features</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">ItemType</span><span class="p">)):</span>
             <span class="n">tensor</span> <span class="o">=</span> <span class="n">TFDataHandler</span><span class="o">.</span><span class="n">get_input_from_dataset_item</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
 
@@ -1533,10 +1565,7 @@ Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/extractor/keras_feature_extractor.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">73</span>
 <span class="normal">74</span>
 <span class="normal">75</span>
 <span class="normal">76</span>
@@ -1549,7 +1578,10 @@ Defaults to None.</p></td>
 <span class="normal">83</span>
 <span class="normal">84</span>
 <span class="normal">85</span>
-<span class="normal">86</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">find_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Layer</span><span class="p">:</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">find_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Layer</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a layer in a model either by his name or by his index.</span>
 
 <span class="sd">    Args:</span>
@@ -1630,16 +1662,16 @@ Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/extractor/keras_feature_extractor.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">154</span>
 <span class="normal">155</span>
 <span class="normal">156</span>
 <span class="normal">157</span>
-<span class="normal">158</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the weights of a layer</span>
 
 <span class="sd">    Args:</span>
@@ -1683,7 +1715,7 @@ Defaults to None.</p></td>
         <tr>
           <td><code>dataset</code></td>
           <td>
-                <code><span title="tensorflow">tf</span>.<span title="tensorflow.data">data</span>.<span title="tf.data.Dataset">Dataset</span></code>
+                <code><span title="oodeel.types.Union">Union</span>[<span title="oodeel.types.ItemType">ItemType</span>, <span title="tensorflow">tf</span>.<span title="tensorflow.data">data</span>.<span title="tf.data.Dataset">Dataset</span>]</code>
           </td>
           <td><p>input dataset</p></td>
           <td>
@@ -1714,7 +1746,7 @@ Defaults to None.</p></td>
     <tbody>
         <tr>
           <td>
-                <code><span title="oodeel.types.List">List</span>[<span title="tensorflow">tf</span>.<span title="tensorflow.Tensor">Tensor</span>]</code>
+                <code><span title="oodeel.types.Union">Union</span>[<span title="tensorflow">tf</span>.<span title="tensorflow.Tensor">Tensor</span>, <span title="oodeel.types.List">List</span>[<span title="tensorflow">tf</span>.<span title="tensorflow.Tensor">Tensor</span>]]</code>
           </td>
           <td><p>List[tf.Tensor]: features</p></td>
         </tr>
@@ -1723,10 +1755,7 @@ Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/extractor/keras_feature_extractor.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">122</span>
 <span class="normal">123</span>
 <span class="normal">124</span>
 <span class="normal">125</span>
@@ -1751,17 +1780,24 @@ Defaults to None.</p></td>
 <span class="normal">144</span>
 <span class="normal">145</span>
 <span class="normal">146</span>
-<span class="normal">147</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ItemType</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the projection of the dataset in the feature space of self.model</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        dataset (tf.data.Dataset): input dataset</span>
+<span class="sd">        dataset (Union[ItemType, tf.data.Dataset]): input dataset</span>
 <span class="sd">        kwargs (dict): additional arguments not considered for prediction</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        List[tf.Tensor]: features</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">ItemType</span><span class="p">)):</span>
         <span class="n">tensor</span> <span class="o">=</span> <span class="n">TFDataHandler</span><span class="o">.</span><span class="n">get_input_from_dataset_item</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
 
@@ -1814,7 +1850,7 @@ Defaults to None.</p></td>
         <tr>
           <td><code>tensor</code></td>
           <td>
-                <code><span title="oodeel.types.Union">Union</span>[<span title="tensorflow">tf</span>.<span title="tensorflow.Tensor">Tensor</span>, <span title="numpy">np</span>.<span title="numpy.ndarray">ndarray</span>, <span title="oodeel.types.Tuple">Tuple</span>]</code>
+                <code><span title="oodeel.types.TensorType">TensorType</span></code>
           </td>
           <td><p>input tensor (or dataset elem)</p></td>
           <td>
@@ -1835,7 +1871,7 @@ Defaults to None.</p></td>
     <tbody>
         <tr>
           <td>
-                <code><span title="tensorflow">tf</span>.<span title="tensorflow.Tensor">Tensor</span></code>
+                <code><span title="oodeel.types.Union">Union</span>[<span title="tensorflow">tf</span>.<span title="tensorflow.Tensor">Tensor</span>, <span title="oodeel.types.List">List</span>[<span title="tensorflow">tf</span>.<span title="tensorflow.Tensor">Tensor</span>]]</code>
           </td>
           <td><p>tf.Tensor: features</p></td>
         </tr>
@@ -1844,10 +1880,7 @@ Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/extractor/keras_feature_extractor.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">108</span>
 <span class="normal">109</span>
 <span class="normal">110</span>
 <span class="normal">111</span>
@@ -1856,13 +1889,16 @@ Defaults to None.</p></td>
 <span class="normal">114</span>
 <span class="normal">115</span>
 <span class="normal">116</span>
-<span class="normal">117</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@sanitize_input</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@sanitize_input</span>
 <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
-<span class="k">def</span> <span class="nf">predict_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">predict_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the projection of tensor in the feature space of self.model</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        tensor (Union[tf.Tensor, np.ndarray, Tuple]): input tensor (or dataset elem)</span>
+<span class="sd">        tensor (TensorType): input tensor (or dataset elem)</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        tf.Tensor: features</span>
@@ -1909,10 +1945,7 @@ Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/extractor/keras_feature_extractor.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 90</span>
-<span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 93</span>
 <span class="normal"> 94</span>
 <span class="normal"> 95</span>
 <span class="normal"> 96</span>
@@ -1922,7 +1955,10 @@ Defaults to None.</p></td>
 <span class="normal">100</span>
 <span class="normal">101</span>
 <span class="normal">102</span>
-<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">prepare_extractor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">:</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">prepare_extractor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constructs the feature extractor model</span>
 
 <span class="sd">    Returns:</span>

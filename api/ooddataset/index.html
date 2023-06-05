@@ -400,6 +400,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_entropy_tf/" class="md-nav__link">
+        Entropy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../notebooks/tensorflow/demo_mahalanobis_tf/" class="md-nav__link">
         Mahalanobis
       </a>
@@ -505,6 +519,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_energy_torch/" class="md-nav__link">
         Energy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_entropy_torch/" class="md-nav__link">
+        Entropy
       </a>
     </li>
   
@@ -1183,11 +1211,11 @@ scoring or training with the .prepare method.</p>
         <tr>
           <td><code>dataset_id</code></td>
           <td>
-                <code><span title="oodeel.types.Union">Union</span>[<span title="oodeel.datasets.ooddataset.Dataset">Dataset</span>, tuple, dict, str]</code>
+                <code><span title="oodeel.types.Union">Union</span>[<span title="oodeel.types.DatasetType">DatasetType</span>, tuple, dict, str]</code>
           </td>
           <td><p>The dataset to load.
 Can be loaded from tensorflow or torch datasets catalog when the str matches
-one of the datasets. Defaults to Union[Dataset, tuple, dict, str].</p></td>
+one of the datasets. Defaults to Union[DatasetType, tuple, dict, str].</p></td>
           <td>
               <em>required</em>
           </td>
@@ -1254,7 +1282,11 @@ model input tensor. If None, taken as the first key. Defaults to None.</p></td>
 
         <details class="quote">
           <summary>Source code in <code>oodeel/datasets/ooddataset.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 36</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
 <span class="normal"> 37</span>
 <span class="normal"> 38</span>
 <span class="normal"> 39</span>
@@ -1594,20 +1626,16 @@ model input tensor. If None, taken as the first key. Defaults to None.</p></td>
 <span class="normal">373</span>
 <span class="normal">374</span>
 <span class="normal">375</span>
-<span class="normal">376</span>
-<span class="normal">377</span>
-<span class="normal">378</span>
-<span class="normal">379</span>
-<span class="normal">380</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">OODDataset</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="normal">376</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">OODDataset</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for managing loading and processing of datasets that are to be used for</span>
 <span class="sd">    OOD detection. The class encapsulates a dataset like object augmented with OOD</span>
 <span class="sd">    related information, and then returns a dataset like object that is suited for</span>
 <span class="sd">    scoring or training with the .prepare method.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        dataset_id (Union[Dataset, tuple, dict, str]): The dataset to load.</span>
+<span class="sd">        dataset_id (Union[DatasetType, tuple, dict, str]): The dataset to load.</span>
 <span class="sd">            Can be loaded from tensorflow or torch datasets catalog when the str matches</span>
-<span class="sd">            one of the datasets. Defaults to Union[Dataset, tuple, dict, str].</span>
+<span class="sd">            one of the datasets. Defaults to Union[DatasetType, tuple, dict, str].</span>
 <span class="sd">        backend (str, optional): Whether the dataset is to be used for tensorflow</span>
 <span class="sd">             or torch models. Defaults to &quot;tensorflow&quot;. Alternative: &quot;torch&quot;.</span>
 <span class="sd">        keys (list, optional): keys to use for dataset elems. Default to None</span>
@@ -1623,12 +1651,12 @@ model input tensor. If None, taken as the first key. Defaults to None.</p></td>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">dataset_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dataset</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">dataset_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DatasetType</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
         <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;tensorflow&quot;</span><span class="p">,</span>
-        <span class="n">keys</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">load_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
         <span class="n">load_from_tensorflow_datasets</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">input_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">input_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">backend</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_from_tensorflow_datasets</span> <span class="o">=</span> <span class="n">load_from_tensorflow_datasets</span>
@@ -1710,7 +1738,7 @@ model input tensor. If None, taken as the first key. Defaults to None.</p></td>
 
     <span class="k">def</span> <span class="nf">add_out_data</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">out_dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;OODDataset&quot;</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">],</span>
+        <span class="n">out_dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;OODDataset&quot;</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">],</span>
         <span class="n">in_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">out_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">resize</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1720,7 +1748,7 @@ model input tensor. If None, taken as the first key. Defaults to None.</p></td>
 <span class="sd">        training with added out-of-distribution data.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            out_dataset (Union[OODDataset, Dataset]): dataset of</span>
+<span class="sd">            out_dataset (Union[OODDataset, DatasetType]): dataset of</span>
 <span class="sd">                out-of-distribution data</span>
 <span class="sd">            in_value (int): ood label value for in-distribution data. Defaults to 0</span>
 <span class="sd">            out_value (int): ood label value for out-of-distribution data. Defaults to 1</span>
@@ -1830,7 +1858,7 @@ model input tensor. If None, taken as the first key. Defaults to None.</p></td>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">with_ood_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">with_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dataset</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetType</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the dataset in a tuple format and correct labels, without preparing</span>
 <span class="sd">        for training or inference.</span>
 
@@ -1841,7 +1869,7 @@ model input tensor. If None, taken as the first key. Defaults to None.</p></td>
 <span class="sd">                Defaults to True.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tf.data.Dataset: dataset</span>
+<span class="sd">            DatasetType : dataset</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Check if the dataset has at least one of label and ood_label</span>
         <span class="k">assert</span> <span class="p">(</span>
@@ -1877,13 +1905,13 @@ model input tensor. If None, taken as the first key. Defaults to None.</p></td>
     <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
-        <span class="n">preprocess_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">augment_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">preprocess_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">augment_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">with_ood_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">with_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">shuffle_buffer_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dataset</span><span class="p">:</span>
+        <span class="n">shuffle_buffer_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetType</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare self.data for scoring or training</span>
 
 <span class="sd">        Args:</span>
@@ -1903,7 +1931,7 @@ model input tensor. If None, taken as the first key. Defaults to None.</p></td>
 <span class="sd">                If None, taken as the number of samples in the dataset. Defaults to None.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Dataset: prepared dataset</span>
+<span class="sd">            DatasetType: prepared dataset</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Check if the dataset has at least one of label and ood_label</span>
         <span class="k">assert</span> <span class="p">(</span>
@@ -2031,15 +2059,15 @@ model input tensor. If None, taken as the first key. Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/ooddataset.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">113</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
 <span class="normal">114</span>
 <span class="normal">115</span>
 <span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="normal">117</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;get the length of the dataset.</span>
 
 <span class="sd">    Returns:</span>
@@ -2083,7 +2111,7 @@ training with added out-of-distribution data.</p>
         <tr>
           <td><code>out_dataset</code></td>
           <td>
-                <code><span title="oodeel.types.Union">Union</span>[<a class="autorefs autorefs-internal" title="oodeel.datasets.ooddataset.OODDataset" href="#oodeel.datasets.ooddataset.OODDataset">OODDataset</a>, <span title="oodeel.datasets.ooddataset.Dataset">Dataset</span>]</code>
+                <code><span title="oodeel.types.Union">Union</span>[<a class="autorefs autorefs-internal" title="oodeel.datasets.ooddataset.OODDataset" href="#oodeel.datasets.ooddataset.OODDataset">OODDataset</a>, <span title="oodeel.types.DatasetType">DatasetType</span>]</code>
           </td>
           <td><p>dataset of
 out-of-distribution data</p></td>
@@ -2157,7 +2185,11 @@ in_dataset input tensors. Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/ooddataset.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">146</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
 <span class="normal">147</span>
 <span class="normal">148</span>
 <span class="normal">149</span>
@@ -2214,13 +2246,9 @@ in_dataset input tensors. Defaults to None.</p></td>
 <span class="normal">200</span>
 <span class="normal">201</span>
 <span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_out_data</span><span class="p">(</span>
+<span class="normal">203</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_out_data</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
-    <span class="n">out_dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;OODDataset&quot;</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">],</span>
+    <span class="n">out_dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;OODDataset&quot;</span><span class="p">,</span> <span class="n">DatasetType</span><span class="p">],</span>
     <span class="n">in_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">out_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">resize</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -2230,7 +2258,7 @@ in_dataset input tensors. Defaults to None.</p></td>
 <span class="sd">    training with added out-of-distribution data.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        out_dataset (Union[OODDataset, Dataset]): dataset of</span>
+<span class="sd">        out_dataset (Union[OODDataset, DatasetType]): dataset of</span>
 <span class="sd">            out-of-distribution data</span>
 <span class="sd">        in_value (int): ood label value for in-distribution data. Defaults to 0</span>
 <span class="sd">        out_value (int): ood label value for out-of-distribution data. Defaults to 1</span>
@@ -2358,7 +2386,11 @@ out-of-distribution OODDatasets</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/ooddataset.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">209</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
 <span class="normal">210</span>
 <span class="normal">211</span>
 <span class="normal">212</span>
@@ -2407,11 +2439,7 @@ out-of-distribution OODDatasets</p></td>
 <span class="normal">255</span>
 <span class="normal">256</span>
 <span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span>
-<span class="normal">261</span>
-<span class="normal">262</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">assign_ood_labels_by_class</span><span class="p">(</span>
+<span class="normal">258</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">assign_ood_labels_by_class</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">in_labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">out_labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2526,23 +2554,27 @@ Defaults to True.</p></td>
   <table>
     <thead>
       <tr>
-        <th>Type</th>
+<th>Name</th>        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-          <td>
-                <code><span title="oodeel.datasets.ooddataset.Dataset">Dataset</span></code>
+<td><code>DatasetType</code></td>          <td>
+                <code><span title="oodeel.types.DatasetType">DatasetType</span></code>
           </td>
-          <td><p>tf.data.Dataset: dataset</p></td>
+          <td><p>dataset</p></td>
         </tr>
     </tbody>
   </table>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/ooddataset.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">264</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
 <span class="normal">265</span>
 <span class="normal">266</span>
 <span class="normal">267</span>
@@ -2584,15 +2616,11 @@ Defaults to True.</p></td>
 <span class="normal">303</span>
 <span class="normal">304</span>
 <span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_dataset</span><span class="p">(</span>
+<span class="normal">306</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_dataset</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">with_ood_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">with_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dataset</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetType</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the dataset in a tuple format and correct labels, without preparing</span>
 <span class="sd">    for training or inference.</span>
 
@@ -2603,7 +2631,7 @@ Defaults to True.</p></td>
 <span class="sd">            Defaults to True.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        tf.data.Dataset: dataset</span>
+<span class="sd">        DatasetType : dataset</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Check if the dataset has at least one of label and ood_label</span>
     <span class="k">assert</span> <span class="p">(</span>
@@ -2675,7 +2703,11 @@ Defaults to True.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/ooddataset.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">132</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
 <span class="normal">133</span>
 <span class="normal">134</span>
 <span class="normal">135</span>
@@ -2683,11 +2715,7 @@ Defaults to True.</p></td>
 <span class="normal">137</span>
 <span class="normal">138</span>
 <span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_ood_labels</span><span class="p">(</span>
+<span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_ood_labels</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get ood_labels from self.data if any</span>
@@ -2821,8 +2849,8 @@ If None, taken as the number of samples in the dataset. Defaults to None.</p></t
     </thead>
     <tbody>
         <tr>
-<td><code>Dataset</code></td>          <td>
-                <code><span title="oodeel.datasets.ooddataset.Dataset">Dataset</span></code>
+<td><code>DatasetType</code></td>          <td>
+                <code><span title="oodeel.types.DatasetType">DatasetType</span></code>
           </td>
           <td><p>prepared dataset</p></td>
         </tr>
@@ -2831,7 +2859,11 @@ If None, taken as the number of samples in the dataset. Defaults to None.</p></t
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/ooddataset.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">312</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
 <span class="normal">313</span>
 <span class="normal">314</span>
 <span class="normal">315</span>
@@ -2895,20 +2927,16 @@ If None, taken as the number of samples in the dataset. Defaults to None.</p></t
 <span class="normal">373</span>
 <span class="normal">374</span>
 <span class="normal">375</span>
-<span class="normal">376</span>
-<span class="normal">377</span>
-<span class="normal">378</span>
-<span class="normal">379</span>
-<span class="normal">380</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span>
+<span class="normal">376</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
-    <span class="n">preprocess_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">augment_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">preprocess_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">augment_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">with_ood_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">with_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">shuffle_buffer_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dataset</span><span class="p">:</span>
+    <span class="n">shuffle_buffer_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetType</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepare self.data for scoring or training</span>
 
 <span class="sd">    Args:</span>
@@ -2928,7 +2956,7 @@ If None, taken as the number of samples in the dataset. Defaults to None.</p></t
 <span class="sd">            If None, taken as the number of samples in the dataset. Defaults to None.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dataset: prepared dataset</span>
+<span class="sd">        DatasetType: prepared dataset</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Check if the dataset has at least one of label and ood_label</span>
     <span class="k">assert</span> <span class="p">(</span>

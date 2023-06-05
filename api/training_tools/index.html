@@ -400,6 +400,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_entropy_tf/" class="md-nav__link">
+        Entropy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../notebooks/tensorflow/demo_mahalanobis_tf/" class="md-nav__link">
         Mahalanobis
       </a>
@@ -505,6 +519,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_energy_torch/" class="md-nav__link">
         Energy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_entropy_torch/" class="md-nav__link">
+        Entropy
       </a>
     </li>
   
@@ -1203,7 +1231,7 @@
 
 
 <h2 id="oodeel.utils.tf_training_tools.train_tf_model" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">train_tf_model</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_prepared</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;sparse_categorical_crossentropy&#39;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;adam&#39;</span><span class="p">,</span> <span class="n">lr_scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;accuracy&#39;</span><span class="p">],</span> <span class="n">imagenet_pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">train_tf_model</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">is_prepared</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;sparse_categorical_crossentropy&#39;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;adam&#39;</span><span class="p">,</span> <span class="n">lr_scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;accuracy&#39;</span><span class="p">],</span> <span class="n">imagenet_pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#oodeel.utils.tf_training_tools.train_tf_model" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -1249,10 +1277,9 @@ If the dataset is different from imagenet, trains on provided dataset.</p>
           <td>
                 <code>tuple</code>
           </td>
-          <td><p>If None, infered from train_data.
-Defaults to None.</p></td>
+          <td><p>Shape of the input images.</p></td>
           <td>
-                <code>None</code>
+              <em>required</em>
           </td>
         </tr>
         <tr>
@@ -1260,9 +1287,9 @@ Defaults to None.</p></td>
           <td>
                 <code>int</code>
           </td>
-          <td><p>If None, infered from train_data. Defaults to None.</p></td>
+          <td><p>Number of output classes.</p></td>
           <td>
-                <code>None</code>
+              <em>required</em>
           </td>
         </tr>
         <tr>
@@ -1577,20 +1604,17 @@ Defaults to None.</p></td>
 <span class="normal">232</span>
 <span class="normal">233</span>
 <span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span>
-<span class="normal">238</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">train_tf_model</span><span class="p">(</span>
+<span class="normal">235</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">train_tf_model</span><span class="p">(</span>
     <span class="n">train_data</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">input_shape</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">input_shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">is_prepared</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
     <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
     <span class="n">loss</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sparse_categorical_crossentropy&quot;</span><span class="p">,</span>
     <span class="n">optimizer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span><span class="p">,</span>
-    <span class="n">lr_scheduler</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">lr_scheduler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
     <span class="n">metrics</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">],</span>
     <span class="n">imagenet_pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1603,9 +1627,8 @@ Defaults to None.</p></td>
 <span class="sd">    Args:</span>
 <span class="sd">        train_data (tf.data.Dataset): training dataset.</span>
 <span class="sd">        model_name (str): must be a model from tf.keras.applications or &quot;toy_convnet&quot;</span>
-<span class="sd">        input_shape (tuple, optional): If None, infered from train_data.</span>
-<span class="sd">            Defaults to None.</span>
-<span class="sd">        num_classes (int, optional): If None, infered from train_data. Defaults to None.</span>
+<span class="sd">        input_shape (tuple): Shape of the input images.</span>
+<span class="sd">        num_classes (int): Number of output classes.</span>
 <span class="sd">        is_prepared (bool, optional): If train_data is a pipeline already prepared</span>
 <span class="sd">            for training (with batch, shufle, cache etc...). Defaults to False.</span>
 <span class="sd">        batch_size (int, optional): Defaults to 128.</span>
@@ -1627,11 +1650,9 @@ Defaults to None.</p></td>
 
     <span class="c1"># Prepare model</span>
     <span class="k">if</span> <span class="n">imagenet_pretrained</span><span class="p">:</span>
-        <span class="n">input_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="n">backbone</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="p">,</span> <span class="n">model_name</span><span class="p">)(</span>
             <span class="n">include_top</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;imagenet&quot;</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="n">input_shape</span>
         <span class="p">)</span>
-        <span class="n">num_classes</span> <span class="o">=</span> <span class="mi">1000</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_data</span><span class="o">.</span><span class="n">element_spec</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">input_id</span> <span class="o">=</span> <span class="s2">&quot;image&quot;</span>
@@ -1970,7 +1991,7 @@ Defaults to None.</p></td>
 
 
 <h2 id="oodeel.utils.torch_training_tools.train_torch_model" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">train_torch_model</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;resnet18&#39;</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;CrossEntropyLoss&#39;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;Adam&#39;</span><span class="p">,</span> <span class="n">lr_scheduler</span><span class="o">=</span><span class="s1">&#39;cosine&#39;</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">imagenet_pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cuda_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">train_torch_model</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;CrossEntropyLoss&#39;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;Adam&#39;</span><span class="p">,</span> <span class="n">lr_scheduler</span><span class="o">=</span><span class="s1">&#39;cosine&#39;</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">imagenet_pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cuda_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
 
 <a href="#oodeel.utils.torch_training_tools.train_torch_model" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -2006,10 +2027,9 @@ it over a torch dataloader.</p>
           <td>
                 <code>str</code>
           </td>
-          <td><p>must be a model from torchvision.models or "toy_convnet".
-Defaults to "resnet18".</p></td>
+          <td><p>must be a model from torchvision.models or "toy_convnet".</p></td>
           <td>
-                <code>&#39;resnet18&#39;</code>
+              <em>required</em>
           </td>
         </tr>
         <tr>
@@ -2017,9 +2037,9 @@ Defaults to "resnet18".</p></td>
           <td>
                 <code>int</code>
           </td>
-          <td><p>If None, infered from train_data. Defaults to None.</p></td>
+          <td><p>Number of output classes.</p></td>
           <td>
-                <code>None</code>
+              <em>required</em>
           </td>
         </tr>
         <tr>
@@ -2215,18 +2235,17 @@ Defaults to None.</p></td>
 <span class="normal">162</span>
 <span class="normal">163</span>
 <span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">train_torch_model</span><span class="p">(</span>
+<span class="normal">165</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">train_torch_model</span><span class="p">(</span>
     <span class="n">train_data</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
-    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;resnet18&quot;</span><span class="p">,</span>
-    <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
     <span class="n">loss</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;CrossEntropyLoss&quot;</span><span class="p">,</span>
     <span class="n">optimizer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Adam&quot;</span><span class="p">,</span>
     <span class="n">lr_scheduler</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cosine&quot;</span><span class="p">,</span>
     <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
     <span class="n">imagenet_pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">validation_data</span><span class="p">:</span> <span class="n">DataLoader</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">validation_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">save_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">cuda_idx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
@@ -2237,8 +2256,7 @@ Defaults to None.</p></td>
 <span class="sd">    Args:</span>
 <span class="sd">        train_data (DataLoader): train dataloader</span>
 <span class="sd">        model_name (str): must be a model from torchvision.models or &quot;toy_convnet&quot;.</span>
-<span class="sd">            Defaults to &quot;resnet18&quot;.</span>
-<span class="sd">        num_classes (int, optional): If None, infered from train_data. Defaults to None.</span>
+<span class="sd">        num_classes (int): Number of output classes.</span>
 <span class="sd">        epochs (int, optional): Defaults to 50.</span>
 <span class="sd">        loss (str, optional): Defaults to &quot;CrossEntropyLoss&quot;.</span>
 <span class="sd">        optimizer (str, optional): Defaults to &quot;Adam&quot;.</span>

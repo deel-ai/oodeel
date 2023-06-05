@@ -33,6 +33,14 @@ This command activates your virtual environment and launch the `tox` command.
 
 Please, make sure you run all the tests at least once before opening a pull request.
 
+We advise that you run [`docsig`](https://github.com/jshwi/docsig) before each push. Docsig is an utilitary checking for the coherence between docstrings and functions' signatures. You can obtain a report by running:
+
+```bash
+docsig -c -D -o -P -p -i oodeel
+```
+
+This awesome repository is way underrated (14 stars only at the time of the present commit), so drop by and add a star to help them!
+
 A word toward flake8 for those that don't know it:
 > Flake8 is a Python static code analysis tool which looks for programming errors, helps enforcing a coding standard, sniffs for code smells and offers simple refactoring suggestions.
 

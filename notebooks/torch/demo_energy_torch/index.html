@@ -402,6 +402,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../tensorflow/demo_entropy_tf/" class="md-nav__link">
+        Entropy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../tensorflow/demo_mahalanobis_tf/" class="md-nav__link">
         Mahalanobis
       </a>
@@ -619,6 +633,20 @@
   
 </nav>
       
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo_entropy_torch/" class="md-nav__link">
+        Entropy
+      </a>
     </li>
   
 
@@ -2621,7 +2649,7 @@ print(f"Test accuracy:\t{accuracy_score(torch.cat(labels), torch.cat(preds)):.6f
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <span class="c1"># roc</span>
-<span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_curve</span><span class="p">(</span>
+<span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_curve</span><span class="p">(</span>
     <span class="n">scores</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">scores_in</span><span class="p">,</span> <span class="n">scores_out</span><span class="p">]),</span> 
     <span class="n">labels</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">scores_in</span> <span class="o">*</span> <span class="mi">0</span> <span class="o">+</span> <span class="mi">0</span><span class="p">,</span> <span class="n">scores_out</span> <span class="o">*</span> <span class="mi">0</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
 <span class="p">)</span>
@@ -2655,7 +2683,7 @@ for k, v in metrics.items():
     print(f"{k:<10} {v:.6f}")
 
 # roc
-fpr, tpr, _, _ = get_curve(
+fpr, tpr, _, _, _ = get_curve(
     scores=np.concatenate([scores_in, scores_out]), 
     labels=np.concatenate([scores_in * 0 + 0, scores_out * 0 + 1])
 )
@@ -2992,7 +3020,7 @@ print(f"Test accuracy:\t{accuracy_score(torch.cat(labels), torch.cat(preds)):.6f
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <span class="c1"># roc</span>
-<span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_curve</span><span class="p">(</span>
+<span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_curve</span><span class="p">(</span>
     <span class="n">scores</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">scores_in</span><span class="p">,</span> <span class="n">scores_out</span><span class="p">]),</span> 
     <span class="n">labels</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">scores_in</span> <span class="o">*</span> <span class="mi">0</span> <span class="o">+</span> <span class="mi">0</span><span class="p">,</span> <span class="n">scores_out</span> <span class="o">*</span> <span class="mi">0</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
 <span class="p">)</span>
@@ -3026,7 +3054,7 @@ for k, v in metrics.items():
     print(f"{k:<10} {v:.6f}")
 
 # roc
-fpr, tpr, _, _ = get_curve(
+fpr, tpr, _, _, _ = get_curve(
     scores=np.concatenate([scores_in, scores_out]), 
     labels=np.concatenate([scores_in * 0 + 0, scores_out * 0 + 1])
 )
@@ -3132,13 +3160,13 @@ class="
       
       
         
-        <a href="../demo_mahalanobis_torch/" class="md-footer__link md-footer__link--next" aria-label="Next: Mahalanobis" rel="next">
+        <a href="../demo_entropy_torch/" class="md-footer__link md-footer__link--next" aria-label="Next: Entropy" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Mahalanobis
+              Entropy
             </div>
           </div>
           <div class="md-footer__button md-icon">

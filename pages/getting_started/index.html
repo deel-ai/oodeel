@@ -495,6 +495,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_entropy_tf/" class="md-nav__link">
+        Entropy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../notebooks/tensorflow/demo_mahalanobis_tf/" class="md-nav__link">
         Mahalanobis
       </a>
@@ -697,6 +711,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_energy_torch/" class="md-nav__link">
         Energy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_entropy_torch/" class="md-nav__link">
+        Entropy
       </a>
     </li>
   
@@ -2313,7 +2341,7 @@ Licensed under the Apache License, Version 2.0.
         <span class="n">minim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">scores_in</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">scores_out</span><span class="p">)])</span>
         <span class="n">scores_in_</span> <span class="o">=</span> <span class="n">scores_in</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">minim</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">scores_in</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">scores_in</span> <span class="o">!=</span> <span class="n">minim</span><span class="p">)])</span>
         <span class="n">scores_out_</span> <span class="o">=</span> <span class="n">scores_out</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">minim</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">scores_in</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">scores_in</span> <span class="o">!=</span> <span class="n">minim</span><span class="p">)])</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">scores_in_</span><span class="p">,</span> <span class="n">scores_out_</span><span class="p">]),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">scores_in_</span><span class="p">,</span> <span class="n">scores_out_</span><span class="p">]),</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">)</span>
         <span class="n">logbins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span><span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">))</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;score (normalized log axis)&quot;</span><span class="p">)</span>
@@ -2354,7 +2382,7 @@ def plot_hist(scores_in, scores_out, bins, log=False):
         minim = np.min([np.min(scores_in), np.min(scores_out)])
         scores_in_ = scores_in - 2 * minim + np.min(scores_in[np.where(scores_in != minim)])
         scores_out_ = scores_out - 2 * minim + np.min(scores_in[np.where(scores_in != minim)])
-        _, bins = np.histogram(np.concatenate([scores_in_, scores_out_]), bins=30)
+        _, bins = np.histogram(np.concatenate([scores_in_, scores_out_]), bins=bins)
         logbins = np.logspace(np.log10(bins[0]),np.log10(bins[-1]),len(bins))
         plt.xscale('log')
         plt.xlabel("score (normalized log axis)")
