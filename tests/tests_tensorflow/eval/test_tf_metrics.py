@@ -84,3 +84,14 @@ def test_bench_metrics(in_value, out_value):
     assert metrics_dict["tpr50fpr"] == 0.6
     assert metrics_dict["fpr15tnr"] == 0.8
     assert metrics_dict["tnr90fpr"] == 0.2
+
+    # Assert scores as (scores_in, scores_out) return the same results
+    scores_in = scores[labels == in_value]
+    scores_out = scores[labels == out_value]
+    metrics_dict_2 = bench_metrics(
+        (scores_in, scores_out),
+        metrics=["auroc", "tpr50fpr", "fpr15tnr", "tnr90fpr", accuracy_score],
+        threshold=0.5,
+        step=1,
+    )
+    assert metrics_dict == metrics_dict_2
