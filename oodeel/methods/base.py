@@ -54,10 +54,12 @@ class OODBaseDetector(ABC):
         self,
         output_layers_id: List[Union[int, str]] = [-1],
         input_layers_id: Optional[Union[int, str]] = None,
+        postproc_fns: Optional[List[Callable]] = None,
     ):
         self.feature_extractor: FeatureExtractor = None
         self.output_layers_id = output_layers_id
         self.input_layers_id = input_layers_id
+        self.postproc_fns = postproc_fns
 
     @abstractmethod
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -135,6 +137,7 @@ class OODBaseDetector(ABC):
             model,
             input_layer_id=self.input_layers_id,
             output_layers_id=self.output_layers_id,
+            postproc_fns=self.postproc_fns,
         )
         return feature_extractor
 
