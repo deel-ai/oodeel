@@ -66,7 +66,7 @@ def test_get_curve():
 
 @pytest.mark.parametrize("in_value,out_value", [(0.0, 1.0), (2.0, 4.0)])
 def test_bench_metrics(in_value, out_value):
-    labels = np.array([0.0] * 5 + [1.0] * 5)  # 5 ID + 5 OOD samples
+    labels = np.array([in_value] * 5 + [out_value] * 5)  # 5 ID + 5 OOD samples
     scores = np.array([0.0] + [0.2] * 6 + [1.0] * 3)  # ID: 1x0, 4x0.2 / OOD: 2x0.1, 3x1
     # get metrics
     metrics_dict = bench_metrics(

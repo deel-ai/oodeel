@@ -48,8 +48,10 @@ def bench_metrics(
             the OOD detector to evaluate. If a tuple is provided,
             the first array is considered in-distribution scores, and the second
             is considered out-of-distribution scores.
-        labels (Optional[np.ndarray], optional): labels denoting oodness. When labels
-            is not None, the following in_values and out_values are not used.
+        labels (Optional[np.ndarray], optional): labels denoting oodness. When scores is
+            a tuple, this argument and the following in_value and out_value are not
+            used. If scores is a np.ndarray, labels are required with in_value and
+            out_value if different from their default values.
             Defaults to None.
         in_value (Optional[int], optional): ood label value for in-distribution data.
             Defaults to 0.
@@ -74,10 +76,13 @@ def bench_metrics(
             "Provide labels with scores, or provide a tuple of in-distribution "
             "and out-of-distribution scores arrays"
         )
+        labels = np.copy(labels)  # to avoid mutable np.array to be modified
+        labels[labels == in_value] = 0
+        labels[labels == out_value] = 1
     elif isinstance(scores, tuple):
         scores_in, scores_out = scores
         scores = np.concatenate([scores_in, scores_out])
-        labels = np.concatenate([scores_in * 0 + in_value, scores_out * 0 + out_value])
+        labels = np.concatenate([scores_in * 0, scores_out * 0 + 1])
 
     fpr, tpr, fnr, tnr, acc = get_curve(scores, labels, step)
 
