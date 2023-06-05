@@ -61,12 +61,14 @@ class TorchFeatureExtractor(FeatureExtractor):
         model: nn.Module,
         output_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
+        postproc_fns: Optional[List[Callable]] = None,
     ):
         model = model.eval()
         super().__init__(
             model=model,
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
+            postproc_fns=postproc_fns,
         )
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
@@ -168,16 +170,19 @@ class TorchFeatureExtractor(FeatureExtractor):
         else:
             features = [self._features[layer_id] for layer_id in self.output_layers_id]
 
+        if self.postproc_fns is not None:
+            features = [
+                postproc_fn(feature)
+                for feature, postproc_fn in zip(features, self.postproc_fns)
+            ]
+
         if len(features) == 1:
             features = features[0]
+
         return features
 
     def predict(
-        self,
-        dataset: Union[DataLoader, ItemType],
-        detach: bool = True,
-        postproc_fn: Optional[Callable] = None,
-        **kwargs
+        self, dataset: Union[DataLoader, ItemType], detach: bool = True, **kwargs
     ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
 
@@ -195,11 +200,6 @@ class TorchFeatureExtractor(FeatureExtractor):
             tensor = TorchDataHandler.get_input_from_dataset_item(dataset)
             return self.predict_tensor(tensor, detach=detach)
 
-        if postproc_fn is None:
-
-            def postproc_fn(x):
-                return x
-
         features = [None for i in range(len(self.output_layers_id))]
         for elem in tqdm(
             dataset, desc="Extracting the dataset features...", total=len(dataset)
@@ -210,9 +210,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 features_batch = [features_batch]
             for i, f in enumerate(features_batch):
                 features[i] = (
-                    postproc_fn(f)
-                    if features[i] is None
-                    else torch.cat([features[i], postproc_fn(f)], dim=0)
+                    f if features[i] is None else torch.cat([features[i], f], dim=0)
                 )
 
         # No need to return a list when there is only one input layer

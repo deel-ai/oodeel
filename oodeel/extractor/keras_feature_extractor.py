@@ -58,6 +58,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         model: Callable,
         output_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Optional[Union[int, str]] = None,
+        postproc_fns: Optional[List[Callable]] = None,
     ):
         if input_layer_id is None:
             input_layer_id = 0
@@ -65,6 +66,7 @@ class KerasFeatureExtractor(FeatureExtractor):
             model=model,
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
+            postproc_fns=postproc_fns,
         )
 
         self.backend = "tensorflow"
@@ -117,12 +119,21 @@ class KerasFeatureExtractor(FeatureExtractor):
             tf.Tensor: features
         """
         features = self.extractor(tensor, training=False)
+
+        if self.postproc_fns is not None:
+            features = [
+                postproc_fn(feature)
+                for feature, postproc_fn in zip(features, self.postproc_fns)
+            ]
+
+        if len(features) == 1:
+            features = features[0]
+
         return features
 
     def predict(
         self,
         dataset: Union[ItemType, tf.data.Dataset],
-        postproc_fn: Optional[Callable] = None,
         **kwargs,
     ) -> Union[tf.Tensor, List[tf.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
@@ -138,11 +149,6 @@ class KerasFeatureExtractor(FeatureExtractor):
             tensor = TFDataHandler.get_input_from_dataset_item(dataset)
             return self.predict_tensor(tensor)
 
-        if postproc_fn is None:
-
-            def postproc_fn(x):
-                return x
-
         features = [None for i in range(len(self.output_layers_id))]
         for elem in dataset:
             tensor = TFDataHandler.get_input_from_dataset_item(elem)
@@ -151,9 +157,7 @@ class KerasFeatureExtractor(FeatureExtractor):
                 features_batch = [features_batch]
             for i, f in enumerate(features_batch):
                 features[i] = (
-                    postproc_fn(f)
-                    if features[i] is None
-                    else tf.concat([features[i], postproc_fn(f)], axis=0)
+                    f if features[i] is None else tf.concat([features[i], f], axis=0)
                 )
 
         # No need to return a list when there is only one input layer

@@ -55,6 +55,7 @@ class FeatureExtractor(ABC):
         model: Callable,
         output_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Union[int, str] = [0],
+        postproc_fns: Optional[List[Callable]] = None,
     ):
         if not isinstance(output_layers_id, list):
             output_layers_id = [output_layers_id]
@@ -62,7 +63,33 @@ class FeatureExtractor(ABC):
         self.output_layers_id = output_layers_id
         self.input_layer_id = input_layer_id
         self.model = model
+        self.postproc_fns = self.sanitize_posproc_fns(postproc_fns)
         self.extractor = self.prepare_extractor()
+
+    def sanitize_posproc_fns(
+        self,
+        postproc_fns: Union[List[Callable], None],
+    ) -> List[Callable]:
+        """Sanitize postproc fns used at each layer output of the feature extractor.
+
+        Args:
+            postproc_fns (Optional[List[Callable]], optional): List of postproc functions,
+                one per output layer. Defaults to None.
+
+        Returns:
+            List[Callable]: Sanitized postproc_fns list
+        """
+        if postproc_fns is not None:
+            assert len(postproc_fns) == len(
+                self.output_layers_id
+            ), "len of postproc_fns and output_layers_id must match"
+
+            def identity(x):
+                return x
+
+            postproc_fns = [identity if fn is None else fn for fn in postproc_fns]
+
+        return postproc_fns
 
     @abstractmethod
     def prepare_extractor(self) -> None:

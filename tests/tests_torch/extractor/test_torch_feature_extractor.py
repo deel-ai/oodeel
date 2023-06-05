@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import pytest
+import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from oodeel.extractor.torch_feature_extractor import TorchFeatureExtractor
@@ -113,3 +114,27 @@ def test_get_weights():
 
     assert W.shape == (10, 84)
     assert b.shape == (10,)
+
+
+def test_postproc_fns():
+    n_samples = 100
+    input_shape = (3, 32, 32)
+    num_labels = 10
+
+    x = generate_data_torch(input_shape, num_labels, n_samples)
+    dataset = DataLoader(x, batch_size=n_samples // 2)
+
+    model = named_sequential_model()
+
+    def globalavg(x):
+        _, _, height, width = x.size()
+        return nn.AvgPool2d(height, width)(x)
+
+    postproc_fns = [globalavg, None]
+    feature_extractor = TorchFeatureExtractor(
+        model, output_layers_id=["relu2", "fc2"], postproc_fns=postproc_fns
+    )
+
+    feat0, feat1 = feature_extractor.predict(dataset)
+    assert list(feat0.size()) == [100, 16]
+    assert list(feat1.size()) == [100, 84]

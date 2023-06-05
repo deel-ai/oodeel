@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import tensorflow as tf
+
 from oodeel.extractor.keras_feature_extractor import KerasFeatureExtractor
 from tests.tests_tensorflow import almost_equal
 from tests.tests_tensorflow import generate_data_tf
@@ -67,3 +69,25 @@ def test_get_weights():
 
     assert W.shape == (900, 10)
     assert b.shape == (10,)
+
+
+def test_postproc_fns():
+    samples = 100
+    input_shape = (3, 32, 32)
+    num_labels = 10
+
+    dataset = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    ).batch(samples // 2)
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    postproc_fns = [tf.keras.layers.GlobalAveragePooling2D(), None]
+
+    feature_extractor = KerasFeatureExtractor(
+        model, output_layers_id=["conv2d", "flatten"], postproc_fns=postproc_fns
+    )
+
+    feat0, feat1 = feature_extractor.predict(dataset)
+    assert list(feat0.shape) == [100, 4]
+    assert list(feat1.shape) == [100, 60]
