@@ -124,7 +124,11 @@ def train_torch_model(
         nn.Module: trained model
     """
     # device
-    device = torch.device(f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu")
+    device = torch.device(
+        f"cuda:{cuda_idx}"
+        if torch.cuda.is_available() and cuda_idx is not None
+        else "cpu"
+    )
 
     # Prepare model
     if isinstance(model, nn.Module):
@@ -141,13 +145,12 @@ def train_torch_model(
             ).to(device)
 
     # define optimizer and learning rate scheduler
+    optimizer = getattr(optim, optimizer)(model.parameters(), lr=learning_rate)
     n_steps = len(train_data) * epochs
     if lr_scheduler == "cosine":
-        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
         lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, n_steps)
     elif lr_scheduler == "steps":
         boundaries = list(np.round(n_steps * np.array([1 / 3, 2 / 3])).astype(int))
-        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
         lr_scheduler = optim.lr_scheduler.MultiStepLR(
             optimizer, milestones=boundaries, gamma=0.1
         )
