@@ -73,6 +73,7 @@ def train_tf_model(
     imagenet_pretrained: bool = False,
     validation_data: Optional[tf.data.Dataset] = None,
     save_dir: Optional[str] = None,
+    save_best_only: bool = True,
 ) -> tf.keras.Model:
     """Loads a model from tensorflow.python.keras.applications.
     If the dataset is different from imagenet, trains on provided dataset.
@@ -97,6 +98,8 @@ def train_tf_model(
         validation_data (Optional[tf.data.Dataset], optional): Defaults to None.
         save_dir (Optional[str], optional): Directory to save the model.
             Defaults to None.
+        save_best_only (bool): If False, saved model will be the last one. Defaults to
+            True.
 
     Returns:
         tf.keras.Model: Trained model
@@ -185,7 +188,7 @@ def train_tf_model(
                 save_weights_only=True,
                 monitor="val_accuracy",
                 mode="max",
-                save_best_only=True,
+                save_best_only=save_best_only,
             )
         )
 
