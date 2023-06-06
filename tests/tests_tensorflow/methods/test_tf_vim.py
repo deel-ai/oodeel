@@ -23,7 +23,7 @@
 import pytest
 
 from oodeel.methods import VIM
-from tests.tests_tensorflow import eval_detector_on_mnist
+from tests.tests_tensorflow import eval_detector_on_blobs
 
 
 @pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
@@ -35,6 +35,6 @@ def test_vim(auroc_thr, fpr95_thr):
     is below an other threshold.
     """
     vim = VIM()
-    eval_detector_on_mnist(
+    eval_detector_on_blobs(
         detector=vim, need_to_fit_dataset=True, auroc_thr=auroc_thr, fpr95_thr=fpr95_thr
     )
