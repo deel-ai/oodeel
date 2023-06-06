@@ -122,7 +122,7 @@ def train_torch_model(
         nn.Module: trained model
     """
     # device
-    device = torch.device(f"cuda:{cuda_idx}" if cuda_idx is not None else "cpu")
+    device = torch.device(f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu")
 
     # Prepare model
     if model_name == "toy_convnet":
