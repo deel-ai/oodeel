@@ -129,12 +129,12 @@ def train_tf_model(
                 include_top=False, weights=weights, input_shape=input_shape
             )
 
-        features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
-        output = tf.keras.layers.Dense(
-            num_classes,
-            activation="softmax",
-        )(features)
-        model = tf.keras.Model(backbone.layers[0].input, output)
+            features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
+            output = tf.keras.layers.Dense(
+                num_classes,
+                activation="softmax",
+            )(features)
+            model = tf.keras.Model(backbone.layers[0].input, output)
 
     n_samples = TFDataHandler.get_dataset_length(train_data)
 
