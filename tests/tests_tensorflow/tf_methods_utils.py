@@ -75,7 +75,7 @@ def get_mnist_toy_convnet(ds_fit, ds_in):
     else:
         # else, train a new model
         train_config = {
-            "model_name": "toy_convnet",
+            "model": "toy_convnet",
             "input_shape": (28, 28, 1),
             "num_classes": 10,
             "epochs": 5,

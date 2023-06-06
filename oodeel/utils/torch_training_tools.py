@@ -32,6 +32,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from ..types import Optional
+from ..types import Union
 
 
 class ToyTorchConvnet(nn.Sequential):
@@ -86,7 +87,7 @@ class ToyTorchConvnet(nn.Sequential):
 
 def train_torch_model(
     train_data: DataLoader,
-    model_name: str,
+    model: Union[nn.Module, str],
     num_classes: int,
     epochs: int = 50,
     loss: str = "CrossEntropyLoss",
@@ -104,7 +105,8 @@ def train_torch_model(
 
     Args:
         train_data (DataLoader): train dataloader
-        model_name (str): must be a model from torchvision.models or "toy_convnet".
+        model (Union[nn.Module, str]): if a string is provided, must be a model from
+            torchvision.models or "toy_convnet".
         num_classes (int): Number of output classes.
         epochs (int, optional): Defaults to 50.
         loss (str, optional): Defaults to "CrossEntropyLoss".
@@ -125,15 +127,18 @@ def train_torch_model(
     device = torch.device(f"cuda:{cuda_idx}" if torch.cuda.is_available() else "cpu")
 
     # Prepare model
-    if model_name == "toy_convnet":
-        # toy model
-        input_shape = next(iter(train_data))[0].shape[1:]
-        model = ToyTorchConvnet(input_shape, num_classes).to(device)
-    else:
-        # torchvision model
-        model = getattr(torchvision.models, model_name)(
-            num_classes=num_classes, pretrained=imagenet_pretrained
-        ).to(device)
+    if isinstance(model, nn.Module):
+        model = model.to(device)
+    elif isinstance(model, str):
+        if model == "toy_convnet":
+            # toy model
+            input_shape = next(iter(train_data))[0].shape[1:]
+            model = ToyTorchConvnet(input_shape, num_classes).to(device)
+        else:
+            # torchvision model
+            model = getattr(torchvision.models, model)(
+                num_classes=num_classes, pretrained=imagenet_pretrained
+            ).to(device)
 
     # define optimizer and learning rate scheduler
     n_steps = len(train_data) * epochs
