@@ -23,7 +23,7 @@
 import pytest
 
 from oodeel.methods import Energy
-from tests.tests_torch import eval_detector_on_mnist
+from tests.tests_torch import eval_detector_on_blobs
 
 
 @pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
@@ -35,7 +35,7 @@ def test_energy(auroc_thr, fpr95_thr):
     is below an other threshold.
     """
     energy = Energy()
-    eval_detector_on_mnist(
+    eval_detector_on_blobs(
         detector=energy,
         need_to_fit_dataset=False,
         auroc_thr=auroc_thr,

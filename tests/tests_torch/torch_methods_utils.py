@@ -22,11 +22,14 @@
 # SOFTWARE.
 import os
 
+import numpy as np
+import requests
 import torch
+from sklearn.datasets import make_blobs
+from sklearn.model_selection import train_test_split
 
 from oodeel.datasets import OODDataset
 from oodeel.eval.metrics import bench_metrics
-from oodeel.utils.torch_training_tools import train_torch_model
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -36,71 +39,60 @@ os.makedirs(model_path, exist_ok=True)
 os.makedirs(data_path, exist_ok=True)
 
 
-def load_mnist_vs_fmnist(batch_size=128):
-    # load mnist train / test
-    oods_fit = OODDataset(
-        dataset_id="MNIST",
-        backend="torch",
-        load_kwargs={"root": data_path, "train": True, "download": True},
-    )
-    oods_in = OODDataset(
-        dataset_id="MNIST",
-        backend="torch",
-        load_kwargs={"root": data_path, "train": False, "download": True},
-    )
-    oods_out = OODDataset(
-        dataset_id="FashionMNIST",
-        backend="torch",
-        load_kwargs={"root": data_path, "train": False, "download": True},
+def load_blobs_data(batch_size=128, num_samples=10000, train_ratio=0.8):
+    # === data hparams ===
+    num_classes = 3
+    in_labels = [0, 1]
+    out_labels = [2, 3]
+    centers = np.array([[-4, -4], [4, 4], [-4, 4], [4, -4]])
+
+    # === generate data ===
+    X, y = make_blobs(num_samples, num_classes, centers=centers, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, train_size=train_ratio, random_state=0
     )
 
-    # prepare data (preprocess, shuffle, batch) => torch dataloaders
-    def preprocess_fn(inputs):
-        """Simple preprocessing function to normalize images in [0, 1]."""
-        x = inputs[0] / 255.0
-        return tuple([x] + list(inputs[1:]))
+    # === id / ood split ===
+    blobs_train = OODDataset((X_train, y_train), backend="torch")
+    blobs_test = OODDataset((X_test, y_test), backend="torch")
+    oods_fit, _ = blobs_train.assign_ood_labels_by_class(in_labels, out_labels)
+    oods_in, oods_out = blobs_test.assign_ood_labels_by_class(in_labels, out_labels)
 
-    ds_fit = oods_fit.prepare(
-        batch_size=batch_size, preprocess_fn=preprocess_fn, shuffle=True
-    )
-    ds_in = oods_in.prepare(batch_size=batch_size, preprocess_fn=preprocess_fn)
-    ds_out = oods_out.prepare(batch_size=batch_size, preprocess_fn=preprocess_fn)
+    # === prepare data (shuffle, batch) => torch dataloaders ===
+    ds_fit = oods_fit.prepare(batch_size=batch_size, shuffle=True)
+    ds_in = oods_in.prepare(batch_size=batch_size)
+    ds_out = oods_out.prepare(batch_size=batch_size)
     return ds_fit, ds_in, ds_out
 
 
-def get_mnist_toy_convnet(ds_fit, ds_in):
-    model_path_mnist = os.path.join(model_path, "mnist_model")
+def load_blob_mlp():
+    model_path_blob = os.path.join(model_path, "blobs_mlp.pt")
 
-    if os.path.exists(os.path.join(model_path_mnist, "best.pt")):
-        # if the model exists, load it
-        model = torch.load(
-            os.path.join(model_path_mnist, "best.pt"), map_location=device
+    # if model not in local, download it
+    if not os.path.exists(model_path_blob):
+        data = requests.get(
+            "https://share.deel.ai/s/xcyk3ET8fzfTp8S/download/blobs_mlp.pt"
         )
-    else:
-        # else, train a new model
-        train_config = {
-            "model": "toy_convnet",
-            "num_classes": 10,
-            "epochs": 5,
-            "save_dir": model_path_mnist,
-            "validation_data": ds_in,
-        }
-        model = train_torch_model(ds_fit, **train_config)
+        with open(model_path_blob, "wb") as file:
+            file.write(data.content)
+
+    # load model
+    model = torch.load(model_path_blob, map_location=device)
     model.eval()
     return model
 
 
-def eval_detector_on_mnist(
+def eval_detector_on_blobs(
     detector, need_to_fit_dataset, auroc_thr=0.6, fpr95_thr=0.3, batch_size=128
 ):
     # seed
-    torch.manual_seed(0)
+    torch.manual_seed(1)
 
     # load data
-    ds_fit, ds_in, ds_out = load_mnist_vs_fmnist(batch_size)
+    ds_fit, ds_in, ds_out = load_blobs_data(batch_size)
 
     # get classifier
-    model = get_mnist_toy_convnet(ds_fit, ds_in)
+    model = load_blob_mlp()
 
     # fit ood detector
     if need_to_fit_dataset:
@@ -111,13 +103,14 @@ def eval_detector_on_mnist(
     # ood scores
     scores_in = detector.score(ds_in)
     scores_out = detector.score(ds_out)
-    assert scores_in.shape == (10000,)
-    assert scores_out.shape == (10000,)
+    assert scores_in.shape == (1028,)
+    assert scores_out.shape == (972,)
 
     # ood metrics: auroc, fpr95tpr
     metrics = bench_metrics(
         (scores_in, scores_out),
         metrics=["auroc", "fpr95tpr"],
     )
-    assert metrics["auroc"] >= auroc_thr
-    assert metrics["fpr95tpr"] <= fpr95_thr
+    auroc, fpr95tpr = metrics["auroc"], metrics["fpr95tpr"]
+    assert auroc >= auroc_thr, f"got a score of {auroc}, below {auroc_thr}!"
+    assert fpr95tpr <= fpr95_thr, f"got a score of {fpr95tpr}, above {fpr95_thr}!"

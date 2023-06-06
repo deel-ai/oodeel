@@ -23,10 +23,10 @@
 import pytest
 
 from oodeel.methods import Mahalanobis
-from tests.tests_torch import eval_detector_on_mnist
+from tests.tests_torch import eval_detector_on_blobs
 
 
-@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.83, 0.66)])
+@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
 def test_mahalanobis(auroc_thr, fpr95_thr):
     """
     Test Mahalanobis on MNIST vs FashionMNIST OOD dataset-wise task
@@ -35,7 +35,7 @@ def test_mahalanobis(auroc_thr, fpr95_thr):
     is below an other threshold.
     """
     mahalanobis = Mahalanobis()
-    eval_detector_on_mnist(
+    eval_detector_on_blobs(
         detector=mahalanobis,
         need_to_fit_dataset=True,
         auroc_thr=auroc_thr,
