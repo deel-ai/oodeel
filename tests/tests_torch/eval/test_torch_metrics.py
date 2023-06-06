@@ -23,6 +23,7 @@
 import numpy as np
 import pytest
 from pytest import approx
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import accuracy_score, roc_auc_score
 
 from oodeel.eval.metrics import bench_metrics
@@ -106,3 +107,12 @@ def test_bench_metrics(in_value, out_value):
         step=1,
     )
     assert metrics_dict == metrics_dict_2
+
+    # Assert bench_metrics() returns no metric when wrong sklearn metric name
+    metrics = bench_metrics(scores, labels, metrics=[LinearRegression], threshold=0.3)
+    assert len(metrics) == 0
+
+    # Assert bench_metrics() returns no metric when no threshold is given
+    metrics = bench_metrics(scores, labels, metrics=[accuracy_score], threshold=None)
+    print(metrics, "DEBUG")
+    assert len(metrics) == 0
