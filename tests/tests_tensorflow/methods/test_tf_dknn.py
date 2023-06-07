@@ -20,35 +20,24 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import pytest
+
 from oodeel.methods import DKNN
-from tests.tests_tensorflow import generate_data
-from tests.tests_tensorflow import generate_data_tf
-from tests.tests_tensorflow import generate_model
+from tests.tests_tensorflow import eval_detector_on_blobs
 
 
-def test_dknn():
+@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
+def test_dknn(auroc_thr, fpr95_thr):
     """
-    Test DKNN
+    Test DKNN on MNIST vs FashionMNIST OOD dataset-wise task
+
+    We check that the area under ROC is above a certain threshold, and that the FPR95TPR
+    is below an other threshold.
     """
-    input_shape = (32, 32, 3)
-    num_labels = 10
-    samples = 100
-
-    data_x, _ = generate_data(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )
-
-    model = generate_model(input_shape=input_shape, output_shape=num_labels)
-
     dknn = DKNN()
-    dknn.fit(model, fit_dataset=data_x)
-    scores = dknn.score(data_x)
-
-    assert scores.shape == (100,)
-
-    data = generate_data_tf(
-        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    ).batch(samples)
-    scores = dknn.score(data)
-
-    assert scores.shape == (100,)
+    eval_detector_on_blobs(
+        detector=dknn,
+        need_to_fit_dataset=True,
+        auroc_thr=auroc_thr,
+        fpr95_thr=fpr95_thr,
+    )

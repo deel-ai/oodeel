@@ -32,6 +32,7 @@ from tensorflow.keras.models import Sequential
 from ..datasets.tf_data_handler import TFDataHandler
 from ..types import List
 from ..types import Optional
+from ..types import Union
 
 
 def get_toy_keras_convnet(num_classes: int) -> tf.keras.Model:
@@ -58,7 +59,7 @@ def get_toy_keras_convnet(num_classes: int) -> tf.keras.Model:
 
 def train_tf_model(
     train_data: tf.data.Dataset,
-    model_name: str,
+    model: Union[tf.keras.Model, str],
     input_shape: tuple,
     num_classes: int,
     is_prepared: bool = True,
@@ -72,13 +73,15 @@ def train_tf_model(
     imagenet_pretrained: bool = False,
     validation_data: Optional[tf.data.Dataset] = None,
     save_dir: Optional[str] = None,
+    save_best_only: bool = True,
 ) -> tf.keras.Model:
     """Loads a model from tensorflow.python.keras.applications.
     If the dataset is different from imagenet, trains on provided dataset.
 
     Args:
         train_data (tf.data.Dataset): training dataset.
-        model_name (str): must be a model from tf.keras.applications or "toy_convnet"
+        model (Union[tf.keras.Model, str]): if a string is provided, must be a model
+            from tf.keras.applications or "toy_convnet"
         input_shape (tuple): Shape of the input images.
         num_classes (int): Number of output classes.
         is_prepared (bool, optional): If train_data is a pipeline already prepared
@@ -95,43 +98,43 @@ def train_tf_model(
         validation_data (Optional[tf.data.Dataset], optional): Defaults to None.
         save_dir (Optional[str], optional): Directory to save the model.
             Defaults to None.
+        save_best_only (bool): If False, saved model will be the last one. Defaults to
+            True.
 
     Returns:
         tf.keras.Model: Trained model
     """
-
-    # Prepare model
-    if imagenet_pretrained:
-        backbone = getattr(tf.keras.applications, model_name)(
-            include_top=False, weights="imagenet", input_shape=input_shape
-        )
+    # get data infos from dataset
+    if isinstance(train_data.element_spec, dict):
+        input_id = "image"
+        label_id = "label"
     else:
-        if isinstance(train_data.element_spec, dict):
-            input_id = "image"
-            label_id = "label"
-        else:
-            input_id = 0
-            label_id = -1
-        if input_shape is None:
-            input_shape = TFDataHandler.get_feature_shape(train_data, input_id)
-        if num_classes is None:
-            classes = TFDataHandler.get_feature(train_data, label_id).unique()
-            num_classes = len(list(classes.as_numpy_iterator()))
+        input_id = 0
+        label_id = -1
+    if input_shape is None:
+        input_shape = TFDataHandler.get_feature_shape(train_data, input_id)
+    if num_classes is None:
+        classes = TFDataHandler.get_feature(train_data, label_id).unique()
+        num_classes = len(list(classes.as_numpy_iterator()))
 
-        if model_name != "toy_convnet":
-            backbone = getattr(tf.keras.applications, model_name)(
-                include_top=False, weights=None, input_shape=input_shape
+    # prepare model
+    if isinstance(model, tf.keras.Model):
+        pass
+    elif isinstance(model, str):
+        if model == "toy_convnet":
+            model = get_toy_keras_convnet(num_classes)
+        else:
+            weights = "imagenet" if imagenet_pretrained else None
+            backbone = getattr(tf.keras.applications, model)(
+                include_top=False, weights=weights, input_shape=input_shape
             )
 
-    if model_name == "toy_convnet":
-        model = get_toy_keras_convnet(num_classes)
-    else:
-        features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
-        output = tf.keras.layers.Dense(
-            num_classes,
-            activation="softmax",
-        )(features)
-        model = tf.keras.Model(backbone.layers[0].input, output)
+            features = tf.keras.layers.Flatten()(backbone.layers[-1].output)
+            output = tf.keras.layers.Dense(
+                num_classes,
+                activation="softmax",
+            )(features)
+            model = tf.keras.Model(backbone.layers[0].input, output)
 
     n_samples = TFDataHandler.get_dataset_length(train_data)
 
@@ -185,7 +188,7 @@ def train_tf_model(
                 save_weights_only=True,
                 monitor="val_accuracy",
                 mode="max",
-                save_best_only=True,
+                save_best_only=save_best_only,
             )
         )
 

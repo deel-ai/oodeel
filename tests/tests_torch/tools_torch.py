@@ -122,6 +122,14 @@ def named_sequential_model():
     )
 
 
+def simplest_mlp(num_features, num_classes):
+    return nn.Sequential(
+        nn.Linear(num_features, 64),
+        nn.ReLU(),
+        nn.Linear(64, num_classes),
+    )
+
+
 def generate_data(x_shape=(3, 32, 32), num_labels=10, samples=100, one_hot=True):
     x = np.random.rand(samples, *x_shape).astype(np.float32)
     x /= np.max(x)

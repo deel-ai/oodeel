@@ -32,7 +32,7 @@ def test_convnet_classifier():
     samples = 100
 
     train_config = {
-        "model_name": "toy_convnet",
+        "model": "toy_convnet",
         "epochs": 3,
         "num_classes": num_labels,
         "cuda_idx": None,
@@ -62,7 +62,7 @@ def test_train_torch_model_imagenet():
 
     data = DataLoader(data, batch_size=samples // 2)
     train_torch_model(
-        data, model_name="mobilenet_v2", imagenet_pretrained=True, **train_config
+        data, model="mobilenet_v2", imagenet_pretrained=True, **train_config
     )
 
 
@@ -89,7 +89,7 @@ def test_train_torch_model():
     validation_data = DataLoader(validation_data, batch_size=samples // 2)
     train_torch_model(
         data,
-        model_name="mobilenet_v2",
+        model="mobilenet_v2",
         imagenet_pretrained=False,
         validation_data=validation_data,
         **train_config

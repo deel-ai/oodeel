@@ -54,6 +54,16 @@ def generate_regression_model(features_shape, output_shape=1):
     return model
 
 
+def simplest_mlp(num_features, num_classes):
+    return tf.keras.models.Sequential(
+        [
+            tf.keras.layers.Input(shape=(num_features,)),
+            tf.keras.layers.Dense(64, activation="relu"),
+            tf.keras.layers.Dense(num_classes, activation="softmax"),
+        ]
+    )
+
+
 def generate_data(x_shape=(32, 32, 3), num_labels=10, samples=100, one_hot=True):
     x = np.random.rand(samples, *x_shape).astype(np.float32)
     x /= np.max(x)

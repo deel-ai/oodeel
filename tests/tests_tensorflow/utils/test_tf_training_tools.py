@@ -30,7 +30,7 @@ def test_convnet_classifier():
     samples = 100
 
     train_config = {
-        "model_name": "toy_convnet",
+        "model": "toy_convnet",
         "batch_size": 5,
         "epochs": 3,
         "input_shape": input_shape,
@@ -62,9 +62,7 @@ def test_train_tf_model_imagenet():
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
     )
 
-    train_tf_model(
-        data, model_name="MobileNet", imagenet_pretrained=True, **train_config
-    )
+    train_tf_model(data, model="MobileNet", imagenet_pretrained=True, **train_config)
 
 
 def test_train_tf_model():
@@ -90,7 +88,7 @@ def test_train_tf_model():
 
     train_tf_model(
         data,
-        model_name="MobileNet",
+        model="MobileNet",
         imagenet_pretrained=False,
         validation_data=validation_data,
         **train_config
