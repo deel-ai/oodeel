@@ -76,6 +76,8 @@ def test_postproc_fns():
     input_shape = (3, 32, 32)
     num_labels = 10
 
+    tf.keras.backend.clear_session()
+
     dataset = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples
     ).batch(samples // 2)

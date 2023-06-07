@@ -136,5 +136,5 @@ def test_postproc_fns():
     )
 
     feat0, feat1 = feature_extractor.predict(dataset)
-    assert list(feat0.size()) == [100, 16]
+    assert list(feat0.size()) == [100, 16, 1, 1]
     assert list(feat1.size()) == [100, 84]
