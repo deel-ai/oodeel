@@ -26,6 +26,7 @@ from abc import abstractmethod
 from ..types import Callable
 from ..types import DatasetType
 from ..types import List
+from ..types import Optional
 from ..types import TensorType
 from ..types import Union
 
@@ -47,6 +48,10 @@ class FeatureExtractor(ABC):
             when working on the feature space without finetuning the bottom of the
             model).
             Defaults to None.
+        react_threshold: if not None, penultimate layer activations are clipped under
+            this threshold value (useful for ReAct). Defaults to None.
+        penultimate_layer_id: identifier for the penultimate layer, used for ReAct.
+            Defaults to None.
     """
 
     def __init__(
@@ -54,12 +59,16 @@ class FeatureExtractor(ABC):
         model: Callable,
         output_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Union[int, str] = [0],
+        react_threshold: Optional[float] = None,
+        penultimate_layer_id: Optional[Union[str, int]] = None,
     ):
         if not isinstance(output_layers_id, list):
             output_layers_id = [output_layers_id]
 
         self.output_layers_id = output_layers_id
         self.input_layer_id = input_layer_id
+        self.react_threshold = react_threshold
+        self.penultimate_layer_id = penultimate_layer_id
         self.model = model
         self.extractor = self.prepare_extractor()
 

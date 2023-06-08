@@ -51,6 +51,10 @@ class KerasFeatureExtractor(FeatureExtractor):
             when working on the feature space without finetuning the bottom of the
             model).
             Defaults to None.
+        react_threshold: if not None, penultimate layer activations are clipped under
+            this threshold value (useful for ReAct). Defaults to None.
+        penultimate_layer_id: identifier for the penultimate layer, used for ReAct.
+            Defaults to None.
     """
 
     def __init__(
@@ -58,6 +62,8 @@ class KerasFeatureExtractor(FeatureExtractor):
         model: Callable,
         output_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Optional[Union[int, str]] = None,
+        react_threshold: Optional[float] = None,
+        penultimate_layer_id: Optional[Union[str, int]] = None,
     ):
         if input_layer_id is None:
             input_layer_id = 0
@@ -65,16 +71,22 @@ class KerasFeatureExtractor(FeatureExtractor):
             model=model,
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
+            react_threshold=react_threshold,
+            penultimate_layer_id=penultimate_layer_id,
         )
 
         self.backend = "tensorflow"
         self.model.layers[-1].activation = getattr(tf.keras.activations, "linear")
 
-    def find_layer(self, layer_id: Union[str, int]) -> tf.keras.layers.Layer:
+    def find_layer(
+        self, layer_id: Union[str, int], index_offset: int = 0
+    ) -> tf.keras.layers.Layer:
         """Find a layer in a model either by his name or by his index.
 
         Args:
             layer_id (Union[str, int]): layer identifier
+            index_offset (int): index offset to find layers located before (negative
+                offset) or after (positive offset) the identified layer
 
         Raises:
             ValueError: if the layer is not found
@@ -83,9 +95,10 @@ class KerasFeatureExtractor(FeatureExtractor):
             tf.keras.layers.Layer: the corresponding layer
         """
         if isinstance(layer_id, str):
-            return self.model.get_layer(layer_id)
+            layers_names = [layer.name for layer in self.model.layers]
+            layer_id = layers_names.index(layer_id)
         if isinstance(layer_id, int):
-            return self.model.get_layer(index=layer_id)
+            return self.model.get_layer(index=layer_id + index_offset)
         raise ValueError(f"Could not find any layer {layer_id}.")
 
     # @tf.function
@@ -96,13 +109,33 @@ class KerasFeatureExtractor(FeatureExtractor):
         Returns:
             tf.keras.models.Model: truncated model (extractor)
         """
-        output_layers = [
+        input_layer = self.find_layer(self.input_layer_id)
+        new_input = tf.keras.layers.Input(tensor=input_layer.input)
+        output_tensors = [
             self.find_layer(ol_id).output for ol_id in self.output_layers_id
         ]
 
-        input_layer = self.find_layer(self.input_layer_id)
-        new_input = tf.keras.layers.Input(tensor=input_layer.input)
-        extractor = tf.keras.models.Model(new_input, output_layers)
+        # === If react method, clip activations from penultimate layer ===
+        if self.react_threshold is not None:
+            assert isinstance(self.react_threshold, (float, int))
+            assert self.penultimate_layer_id is not None
+            penultimate_layer = self.find_layer(self.penultimate_layer_id)
+            next_layer = self.find_layer(self.penultimate_layer_id, index_offset=1)
+            left_extractor = tf.keras.models.Model(new_input, penultimate_layer.output)
+            right_extractor = tf.keras.models.Model(
+                tf.keras.layers.Input(tensor=next_layer.input), output_tensors[-1]
+            )
+            # join left and right extractors with clipping layer
+            x = new_input
+            x = left_extractor(x)
+            x = tf.clip_by_value(
+                x,
+                clip_value_min=tf.float32.min,
+                clip_value_max=self.react_threshold,
+            )
+            output_tensors[-1] = right_extractor(x)
+
+        extractor = tf.keras.models.Model(new_input, output_tensors)
         return extractor
 
     @sanitize_input
