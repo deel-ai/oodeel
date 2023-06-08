@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from collections import OrderedDict
 from typing import get_args
 from typing import Optional
 
@@ -54,6 +55,10 @@ class TorchFeatureExtractor(FeatureExtractor):
             when working on the feature space without finetuning the bottom of
             the model).
             Defaults to None.
+        react_threshold: if not None, penultimate layer activations are clipped under
+            this threshold value (useful for ReAct). Defaults to None.
+        penultimate_layer_id: identifier for the penultimate layer, used for ReAct.
+            Defaults to None.
     """
 
     def __init__(
@@ -61,18 +66,22 @@ class TorchFeatureExtractor(FeatureExtractor):
         model: nn.Module,
         output_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
+        react_threshold: Optional[float] = None,
+        penultimate_layer_id: Optional[Union[str, int]] = None,
     ):
         model = model.eval()
         super().__init__(
             model=model,
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
+            react_threshold=react_threshold,
+            penultimate_layer_id=penultimate_layer_id,
         )
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
         self.backend = "torch"
 
-    def get_features_hook(self, layer_id: Union[str, int]) -> Callable:
+    def _get_features_hook(self, layer_id: Union[str, int]) -> Callable:
         """
         Hook that stores features corresponding to a specific layer
         in a class dictionary.
@@ -112,10 +121,20 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     def prepare_extractor(self) -> None:
         """Prepare the feature extractor by adding hooks to self.model"""
+        # remove forward hooks attached to the model
+        self._clean_forward_hooks()
+
+        # === If react method, clip activations from penultimate layer ===
+        if self.react_threshold is not None:
+            assert isinstance(self.react_threshold, (float, int))
+            assert self.penultimate_layer_id is not None
+            pen_layer = self.find_layer(self.penultimate_layer_id)
+            pen_layer.register_forward_hook(self._get_clip_hook(self.react_threshold))
+
         # Register a hook to store feature values for each considered layer.
         for layer_id in self.output_layers_id:
             layer = self.find_layer(layer_id)
-            layer.register_forward_hook(self.get_features_hook(layer_id))
+            layer.register_forward_hook(self._get_features_hook(layer_id))
 
         # Crop model if input layer is provided
         if not (self.input_layer_id) is None:
@@ -220,3 +239,36 @@ class TorchFeatureExtractor(FeatureExtractor):
         """
         layer = self.find_layer(layer_id)
         return [layer.weight.detach().cpu().numpy(), layer.bias.detach().cpu().numpy()]
+
+    def _get_clip_hook(self, threshold: float) -> Callable:
+        """
+        Hook that truncate activation features under a threshold value
+
+        Args:
+            threshold (float): threshold value
+
+        Returns:
+            Callable: hook function
+        """
+
+        def hook(_, __, output):
+            output = torch.clip(output, max=threshold)
+            return output
+
+        return hook
+
+    def _clean_forward_hooks(self) -> None:
+        """
+        Remove all the forward hook attached to the model's layers. This function should
+        be called at the __init__, and avoid to accumulate the hooks when defining a
+        new TorchFeatureExtractor for the same model.
+        """
+
+        def __clean_hooks(m: nn.Module):
+            for _, child in m._modules.items():
+                if child is not None:
+                    if hasattr(child, "_forward_hooks"):
+                        child._forward_hooks = OrderedDict()
+                    __clean_hooks(child)
+
+        return __clean_hooks(self.model)
