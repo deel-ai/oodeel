@@ -188,7 +188,8 @@ class TFOperator(Operator):
     @staticmethod
     def quantile(tensor: TensorType, q: float, dim: int = None) -> tf.Tensor:
         "Computes the quantile of a tensor's components. q in (0,1)"
-        return tfp.stats.percentiles(tensor, q * 100, axis=dim)
+        q = tfp.stats.percentile(tensor, q * 100, axis=dim)
+        return float(q) if dim is None else q
 
     @staticmethod
     def relu(tensor: TensorType) -> tf.Tensor:
