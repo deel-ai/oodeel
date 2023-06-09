@@ -203,7 +203,8 @@ class TorchOperator(Operator):
     @staticmethod
     def quantile(tensor: TensorType, q: float, dim: int = None) -> torch.Tensor:
         "Computes the quantile of a tensor's components. q in (0,1)"
-        return torch.quantile(tensor, q, dim)
+        q = torch.quantile(tensor, q, dim)
+        return q.item() if dim is None else q
 
     @staticmethod
     def relu(tensor: TensorType) -> torch.Tensor:
