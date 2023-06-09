@@ -23,7 +23,10 @@
 import numpy as np
 from scipy.special import logsumexp
 
+from ..types import DatasetType
+from ..types import Optional
 from ..types import TensorType
+from ..types import Union
 from .base import OODBaseDetector
 
 
@@ -45,10 +48,25 @@ class Energy(OODBaseDetector):
     where $model(x)=(l_{c})_{c=1}^{C}$ are the logits predicted by the model on
     $x$.
     As always, training data is expected to have lower score than OOD data.
+
+    Args:
+        react_quantile: if not None, a threshold corresponding to this quantile for the
+            penultimate layer activations is calculated, then used to clip the
+            activations under this threshold (ReAct method). Defaults to None.
+        penultimate_layer_id: identifier for the penultimate layer, used for ReAct.
+            Defaults to None.
     """
 
-    def __init__(self):
-        super().__init__(output_layers_id=[-1])
+    def __init__(
+        self,
+        react_quantile: Optional[float] = None,
+        penultimate_layer_id: Optional[Union[str, int]] = None,
+    ):
+        super().__init__(
+            output_layers_id=[-1],
+            react_quantile=react_quantile,
+            penultimate_layer_id=penultimate_layer_id,
+        )
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
@@ -61,10 +79,18 @@ class Energy(OODBaseDetector):
         Returns:
             scores
         """
-
         # compute logits (softmax(logits,axis=1) is the actual softmax
         # output minimized using binary cross entropy)
         logits = self.feature_extractor(inputs)
         logits = self.op.convert_to_numpy(logits)
         scores = -logsumexp(logits, axis=1)
         return scores
+
+    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
+        """
+        Fits the OOD detector to fit_dataset.
+
+        Args:
+            fit_dataset: dataset to fit the OOD detector on
+        """
+        pass
