@@ -108,7 +108,6 @@ class TFOperator(Operator):
         return tensor.numpy()
 
     @staticmethod
-    @tf.function
     def gradient(func: Callable, inputs: tf.Tensor, *args, **kwargs) -> tf.Tensor:
         """Compute gradients for a batch of samples.
 
