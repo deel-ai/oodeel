@@ -22,7 +22,10 @@
 # SOFTWARE.
 import numpy as np
 
+from ..types import DatasetType
+from ..types import Optional
 from ..types import TensorType
+from ..types import Union
 from .base import OODBaseDetector
 
 
@@ -40,11 +43,24 @@ class MLS(OODBaseDetector):
         output_activation (str): activation function for the last layer. If "linear",
             the method is MLS and if "softmax", the method is MSS.
             Defaults to "linear".
+        react_quantile: if not None, a threshold corresponding to this quantile for the
+            penultimate layer activations is calculated, then used to clip the
+            activations under this threshold (ReAct method). Defaults to None.
+        penultimate_layer_id: identifier for the penultimate layer, used for ReAct.
+            Defaults to None.
     """
 
-    def __init__(self, output_activation="linear"):
-        # This line is not necessary but improves readability
-        super().__init__(output_layers_id=[-1])
+    def __init__(
+        self,
+        output_activation: str = "linear",
+        react_quantile: Optional[float] = None,
+        penultimate_layer_id: Optional[Union[str, int]] = None,
+    ):
+        super().__init__(
+            output_layers_id=[-1],
+            react_quantile=react_quantile,
+            penultimate_layer_id=penultimate_layer_id,
+        )
         self.output_activation = output_activation
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -65,3 +81,12 @@ class MLS(OODBaseDetector):
         pred = self.op.convert_to_numpy(pred)
         scores = -np.max(pred, axis=1)
         return scores
+
+    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
+        """
+        Fits the OOD detector to fit_dataset.
+
+        Args:
+            fit_dataset: dataset to fit the OOD detector on
+        """
+        pass
