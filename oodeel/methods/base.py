@@ -48,16 +48,26 @@ class OODBaseDetector(ABC):
             of the feature extractor.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to None.
+        react_quantile: if not None, a threshold corresponding to this quantile for the
+            penultimate layer activations is calculated, then used to clip the
+            activations under this threshold (ReAct method). Defaults to None.
+        penultimate_layer_id: identifier for the penultimate layer, used for ReAct.
+            Defaults to None.
     """
 
     def __init__(
         self,
         output_layers_id: List[Union[int, str]] = [-1],
         input_layers_id: Optional[Union[int, str]] = None,
+        react_quantile: Optional[float] = None,
+        penultimate_layer_id: Optional[Union[str, int]] = None,
     ):
         self.feature_extractor: FeatureExtractor = None
         self.output_layers_id = output_layers_id
         self.input_layers_id = input_layers_id
+        self.react_quantile = react_quantile
+        self.penultimate_layer_id = penultimate_layer_id
+        self.react_threshold = None
 
     @abstractmethod
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -90,6 +100,16 @@ class OODBaseDetector(ABC):
             model: model to extract the features from
             fit_dataset: dataset to fit the detector on
         """
+        # react: compute threshold (activation percentiles)
+        if self.react_quantile is not None:
+            if fit_dataset is None:
+                raise ValueError(
+                    "if react quantile is not None, fit_dataset must be"
+                    " provided to compute react activation threshold"
+                )
+            else:
+                self.compute_react_threshold(model, fit_dataset)
+
         self.feature_extractor = self._load_feature_extractor(model)
 
         if fit_dataset is not None:
@@ -98,6 +118,7 @@ class OODBaseDetector(ABC):
     def _load_feature_extractor(
         self,
         model: Callable,
+        output_layers_id: List[Union[int, str]] = None,
     ) -> Callable:
         """
         Loads feature extractor
@@ -131,10 +152,12 @@ class OODBaseDetector(ABC):
         else:
             raise NotImplementedError()
 
+        output_layers_id = output_layers_id or self.output_layers_id
         feature_extractor = FeatureExtractor(
             model,
-            input_layer_id=self.input_layers_id,
-            output_layers_id=self.output_layers_id,
+            output_layers_id=output_layers_id,
+            react_threshold=self.react_threshold,
+            penultimate_layer_id=self.penultimate_layer_id,
         )
         return feature_extractor
 
@@ -228,6 +251,13 @@ class OODBaseDetector(ABC):
             )
         oodness = scores < threshold
         return np.array(oodness, dtype=np.bool)
+
+    def compute_react_threshold(self, model: Callable, fit_dataset: DatasetType):
+        assert self.penultimate_layer_id is not None
+        output_layers_id = [self.penultimate_layer_id]
+        penult_feat_extractor = self._load_feature_extractor(model, output_layers_id)
+        unclipped_features = penult_feat_extractor.predict(fit_dataset)
+        self.react_threshold = self.op.quantile(unclipped_features, self.react_quantile)
 
     def __call__(
         self, inputs: Union[ItemType, DatasetType], threshold: float
