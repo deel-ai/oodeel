@@ -142,3 +142,7 @@ def check_common_operators(backend):
 
     # Pinv
     assert operator.pinv(x[0]).shape == (6, 12)
+
+    # einsum
+    ein = operator.einsum("bij,jk->bik", x, operator.transpose(x[0]))
+    assert ein.shape == (25, 12, 12)

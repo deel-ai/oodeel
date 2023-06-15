@@ -171,3 +171,9 @@ class Operator(ABC):
     def eigh(tensor: TensorType) -> TensorType:
         "Computes the eigen decomposition of a self-adjoint matrix."
         raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def einsum(equation: str, *tensors: TensorType) -> TensorType:
+        "Computes the einsum between tensors following equation"
+        raise NotImplementedError()

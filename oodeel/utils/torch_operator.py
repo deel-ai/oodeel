@@ -199,3 +199,8 @@ class TorchOperator(Operator):
         "Computes the eigen decomposition of a self-adjoint matrix."
         eigval, eigvec = torch.linalg.eigh(tensor)
         return eigval, eigvec
+
+    @staticmethod
+    def einsum(equation: str, *tensors: TensorType) -> TensorType:
+        "Computes the einsum between tensors following equation"
+        return torch.einsum(equation, *tensors)
