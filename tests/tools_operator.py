@@ -146,3 +146,8 @@ def check_common_operators(backend):
     # einsum
     ein = operator.einsum("bij,jk->bik", x, operator.transpose(x[0]))
     assert ein.shape == (25, 12, 12)
+
+    # tril
+    triangle = operator.tril(ein, diagonal=-1)
+    assert triangle.shape == (25, 12, 12)
+    assert np.sum([m[0, 0] + m[11, 11] + m[0, 11] for m in triangle]) == 0

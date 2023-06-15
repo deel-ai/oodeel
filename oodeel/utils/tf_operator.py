@@ -188,3 +188,8 @@ class TFOperator(Operator):
     def einsum(equation: str, *tensors: TensorType) -> TensorType:
         "Computes the einsum between tensors following equation"
         return tf.einsum(equation, *tensors)
+
+    @staticmethod
+    def tril(tensor: TensorType, diagonal: int = 0) -> TensorType:
+        "Set the upper triangle of the matrix formed by the last two dimensions of tensor to zero"
+        return tf.experimental.numpy.tril(tensor, k=diagonal)

@@ -177,3 +177,9 @@ class Operator(ABC):
     def einsum(equation: str, *tensors: TensorType) -> TensorType:
         "Computes the einsum between tensors following equation"
         raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def tril(tensor: TensorType, diagonal: int = 0) -> TensorType:
+        "Set the upper triangle of the matrix formed by the last two dimensions of tensor to zero"
+        raise NotImplementedError()
