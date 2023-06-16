@@ -171,10 +171,13 @@ class TorchFeatureExtractor(FeatureExtractor):
             features = [self._features[layer_id] for layer_id in self.output_layers_id]
 
         if self.postproc_fns is not None:
-            features = [
-                postproc_fn(feature)
-                for feature, postproc_fn in zip(features, self.postproc_fns)
-            ]
+            if len(self.postproc_fns) == 1:
+                features = [self.postproc_fns[0](features)]
+            else:
+                features = [
+                    postproc_fn(feature)
+                    for feature, postproc_fn in zip(features, self.postproc_fns)
+                ]
 
         if len(features) == 1:
             features = features[0]

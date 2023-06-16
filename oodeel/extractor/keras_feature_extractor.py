@@ -108,7 +108,6 @@ class KerasFeatureExtractor(FeatureExtractor):
         return extractor
 
     @sanitize_input
-    @tf.function
     def predict_tensor(self, tensor: TensorType) -> Union[tf.Tensor, List[tf.Tensor]]:
         """Get the projection of tensor in the feature space of self.model
 
@@ -118,18 +117,33 @@ class KerasFeatureExtractor(FeatureExtractor):
         Returns:
             tf.Tensor: features
         """
-        features = self.extractor(tensor, training=False)
+        features = self.simple_forward(tensor)
 
         if self.postproc_fns is not None:
-            features = [
-                postproc_fn(feature)
-                for feature, postproc_fn in zip(features, self.postproc_fns)
-            ]
+            if len(self.postproc_fns) == 1:
+                features = [self.postproc_fns[0](features)]
+            else:
+                features = [
+                    postproc_fn(feature)
+                    for feature, postproc_fn in zip(features, self.postproc_fns)
+                ]
 
         if len(features) == 1:
             features = features[0]
 
         return features
+
+    @tf.function
+    def simple_forward(self, tensor: TensorType) -> Union[tf.Tensor, List[tf.Tensor]]:
+        """Get the projection of tensor in the feature space of self.model
+
+        Args:
+            tensor (TensorType): input tensor (or dataset elem)
+
+        Returns:
+            tf.Tensor: features
+        """
+        return self.extractor(tensor, training=False)
 
     def predict(
         self,
