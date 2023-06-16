@@ -49,8 +49,18 @@ class Operator(ABC):
 
     @staticmethod
     @abstractmethod
-    def max(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
+    def max(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+    ) -> TensorType:
         """Max function"""
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def min(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+    ) -> TensorType:
+        """Min function"""
         raise NotImplementedError()
 
     @staticmethod

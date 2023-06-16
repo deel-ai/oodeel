@@ -28,15 +28,14 @@ from tests.tests_tensorflow import generate_data_tf
 from tests.tests_tensorflow import generate_model
 
 
-@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
-def test_gram(auroc_thr, fpr95_thr):
+def test_gram():
     """
     Test Mahalanobis on MNIST vs FashionMNIST OOD dataset-wise task
 
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    gram = Gram(output_layers_id=["conv2d"])
+    gram = Gram(output_layers_id=["conv2d", "dense"])
 
     input_shape = (32, 32, 3)
     num_labels = 10
@@ -49,4 +48,4 @@ def test_gram(auroc_thr, fpr95_thr):
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
     gram.fit(model, data)
-    assert gram.fitted.shape == (100, 961)
+    assert gram.fitted[0].shape == gram.fitted[1].shape == (100, 2)

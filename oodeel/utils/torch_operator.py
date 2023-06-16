@@ -69,12 +69,24 @@ class TorchOperator(Operator):
         return torch.argmax(tensor, dim=dim)
 
     @staticmethod
-    def max(tensor: TensorType, dim: Optional[int] = None) -> torch.Tensor:
+    def max(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+    ) -> torch.Tensor:
         """Max function"""
         if dim is None:
-            return torch.max(tensor)
+            return torch.max(tensor, keepdim=keepdim)
         else:
-            return torch.max(tensor, dim)[0]
+            return torch.max(tensor, dim, keepdim=keepdim)[0]
+
+    @staticmethod
+    def min(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+    ) -> torch.Tensor:
+        """Min function"""
+        if dim is None:
+            return torch.min(tensor, keepdim=keepdim)
+        else:
+            return torch.min(tensor, dim, keepdim=keepdim)[0]
 
     @staticmethod
     def one_hot(tensor: TensorType, num_classes: int) -> torch.Tensor:

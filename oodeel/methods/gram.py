@@ -91,4 +91,11 @@ class Gram(OODBaseDetector):
         feature_map = self.op.tril(feature_map, diagonal=-1)
         # directly sum row-wise (to limit computational burden)
         feature_map = self.op.sum(feature_map, dim=-2)
-        return feature_map
+        min_max = self.op.cat(
+            [
+                self.op.min(feature_map, dim=1, keepdim=True),
+                self.op.max(feature_map, dim=1, keepdim=True),
+            ],
+            dim=1,
+        )
+        return min_max

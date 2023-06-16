@@ -64,9 +64,18 @@ class TFOperator(Operator):
         return tf.argmax(tensor, axis=dim)
 
     @staticmethod
-    def max(tensor: TensorType, dim: Optional[int] = None) -> tf.Tensor:
+    def max(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+    ) -> tf.Tensor:
         """Max function"""
-        return tf.reduce_max(tensor, axis=dim)
+        return tf.reduce_max(tensor, axis=dim, keepdims=keepdim)
+
+    @staticmethod
+    def min(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+    ) -> tf.Tensor:
+        """Min function"""
+        return tf.reduce_min(tensor, axis=dim, keepdims=keepdim)
 
     @staticmethod
     def one_hot(tensor: TensorType, num_classes: int) -> tf.Tensor:
