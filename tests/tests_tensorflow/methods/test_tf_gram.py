@@ -20,13 +20,33 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .dknn import DKNN
-from .energy import Energy
-from .entropy import Entropy
-from .gram import Gram
-from .mahalanobis import Mahalanobis
-from .mls import MLS
-from .odin import ODIN
-from .vim import VIM
+import pytest
 
-__all__ = ["MLS", "DKNN", "ODIN", "Energy", "VIM", "Mahalanobis", "Entropy", "Gram"]
+from oodeel.methods import Gram
+from tests.tests_tensorflow import eval_detector_on_blobs
+from tests.tests_tensorflow import generate_data_tf
+from tests.tests_tensorflow import generate_model
+
+
+@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
+def test_gram(auroc_thr, fpr95_thr):
+    """
+    Test Mahalanobis on MNIST vs FashionMNIST OOD dataset-wise task
+
+    We check that the area under ROC is above a certain threshold, and that the FPR95TPR
+    is below an other threshold.
+    """
+    gram = Gram(output_layers_id=["conv2d"])
+
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    ).batch(samples // 2)
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    gram.fit(model, data)
+    assert gram.fitted.shape == (100, 961)
