@@ -201,11 +201,16 @@ class TorchOperator(Operator):
         return eigval, eigvec
 
     @staticmethod
-    def einsum(equation: str, *tensors: TensorType) -> TensorType:
+    def einsum(equation: str, *tensors: TensorType) -> torch.Tensor:
         "Computes the einsum between tensors following equation"
         return torch.einsum(equation, *tensors)
 
     @staticmethod
-    def tril(tensor: TensorType, diagonal: int = 0) -> TensorType:
+    def tril(tensor: TensorType, diagonal: int = 0) -> torch.Tensor:
         "Set the upper triangle of the matrix formed by the last two dimensions of tensor to zero"
         return torch.tril(tensor, diagonal)
+
+    @staticmethod
+    def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> torch.Tensor:
+        "sum along dim"
+        return torch.sum(tensor, dim)

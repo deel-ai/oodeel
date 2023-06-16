@@ -185,11 +185,16 @@ class TFOperator(Operator):
         return eigval, eigvec
 
     @staticmethod
-    def einsum(equation: str, *tensors: TensorType) -> TensorType:
+    def einsum(equation: str, *tensors: TensorType) -> tf.Tensor:
         "Computes the einsum between tensors following equation"
         return tf.einsum(equation, *tensors)
 
     @staticmethod
-    def tril(tensor: TensorType, diagonal: int = 0) -> TensorType:
+    def tril(tensor: TensorType, diagonal: int = 0) -> tf.Tensor:
         "Set the upper triangle of the matrix formed by the last two dimensions of tensor to zero"
         return tf.experimental.numpy.tril(tensor, k=diagonal)
+
+    @staticmethod
+    def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> tf.Tensor:
+        "sum along dim"
+        return tf.reduce_sum(tensor, axis=dim)

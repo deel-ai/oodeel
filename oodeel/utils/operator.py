@@ -183,3 +183,8 @@ class Operator(ABC):
     def tril(tensor: TensorType, diagonal: int = 0) -> TensorType:
         "Set the upper triangle of the matrix formed by the last two dimensions of tensor to zero"
         raise NotImplementedError()
+
+    @staticmethod
+    def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> TensorType:
+        "sum along dim"
+        raise NotImplementedError()
