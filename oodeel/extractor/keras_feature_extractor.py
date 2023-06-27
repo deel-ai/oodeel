@@ -53,8 +53,6 @@ class KerasFeatureExtractor(FeatureExtractor):
             Defaults to None.
         react_threshold: if not None, penultimate layer activations are clipped under
             this threshold value (useful for ReAct). Defaults to None.
-        penultimate_layer_id: identifier for the penultimate layer, used for ReAct.
-            Defaults to None.
     """
 
     def __init__(
@@ -63,7 +61,6 @@ class KerasFeatureExtractor(FeatureExtractor):
         output_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
-        penultimate_layer_id: Optional[Union[str, int]] = None,
     ):
         if input_layer_id is None:
             input_layer_id = 0
@@ -72,14 +69,17 @@ class KerasFeatureExtractor(FeatureExtractor):
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
-            penultimate_layer_id=penultimate_layer_id,
         )
 
         self.backend = "tensorflow"
         self.model.layers[-1].activation = getattr(tf.keras.activations, "linear")
 
+    @staticmethod
     def find_layer(
-        self, layer_id: Union[str, int], index_offset: int = 0
+        model: Callable,
+        layer_id: Union[str, int],
+        index_offset: int = 0,
+        return_id: bool = False,
     ) -> tf.keras.layers.Layer:
         """Find a layer in a model either by his name or by his index.
 
@@ -95,11 +95,18 @@ class KerasFeatureExtractor(FeatureExtractor):
             tf.keras.layers.Layer: the corresponding layer
         """
         if isinstance(layer_id, str):
-            layers_names = [layer.name for layer in self.model.layers]
+            layers_names = [layer.name for layer in model.layers]
             layer_id = layers_names.index(layer_id)
         if isinstance(layer_id, int):
-            return self.model.get_layer(index=layer_id + index_offset)
-        raise ValueError(f"Could not find any layer {layer_id}.")
+            layer_id += index_offset
+            layer = model.get_layer(index=layer_id)
+        else:
+            raise ValueError(f"Could not find any layer {layer_id}.")
+
+        if return_id:
+            return layer, layer_id
+        else:
+            return layer
 
     # @tf.function
     # TODO check with Thomas about @tf.function
@@ -109,25 +116,22 @@ class KerasFeatureExtractor(FeatureExtractor):
         Returns:
             tf.keras.models.Model: truncated model (extractor)
         """
-        input_layer = self.find_layer(self.input_layer_id)
+        input_layer = self.find_layer(self.model, self.input_layer_id)
         new_input = tf.keras.layers.Input(tensor=input_layer.input)
         output_tensors = [
-            self.find_layer(ol_id).output for ol_id in self.output_layers_id
+            self.find_layer(self.model, ol_id).output for ol_id in self.output_layers_id
         ]
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
-            assert isinstance(self.react_threshold, (float, int))
-            assert self.penultimate_layer_id is not None
-            penultimate_layer = self.find_layer(self.penultimate_layer_id)
+            penultimate_layer, penultimate_layer_id = self.find_layer(
+                self.model, self.output_layers_id[-1], index_offset=-1, return_id=True
+            )
+            self.penultimate_layer_id = penultimate_layer_id
             penult_extractor = tf.keras.models.Model(
                 new_input, penultimate_layer.output
             )
-            last_layer = self.find_layer(self.penultimate_layer_id, index_offset=1)
-            assert last_layer == self.find_layer(self.output_layers_id[-1]), (
-                "self.penultimate_layer_id should preceed the last element of"
-                + "self.output_layer_id"
-            )
+            last_layer = self.find_layer(self.model, self.output_layers_id[-1])
 
             # clip penultimate activations
             x = tf.clip_by_value(
@@ -196,4 +200,4 @@ class KerasFeatureExtractor(FeatureExtractor):
         Returns:
             List[tf.Tensor]: weights and biases matrixes
         """
-        return self.find_layer(layer_id).get_weights()
+        return self.find_layer(self.model, layer_id).get_weights()

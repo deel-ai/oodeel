@@ -41,32 +41,33 @@ class OODBaseDetector(ABC):
     """Base Class for methods that assign a score to unseen samples.
 
     Args:
-        output_layers_id (List[int]): list of str or int that identify features to output.
+        output_layers_id (List[int]): list of str or int that identify features to
+            output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [-1],
         input_layers_id (List[int]): = list of str or int that identify the input layer
             of the feature extractor.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to None.
-        react_quantile: if not None, a threshold corresponding to this quantile for the
-            penultimate layer activations is calculated, then used to clip the
-            activations under this threshold (ReAct method). Defaults to None.
-        penultimate_layer_id: identifier for the penultimate layer, used for ReAct.
-            Defaults to None.
+        use_react (bool): if true, apply ReAct method by clipping penultimate
+            activations under a threshold value.
+        react_quantile (Optional[float]): q value in the range [0, 1] used to compute
+            the react clipping threshold defined as the q-th quantile penultimate layer
+            activations. Defaults to 0.8.
     """
 
     def __init__(
         self,
         output_layers_id: List[Union[int, str]] = [-1],
         input_layers_id: Optional[Union[int, str]] = None,
-        react_quantile: Optional[float] = None,
-        penultimate_layer_id: Optional[Union[str, int]] = None,
+        use_react: bool = False,
+        react_quantile: float = 0.8,
     ):
         self.feature_extractor: FeatureExtractor = None
         self.output_layers_id = output_layers_id
         self.input_layers_id = input_layers_id
+        self.use_react = use_react
         self.react_quantile = react_quantile
-        self.penultimate_layer_id = penultimate_layer_id
         self.react_threshold = None
 
     @abstractmethod
@@ -100,8 +101,10 @@ class OODBaseDetector(ABC):
             model: model to extract the features from
             fit_dataset: dataset to fit the detector on
         """
+        self._import_backend_specific_stuff(model)
+
         # react: compute threshold (activation percentiles)
-        if self.react_quantile is not None:
+        if self.use_react:
             if fit_dataset is None:
                 raise ValueError(
                     "if react quantile is not None, fit_dataset must be"
@@ -114,6 +117,36 @@ class OODBaseDetector(ABC):
 
         if fit_dataset is not None:
             self._fit_to_dataset(fit_dataset)
+
+    def _import_backend_specific_stuff(self, model: Callable):
+        """Store as attributes backend specific data handler, operator and feature
+        extractor class.
+
+        Args:
+            model (Callable): a model (Keras or PyTorch) used to identify the backend.
+        """
+        if is_from(model, "keras"):
+            from ..extractor.keras_feature_extractor import KerasFeatureExtractor
+            from ..datasets.tf_data_handler import TFDataHandler
+            from ..utils import TFOperator
+
+            self.data_handler = TFDataHandler()
+            self.op = TFOperator()
+            self.backend = "tensorflow"
+            self.FeatureExtractorClass = KerasFeatureExtractor
+
+        elif is_from(model, "torch"):
+            from ..extractor.torch_feature_extractor import TorchFeatureExtractor
+            from ..datasets.torch_data_handler import TorchDataHandler
+            from ..utils import TorchOperator
+
+            self.data_handler = TorchDataHandler()
+            self.op = TorchOperator(model)
+            self.backend = "torch"
+            self.FeatureExtractorClass = TorchFeatureExtractor
+
+        else:
+            raise NotImplementedError()
 
     def _load_feature_extractor(
         self,
@@ -129,35 +162,11 @@ class OODBaseDetector(ABC):
         Returns:
             FeatureExtractor: a feature extractor instance
         """
-        if is_from(model, "keras"):
-            from ..extractor.keras_feature_extractor import KerasFeatureExtractor
-            from ..datasets.tf_data_handler import TFDataHandler
-            from ..utils import TFOperator
-
-            self.data_handler = TFDataHandler()
-            self.op = TFOperator()
-            self.backend = "tensorflow"
-            FeatureExtractor = KerasFeatureExtractor
-
-        elif is_from(model, "torch"):
-            from ..extractor.torch_feature_extractor import TorchFeatureExtractor
-            from ..datasets.torch_data_handler import TorchDataHandler
-            from ..utils import TorchOperator
-
-            self.data_handler = TorchDataHandler()
-            self.op = TorchOperator(model)
-            self.backend = "torch"
-            FeatureExtractor = TorchFeatureExtractor
-
-        else:
-            raise NotImplementedError()
-
         output_layers_id = output_layers_id or self.output_layers_id
-        feature_extractor = FeatureExtractor(
+        feature_extractor = self.FeatureExtractorClass(
             model,
             output_layers_id=output_layers_id,
             react_threshold=self.react_threshold,
-            penultimate_layer_id=self.penultimate_layer_id,
         )
         return feature_extractor
 
@@ -253,8 +262,10 @@ class OODBaseDetector(ABC):
         return np.array(oodness, dtype=np.bool)
 
     def compute_react_threshold(self, model: Callable, fit_dataset: DatasetType):
-        assert self.penultimate_layer_id is not None
-        output_layers_id = [self.penultimate_layer_id]
+        _, penultimate_layer_id = self.FeatureExtractorClass.find_layer(
+            model, self.output_layers_id[-1], index_offset=-1, return_id=True
+        )
+        output_layers_id = [penultimate_layer_id]
         penult_feat_extractor = self._load_feature_extractor(model, output_layers_id)
         unclipped_features = penult_feat_extractor.predict(fit_dataset)
         self.react_threshold = self.op.quantile(unclipped_features, self.react_quantile)
