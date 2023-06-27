@@ -120,20 +120,23 @@ class KerasFeatureExtractor(FeatureExtractor):
             assert isinstance(self.react_threshold, (float, int))
             assert self.penultimate_layer_id is not None
             penultimate_layer = self.find_layer(self.penultimate_layer_id)
-            next_layer = self.find_layer(self.penultimate_layer_id, index_offset=1)
-            left_extractor = tf.keras.models.Model(new_input, penultimate_layer.output)
-            right_extractor = tf.keras.models.Model(
-                tf.keras.layers.Input(tensor=next_layer.input), output_tensors[-1]
+            penult_extractor = tf.keras.models.Model(
+                new_input, penultimate_layer.output
             )
-            # join left and right extractors with clipping layer
-            x = new_input
-            x = left_extractor(x)
+            last_layer = self.find_layer(self.penultimate_layer_id, index_offset=1)
+            assert last_layer == self.find_layer(self.output_layers_id[-1]), (
+                "self.penultimate_layer_id should preceed the last element of"
+                + "self.output_layer_id"
+            )
+
+            # clip penultimate activations
             x = tf.clip_by_value(
-                x,
+                penult_extractor(new_input),
                 clip_value_min=tf.float32.min,
                 clip_value_max=self.react_threshold,
             )
-            output_tensors[-1] = right_extractor(x)
+            # apply ultimate layer on clipped activations
+            output_tensors[-1] = last_layer(x)
 
         extractor = tf.keras.models.Model(new_input, output_tensors)
         return extractor
