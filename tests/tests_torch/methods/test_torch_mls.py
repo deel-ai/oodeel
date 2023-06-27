@@ -29,7 +29,7 @@ from tests.tests_torch import eval_detector_on_blobs
 @pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
 def test_mls(auroc_thr, fpr95_thr):
     """
-    Test MLS on MNIST vs FashionMNIST OOD dataset-wise task
+    Test MLS on toy blobs OOD dataset-wise task
 
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
