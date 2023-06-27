@@ -29,8 +29,17 @@ from oodeel.methods import ODIN
 from tests.tests_torch import eval_detector_on_blobs
 
 
-@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
-def test_react(auroc_thr, fpr95_thr):
+@pytest.mark.parametrize(
+    "detector_name,auroc_thr,fpr95_thr",
+    [
+        ("odin", 0.95, 0.05),
+        ("mls", 0.95, 0.05),
+        ("msp", 0.95, 0.05),
+        ("energy", 0.95, 0.23),
+        ("entropy", 0.95, 0.05),
+    ],
+)
+def test_react(detector_name, auroc_thr, fpr95_thr):
     """
     Test ReAct + [MLS, MSP, Energy, ODIN, Entropy] on toy blobs OOD dataset-wise task
 
@@ -60,14 +69,13 @@ def test_react(auroc_thr, fpr95_thr):
         },
     }
 
-    for d in detectors.keys():
-        d_kwargs = detectors[d]["kwargs"]
-        detector = detectors[d]["class"](
-            react_quantile=0.995, penultimate_layer_id=-2, **d_kwargs
-        )
-        eval_detector_on_blobs(
-            detector=detector,
-            need_to_fit_dataset=True,
-            auroc_thr=auroc_thr,
-            fpr95_thr=fpr95_thr,
-        )
+    d_kwargs = detectors[detector_name]["kwargs"]
+    detector = detectors[detector_name]["class"](
+        use_react=True, react_quantile=0.9, **d_kwargs
+    )
+    eval_detector_on_blobs(
+        detector=detector,
+        need_to_fit_dataset=True,
+        auroc_thr=auroc_thr,
+        fpr95_thr=fpr95_thr,
+    )

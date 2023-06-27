@@ -43,23 +43,23 @@ class MLS(OODBaseDetector):
         output_activation (str): activation function for the last layer. If "linear",
             the method is MLS and if "softmax", the method is MSS.
             Defaults to "linear".
-        react_quantile: if not None, a threshold corresponding to this quantile for the
-            penultimate layer activations is calculated, then used to clip the
-            activations under this threshold (ReAct method). Defaults to None.
-        penultimate_layer_id: identifier for the penultimate layer, used for ReAct.
-            Defaults to None.
+        use_react (bool): if true, apply ReAct method by clipping penultimate
+            activations under a threshold value.
+        react_quantile (Optional[float]): q value in the range [0, 1] used to compute
+            the react clipping threshold defined as the q-th quantile penultimate layer
+            activations. Defaults to 0.8.
     """
 
     def __init__(
         self,
         output_activation: str = "linear",
-        react_quantile: Optional[float] = None,
-        penultimate_layer_id: Optional[Union[str, int]] = None,
+        use_react: bool = False,
+        react_quantile: float = 0.8,
     ):
         super().__init__(
             output_layers_id=[-1],
+            use_react=use_react,
             react_quantile=react_quantile,
-            penultimate_layer_id=penultimate_layer_id,
         )
         self.output_activation = output_activation
 

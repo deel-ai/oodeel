@@ -57,8 +57,6 @@ class TorchFeatureExtractor(FeatureExtractor):
             Defaults to None.
         react_threshold: if not None, penultimate layer activations are clipped under
             this threshold value (useful for ReAct). Defaults to None.
-        penultimate_layer_id: identifier for the penultimate layer, used for ReAct.
-            Defaults to None.
     """
 
     def __init__(
@@ -67,7 +65,6 @@ class TorchFeatureExtractor(FeatureExtractor):
         output_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
-        penultimate_layer_id: Optional[Union[str, int]] = None,
     ):
         model = model.eval()
         super().__init__(
@@ -75,7 +72,6 @@ class TorchFeatureExtractor(FeatureExtractor):
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
-            penultimate_layer_id=penultimate_layer_id,
         )
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
@@ -102,22 +98,38 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         return hook
 
-    def find_layer(self, layer_id: Union[str, int]) -> nn.Module:
+    @staticmethod
+    def find_layer(
+        model: nn.Module,
+        layer_id: Union[str, int],
+        index_offset: int = 0,
+        return_id: bool = False,
+    ) -> nn.Module:
         """Find a layer in a model either by his name or by his index.
 
         Args:
             layer_id (Union[str, int]): layer identifier
+            index_offset (int): index offset to find layers located before (negative
+                offset) or after (positive offset) the identified layer
 
         Returns:
             nn.Module: the corresponding layer
         """
         if isinstance(layer_id, int):
-            if isinstance(self.model, nn.Sequential):
-                return self.model[layer_id]
+            layer_id += index_offset
+            if isinstance(model, nn.Sequential):
+                layer = model[layer_id]
             else:
-                return list(self.model.named_modules())[layer_id][1]
+                layer = list(model.named_modules())[layer_id][1]
         else:
-            return dict(self.model.named_modules())[layer_id]
+            layer_id = list(dict(model.named_modules()).keys()).index(layer_id)
+            layer_id += index_offset
+            layer = list(model.named_modules())[layer_id][1]
+
+        if return_id:
+            return layer, layer_id
+        else:
+            return layer
 
     def prepare_extractor(self) -> None:
         """Prepare the feature extractor by adding hooks to self.model"""
@@ -126,14 +138,15 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
-            assert isinstance(self.react_threshold, (float, int))
-            assert self.penultimate_layer_id is not None
-            pen_layer = self.find_layer(self.penultimate_layer_id)
+            pen_layer, pen_layer_id = self.find_layer(
+                self.model, self.output_layers_id[-1], index_offset=-1, return_id=True
+            )
+            self.penultimate_layer_id = pen_layer_id
             pen_layer.register_forward_hook(self._get_clip_hook(self.react_threshold))
 
         # Register a hook to store feature values for each considered layer.
         for layer_id in self.output_layers_id:
-            layer = self.find_layer(layer_id)
+            layer = self.find_layer(self.model, layer_id)
             layer.register_forward_hook(self._get_features_hook(layer_id))
 
         # Crop model if input layer is provided
@@ -237,7 +250,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         Returns:
             List[torch.Tensor]: weights and biases matrixes
         """
-        layer = self.find_layer(layer_id)
+        layer = self.find_layer(self.model, layer_id)
         return [layer.weight.detach().cpu().numpy(), layer.bias.detach().cpu().numpy()]
 
     def _get_clip_hook(self, threshold: float) -> Callable:
@@ -260,8 +273,8 @@ class TorchFeatureExtractor(FeatureExtractor):
     def _clean_forward_hooks(self) -> None:
         """
         Remove all the forward hook attached to the model's layers. This function should
-        be called at the __init__, and avoid to accumulate the hooks when defining a
-        new TorchFeatureExtractor for the same model.
+        be called at the __init__, and prevent from accumulating the hooks when
+        defining a new TorchFeatureExtractor for the same model.
         """
 
         def __clean_hooks(m: nn.Module):
