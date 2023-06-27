@@ -23,9 +23,7 @@
 import numpy as np
 
 from ..types import DatasetType
-from ..types import Optional
 from ..types import TensorType
-from ..types import Union
 from .base import OODBaseDetector
 
 
