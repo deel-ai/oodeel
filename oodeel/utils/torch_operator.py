@@ -203,8 +203,13 @@ class TorchOperator(Operator):
     @staticmethod
     def quantile(tensor: TensorType, q: float, dim: int = None) -> torch.Tensor:
         "Computes the quantile of a tensor's components. q in (0,1)"
-        q = torch.quantile(tensor, q, dim)
-        return q.item() if dim is None else q
+        if dim is None:
+            # keep the 16 millions first elements (see torch.quantile issue:
+            # https://github.com/pytorch/pytorch/issues/64947)
+            tensor_flatten = tensor.view(-1)[:16_000_000]
+            return torch.quantile(tensor_flatten, q).item()
+        else:
+            return torch.quantile(tensor, q, dim)
 
     @staticmethod
     def relu(tensor: TensorType) -> torch.Tensor:
