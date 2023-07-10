@@ -64,6 +64,9 @@ class Mahalanobis(OODBaseDetector):
             # if one hot encoded labels, take the argmax
             if len(_labels.shape) > 1 and _labels.shape[1] > 1:
                 _labels = self.op.argmax(self.op.flatten(_labels), 1)
+            # if labels in two dimensions, squeeze them
+            if len(_labels.shape) > 1:
+                _labels = self.op.reshape(_labels, [_labels.shape[0]])
             # get features
             _features = self.feature_extractor.predict(_images)
             _features = self.op.flatten(_features)
