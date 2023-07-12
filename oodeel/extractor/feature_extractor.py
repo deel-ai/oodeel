@@ -28,6 +28,7 @@ from ..types import DatasetType
 from ..types import List
 from ..types import Optional
 from ..types import TensorType
+from ..types import Tuple
 from ..types import Union
 
 
@@ -114,6 +115,29 @@ class FeatureExtractor(ABC):
 
         Returns:
             TensorType: features
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def find_layer(
+        model: Callable,
+        layer_id: Union[str, int],
+        index_offset: int = 0,
+        return_id: bool = False,
+    ) -> Union[Callable, Tuple[Callable, str]]:
+        """Find a layer in a model either by his name or by his index.
+
+        Args:
+            model (nn.Module): model whose identified layer will be returned
+            layer_id (Union[str, int]): layer identifier
+            index_offset (int): index offset to find layers located before (negative
+                offset) or after (positive offset) the identified layer
+            return_id (bool): if True, the layer will be returned with its id
+
+        Returns:
+            Union[Callable, Tuple[Callable, str]]: the corresponding layer and its id if
+                return_id is True.
         """
         raise NotImplementedError()
 
