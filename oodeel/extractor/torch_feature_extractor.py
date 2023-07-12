@@ -34,6 +34,7 @@ from ..types import Callable
 from ..types import ItemType
 from ..types import List
 from ..types import TensorType
+from ..types import Tuple
 from ..types import Union
 from ..utils.torch_operator import sanitize_input
 from .feature_extractor import FeatureExtractor
@@ -104,16 +105,19 @@ class TorchFeatureExtractor(FeatureExtractor):
         layer_id: Union[str, int],
         index_offset: int = 0,
         return_id: bool = False,
-    ) -> nn.Module:
+    ) -> Union[nn.Module, Tuple[nn.Module, str]]:
         """Find a layer in a model either by his name or by his index.
 
         Args:
+            model (nn.Module): model whose identified layer will be returned
             layer_id (Union[str, int]): layer identifier
             index_offset (int): index offset to find layers located before (negative
                 offset) or after (positive offset) the identified layer
+            return_id (bool): if True, the layer will be returned with its id
 
         Returns:
-            nn.Module: the corresponding layer
+            Union[nn.Module, Tuple[nn.Module, str]]: the corresponding layer and its id
+                if return_id is True.
         """
         if isinstance(layer_id, int):
             layer_id += index_offset
