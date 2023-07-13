@@ -20,3 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from .features import plot_2D_features
+from .features import plot_3D_features
+from .metrics import plot_ood_scores
+from .metrics import plot_roc_curve
+from .plotly import plotly_3D_features
