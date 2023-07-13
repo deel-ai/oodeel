@@ -204,11 +204,11 @@ def test_prepare(shuffle, with_labels, with_ood_labels, expected_output):
         backend="torch",
     )
 
-    def preprocess_fn(inputs):
+    def preprocess_fn(*inputs):
         x = inputs[0] / 255
         return tuple([x] + list(inputs[1:]))
 
-    def augment_fn_(inputs):
+    def augment_fn_(*inputs):
         x = torchvision.transforms.RandomHorizontalFlip()(inputs[0])
         return tuple([x] + list(inputs[1:]))
 
