@@ -27,7 +27,6 @@ from typing import Optional
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 from ..datasets.torch_data_handler import TorchDataHandler
 from ..types import Callable
@@ -228,9 +227,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             return self.predict_tensor(tensor, detach=detach)
 
         features = [None for i in range(len(self.output_layers_id))]
-        for elem in tqdm(
-            dataset, desc="Extracting the dataset features...", total=len(dataset)
-        ):
+        for elem in dataset:
             tensor = TorchDataHandler.get_input_from_dataset_item(elem)
             features_batch = self.predict_tensor(tensor, detach=detach)
             if len(features) == 1:

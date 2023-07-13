@@ -33,7 +33,6 @@ from torch.utils.data import Dataset
 from torch.utils.data import Subset
 from torch.utils.data import TensorDataset
 from torch.utils.data.dataloader import default_collate
-from tqdm import tqdm
 
 from ..types import Any
 from ..types import Callable
@@ -207,11 +206,7 @@ class DictDataset(Dataset):
         Returns:
             DictDataset: Filtered dataset
         """
-        indices = [
-            i
-            for i in tqdm(range(len(self)), desc="Filtering the dataset...")
-            if filter_fn(self[i])
-        ]
+        indices = [i for i in range(len(self)) if filter_fn(self[i])]
         dataset = self if inplace else copy.deepcopy(self)
         dataset._dataset = Subset(self._dataset, indices)
         return dataset
@@ -476,12 +471,7 @@ class TorchDataHandler(DataHandler):
         """
 
         features = dataset.map(lambda x: x[feature_key])
-        features = np.stack(
-            [
-                f.numpy()
-                for f in tqdm(features, desc="Extracting feature from dataset...")
-            ]
-        )
+        features = np.stack([f.numpy() for f in features])
         return features
 
     @staticmethod
