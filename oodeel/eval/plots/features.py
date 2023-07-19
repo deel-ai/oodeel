@@ -31,7 +31,7 @@ from sklearn.manifold import TSNE
 from ...types import Callable
 from ...types import DatasetType
 from ...types import Union
-from ...utils import is_from
+from ...utils import import_backend_specific_stuff
 
 sns.set_style("darkgrid")
 
@@ -43,26 +43,6 @@ PROJ_DICT = {
     },
     "PCA": {"name": "PCA", "class": PCA, "default_kwargs": dict()},
 }
-
-
-def _import_backend_relative_stuff(model: Callable):
-    if is_from(model, "keras"):
-        from ...extractor.keras_feature_extractor import KerasFeatureExtractor
-        from ...utils import TFOperator
-
-        op = TFOperator()
-        FeatureExtractorClass = KerasFeatureExtractor
-
-    elif is_from(model, "torch"):
-        from ...extractor.torch_feature_extractor import TorchFeatureExtractor
-        from ...utils import TorchOperator
-
-        op = TorchOperator(model)
-        FeatureExtractorClass = TorchFeatureExtractor
-
-    else:
-        raise NotImplementedError()
-    return op, FeatureExtractorClass
 
 
 def plot_2D_features(
@@ -182,7 +162,7 @@ def _plot_features(
     max_samples = max_samples if out_dataset is None else max_samples // 2
 
     # feature extractor
-    op, FeatureExtractorClass = _import_backend_relative_stuff(model)
+    _, _, op, FeatureExtractorClass = import_backend_specific_stuff(model)
     feature_extractor = FeatureExtractorClass(model, [output_layer_id])
 
     # === extract id features ===

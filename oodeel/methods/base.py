@@ -34,7 +34,7 @@ from ..types import List
 from ..types import Optional
 from ..types import TensorType
 from ..types import Union
-from ..utils import is_from
+from ..utils import import_backend_specific_stuff
 
 
 class OODBaseDetector(ABC):
@@ -101,7 +101,12 @@ class OODBaseDetector(ABC):
             model: model to extract the features from
             fit_dataset: dataset to fit the detector on
         """
-        self._import_backend_specific_stuff(model)
+        (
+            self.backend,
+            self.data_handler,
+            self.op,
+            self.FeatureExtractorClass,
+        ) = import_backend_specific_stuff(model)
 
         # react: compute threshold (activation percentiles)
         if self.use_react:
@@ -117,36 +122,6 @@ class OODBaseDetector(ABC):
 
         if fit_dataset is not None:
             self._fit_to_dataset(fit_dataset)
-
-    def _import_backend_specific_stuff(self, model: Callable):
-        """Store as attributes backend specific data handler, operator and feature
-        extractor class.
-
-        Args:
-            model (Callable): a model (Keras or PyTorch) used to identify the backend.
-        """
-        if is_from(model, "keras"):
-            from ..extractor.keras_feature_extractor import KerasFeatureExtractor
-            from ..datasets.tf_data_handler import TFDataHandler
-            from ..utils import TFOperator
-
-            self.data_handler = TFDataHandler()
-            self.op = TFOperator()
-            self.backend = "tensorflow"
-            self.FeatureExtractorClass = KerasFeatureExtractor
-
-        elif is_from(model, "torch"):
-            from ..extractor.torch_feature_extractor import TorchFeatureExtractor
-            from ..datasets.torch_data_handler import TorchDataHandler
-            from ..utils import TorchOperator
-
-            self.data_handler = TorchDataHandler()
-            self.op = TorchOperator(model)
-            self.backend = "torch"
-            self.FeatureExtractorClass = TorchFeatureExtractor
-
-        else:
-            raise NotImplementedError()
 
     def _load_feature_extractor(
         self,
