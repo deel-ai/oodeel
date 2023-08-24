@@ -58,12 +58,21 @@ class OODBaseDetector(ABC):
 
     def __init__(
         self,
-        output_layers_id: List[Union[int, str]] = [-1],
+        output_layers_id: List[Union[int, str]] = None,
         input_layers_id: Optional[Union[int, str]] = None,
         use_react: bool = False,
         react_quantile: float = 0.8,
     ):
         self.feature_extractor: FeatureExtractor = None
+        if output_layers_id is None:
+            raise ValueError(
+                "Explicitely specify output_layers_id=[layer0, layer1,...], "
+                + "where layer0, "
+                + "layer1,... are the names of the desired output layers of your model"
+                + ". These can be int"
+                + " or str. To know what to put, have a look at model.summary() "
+                + "with keras or model.named_module()"
+            )
         self.output_layers_id = output_layers_id
         self.input_layers_id = input_layers_id
         self.use_react = use_react
