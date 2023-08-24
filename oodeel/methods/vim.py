@@ -53,7 +53,6 @@ class VIM(OODBaseDetector):
 
     Args:
         output_layers_id (List[Union[int, str]]): features to use for Residual score.
-            The output_id for the Energy score is set to -1 by default).
         princ_dims (Union[int, float]): number of principal dimensions of in distribution
             features to consider. If an int, must be less than the dimension of the
             feature space. If a float, it must be in [0,1), it represents the ratio of
