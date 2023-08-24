@@ -36,16 +36,16 @@ class DKNN(OODBaseDetector):
     https://arxiv.org/abs/2204.06507
 
     Args:
+        output_layers_id List[Union[int, str]]: feature space on which to compute
+            nearest neighbors.
         nearest: number of nearest neighbors to consider.
             Defaults to 1.
-        output_layers_id: feature space on which to compute nearest neighbors.
-            Defaults to [-2].
     """
 
     def __init__(
         self,
+        output_layers_id: List[Union[int, str]],
         nearest: int = 1,
-        output_layers_id: List[int] = [-2],
     ):
         super().__init__(
             output_layers_id=output_layers_id,
