@@ -1,7 +1,7 @@
 
 Oodeel is designed to work with both Tensorflow and Pytorch models. However, we wanted to avoid duplicate code as much as possible.
 
-Hence, we created the class `Operator` and the child classes `TFOperator` (API [here](../api/tf_operator)) and `TorchOperator` (API [here](../api/torch_operator)) to seamlessly perform basic operations on `tf.Tensor`or `torch.tensor`, for instance `mean`, `matmul`, `cat`, `softmax`...
+Hence, we created the class `Operator` and the child classes `TFOperator` (API [here](../../api/tf_operator)) and `TorchOperator` (API [here](../../api/torch_operator)) to seamlessly perform basic operations on `tf.Tensor`or `torch.tensor`, for instance `mean`, `matmul`, `cat`, `softmax`...
 
 !!! info
     Using this feature is not required to implement your own baselines with your favorite library, but only if you want your baseline to be usable with both Tensorflow and Pytorch.
@@ -43,7 +43,7 @@ elif backend == "tensorflow":
 ```
 
 !!! tip
-    If you do not know in advance from which library the input tensor will come from, there is a nice function we implemented for you: `is_from` (see [here](../api/utils))
+    If you do not know in advance from which library the input tensor will come from, there is a nice function we implemented for you: `is_from` (see [here](../../api/utils))
 
 now it is possible to seamlessly use your `operator` to process your `tensor`:
 
