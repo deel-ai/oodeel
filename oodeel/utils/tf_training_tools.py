@@ -62,7 +62,6 @@ def train_tf_model(
     model: Union[tf.keras.Model, str],
     input_shape: tuple,
     num_classes: int,
-    is_prepared: bool = True,
     batch_size: int = 128,
     epochs: int = 50,
     loss: str = "sparse_categorical_crossentropy",
@@ -84,8 +83,6 @@ def train_tf_model(
             from tf.keras.applications or "toy_convnet"
         input_shape (tuple): Shape of the input images.
         num_classes (int): Number of output classes.
-        is_prepared (bool, optional): If train_data is a pipeline already prepared
-            for training (with batch, shufle, cache etc...). Defaults to False.
         batch_size (int, optional): Defaults to 128.
         epochs (int, optional): Defaults to 50.
         loss (str, optional): Defaults to "sparse_categorical_crossentropy".
@@ -137,45 +134,6 @@ def train_tf_model(
             model = tf.keras.Model(backbone.layers[0].input, output)
 
     n_samples = TFDataHandler.get_dataset_length(train_data)
-
-    # Prepare data
-    if not is_prepared:
-
-        def _preprocess_fn(*inputs):
-            x = inputs[0] / 255
-            return tuple([x] + list(inputs[1:]))
-
-        padding = 4
-        image_size = input_shape[0]
-        target_size = image_size + padding * 2
-        nb_channels = input_shape[2]
-
-        def _augment_fn(images, labels):
-            images = tf.image.pad_to_bounding_box(
-                images, padding, padding, target_size, target_size
-            )
-            images = tf.image.random_crop(images, (image_size, image_size, nb_channels))
-            images = tf.image.random_flip_left_right(images)
-            return images, labels
-
-        train_data = (
-            train_data.map(
-                _preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
-            )
-            .map(_augment_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-            .shuffle(n_samples)
-            .batch(batch_size)
-            .prefetch(tf.data.experimental.AUTOTUNE)
-        )
-
-        if validation_data is not None:
-            validation_data = (
-                validation_data.map(
-                    _preprocess_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE
-                )
-                .batch(batch_size)
-                .prefetch(tf.data.experimental.AUTOTUNE)
-            )
 
     # Prepare callbacks
     model_checkpoint_callback = []
