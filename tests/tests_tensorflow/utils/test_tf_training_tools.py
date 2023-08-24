@@ -35,12 +35,11 @@ def test_convnet_classifier():
         "epochs": 3,
         "input_shape": input_shape,
         "num_classes": num_labels,
-        "is_prepared": False,
     }
 
     data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )
+    ).batch(samples // 2)
 
     train_tf_model(data, **train_config)
 
@@ -55,12 +54,11 @@ def test_train_tf_model_imagenet():
         "epochs": 3,
         "input_shape": input_shape,
         "num_classes": num_labels,
-        "is_prepared": False,
     }
 
     data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )
+    ).batch(samples // 2)
 
     train_tf_model(data, model="MobileNet", imagenet_pretrained=True, **train_config)
 
@@ -75,16 +73,15 @@ def test_train_tf_model():
         "epochs": 3,
         "input_shape": input_shape,
         "num_classes": num_labels,
-        "is_prepared": False,
     }
 
     data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )
+    ).batch(samples // 2)
 
     validation_data = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
-    )
+    ).batch(samples // 2)
 
     train_tf_model(
         data,
