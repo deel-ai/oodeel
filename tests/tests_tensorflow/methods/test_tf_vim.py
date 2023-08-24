@@ -34,5 +34,5 @@ def test_vim(auroc_thr, fpr95_thr):
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    vim = VIM()
+    vim = VIM(output_layers_id=[-2])
     eval_detector_on_blobs(detector=vim, auroc_thr=auroc_thr, fpr95_thr=fpr95_thr)
