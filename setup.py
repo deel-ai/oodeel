@@ -39,6 +39,8 @@ requirements = [
     "matplotlib",
     "kneed",
     "pandas",
+    "seaborn",
+    "plotly",
 ]
 
 tensorflow_requirements = [
