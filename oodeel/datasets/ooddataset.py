@@ -257,54 +257,6 @@ class OODDataset(object):
             OODDataset(out_data, backend=self.backend),
         )
 
-    def get_dataset(
-        self,
-        with_ood_labels: bool = False,
-        with_labels: bool = True,
-    ) -> DatasetType:
-        """Return the dataset in a tuple format and correct labels, without preparing
-        for training or inference.
-
-        Args:
-            with_ood_labels (bool, optional): To return the dataset with ood_labels.
-                Defaults to False.
-            with_labels (bool, optional): To return the dataset with labels.
-                Defaults to True.
-
-        Returns:
-            DatasetType : dataset
-        """
-        # Check if the dataset has at least one of label and ood_label
-        assert (
-            with_ood_labels or with_labels
-        ), "The dataset must have at least one of label and ood_label"
-
-        # Check if the dataset has ood_labels when asked to return with_ood_labels
-        if with_ood_labels:
-            assert (
-                self.has_ood_label
-            ), "Please assign ood labels before preparing with ood_labels"
-
-        dataset_to_prepare = self.data
-
-        # Making the dataset channel first if the backend is pytorch
-        if self.backend in ["torch", "pytorch"]:
-            dataset_to_prepare = self._data_handler.make_channel_first(
-                dataset_to_prepare
-            )
-
-        # Select the keys to be returned
-        if with_ood_labels and with_labels:
-            keys = [self.input_key, "label", "ood_label"]
-        elif with_ood_labels and not with_labels:
-            keys = [self.input_key, "ood_label"]
-        else:
-            keys = [self.input_key, "label"]
-
-        # Transform the dataset from dict to tuple
-        dataset_to_prepare = self._data_handler.dict_to_tuple(dataset_to_prepare, keys)
-        return dataset_to_prepare
-
     def prepare(
         self,
         batch_size: int = 128,
