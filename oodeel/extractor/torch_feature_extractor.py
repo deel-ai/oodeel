@@ -61,14 +61,12 @@ class TorchFeatureExtractor(FeatureExtractor):
         model: nn.Module,
         output_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
-        postproc_fns: Optional[List[Callable]] = None,
     ):
         model = model.eval()
         super().__init__(
             model=model,
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
-            postproc_fns=postproc_fns,
         )
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
@@ -147,7 +145,10 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     @sanitize_input
     def predict_tensor(
-        self, x: TensorType, detach: bool = True
+        self,
+        x: TensorType,
+        postproc_fns: Optional[Callable] = None,
+        detach: bool = True,
     ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Get the projection of tensor in the feature space of self.model
 
@@ -170,13 +171,13 @@ class TorchFeatureExtractor(FeatureExtractor):
         else:
             features = [self._features[layer_id] for layer_id in self.output_layers_id]
 
-        if self.postproc_fns is not None:
-            if len(self.postproc_fns) == 1:
-                features = [self.postproc_fns[0](features)]
+        if postproc_fns is not None:
+            if len(postproc_fns) == 1:
+                features = [postproc_fns[0](features)]
             else:
                 features = [
                     postproc_fn(feature)
-                    for feature, postproc_fn in zip(features, self.postproc_fns)
+                    for feature, postproc_fn in zip(features, postproc_fns)
                 ]
 
         if len(features) == 1:
@@ -185,7 +186,11 @@ class TorchFeatureExtractor(FeatureExtractor):
         return features
 
     def predict(
-        self, dataset: Union[DataLoader, ItemType], detach: bool = True, **kwargs
+        self,
+        dataset: Union[DataLoader, ItemType],
+        postproc_fns: Optional[Callable] = None,
+        detach: bool = True,
+        **kwargs
     ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
 
@@ -201,14 +206,14 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         if isinstance(dataset, get_args(ItemType)):
             tensor = TorchDataHandler.get_input_from_dataset_item(dataset)
-            return self.predict_tensor(tensor, detach=detach)
+            return self.predict_tensor(tensor, postproc_fns, detach=detach)
 
         features = [None for i in range(len(self.output_layers_id))]
         for elem in tqdm(
             dataset, desc="Extracting the dataset features...", total=len(dataset)
         ):
             tensor = TorchDataHandler.get_input_from_dataset_item(elem)
-            features_batch = self.predict_tensor(tensor, detach=detach)
+            features_batch = self.predict_tensor(tensor, postproc_fns, detach=detach)
             if len(features) == 1:
                 features_batch = [features_batch]
             for i, f in enumerate(features_batch):

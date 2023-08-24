@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import faiss
 import numpy as np
 
 from ..types import DatasetType
@@ -57,7 +56,7 @@ class Gram(OODBaseDetector):
         Args:
             fit_dataset: input dataset (ID) to construct the index with.
         """
-        fit_projected = self.feature_extractor.predict(fit_dataset)
+        fit_projected = self.feature_extractor.predict(fit_dataset, self.postproc_fns)
         self.fitted = fit_projected
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -72,7 +71,7 @@ class Gram(OODBaseDetector):
             scores
         """
 
-        input_projected = self.feature_extractor(inputs)
+        input_projected = self.feature_extractor(inputs, self.postproc_fns)
 
     def row_wise_sums(self, feature_map):
         fm_s = feature_map.shape

@@ -59,7 +59,7 @@ class OODBaseDetector(ABC):
         self.feature_extractor: FeatureExtractor = None
         self.output_layers_id = output_layers_id
         self.input_layers_id = input_layers_id
-        self.postproc_fns = postproc_fns
+        self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
 
     @abstractmethod
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -77,6 +77,31 @@ class OODBaseDetector(ABC):
             NotImplementedError: _description_
         """
         raise NotImplementedError()
+
+    def _sanitize_posproc_fns(
+        self,
+        postproc_fns: Union[List[Callable], None],
+    ) -> List[Callable]:
+        """Sanitize postproc fns used at each layer output of the feature extractor.
+
+        Args:
+            postproc_fns (Optional[List[Callable]], optional): List of postproc functions,
+                one per output layer. Defaults to None.
+
+        Returns:
+            List[Callable]: Sanitized postproc_fns list
+        """
+        if postproc_fns is not None:
+            assert len(postproc_fns) == len(
+                self.output_layers_id
+            ), "len of postproc_fns and output_layers_id must match"
+
+            def identity(x):
+                return x
+
+            postproc_fns = [identity if fn is None else fn for fn in postproc_fns]
+
+        return postproc_fns
 
     def fit(
         self,
@@ -137,7 +162,6 @@ class OODBaseDetector(ABC):
             model,
             input_layer_id=self.input_layers_id,
             output_layers_id=self.output_layers_id,
-            postproc_fns=self.postproc_fns,
         )
         return feature_extractor
 

@@ -58,7 +58,6 @@ class KerasFeatureExtractor(FeatureExtractor):
         model: Callable,
         output_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Optional[Union[int, str]] = None,
-        postproc_fns: Optional[List[Callable]] = None,
     ):
         if input_layer_id is None:
             input_layer_id = 0
@@ -66,7 +65,6 @@ class KerasFeatureExtractor(FeatureExtractor):
             model=model,
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
-            postproc_fns=postproc_fns,
         )
 
         self.backend = "tensorflow"
@@ -108,7 +106,11 @@ class KerasFeatureExtractor(FeatureExtractor):
         return extractor
 
     @sanitize_input
-    def predict_tensor(self, tensor: TensorType) -> Union[tf.Tensor, List[tf.Tensor]]:
+    def predict_tensor(
+        self,
+        tensor: TensorType,
+        postproc_fns: Optional[Callable] = None,
+    ) -> Union[tf.Tensor, List[tf.Tensor]]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
@@ -117,15 +119,14 @@ class KerasFeatureExtractor(FeatureExtractor):
         Returns:
             tf.Tensor: features
         """
-        features = self.simple_forward(tensor)
-
-        if self.postproc_fns is not None:
-            if len(self.postproc_fns) == 1:
-                features = [self.postproc_fns[0](features)]
+        features = self.extractor(tensor, training=False)
+        if postproc_fns is not None:
+            if len(postproc_fns) == 1:
+                features = [postproc_fns[0](features)]
             else:
                 features = [
                     postproc_fn(feature)
-                    for feature, postproc_fn in zip(features, self.postproc_fns)
+                    for feature, postproc_fn in zip(features, postproc_fns)
                 ]
 
         if len(features) == 1:
@@ -133,21 +134,10 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         return features
 
-    @tf.function
-    def simple_forward(self, tensor: TensorType) -> Union[tf.Tensor, List[tf.Tensor]]:
-        """Get the projection of tensor in the feature space of self.model
-
-        Args:
-            tensor (TensorType): input tensor (or dataset elem)
-
-        Returns:
-            tf.Tensor: features
-        """
-        return self.extractor(tensor, training=False)
-
     def predict(
         self,
         dataset: Union[ItemType, tf.data.Dataset],
+        postproc_fns: Optional[Callable] = None,
         **kwargs,
     ) -> Union[tf.Tensor, List[tf.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
@@ -161,12 +151,12 @@ class KerasFeatureExtractor(FeatureExtractor):
         """
         if isinstance(dataset, get_args(ItemType)):
             tensor = TFDataHandler.get_input_from_dataset_item(dataset)
-            return self.predict_tensor(tensor)
+            return self.predict_tensor(tensor, postproc_fns)
 
         features = [None for i in range(len(self.output_layers_id))]
         for elem in dataset:
             tensor = TFDataHandler.get_input_from_dataset_item(elem)
-            features_batch = self.predict_tensor(tensor)
+            features_batch = self.predict_tensor(tensor, postproc_fns)
             if len(features) == 1:
                 features_batch = [features_batch]
             for i, f in enumerate(features_batch):
