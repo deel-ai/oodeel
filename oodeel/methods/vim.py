@@ -198,3 +198,13 @@ class VIM(OODBaseDetector):
         plt.legend()
         plt.ylabel("Residual explained variance")
         plt.xlabel("Number of principal dimensions")
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return True
