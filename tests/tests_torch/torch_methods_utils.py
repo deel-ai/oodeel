@@ -84,7 +84,6 @@ def load_blob_mlp():
 
 def eval_detector_on_blobs(
     detector,
-    need_to_fit_dataset,
     auroc_thr=0.6,
     fpr95_thr=0.3,
     batch_size=128,
@@ -100,7 +99,7 @@ def eval_detector_on_blobs(
     model = load_blob_mlp()
 
     # fit ood detector
-    if need_to_fit_dataset:
+    if detector.requires_to_fit_dataset or detector.use_react:
         detector.fit(model, ds_fit)
     else:
         detector.fit(model)

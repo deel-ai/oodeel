@@ -37,7 +37,6 @@ def test_odin(auroc_thr, fpr95_thr):
     odin = ODIN()
     eval_detector_on_blobs(
         detector=odin,
-        need_to_fit_dataset=False,
         auroc_thr=auroc_thr,
         fpr95_thr=fpr95_thr,
     )

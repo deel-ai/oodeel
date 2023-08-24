@@ -37,7 +37,6 @@ def test_energy(auroc_thr, fpr95_thr):
     energy = Energy()
     eval_detector_on_blobs(
         detector=energy,
-        need_to_fit_dataset=False,
         auroc_thr=auroc_thr,
         fpr95_thr=fpr95_thr,
     )
