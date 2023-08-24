@@ -107,6 +107,7 @@ class OODBaseDetector(ABC):
         self,
         model: Callable,
         fit_dataset: Optional[Union[ItemType, DatasetType]] = None,
+        **kwargs,
     ) -> None:
         """Prepare the detector for scoring:
         * Constructs the feature extractor based on the model
@@ -120,7 +121,7 @@ class OODBaseDetector(ABC):
         self.feature_extractor = self._load_feature_extractor(model)
 
         if fit_dataset is not None:
-            self._fit_to_dataset(fit_dataset)
+            self._fit_to_dataset(fit_dataset, **kwargs)
 
     def _load_feature_extractor(
         self,
