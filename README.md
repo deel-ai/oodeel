@@ -73,6 +73,8 @@ cd oodeel
 make prepare-dev
 ```
 
+> **Note:** If you want to install oodeel for a specific backend, replace the last line with either `make prepare-dev-torch` (for torch users) or `make prepare-dev-tf` (for tensorflow users).
+
 Now that *oodeel* is installed, here are some basic examples of what you can do with the available modules. See also the notebooks directory for more advanced examples.
 
 ## For benchmarking with one dataset as in-distribution and another as out-of-distribution
