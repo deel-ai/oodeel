@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from ..types import Any
+from ..types import Callable
 
 
 def is_from(model_or_tensor: Any, framework: str) -> bool:
@@ -40,3 +41,41 @@ def is_from(model_or_tensor: Any, framework: str) -> bool:
         for keyword in class_list:
             keywords_list.append(keyword)
     return framework in keywords_list
+
+
+def import_backend_specific_stuff(model: Callable):
+    """Get backend specific data handler, operator and feature extractor class.
+
+    Args:
+        model (Callable): a model (Keras or PyTorch) used to identify the backend.
+
+    Returns:
+        str: backend name
+        DataHandler: torch or tf data handler
+        Operator: torch or tf operator
+        FeatureExtractor: torch or tf feature extractor class
+    """
+    if is_from(model, "keras"):
+        from ..extractor.keras_feature_extractor import KerasFeatureExtractor
+        from ..datasets.tf_data_handler import TFDataHandler
+        from ..utils import TFOperator
+
+        backend = "tensorflow"
+        data_handler = TFDataHandler()
+        op = TFOperator()
+        FeatureExtractorClass = KerasFeatureExtractor
+
+    elif is_from(model, "torch"):
+        from ..extractor.torch_feature_extractor import TorchFeatureExtractor
+        from ..datasets.torch_data_handler import TorchDataHandler
+        from ..utils import TorchOperator
+
+        backend = "torch"
+        data_handler = TorchDataHandler()
+        op = TorchOperator(model)
+        FeatureExtractorClass = TorchFeatureExtractor
+
+    else:
+        raise NotImplementedError()
+
+    return backend, data_handler, op, FeatureExtractorClass

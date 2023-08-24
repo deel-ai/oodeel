@@ -20,19 +20,49 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .general_utils import import_backend_specific_stuff
-from .general_utils import is_from
+import matplotlib.pyplot as plt
+import torch
 
-try:
-    import tensorflow as tf
-    from .tf_operator import TFOperator
-    from .tf_training_tools import train_tf_model
-except ImportError:
-    pass
+from oodeel.eval.plots import plot_2D_features
+from oodeel.eval.plots import plot_3D_features
+from oodeel.eval.plots import plot_ood_scores
+from oodeel.eval.plots import plot_roc_curve
+from oodeel.eval.plots import plotly_3D_features
+from oodeel.methods import MLS
+from tests.tests_torch.torch_methods_utils import load_blob_mlp
+from tests.tests_torch.torch_methods_utils import load_blobs_data
 
-try:
-    import torch
-    from .torch_operator import TorchOperator
-    from .torch_training_tools import train_torch_model
-except ImportError:
-    pass
+
+def test_mls_blobs_plots():
+    # seed
+    torch.manual_seed(1)
+
+    # load data
+    batch_size = 128
+    ds_fit, ds_in, ds_out = load_blobs_data(batch_size)
+
+    # get classifier
+    model = load_blob_mlp()
+
+    # fit ood detector
+    detector = MLS()
+    detector.fit(model)
+
+    # ood scores
+    scores_in = detector.score(ds_in)
+    scores_out = detector.score(ds_out)
+
+    # static plots (matplotlib + seaborn)
+    plt.figure()
+    plt.subplot(141)
+    plot_2D_features(model, ds_in, -2, ds_out, "TSNE")
+    plt.subplot(142, projection="3d")
+    plot_3D_features(model, ds_in, -2, ds_out, "PCA")
+    plt.subplot(143)
+    plot_ood_scores(scores_in, scores_out)
+    plt.subplot(144)
+    plot_roc_curve(scores_in, scores_out)
+    plt.show()
+
+    # interactive plot (plotly)
+    plotly_3D_features(model, ds_in, -2, ds_out, "PCA")
