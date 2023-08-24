@@ -164,22 +164,53 @@ class KerasFeatureExtractor(FeatureExtractor):
         return features
 
     def predict(
-        self, dataset: Union[ItemType, tf.data.Dataset], **kwargs
+        self,
+        dataset: Union[ItemType, tf.data.Dataset],
+        return_labels: bool = False,
+        **kwargs,
     ) -> Union[tf.Tensor, List[tf.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
             dataset (Union[ItemType, tf.data.Dataset]): input dataset
+            return_labels (bool): if True, labels are returned in addition to the
+                features. If labels are one-hot encoded, the single label value is
+                returned instead.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
             List[tf.Tensor]: features
         """
+
+        def _get_label(item):
+            """Retrieve label tensor from item as a tuple/list. Label must be at index 1
+            in the item tuple. If one-hot encoded, labels are converted to single value.
+            """
+            label = item[1]  # labels must be at index 1 in the item tuple
+            # If labels are one-hot encoded, take the argmax
+            if tf.rank(label) > 1 and label.shape[1] > 1:
+                label = tf.reshape(label, shape=[label.shape[0], -1])
+                label = tf.argmax(label, axis=1)
+            # If labels are in two dimensions, squeeze them
+            if len(label.shape) > 1:
+                label = tf.reshape(label, [label.shape[0]])
+            return label
+
+        labels = None
+
         if isinstance(dataset, get_args(ItemType)):
             tensor = TFDataHandler.get_input_from_dataset_item(dataset)
-            return self.predict_tensor(tensor)
+            features = self.predict_tensor(tensor)
+
+            # Get labels if dataset is a tuple/list
+            if return_labels and isinstance(dataset, (list, tuple)):
+                labels = _get_label(dataset)
+            if return_labels:
+                return features, labels
+            return features
 
         features = [None for i in range(len(self.output_layers_id))]
+        contains_labels = TFDataHandler.get_item_length(dataset) > 1
         for elem in dataset:
             tensor = TFDataHandler.get_input_from_dataset_item(elem)
             features_batch = self.predict_tensor(tensor)
@@ -190,9 +221,21 @@ class KerasFeatureExtractor(FeatureExtractor):
                     f if features[i] is None else tf.concat([features[i], f], axis=0)
                 )
 
+            # Concatenate labels of current batch with previous batches
+            if return_labels and contains_labels:
+                lbl_batch = _get_label(elem)
+
+                if labels is None:
+                    labels = lbl_batch
+                else:
+                    labels = tf.concat([labels, lbl_batch], axis=0)
+
         # No need to return a list when there is only one input layer
         if len(features) == 1:
             features = features[0]
+
+        if return_labels:
+            return features, labels
         return features
 
     def get_weights(self, layer_id: Union[int, str]) -> List[tf.Tensor]:

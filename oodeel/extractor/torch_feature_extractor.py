@@ -208,25 +208,61 @@ class TorchFeatureExtractor(FeatureExtractor):
         return features
 
     def predict(
-        self, dataset: Union[DataLoader, ItemType], detach: bool = True, **kwargs
+        self,
+        dataset: Union[DataLoader, ItemType],
+        detach: bool = True,
+        return_labels: bool = False,
+        **kwargs
     ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
             dataset (Union[DataLoader, ItemType]): input dataset
-            detach (bool): if True, return features detached from the computational
-                graph. Defaults to True.
+            detach (bool): if True, return features detached from the computational graph.
+                Defaults to True.
+            return_labels (bool): if True, labels are returned in addition to the
+                features. If labels are one-hot encoded, the single label value is
+                returned instead.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
             List[torch.Tensor]: features
         """
 
+        def _get_label(item):
+            """Retrieve label tensor from item as a tuple/list. Label must be at index 1
+            in the item tuple. If one-hot encoded, labels are converted to single value.
+            """
+            label = item[1]  # labels must be at index 1 in the batch tuple
+            # If labels are one-hot encoded, take the argmax
+            if len(label.shape) > 1 and label.shape[1] > 1:
+                label = label.view(label.size(0), -1)
+                label = torch.argmax(label, dim=1)
+            # If labels are in two dimensions, squeeze them
+            if len(label.shape) > 1:
+                label = label.view([label.shape[0]])
+            return label
+
+        labels = None
+
         if isinstance(dataset, get_args(ItemType)):
             tensor = TorchDataHandler.get_input_from_dataset_item(dataset)
-            return self.predict_tensor(tensor, detach=detach)
+            features = self.predict_tensor(tensor, detach=detach)
+
+            # Get labels if dataset is a tuple/list
+            if (
+                return_labels
+                and isinstance(dataset, (list, tuple))
+                and len(dataset) > 1
+            ):
+                labels = _get_label(dataset)
+            if return_labels:
+                return features, labels
+            return features
 
         features = [None for i in range(len(self.output_layers_id))]
+        batch = next(iter(dataset))
+        contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
         for elem in dataset:
             tensor = TorchDataHandler.get_input_from_dataset_item(elem)
             features_batch = self.predict_tensor(tensor, detach=detach)
@@ -237,9 +273,21 @@ class TorchFeatureExtractor(FeatureExtractor):
                     f if features[i] is None else torch.cat([features[i], f], dim=0)
                 )
 
+            # Concatenate labels of current batch with previous batches
+            if return_labels and contains_labels:
+                lbl_batch = _get_label(elem)
+
+                if labels is None:
+                    labels = lbl_batch
+                else:
+                    labels = torch.cat([labels, lbl_batch], dim=0)
+
         # No need to return a list when there is only one input layer
         if len(features) == 1:
             features = features[0]
+
+        if return_labels:
+            return features, labels
         return features
 
     def get_weights(self, layer_id: Union[str, int]) -> List[torch.Tensor]:
