@@ -113,3 +113,74 @@ def test_get_weights():
 
     assert W.shape == (10, 84)
     assert b.shape == (10,)
+
+
+def test_predict_with_labels():
+    """Assert that FeatureExtractor.predict() correctly returns features and labels when
+    return_labels=True.
+
+    Multiple tests are performed:
+    - dataset with labels or without labels
+    - dataset with one-hot encoded or sparse labels
+    - single tensor instead of a dataset
+    """
+    input_shape = (3, 32, 32)
+    num_labels = 10
+    n_samples = 100
+
+    # Generate dataset with sparse labels, with one-hot labels and without labels
+    x = generate_data_torch(input_shape, num_labels, n_samples, one_hot=False)
+    dataset = DataLoader(x, batch_size=n_samples // 3)
+
+    x_one_hot = generate_data_torch(input_shape, num_labels, n_samples)
+    dataset_one_hot = DataLoader(x_one_hot, batch_size=n_samples // 3)
+
+    x_wo_labels = generate_data_torch(
+        input_shape, num_labels, n_samples, with_labels=False
+    )
+    dataset_wo_labels = DataLoader(x_wo_labels, batch_size=n_samples // 3)
+
+    # Generate model and feature extractor
+    model = ComplexNet()
+    feature_extractor = TorchFeatureExtractor(model, output_layers_id=["fcs.fc2"])
+
+    # Assert predict without labels returned
+    out = feature_extractor.predict(dataset, return_labels=False)
+    assert out.shape == (n_samples, 84)
+
+    # Assert predict with labels returned
+    out = feature_extractor.predict(dataset, return_labels=True)
+    assert len(out) == 2
+    assert out[0].shape == (n_samples, 84)
+    assert out[1].shape == (n_samples,)
+
+    # Assert predict with labels returned (labels one-hot)
+    out = feature_extractor.predict(dataset_one_hot, return_labels=True)
+    assert len(out) == 2
+    assert out[0].shape == (n_samples, 84)
+    assert out[1].shape == (n_samples,)
+
+    # Assert predict with labels returned but no labels in dataset
+    out = feature_extractor.predict(dataset_wo_labels, return_labels=True)
+    assert len(out) == 2
+    assert out[1] is None
+
+    # Assert predict with no labels in dataset and return_labels=False
+    out = feature_extractor.predict(dataset_wo_labels, return_labels=False)
+    assert out.shape == (n_samples, 84)
+
+    # Assert predict of a single tensor with return_labels=False and True
+    batch = next(iter(dataset_wo_labels))
+    out = feature_extractor.predict(batch, return_labels=False)
+    assert out.shape == (33, 84)
+    out = feature_extractor.predict(batch, return_labels=True)
+    assert len(out) == 2
+    assert out[1] is None
+
+    # Assert predict of a tuple (tensor, labels) with return_labels=False and True
+    batch = next(iter(dataset_one_hot))
+    out = feature_extractor.predict(batch, return_labels=False)
+    assert out.shape == (33, 84)
+    out = feature_extractor.predict(batch, return_labels=True)
+    assert len(out) == 2
+    assert out[1].shape == (33,)
