@@ -44,8 +44,12 @@ class Gram(OODBaseDetector):
     def __init__(
         self,
         output_layers_id: List[int] = [-2],
+        orders: List[int] = [1],
     ):
         postproc_fns = [self.row_wise_sums for i in range(len(output_layers_id))]
+        if isinstance(orders, int):
+            orders = [orders]
+        self.orders = orders
         super().__init__(output_layers_id=output_layers_id, postproc_fns=postproc_fns)
 
     def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
@@ -56,8 +60,17 @@ class Gram(OODBaseDetector):
         Args:
             fit_dataset: input dataset (ID) to construct the index with.
         """
-        fit_projected = self.feature_extractor.predict(fit_dataset, self.postproc_fns)
-        self.fitted = fit_projected
+        fit_feature_maps = self.feature_extractor.predict(
+            fit_dataset, self.postproc_fns
+        )
+
+        for i, feature_map in enumerate(fit_feature_maps):
+            mins = self.op.unsqueeze(self.op.min(feature_map[..., 0], dim=0), -1)
+            maxs = self.op.unsqueeze(self.op.max(feature_map[..., 1], dim=0), -1)
+            min_max = self.op.cat([mins, maxs], dim=-1)
+            fit_feature_maps[i] = min_max
+
+        self.min_maxs = fit_feature_maps
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
@@ -75,26 +88,40 @@ class Gram(OODBaseDetector):
 
     def row_wise_sums(self, feature_map):
         fm_s = feature_map.shape
-        # construct the Gram matrix
-        if len(fm_s) == 2:
-            # prevents from computing a scalar per batch for layers of shape (1,)
-            feature_map = self.op.einsum("bi,bj->bij", feature_map, feature_map)
-        elif len(fm_s) >= 3:
-            # flatten the feature map
-            if self.backend == "tensorflow":
-                feature_map = self.op.reshape(feature_map, (fm_s[0], fm_s[-1], -1))
-            else:
-                feature_map = self.op.reshape(feature_map, (fm_s[0], fm_s[1], -1))
-            feature_map = self.op.einsum("bij,bik->bjk", feature_map, feature_map)
-        # get the lower triangular part of the matrix
-        feature_map = self.op.tril(feature_map, diagonal=-1)
-        # directly sum row-wise (to limit computational burden)
-        feature_map = self.op.sum(feature_map, dim=-2)
-        min_max = self.op.cat(
-            [
-                self.op.min(feature_map, dim=1, keepdim=True),
-                self.op.max(feature_map, dim=1, keepdim=True),
-            ],
-            dim=1,
-        )
-        return min_max
+
+        min_max_per_order_row = []
+        for p in self.orders:
+            feature_map_p = feature_map**p
+            # construct the Gram matrix
+            if len(fm_s) == 2:
+                # prevents from computing a scalar per batch for layers of shape (1,)
+                feature_map_p = self.op.einsum(
+                    "bi,bj->bij", feature_map_p, feature_map_p
+                )
+            elif len(fm_s) >= 3:
+                # flatten the feature map
+                if self.backend == "tensorflow":
+                    feature_map_p = self.op.reshape(
+                        feature_map_p, (fm_s[0], fm_s[-1], -1)
+                    )
+                else:
+                    feature_map_p = self.op.reshape(
+                        feature_map_p, (fm_s[0], fm_s[1], -1)
+                    )
+                feature_map_p = self.op.einsum(
+                    "bij,bik->bjk", feature_map_p, feature_map_p
+                )
+            feature_map_p = feature_map_p ** (1 / p)
+            # get the lower triangular part of the matrix
+            feature_map_p = self.op.tril(feature_map_p, diagonal=-1)
+            # directly sum row-wise (to limit computational burden)
+            feature_map_p = self.op.sum(feature_map_p, dim=-2)
+            min_max_per_row = self.op.cat(
+                [
+                    self.op.min(feature_map_p, dim=0, keepdim=True),
+                    self.op.max(feature_map_p, dim=0, keepdim=True),
+                ],
+                dim=0,
+            )
+            min_max_per_order_row.append(self.op.transpose(min_max_per_row))
+        return self.op.unsqueeze(self.op.stack(min_max_per_order_row), 0)

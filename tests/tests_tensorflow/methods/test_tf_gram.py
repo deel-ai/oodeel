@@ -48,4 +48,5 @@ def test_gram():
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
     gram.fit(model, data)
-    assert gram.fitted[0].shape == gram.fitted[1].shape == (100, 2)
+    assert gram.min_maxs[0].shape == (1, 961, 2)
+    assert gram.min_maxs[1].shape == (1, 10, 2)
