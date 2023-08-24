@@ -75,7 +75,6 @@ def test_react(detector_name, auroc_thr, fpr95_thr):
     )
     eval_detector_on_blobs(
         detector=detector,
-        need_to_fit_dataset=True,
         auroc_thr=auroc_thr,
         fpr95_thr=fpr95_thr,
         check_react_clipping=True,

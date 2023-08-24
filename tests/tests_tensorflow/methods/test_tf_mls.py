@@ -37,7 +37,6 @@ def test_mls(auroc_thr, fpr95_thr):
     mls = MLS()
     eval_detector_on_blobs(
         detector=mls,
-        need_to_fit_dataset=False,
         auroc_thr=auroc_thr,
         fpr95_thr=fpr95_thr,
     )

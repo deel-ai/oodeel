@@ -37,7 +37,6 @@ def test_mahalanobis(auroc_thr, fpr95_thr):
     mahalanobis = Mahalanobis()
     eval_detector_on_blobs(
         detector=mahalanobis,
-        need_to_fit_dataset=True,
         auroc_thr=auroc_thr,
         fpr95_thr=fpr95_thr,
     )

@@ -37,7 +37,6 @@ def test_entropy(auroc_thr, fpr95_thr):
     entropy = Entropy()
     eval_detector_on_blobs(
         detector=entropy,
-        need_to_fit_dataset=False,
         auroc_thr=auroc_thr,
         fpr95_thr=fpr95_thr,
     )

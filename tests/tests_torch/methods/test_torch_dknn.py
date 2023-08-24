@@ -37,7 +37,6 @@ def test_dknn(auroc_thr, fpr95_thr):
     dknn = DKNN()
     eval_detector_on_blobs(
         detector=dknn,
-        need_to_fit_dataset=True,
         auroc_thr=auroc_thr,
         fpr95_thr=fpr95_thr,
     )
