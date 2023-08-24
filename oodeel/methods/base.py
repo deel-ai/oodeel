@@ -108,6 +108,12 @@ class OODBaseDetector(ABC):
             self.FeatureExtractorClass,
         ) = import_backend_specific_stuff(model)
 
+        # if required by the method, check that fit_dataset is not None
+        if self.requires_to_fit_dataset and fit_dataset is None:
+            raise ValueError(
+                "`fit_dataset` argument must be provided for this OOD detector"
+            )
+
         # react: compute threshold (activation percentiles)
         if self.use_react:
             if fit_dataset is None:
@@ -259,3 +265,16 @@ class OODBaseDetector(ABC):
             np.ndarray: array of 0 for ID samples and 1 for OOD samples
         """
         return self.isood(inputs, threshold)
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        raise NotImplementedError(
+            "Property `requires_to_fit_dataset` is not implemented. It should return"
+            + " a True or False boolean."
+        )

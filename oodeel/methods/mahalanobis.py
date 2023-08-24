@@ -192,3 +192,13 @@ class Mahalanobis(OODBaseDetector):
         # concatenate scores
         gaussian_score = self.op.cat(gaussian_scores, 1)
         return gaussian_score
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return True

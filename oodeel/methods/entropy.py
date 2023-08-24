@@ -87,3 +87,13 @@ class Entropy(OODBaseDetector):
             fit_dataset: dataset to fit the OOD detector on
         """
         pass
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return False
