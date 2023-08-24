@@ -200,7 +200,8 @@ class TFOperator(Operator):
 
     @staticmethod
     def tril(tensor: TensorType, diagonal: int = 0) -> tf.Tensor:
-        "Set the upper triangle of the matrix formed by the last two dimensions of tensor to zero"
+        "Set the upper triangle of the matrix formed by the last two dimensions of"
+        "tensor to zero"
         return tf.experimental.numpy.tril(tensor, k=diagonal)
 
     @staticmethod

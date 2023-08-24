@@ -70,11 +70,11 @@ class TorchOperator(Operator):
 
     @staticmethod
     def max(
-        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+        tensor: TensorType, dim: Optional[int] = None, keepdim: Optional[bool] = False
     ) -> torch.Tensor:
         """Max function"""
         if dim is None:
-            return torch.max(tensor, keepdim=keepdim)
+            return torch.max(tensor)
         else:
             return torch.max(tensor, dim, keepdim=keepdim)[0]
 
@@ -84,7 +84,7 @@ class TorchOperator(Operator):
     ) -> torch.Tensor:
         """Min function"""
         if dim is None:
-            return torch.min(tensor, keepdim=keepdim)
+            return torch.min(tensor)
         else:
             return torch.min(tensor, dim, keepdim=keepdim)[0]
 
@@ -219,7 +219,8 @@ class TorchOperator(Operator):
 
     @staticmethod
     def tril(tensor: TensorType, diagonal: int = 0) -> torch.Tensor:
-        "Set the upper triangle of the matrix formed by the last two dimensions of tensor to zero"
+        "Set the upper triangle of the matrix formed by the last two dimensions of"
+        "tensor to zero"
         return torch.tril(tensor, diagonal)
 
     @staticmethod

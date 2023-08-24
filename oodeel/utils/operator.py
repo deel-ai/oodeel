@@ -191,7 +191,8 @@ class Operator(ABC):
     @staticmethod
     @abstractmethod
     def tril(tensor: TensorType, diagonal: int = 0) -> TensorType:
-        "Set the upper triangle of the matrix formed by the last two dimensions of tensor to zero"
+        "Set the upper triangle of the matrix formed by the last two dimensions of"
+        "tensor to zero"
         raise NotImplementedError()
 
     @staticmethod
