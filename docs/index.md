@@ -31,7 +31,7 @@
 
 <!-- Short description of your library -->
 
-<b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch. You can find the documentation [here](https://deel-ai.github.io/oodeel/).
+<b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch.
 
 ```python
 from oodeel.methods import MLS
@@ -58,7 +58,7 @@ scores = mls.score(ds)
 
 # Tutorials
 
-We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the [doc](https://deel-ai.github.io/oodeel/)
+We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the doc.
 
 # Quick Start
 
@@ -87,7 +87,7 @@ ds_out = OODDataset(
   backend="tensorflow").prepare(batch_size)
 ```
 
-## For benchmarking with one dataset as in-distribution and another as out-of-distribution
+## For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution
 
 Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (a common practice of anomaly detection and open set recognition).
 
