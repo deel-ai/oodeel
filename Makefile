@@ -33,7 +33,7 @@ prepare-dev-tf:
 	python3 -m pip install virtualenv
 	python3 -m venv oodeel_env_tf
 	. oodeel_env_tf/bin/activate && pip install --upgrade pip
-	. oodeel_env_tf/bin/activate && pip install -e .[tensorflow]
+	. oodeel_env_tf/bin/activate && pip install -e .[tensorflow-dev]
 	. oodeel_dev_env/bin/activate && pre-commit install
 	. oodeel_dev_env/bin/activate && pre-commit install-hooks
 	. oodeel_dev_env/bin/activate && pre-commit install --hook-type commit-msg
@@ -42,7 +42,7 @@ prepare-dev-torch:
 	python3 -m pip install virtualenv
 	python3 -m venv oodeel_env_torch
 	. oodeel_env_torch/bin/activate && pip install --upgrade pip
-	. oodeel_env_torch/bin/activate && pip install -e .[torch]
+	. oodeel_env_torch/bin/activate && pip install -e .[torch-dev]
 	. oodeel_dev_env/bin/activate && pre-commit install
 	. oodeel_dev_env/bin/activate && pre-commit install-hooks
 	. oodeel_dev_env/bin/activate && pre-commit install --hook-type commit-msg
