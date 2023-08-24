@@ -227,3 +227,8 @@ class TorchOperator(Operator):
     def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> torch.Tensor:
         "sum along dim"
         return torch.sum(tensor, dim)
+
+    @staticmethod
+    def unsqueeze(tensor: TensorType, dim: int) -> torch.Tensor:
+        "unsqueeze along dim"
+        return torch.unsqueeze(tensor, dim)

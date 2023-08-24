@@ -208,3 +208,8 @@ class TFOperator(Operator):
     def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> tf.Tensor:
         "sum along dim"
         return tf.reduce_sum(tensor, axis=dim)
+
+    @staticmethod
+    def unsqueeze(tensor: TensorType, dim: int) -> tf.Tensor:
+        "expand_dim along dim"
+        return tf.expand_dims(tensor, dim)

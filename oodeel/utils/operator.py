@@ -199,3 +199,8 @@ class Operator(ABC):
     def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> TensorType:
         "sum along dim"
         raise NotImplementedError()
+
+    @staticmethod
+    def unsqueeze(tensor: TensorType, dim: int) -> TensorType:
+        "unsqueeze/expand_dim along dim"
+        raise NotImplementedError()
