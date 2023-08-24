@@ -210,19 +210,19 @@ class TorchFeatureExtractor(FeatureExtractor):
     def predict(
         self,
         dataset: Union[DataLoader, ItemType],
-        detach: bool = True,
         return_labels: bool = False,
+        detach: bool = True,
         **kwargs
     ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
             dataset (Union[DataLoader, ItemType]): input dataset
-            detach (bool): if True, return features detached from the computational graph.
-                Defaults to True.
             return_labels (bool): if True, labels are returned in addition to the
                 features. If labels are one-hot encoded, the single label value is
                 returned instead.
+            detach (bool): if True, return features detached from the computational
+                graph. Defaults to True.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:

@@ -59,23 +59,9 @@ class Mahalanobis(OODBaseDetector):
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
         """
         # extract features and labels
-        features = list()
-        labels = list()
-        for _images, _labels in fit_dataset:
-            # if one hot encoded labels, take the argmax
-            if len(_labels.shape) > 1 and _labels.shape[1] > 1:
-                _labels = self.op.argmax(self.op.flatten(_labels), 1)
-            # if labels in two dimensions, squeeze them
-            if len(_labels.shape) > 1:
-                _labels = self.op.reshape(_labels, [_labels.shape[0]])
-            # get features
-            _features = self.feature_extractor.predict(_images)
-            _features = self.op.flatten(_features)
-
-            labels.append(_labels)
-            features.append(_features)
-        labels = self.op.cat(labels)
-        features = self.op.cat(features)
+        features, labels = self.feature_extractor.predict(
+            fit_dataset, return_labels=True
+        )
 
         # unique sorted classes
         self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
