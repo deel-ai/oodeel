@@ -45,9 +45,9 @@ scores = mls.score(ds)
 
 # Table of contents
 
-- [Table of contents](#table-of-contents)
-- [Tutorials](#tutorials)
+- [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Tutorials](#tutorials)
 - [What's Included](#whats-included)
 - [Development roadmap](#development-roadmap)
 - [Contributing](#contributing)
@@ -56,25 +56,23 @@ scores = mls.score(ds)
 - [Creator](#creator)
 - [License](#license)
 
-# Tutorials
-
-We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the doc.
-
-# Quick Start
+# Installation
 
 **Oodeel** requires some stuff and several libraries including Numpy. Installation can be done using:
 
 ```bash
 git clone https://github.com/deel-ai/oodeel.git
 cd oodeel
-make prepare-dev
-```
+make install-env-${BACKEND}
 
-> **Note:** If you want to install oodeel for a specific backend, replace the last line with either `make prepare-dev-torch` (for torch users) or `make prepare-dev-tf` (for tensorflow users).
+```
+where `${BACKEND}` is either `torch` or `tensorflow` depending on the user's backend.
+
+# Quick Start
 
 Now that *oodeel* is installed, here are some basic examples of what you can do with the available modules. See also the notebooks directory for more advanced examples.
 
-## For benchmarking with one dataset as in-distribution and another as out-of-distribution
+### For benchmarking with one dataset as in-distribution and another as out-of-distribution
 
 Load in-distribution and out-of-distribution datasets.
 
@@ -89,7 +87,7 @@ ds_out = OODDataset(
   backend="tensorflow").prepare(batch_size)
 ```
 
-## For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution
+### For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution
 
 Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (a common practice of anomaly detection and open set recognition).
 
@@ -101,7 +99,7 @@ oods_in, oods_out = oods_test.assign_ood_labels_by_class(in_labels=in_labels)
 ds_in = oods_in.prepare(batch_size=batch_size)
 ds_out = oods_out.prepare(batch_size=batch_size)
 ```
-## Run an OOD method
+### Run an OOD method
 
 Load an OOD method and use it on an already-trained model
 
@@ -125,6 +123,9 @@ metrics = bench_metrics(
     )
 ```
 
+# Tutorials
+
+We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the doc.
 
 # What's Included
 
