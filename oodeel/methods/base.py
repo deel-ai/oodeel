@@ -67,11 +67,10 @@ class OODBaseDetector(ABC):
         if output_layers_id is None:
             raise ValueError(
                 "Explicitely specify output_layers_id=[layer0, layer1,...], "
-                + "where layer0, "
-                + "layer1,... are the names of the desired output layers of your model"
-                + ". These can be int"
-                + " or str. To know what to put, have a look at model.summary() "
-                + "with keras or model.named_module()"
+                + "where layer0, layer1,... are the names of the desired output "
+                + "layers of your model. These can be int or str (even though str"
+                + " is safer). To know what to put, have a look at model.summary() "
+                + "with keras or model.named_modules()"
             )
         self.output_layers_id = output_layers_id
         self.input_layers_id = input_layers_id
