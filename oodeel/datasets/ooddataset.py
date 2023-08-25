@@ -45,8 +45,8 @@ class OODDataset(object):
         load_kwargs (dict, optional): Additional loading kwargs when loading from
             tensorflow_datasets catalog. Defaults to {}.
         load_from_tensorflow_datasets (bool, optional): In the case where if the backend
-            is torch but the user still wants to import from tensorflow_datasets catalog.
-            In that case, tf.Tensor will not be loaded in VRAM and converted as
+            is torch but the user still wants to import from tensorflow_datasets
+            catalog. In that case, tf.Tensor will not be loaded in VRAM and converted as
             torch.Tensors on the fly. Defaults to False.
         input_key (str, optional): The key of the element/item to consider as the
             model input tensor. If None, taken as the first key. Defaults to None.
@@ -283,7 +283,8 @@ class OODDataset(object):
             shuffle (bool, optional): To shuffle the returned dataset or not.
                 Defaults to False.
             shuffle_buffer_size (int, optional): (TF only) Size of the shuffle buffer.
-                If None, taken as the number of samples in the dataset. Defaults to None.
+                If None, taken as the number of samples in the dataset.
+                Defaults to None.
 
         Returns:
             DatasetType: prepared dataset

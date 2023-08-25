@@ -32,8 +32,8 @@ class Entropy(OODBaseDetector):
     Entropy OOD score
 
 
-    The method consists in using the Entropy of the input data computed using the Entropy
-    $\sum_{c=0}^C p(y=c| x) \times log(p(y=c | x))$ where
+    The method consists in using the Entropy of the input data computed using the
+    Entropy $\sum_{c=0}^C p(y=c| x) \times log(p(y=c | x))$ where
     $p(y=c| x) = \text{model}(x)$.
 
     **Reference**
