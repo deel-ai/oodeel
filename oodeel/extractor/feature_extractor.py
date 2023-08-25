@@ -115,7 +115,8 @@ class FeatureExtractor(ABC):
             dataset (Union[DatasetType, TensorType]): iterable of tensor batches
 
         Returns:
-            TensorType: features
+            List[TensorType], dict: features and extra information (logits, labels) as a
+                dictionary.
         """
         raise NotImplementedError()
 
