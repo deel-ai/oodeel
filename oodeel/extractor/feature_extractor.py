@@ -105,13 +105,18 @@ class FeatureExtractor(ABC):
 
     @abstractmethod
     def predict(
-        self, dataset: Union[DatasetType, TensorType]
+        self,
+        dataset: Union[DatasetType, TensorType],
+        return_labels: bool = False,
     ) -> Union[TensorType, List[TensorType]]:
         """
         Projects input samples "inputs" into the feature space for a batched dataset
 
         Args:
             dataset (Union[DatasetType, TensorType]): iterable of tensor batches
+            return_labels (bool): if True, labels are returned in addition to the
+                features. If labels are one-hot encoded, the single label value is
+                returned instead.
 
         Returns:
             TensorType: features

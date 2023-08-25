@@ -141,7 +141,11 @@ def generate_data(x_shape=(3, 32, 32), num_labels=10, samples=100, one_hot=True)
     return x, y
 
 
-def generate_data_torch(x_shape=(3, 32, 32), num_labels=10, samples=100, one_hot=True):
+def generate_data_torch(
+    x_shape=(3, 32, 32), num_labels=10, samples=100, one_hot=True, with_labels=True
+):
     x, y = generate_data(x_shape, num_labels, samples, one_hot)
-    dataset = TensorDataset(torch.Tensor(x), torch.Tensor(y))
-    return dataset
+    if with_labels:
+        return TensorDataset(torch.Tensor(x), torch.Tensor(y))
+    else:
+        return TensorDataset(torch.Tensor(x))
