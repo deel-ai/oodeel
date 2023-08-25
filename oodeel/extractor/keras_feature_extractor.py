@@ -146,21 +146,27 @@ class KerasFeatureExtractor(FeatureExtractor):
             # apply ultimate layer on clipped activations
             output_tensors[-1] = last_layer(x)
 
+        # Add model output to output_tensors
+        output_tensors.append(self.find_layer(self.model, -1).output)
+
         extractor = tf.keras.models.Model(new_input, output_tensors)
         return extractor
 
     @sanitize_input
     @tf.function
-    def predict_tensor(self, tensor: TensorType) -> Union[tf.Tensor, List[tf.Tensor]]:
+    def predict_tensor(self, tensor: TensorType) -> List[tf.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
             tensor (TensorType): input tensor (or dataset elem)
 
         Returns:
-            tf.Tensor: features
+            List[tf.Tensor]: features
         """
         features = self.extractor(tensor, training=False)
+
+        if type(features) is not list:
+            features = [features]
         return features
 
     def predict(
