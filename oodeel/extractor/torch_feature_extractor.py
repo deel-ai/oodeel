@@ -186,8 +186,8 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         Args:
             x (TensorType): input tensor (or dataset elem)
-            detach (bool): if True, return features detached from the computational graph.
-                Defaults to True.
+            detach (bool): if True, return features detached from the computational
+                graph. Defaults to True.
 
         Returns:
             List[torch.Tensor]: features
@@ -214,8 +214,8 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         Args:
             dataset (Union[DataLoader, ItemType]): input dataset
-            detach (bool): if True, return features detached from the computational graph.
-                Defaults to True.
+            detach (bool): if True, return features detached from the computational
+                graph. Defaults to True.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:

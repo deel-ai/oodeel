@@ -53,15 +53,16 @@ class VIM(OODBaseDetector):
 
     Args:
         output_layers_id (List[Union[int, str]]): features to use for Residual score.
-        princ_dims (Union[int, float]): number of principal dimensions of in distribution
-            features to consider. If an int, must be less than the dimension of the
-            feature space. If a float, it must be in [0,1), it represents the ratio of
+        princ_dims (Union[int, float]): number of principal dimensions of in
+            distribution features to consider. If an int, must be less than the
+            dimension of the feature space.
+            If a float, it must be in [0,1), it represents the ratio of
             explained variance to consider to determine the number of principal
             components. Defaults to 0.99.
-        pca_origin (str): either "pseudo" for using $W^{-1}b$ where $W^{-1}$ is the pseudo
-            inverse of the final linear layer applied to bias term (as in the VIM
-            paper), or "center" for using the mean of the data in feature space.
-            Defaults to "center".
+        pca_origin (str): either "pseudo" for using $W^{-1}b$ where $W^{-1}$ is
+            the pseudo inverse of the final linear layer applied to bias term
+            (as in the VIM paper), or "center" for using the mean of the data in
+            feature space. Defaults to "center".
     """
 
     def __init__(
