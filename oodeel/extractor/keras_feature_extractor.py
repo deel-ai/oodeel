@@ -181,7 +181,8 @@ class KerasFeatureExtractor(FeatureExtractor):
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
-            List[tf.Tensor]: features
+            List[tf.Tensor], dict: features and extra information (logits, labels) as a
+                dictionary.
         """
 
         def _get_label(item):
@@ -207,34 +208,37 @@ class KerasFeatureExtractor(FeatureExtractor):
             # Get labels if dataset is a tuple/list
             if isinstance(dataset, (list, tuple)):
                 labels = _get_label(dataset)
-            return features
 
-        features = [None for i in range(len(self.output_layers_id))]
-        contains_labels = TFDataHandler.get_item_length(dataset) > 1
-        for elem in dataset:
-            tensor = TFDataHandler.get_input_from_dataset_item(elem)
-            features_batch = self.predict_tensor(tensor)
-            if len(features) == 1:
-                features_batch = [features_batch]
-            for i, f in enumerate(features_batch):
-                features[i] = (
-                    f if features[i] is None else tf.concat([features[i], f], axis=0)
-                )
+        else:  # if dataset is a tf.data.Dataset
+            features = [None for i in range(len(self.output_layers_id) + 1)]
+            contains_labels = TFDataHandler.get_item_length(dataset) > 1
+            for elem in dataset:
+                tensor = TFDataHandler.get_input_from_dataset_item(elem)
+                features_batch = self.predict_tensor(tensor)
+                if len(features) == 1:
+                    features_batch = [features_batch]
+                for i, f in enumerate(features_batch):
+                    features[i] = (
+                        f if features[i] is None else tf.concat([features[i], f], axis=0)
+                    )
 
-            # Concatenate labels of current batch with previous batches
-            if contains_labels:
-                lbl_batch = _get_label(elem)
+                # Concatenate labels of current batch with previous batches
+                if contains_labels:
+                    lbl_batch = _get_label(elem)
 
-                if labels is None:
-                    labels = lbl_batch
-                else:
-                    labels = tf.concat([labels, lbl_batch], axis=0)
+                    if labels is None:
+                        labels = lbl_batch
+                    else:
+                        labels = tf.concat([labels, lbl_batch], axis=0)
 
-        # No need to return a list when there is only one input layer
+        # Remove logits from features and create extra information as a dict
+        logits = features.pop()
+        info = dict(labels=labels, logits=logits)
+
         if len(features) == 1:
             features = features[0]
 
-        return features
+        return features, info
 
     def get_weights(self, layer_id: Union[int, str]) -> List[tf.Tensor]:
         """Get the weights of a layer

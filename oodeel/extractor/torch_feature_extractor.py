@@ -220,7 +220,8 @@ class TorchFeatureExtractor(FeatureExtractor):
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
-            List[torch.Tensor]: features
+            List[torch.Tensor], dict: features and extra information (logits, labels) as
+                a dictionary.
         """
 
         def _get_label(item):
@@ -246,35 +247,38 @@ class TorchFeatureExtractor(FeatureExtractor):
             # Get labels if dataset is a tuple/list
             if isinstance(dataset, (list, tuple)) and len(dataset) > 1:
                 labels = _get_label(dataset)
-            return features
 
-        features = [None for i in range(len(self.output_layers_id))]
-        batch = next(iter(dataset))
-        contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
-        for elem in dataset:
-            tensor = TorchDataHandler.get_input_from_dataset_item(elem)
-            features_batch = self.predict_tensor(tensor, detach=detach)
-            if len(features) == 1:
-                features_batch = [features_batch]
-            for i, f in enumerate(features_batch):
-                features[i] = (
-                    f if features[i] is None else torch.cat([features[i], f], dim=0)
-                )
+        else:
+            features = [None for i in range(len(self._hook_layers_id))]
+            batch = next(iter(dataset))
+            contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
+            for elem in dataset:
+                tensor = TorchDataHandler.get_input_from_dataset_item(elem)
+                features_batch = self.predict_tensor(tensor, detach=detach)
+                if len(features) == 1:
+                    features_batch = [features_batch]
+                for i, f in enumerate(features_batch):
+                    features[i] = (
+                        f if features[i] is None else torch.cat([features[i], f], dim=0)
+                    )
 
-            # Concatenate labels of current batch with previous batches
-            if contains_labels:
-                lbl_batch = _get_label(elem)
+                # Concatenate labels of current batch with previous batches
+                if contains_labels:
+                    lbl_batch = _get_label(elem)
 
-                if labels is None:
-                    labels = lbl_batch
-                else:
-                    labels = torch.cat([labels, lbl_batch], dim=0)
+                    if labels is None:
+                        labels = lbl_batch
+                    else:
+                        labels = torch.cat([labels, lbl_batch], dim=0)
 
-        # No need to return a list when there is only one input layer
+        # Remove logits from features and create extra information as a dict
+        logits = features.pop()
+        info = dict(labels=labels, logits=logits)
+
         if len(features) == 1:
             features = features[0]
 
-        return features
+        return features, info
 
     def get_weights(self, layer_id: Union[str, int]) -> List[torch.Tensor]:
         """Get the weights of a layer
