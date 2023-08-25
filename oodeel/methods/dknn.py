@@ -62,7 +62,7 @@ class DKNN(OODBaseDetector):
         Args:
             fit_dataset: input dataset (ID) to construct the index with.
         """
-        fit_projected = self.feature_extractor.predict(fit_dataset)
+        fit_projected, _ = self.feature_extractor.predict(fit_dataset)
         fit_projected = self.op.convert_to_numpy(fit_projected)
         fit_projected = fit_projected.reshape(fit_projected.shape[0], -1)
         norm_fit_projected = self._l2_normalization(fit_projected)
@@ -81,7 +81,7 @@ class DKNN(OODBaseDetector):
             scores
         """
 
-        input_projected = self.feature_extractor(inputs)
+        input_projected = self.feature_extractor(inputs)[0]
         input_projected = self.op.convert_to_numpy(input_projected)
         input_projected = input_projected.reshape(input_projected.shape[0], -1)
         norm_input_projected = self._l2_normalization(input_projected)

@@ -43,14 +43,14 @@ def test_predict():
 
     last_layer = KerasFeatureExtractor(model, output_layers_id=[-1], input_layer_id=-2)
 
-    pred_model = model.predict(data)
-    pred_feature_extractor = feature_extractor.predict(data)
-    pred_model_fe = model_fe.predict(data)
+    pred_model, _ = model.predict(data)
+    pred_feature_extractor, _ = feature_extractor.predict(data)
+    pred_model_fe, _ = model_fe.predict(data)
     # To obtain the exact same result, add these lines:
     # pred_feature_extractor = tf.data.Dataset.from_tensor_slices(
     #    pred_feature_extractor
     # ).batch(samples // 2)
-    pred_last_layer = last_layer.predict(pred_feature_extractor)
+    pred_last_layer, _ = last_layer.predict(pred_feature_extractor)
 
     assert almost_equal(pred_model, pred_model_fe)
     assert almost_equal(pred_model, pred_last_layer)

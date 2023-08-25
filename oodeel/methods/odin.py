@@ -71,7 +71,7 @@ class ODIN(OODBaseDetector):
         if self.feature_extractor.backend == "torch":
             inputs = inputs.to(self.feature_extractor._device)
         x = self.input_perturbation(inputs)
-        logits = self.feature_extractor.predict(x) / self.temperature
+        logits = self.feature_extractor.predict(x)[1]["logits"] / self.temperature
         pred = self.op.softmax(logits)
         pred = self.op.convert_to_numpy(pred)
         scores = -np.max(pred, axis=1)

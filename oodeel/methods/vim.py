@@ -91,7 +91,9 @@ class VIM(OODBaseDetector):
             fit_dataset: input dataset (ID) to construct the index with.
         """
         # extract features from fit dataset
-        features_train, logits_train = self.feature_extractor.predict(fit_dataset)
+        all_features_train, info = self.feature_extractor.predict(fit_dataset)
+        features_train = all_features_train[0]
+        logits_train = info["logits"]
         features_train = self.op.flatten(features_train)
         self.feature_dim = features_train.shape[1]
         logits_train = self.op.convert_to_numpy(logits_train)
@@ -174,7 +176,9 @@ class VIM(OODBaseDetector):
             np.ndarray: scores
         """
         # extract features
-        features, logits = self.feature_extractor(inputs)
+        all_features, info = self.feature_extractor.predict(inputs)
+        features = all_features[0]
+        logits = info["logits"]
         features = self.op.flatten(features)
         logits = self.op.convert_to_numpy(logits)
         # vim score

@@ -256,7 +256,7 @@ class OODBaseDetector(ABC):
         )
         output_layers_id = [self.penultimate_layer_id]
         penult_feat_extractor = self._load_feature_extractor(model, output_layers_id)
-        unclipped_features = penult_feat_extractor.predict(fit_dataset)
+        unclipped_features, _ = penult_feat_extractor.predict(fit_dataset)
         self.react_threshold = self.op.quantile(unclipped_features, self.react_quantile)
 
     def __call__(

@@ -131,7 +131,7 @@ def eval_detector_on_blobs(
                 detector.output_layers_id[-1],
             ],
         )
-        penult_features = penult_feat_extractor.predict(ds_fit)[0]
+        penult_features = penult_feat_extractor.predict(ds_fit)[0][0]
         assert torch.max(penult_features) <= detector.react_threshold, (
             f"Maximum value of penultimate features ({torch.max(penult_features)})"
             + " should be less than or equal to the react threshold value"
