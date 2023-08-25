@@ -232,3 +232,17 @@ class TorchOperator(Operator):
     def unsqueeze(tensor: TensorType, dim: int) -> torch.Tensor:
         "unsqueeze along dim"
         return torch.unsqueeze(tensor, dim)
+
+    @staticmethod
+    def abs(tensor: TensorType) -> torch.Tensor:
+        "compute absolute value"
+        return torch.abs(tensor)
+
+    @staticmethod
+    def where(
+        condition: TensorType,
+        input: Union[TensorType, float],
+        other: Union[TensorType, float],
+    ) -> torch.Tensor:
+        "Applies where function to condition"
+        return torch.where(condition, input, other)

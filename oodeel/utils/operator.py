@@ -204,3 +204,17 @@ class Operator(ABC):
     def unsqueeze(tensor: TensorType, dim: int) -> TensorType:
         "unsqueeze/expand_dim along dim"
         raise NotImplementedError()
+
+    @staticmethod
+    def abs(tensor: TensorType) -> TensorType:
+        "compute absolute value"
+        raise NotImplementedError()
+
+    @staticmethod
+    def where(
+        condition: TensorType,
+        input: Union[TensorType, float],
+        other: Union[TensorType, float],
+    ) -> TensorType:
+        "Applies where function to condition"
+        raise NotImplementedError()

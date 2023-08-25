@@ -213,3 +213,17 @@ class TFOperator(Operator):
     def unsqueeze(tensor: TensorType, dim: int) -> tf.Tensor:
         "expand_dim along dim"
         return tf.expand_dims(tensor, dim)
+
+    @staticmethod
+    def abs(tensor: TensorType) -> tf.Tensor:
+        "compute absolute value"
+        return tf.abs(tensor)
+
+    @staticmethod
+    def where(
+        condition: TensorType,
+        input: Union[TensorType, float],
+        other: Union[TensorType, float],
+    ) -> tf.Tensor:
+        "Applies where function to condition"
+        return tf.where(condition, input, other)
