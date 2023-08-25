@@ -88,8 +88,6 @@ class TorchFeatureExtractor(FeatureExtractor):
         Returns:
             Callable: hook function
         """
-        self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
-
         def hook(_, __, output):
             if isinstance(output, torch.Tensor):
                 self._features[layer_id] = output
