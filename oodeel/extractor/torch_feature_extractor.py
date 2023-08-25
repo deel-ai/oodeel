@@ -74,8 +74,12 @@ class TorchFeatureExtractor(FeatureExtractor):
             react_threshold=react_threshold,
         )
         self._device = next(model.parameters()).device
-        self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
+        self._features = {layer: torch.empty(0) for layer in self._hook_layers_id}
         self.backend = "torch"
+
+    @property
+    def _hook_layers_id(self):
+        return self.output_layers_id + [-1]
 
     def _get_features_hook(self, layer_id: Union[str, int]) -> Callable:
         """
@@ -145,8 +149,8 @@ class TorchFeatureExtractor(FeatureExtractor):
             self.penultimate_layer_id = pen_layer_id
             pen_layer.register_forward_hook(self._get_clip_hook(self.react_threshold))
 
-        # Register a hook to store feature values for each considered layer.
-        for layer_id in self.output_layers_id:
+        # Register a hook to store feature values for each considered layer + last layer
+        for layer_id in self._hook_layers_id:
             layer = self.find_layer(self.model, layer_id)
             layer.register_forward_hook(self._get_features_hook(layer_id))
 
@@ -177,9 +181,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 raise NotImplementedError
 
     @sanitize_input
-    def predict_tensor(
-        self, x: TensorType, detach: bool = True
-    ) -> Union[torch.Tensor, List[torch.Tensor]]:
+    def predict_tensor(self, x: TensorType, detach: bool = True) -> List[torch.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
@@ -196,13 +198,11 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         if detach:
             features = [
-                self._features[layer_id].detach() for layer_id in self.output_layers_id
+                self._features[layer_id].detach() for layer_id in self._hook_layers_id
             ]
         else:
-            features = [self._features[layer_id] for layer_id in self.output_layers_id]
+            features = [self._features[layer_id] for layer_id in self._hook_layers_id]
 
-        if len(features) == 1:
-            features = features[0]
         return features
 
     def predict(

@@ -91,7 +91,7 @@ class FeatureExtractor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def predict_tensor(self, tensor: TensorType) -> Union[TensorType, List[TensorType]]:
+    def predict_tensor(self, tensor: TensorType) -> List[TensorType]:
         """
         Projects input samples "inputs" into the feature space
 
@@ -99,7 +99,7 @@ class FeatureExtractor(ABC):
             tensor (TensorType): input tensor
 
         Returns:
-            TensorType: features
+            List[TensorType]: features
         """
         raise NotImplementedError()
 
