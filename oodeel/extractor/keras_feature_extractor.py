@@ -172,16 +172,12 @@ class KerasFeatureExtractor(FeatureExtractor):
     def predict(
         self,
         dataset: Union[ItemType, tf.data.Dataset],
-        return_labels: bool = False,
         **kwargs,
     ) -> Union[tf.Tensor, List[tf.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
             dataset (Union[ItemType, tf.data.Dataset]): input dataset
-            return_labels (bool): if True, labels are returned in addition to the
-                features. If labels are one-hot encoded, the single label value is
-                returned instead.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
@@ -209,10 +205,8 @@ class KerasFeatureExtractor(FeatureExtractor):
             features = self.predict_tensor(tensor)
 
             # Get labels if dataset is a tuple/list
-            if return_labels and isinstance(dataset, (list, tuple)):
+            if isinstance(dataset, (list, tuple)):
                 labels = _get_label(dataset)
-            if return_labels:
-                return features, labels
             return features
 
         features = [None for i in range(len(self.output_layers_id))]
@@ -228,7 +222,7 @@ class KerasFeatureExtractor(FeatureExtractor):
                 )
 
             # Concatenate labels of current batch with previous batches
-            if return_labels and contains_labels:
+            if contains_labels:
                 lbl_batch = _get_label(elem)
 
                 if labels is None:
@@ -240,8 +234,6 @@ class KerasFeatureExtractor(FeatureExtractor):
         if len(features) == 1:
             features = features[0]
 
-        if return_labels:
-            return features, labels
         return features
 
     def get_weights(self, layer_id: Union[int, str]) -> List[tf.Tensor]:
