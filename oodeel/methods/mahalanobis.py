@@ -59,9 +59,8 @@ class Mahalanobis(OODBaseDetector):
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
         """
         # extract features and labels
-        features, labels = self.feature_extractor.predict(
-            fit_dataset, return_labels=True
-        )
+        features, infos = self.feature_extractor.predict(fit_dataset)
+        labels = infos["labels"]
 
         # unique sorted classes
         self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
@@ -103,7 +102,7 @@ class Mahalanobis(OODBaseDetector):
             inputs_p = inputs
 
         # mahalanobis score on perturbed inputs
-        features_p = self.feature_extractor.predict(inputs_p)
+        features_p, _ = self.feature_extractor.predict(inputs_p)
         features_p = self.op.flatten(features_p)
         gaussian_score_p = self._mahalanobis_score(features_p)
 
@@ -136,7 +135,7 @@ class Mahalanobis(OODBaseDetector):
                 TensorType: loss value
             """
             # extract features
-            out_features = self.feature_extractor.predict(inputs, detach=False)
+            out_features, _ = self.feature_extractor.predict(inputs, detach=False)
             out_features = self.op.flatten(out_features)
             # get mahalanobis score for the class maximizing it
             gaussian_score = self._mahalanobis_score(out_features)

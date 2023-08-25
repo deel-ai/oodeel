@@ -121,7 +121,7 @@ def eval_detector_on_blobs(
         penult_feat_extractor = detector.FeatureExtractorClass(
             model=detector.feature_extractor.extractor, output_layers_id=[-2]
         )
-        penult_features = penult_feat_extractor.predict(ds_fit)
+        penult_features, _ = penult_feat_extractor.predict(ds_fit)
         assert tf.reduce_max(penult_features) <= detector.react_threshold, (
             "Maximum value of penultimate features"
             + f" ({tf.reduce_max(penult_features)}) should be less than or equal to"

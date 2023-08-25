@@ -65,7 +65,7 @@ def test_params_torch_feature_extractor(kwargs_factory, expected_sz):
     dataset = DataLoader(x, batch_size=n_samples // 2)
 
     feature_extractor = TorchFeatureExtractor(**kwargs_factory())
-    pred_feature_extractor = feature_extractor.predict(dataset)
+    pred_feature_extractor, _ = feature_extractor.predict(dataset)
 
     assert list(pred_feature_extractor.size()) == expected_sz
 
@@ -100,7 +100,7 @@ def test_pytorch_feature_extractor_with_input_ids(kwargs_factory, expected_sz):
     dataset = DataLoader(x, batch_size=n_samples // 2)
 
     feature_extractor = TorchFeatureExtractor(**kwargs_factory())
-    pred_feature_extractor = feature_extractor.predict(dataset)
+    pred_feature_extractor, _ = feature_extractor.predict(dataset)
 
     assert list(pred_feature_extractor.size()) == expected_sz
 

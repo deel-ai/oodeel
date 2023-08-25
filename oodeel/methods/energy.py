@@ -79,7 +79,7 @@ class Energy(OODBaseDetector):
         """
         # compute logits (softmax(logits,axis=1) is the actual softmax
         # output minimized using binary cross entropy)
-        logits = self.feature_extractor(inputs)
+        logits = self.feature_extractor.predict(inputs)[1]["logits"]
         logits = self.op.convert_to_numpy(logits)
         scores = -logsumexp(logits, axis=1)
         return scores
