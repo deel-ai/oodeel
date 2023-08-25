@@ -208,17 +208,13 @@ class TorchFeatureExtractor(FeatureExtractor):
     def predict(
         self,
         dataset: Union[DataLoader, ItemType],
-        return_labels: bool = False,
         detach: bool = True,
-        **kwargs
+        **kwargs,
     ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
             dataset (Union[DataLoader, ItemType]): input dataset
-            return_labels (bool): if True, labels are returned in addition to the
-                features. If labels are one-hot encoded, the single label value is
-                returned instead.
             detach (bool): if True, return features detached from the computational
                 graph. Defaults to True.
             kwargs (dict): additional arguments not considered for prediction
@@ -248,14 +244,8 @@ class TorchFeatureExtractor(FeatureExtractor):
             features = self.predict_tensor(tensor, detach=detach)
 
             # Get labels if dataset is a tuple/list
-            if (
-                return_labels
-                and isinstance(dataset, (list, tuple))
-                and len(dataset) > 1
-            ):
+            if isinstance(dataset, (list, tuple)) and len(dataset) > 1:
                 labels = _get_label(dataset)
-            if return_labels:
-                return features, labels
             return features
 
         features = [None for i in range(len(self.output_layers_id))]
@@ -272,7 +262,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 )
 
             # Concatenate labels of current batch with previous batches
-            if return_labels and contains_labels:
+            if contains_labels:
                 lbl_batch = _get_label(elem)
 
                 if labels is None:
@@ -284,8 +274,6 @@ class TorchFeatureExtractor(FeatureExtractor):
         if len(features) == 1:
             features = features[0]
 
-        if return_labels:
-            return features, labels
         return features
 
     def get_weights(self, layer_id: Union[str, int]) -> List[torch.Tensor]:
