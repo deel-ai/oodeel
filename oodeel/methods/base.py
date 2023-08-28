@@ -41,7 +41,7 @@ class OODBaseDetector(ABC):
     """Base Class for methods that assign a score to unseen samples.
 
     Args:
-        output_layers_id (List[int]): list of str or int that identify features to
+        feature_layers_id (List[int]): list of str or int that identify features to
             output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [-1],
@@ -58,21 +58,21 @@ class OODBaseDetector(ABC):
 
     def __init__(
         self,
-        output_layers_id: List[Union[int, str]] = None,
+        feature_layers_id: List[Union[int, str]] = None,
         input_layers_id: Optional[Union[int, str]] = None,
         use_react: bool = False,
         react_quantile: float = 0.8,
     ):
         self.feature_extractor: FeatureExtractor = None
-        if output_layers_id is None:
+        if feature_layers_id is None:
             raise ValueError(
-                "Explicitely specify output_layers_id=[layer0, layer1,...], "
+                "Explicitely specify feature_layers_id=[layer0, layer1,...], "
                 + "where layer0, layer1,... are the names of the desired output "
                 + "layers of your model. These can be int or str (even though str"
                 + " is safer). To know what to put, have a look at model.summary() "
                 + "with keras or model.named_modules()"
             )
-        self.output_layers_id = output_layers_id
+        self.feature_layers_id = feature_layers_id
         self.input_layers_id = input_layers_id
         self.use_react = use_react
         self.react_quantile = react_quantile
@@ -141,7 +141,7 @@ class OODBaseDetector(ABC):
     def _load_feature_extractor(
         self,
         model: Callable,
-        output_layers_id: List[Union[int, str]] = None,
+        feature_layers_id: List[Union[int, str]] = None,
     ) -> Callable:
         """
         Loads feature extractor
@@ -152,10 +152,10 @@ class OODBaseDetector(ABC):
         Returns:
             FeatureExtractor: a feature extractor instance
         """
-        output_layers_id = output_layers_id or self.output_layers_id
+        feature_layers_id = feature_layers_id or self.feature_layers_id
         feature_extractor = self.FeatureExtractorClass(
             model,
-            output_layers_id=output_layers_id,
+            feature_layers_id=feature_layers_id,
             react_threshold=self.react_threshold,
         )
         return feature_extractor
@@ -261,10 +261,10 @@ class OODBaseDetector(ABC):
 
     def compute_react_threshold(self, model: Callable, fit_dataset: DatasetType):
         _, self.penultimate_layer_id = self.FeatureExtractorClass.find_layer(
-            model, self.output_layers_id[-1], index_offset=-1, return_id=True
+            model, self.feature_layers_id[-1], index_offset=-1, return_id=True
         )
-        output_layers_id = [self.penultimate_layer_id]
-        penult_feat_extractor = self._load_feature_extractor(model, output_layers_id)
+        feature_layers_id = [self.penultimate_layer_id]
+        penult_feat_extractor = self._load_feature_extractor(model, feature_layers_id)
         unclipped_features, _ = penult_feat_extractor.predict(fit_dataset)
         self.react_threshold = self.op.quantile(unclipped_features, self.react_quantile)
 

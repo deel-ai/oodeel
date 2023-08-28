@@ -36,15 +36,15 @@ from tests.tests_torch import sequential_model
 @pytest.mark.parametrize(
     "kwargs_factory,expected_sz",
     [
-        (lambda: dict(model=Net(), output_layers_id=["fc2"]), [100, 84]),
-        (lambda: dict(model=sequential_model(), output_layers_id=[-2]), [100, 84]),
+        (lambda: dict(model=Net(), feature_layers_id=["fc2"]), [100, 84]),
+        (lambda: dict(model=sequential_model(), feature_layers_id=[-2]), [100, 84]),
         (
-            lambda: dict(model=named_sequential_model(), output_layers_id=["fc2"]),
+            lambda: dict(model=named_sequential_model(), feature_layers_id=["fc2"]),
             [100, 84],
         ),
-        (lambda: dict(model=ComplexNet(), output_layers_id=["fcs.fc2"]), [100, 84]),
+        (lambda: dict(model=ComplexNet(), feature_layers_id=["fcs.fc2"]), [100, 84]),
         (
-            lambda: dict(model=ComplexNet(), output_layers_id=["fcs.fc2"]),
+            lambda: dict(model=ComplexNet(), feature_layers_id=["fcs.fc2"]),
             [100, 84],
         ),
     ],
@@ -75,7 +75,7 @@ def test_params_torch_feature_extractor(kwargs_factory, expected_sz):
     [
         (
             lambda: dict(
-                model=sequential_model(), input_layer_id=4, output_layers_id=[-2]
+                model=sequential_model(), input_layer_id=4, feature_layers_id=[-2]
             ),
             [100, 84],
         ),
@@ -83,7 +83,7 @@ def test_params_torch_feature_extractor(kwargs_factory, expected_sz):
             lambda: dict(
                 model=named_sequential_model(),
                 input_layer_id="conv2",
-                output_layers_id=["fc2"],
+                feature_layers_id=["fc2"],
             ),
             [100, 84],
         ),
@@ -108,7 +108,7 @@ def test_pytorch_feature_extractor_with_input_ids(kwargs_factory, expected_sz):
 def test_get_weights():
     model = named_sequential_model()
 
-    model_fe = TorchFeatureExtractor(model, output_layers_id=[-1])
+    model_fe = TorchFeatureExtractor(model, feature_layers_id=[-1])
     W, b = model_fe.get_weights(-1)
 
     assert W.shape == (10, 84)
@@ -142,7 +142,7 @@ def test_predict_with_labels():
 
     # Generate model and feature extractor
     model = ComplexNet()
-    feature_extractor = TorchFeatureExtractor(model, output_layers_id=["fcs.fc2"])
+    feature_extractor = TorchFeatureExtractor(model, feature_layers_id=["fcs.fc2"])
 
     # Assert predict() outputs have expected shape
     out, info = feature_extractor.predict(dataset)

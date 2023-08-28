@@ -48,7 +48,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     Args:
         model: model to extract the features from
-        output_layers_id: list of str or int that identify features to output.
+        feature_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [].
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
@@ -62,14 +62,14 @@ class TorchFeatureExtractor(FeatureExtractor):
     def __init__(
         self,
         model: nn.Module,
-        output_layers_id: List[Union[int, str]] = [],
+        feature_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
     ):
         model = model.eval()
         super().__init__(
             model=model,
-            output_layers_id=output_layers_id,
+            feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
         )
@@ -79,7 +79,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     @property
     def _hook_layers_id(self):
-        return self.output_layers_id + [-1]
+        return self.feature_layers_id + [-1]
 
     def _get_features_hook(self, layer_id: Union[str, int]) -> Callable:
         """
@@ -92,6 +92,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         Returns:
             Callable: hook function
         """
+
         def hook(_, __, output):
             if isinstance(output, torch.Tensor):
                 self._features[layer_id] = output
@@ -144,7 +145,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
             pen_layer, pen_layer_id = self.find_layer(
-                self.model, self.output_layers_id[-1], index_offset=-1, return_id=True
+                self.model, self.feature_layers_id[-1], index_offset=-1, return_id=True
             )
             self.penultimate_layer_id = pen_layer_id
             pen_layer.register_forward_hook(self._get_clip_hook(self.react_threshold))

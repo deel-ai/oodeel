@@ -119,7 +119,7 @@ def eval_detector_on_blobs(
         assert detector.react_threshold is not None
         assert detector.penultimate_layer_id is not None
         penult_feat_extractor = detector.FeatureExtractorClass(
-            model=detector.feature_extractor.extractor, output_layers_id=[-2]
+            model=detector.feature_extractor.extractor, feature_layers_id=[-2]
         )
         penult_features, _ = penult_feat_extractor.predict(ds_fit)
         assert tf.reduce_max(penult_features) <= detector.react_threshold, (

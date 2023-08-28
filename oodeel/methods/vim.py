@@ -52,7 +52,7 @@ class VIM(OODBaseDetector):
         projection on $P^{\\perp}$ of $x-c$ has large norm.
 
     Args:
-        output_layers_id (List[Union[int, str]]): features to use for Residual score.
+        feature_layers_id (List[Union[int, str]]): features to use for Residual score.
         princ_dims (Union[int, float]): number of principal dimensions of in
             distribution features to consider. If an int, must be less than the
             dimension of the feature space.
@@ -67,14 +67,14 @@ class VIM(OODBaseDetector):
 
     def __init__(
         self,
-        output_layers_id: List[Union[int, str]],
+        feature_layers_id: List[Union[int, str]],
         princ_dims: Union[int, float] = 0.99,
         pca_origin: str = "pseudo",
     ):
-        if -1 not in output_layers_id:
-            output_layers_id.append(-1)
+        if -1 not in feature_layers_id:
+            feature_layers_id.append(-1)
         super().__init__(
-            output_layers_id=output_layers_id,
+            feature_layers_id=feature_layers_id,
         )
         self._princ_dim = princ_dims
         self.pca_origin = pca_origin
@@ -102,7 +102,7 @@ class VIM(OODBaseDetector):
         if self.pca_origin == "center":
             self.center = self.op.mean(features_train, dim=0)
         elif self.pca_origin == "pseudo":
-            W, b = self.feature_extractor.get_weights(self.output_layers_id[1])
+            W, b = self.feature_extractor.get_weights(self.feature_layers_id[1])
             W, b = self.op.from_numpy(W), self.op.from_numpy(b.reshape(-1, 1))
             _W = self.op.transpose(W) if self.backend == "tensorflow" else W
             self.center = -self.op.reshape(self.op.matmul(self.op.pinv(_W), b), (-1,))
