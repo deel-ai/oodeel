@@ -144,43 +144,34 @@ def test_predict_with_labels():
     model = ComplexNet()
     feature_extractor = TorchFeatureExtractor(model, output_layers_id=["fcs.fc2"])
 
-    # Assert predict without labels returned
-    out = feature_extractor.predict(dataset, return_labels=False)
+    # Assert predict() outputs have expected shape
+    out, info = feature_extractor.predict(dataset)
     assert out.shape == (n_samples, 84)
+    assert info["logits"].shape == (n_samples, 10)
+    assert info["labels"].shape == (n_samples,)
 
-    # Assert predict with labels returned
-    out = feature_extractor.predict(dataset, return_labels=True)
-    assert len(out) == 2
-    assert out[0].shape == (n_samples, 84)
-    assert out[1].shape == (n_samples,)
-
-    # Assert predict with labels returned (labels one-hot)
-    out = feature_extractor.predict(dataset_one_hot, return_labels=True)
-    assert len(out) == 2
-    assert out[0].shape == (n_samples, 84)
-    assert out[1].shape == (n_samples,)
-
-    # Assert predict with labels returned but no labels in dataset
-    out = feature_extractor.predict(dataset_wo_labels, return_labels=True)
-    assert len(out) == 2
-    assert out[1] is None
-
-    # Assert predict with no labels in dataset and return_labels=False
-    out = feature_extractor.predict(dataset_wo_labels, return_labels=False)
+    # Assert predict() outputs have expected shape (dataset has one-hot encoded labels)
+    out, info = feature_extractor.predict(dataset_one_hot)
     assert out.shape == (n_samples, 84)
+    assert info["logits"].shape == (n_samples, 10)
+    assert info["labels"].shape == (n_samples,)
 
-    # Assert predict of a single tensor with return_labels=False and True
+    # Assert predict() outputs have expected shape (dataset has no labels)
+    out, info = feature_extractor.predict(dataset_wo_labels)
+    assert out.shape == (n_samples, 84)
+    assert info["logits"].shape == (n_samples, 10)
+    assert info["labels"] is None
+
+    # Assert predict() outputs for a single input tensor (no label provided)
     batch = next(iter(dataset_wo_labels))
-    out = feature_extractor.predict(batch, return_labels=False)
+    out, info = feature_extractor.predict(batch)
     assert out.shape == (33, 84)
-    out = feature_extractor.predict(batch, return_labels=True)
-    assert len(out) == 2
-    assert out[1] is None
+    assert info["logits"].shape == (33, 10)
+    assert info["labels"] is None
 
-    # Assert predict of a tuple (tensor, labels) with return_labels=False and True
+    # Assert predict() outputs for a single input tensor with label provided
     batch = next(iter(dataset_one_hot))
-    out = feature_extractor.predict(batch, return_labels=False)
+    out, info = feature_extractor.predict(batch)
     assert out.shape == (33, 84)
-    out = feature_extractor.predict(batch, return_labels=True)
-    assert len(out) == 2
-    assert out[1].shape == (33,)
+    assert info["logits"].shape == (33, 10)
+    assert info["labels"].shape == (33,)
