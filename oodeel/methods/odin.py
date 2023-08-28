@@ -51,7 +51,7 @@ class ODIN(OODBaseDetector):
     ):
         self.temperature = temperature
         super().__init__(
-            output_layers_id=[-1],
+            feature_layers_id=[-1],
             use_react=use_react,
             react_quantile=react_quantile,
         )

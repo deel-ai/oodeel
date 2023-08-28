@@ -36,7 +36,7 @@ class Mahalanobis(OODBaseDetector):
     https://arxiv.org/abs/1807.03888
 
     Args:
-        output_layers_id (List[Union[int, str]]): feature space on which to
+        feature_layers_id (List[Union[int, str]]): feature space on which to
             compute mahalanobis distance.
         eps (float): magnitude for gradient based input perturbation.
             Defaults to 0.02.
@@ -44,10 +44,10 @@ class Mahalanobis(OODBaseDetector):
 
     def __init__(
         self,
-        output_layers_id: List[Union[int, str]],
+        feature_layers_id: List[Union[int, str]],
         eps: float = 0.002,
     ):
-        super(Mahalanobis, self).__init__(output_layers_id=output_layers_id)
+        super(Mahalanobis, self).__init__(feature_layers_id=feature_layers_id)
         self.eps = eps
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:

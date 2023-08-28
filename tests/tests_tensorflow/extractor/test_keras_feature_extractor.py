@@ -37,11 +37,11 @@ def test_predict():
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    feature_extractor = KerasFeatureExtractor(model, output_layers_id=[-3])
+    feature_extractor = KerasFeatureExtractor(model, feature_layers_id=[-3])
 
-    model_fe = KerasFeatureExtractor(model, output_layers_id=[-1])
+    model_fe = KerasFeatureExtractor(model, feature_layers_id=[-1])
 
-    last_layer = KerasFeatureExtractor(model, output_layers_id=[-1], input_layer_id=-2)
+    last_layer = KerasFeatureExtractor(model, feature_layers_id=[-1], input_layer_id=-2)
 
     pred_model = model.predict(data)
     pred_feature_extractor, _ = feature_extractor.predict(data)
@@ -62,7 +62,7 @@ def test_get_weights():
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    model_fe = KerasFeatureExtractor(model, output_layers_id=[-1])
+    model_fe = KerasFeatureExtractor(model, feature_layers_id=[-1])
     W, b = model_fe.get_weights(-1)
 
     assert W.shape == (900, 10)
@@ -98,7 +98,7 @@ def test_predict_with_labels():
 
     # Generate model and feature extractor
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
-    feature_extractor = KerasFeatureExtractor(model, output_layers_id=[-3])
+    feature_extractor = KerasFeatureExtractor(model, feature_layers_id=[-3])
 
     # Assert predict() outputs have expected shape
     out, info = feature_extractor.predict(data)

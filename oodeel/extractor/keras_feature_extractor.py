@@ -45,7 +45,7 @@ class KerasFeatureExtractor(FeatureExtractor):
 
     Args:
         model: model to extract the features from
-        output_layers_id: list of str or int that identify features to output.
+        feature_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [].
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
@@ -59,7 +59,7 @@ class KerasFeatureExtractor(FeatureExtractor):
     def __init__(
         self,
         model: Callable,
-        output_layers_id: List[Union[int, str]] = [-1],
+        feature_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
     ):
@@ -67,7 +67,7 @@ class KerasFeatureExtractor(FeatureExtractor):
             input_layer_id = 0
         super().__init__(
             model=model,
-            output_layers_id=output_layers_id,
+            feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
         )
@@ -123,19 +123,19 @@ class KerasFeatureExtractor(FeatureExtractor):
         input_layer = self.find_layer(self.model, self.input_layer_id)
         new_input = tf.keras.layers.Input(tensor=input_layer.input)
         output_tensors = [
-            self.find_layer(self.model, ol_id).output for ol_id in self.output_layers_id
+            self.find_layer(self.model, id).output for id in self.feature_layers_id
         ]
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
             penultimate_layer, penultimate_layer_id = self.find_layer(
-                self.model, self.output_layers_id[-1], index_offset=-1, return_id=True
+                self.model, self.feature_layers_id[-1], index_offset=-1, return_id=True
             )
             self.penultimate_layer_id = penultimate_layer_id
             penult_extractor = tf.keras.models.Model(
                 new_input, penultimate_layer.output
             )
-            last_layer = self.find_layer(self.model, self.output_layers_id[-1])
+            last_layer = self.find_layer(self.model, self.feature_layers_id[-1])
 
             # clip penultimate activations
             x = tf.clip_by_value(
@@ -210,7 +210,7 @@ class KerasFeatureExtractor(FeatureExtractor):
                 labels = _get_label(dataset)
 
         else:  # if dataset is a tf.data.Dataset
-            features = [None for i in range(len(self.output_layers_id) + 1)]
+            features = [None for i in range(len(self.feature_layers_id) + 1)]
             contains_labels = TFDataHandler.get_item_length(dataset) > 1
             for elem in dataset:
                 tensor = TFDataHandler.get_input_from_dataset_item(elem)
@@ -219,7 +219,9 @@ class KerasFeatureExtractor(FeatureExtractor):
                     features_batch = [features_batch]
                 for i, f in enumerate(features_batch):
                     features[i] = (
-                        f if features[i] is None else tf.concat([features[i], f], axis=0)
+                        f
+                        if features[i] is None
+                        else tf.concat([features[i], f], axis=0)
                     )
 
                 # Concatenate labels of current batch with previous batches
