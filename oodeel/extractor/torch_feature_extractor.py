@@ -144,10 +144,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
-            pen_layer, pen_layer_id = self.find_layer(
-                self.model, self.feature_layers_id[-1], index_offset=-1, return_id=True
-            )
-            self.penultimate_layer_id = pen_layer_id
+            pen_layer = self.find_layer(self.model, -2)
             pen_layer.register_forward_hook(self._get_clip_hook(self.react_threshold))
 
         # Register a hook to store feature values for each considered layer + last layer

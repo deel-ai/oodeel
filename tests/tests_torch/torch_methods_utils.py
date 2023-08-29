@@ -123,13 +123,8 @@ def eval_detector_on_blobs(
     # /!\ do it at the end of the test because it may affect the detector's behaviour
     if check_react_clipping:
         assert detector.react_threshold is not None
-        assert detector.penultimate_layer_id is not None
         penult_feat_extractor = detector._load_feature_extractor(
-            model=model,
-            feature_layers_id=[
-                detector.penultimate_layer_id,
-                detector.feature_layers_id[-1],
-            ],
+            model=model, feature_layers_id=[-2, -1]
         )
         penult_features = penult_feat_extractor.predict(ds_fit)[0][0]
         assert torch.max(penult_features) <= detector.react_threshold, (

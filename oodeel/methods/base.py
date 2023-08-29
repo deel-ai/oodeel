@@ -260,11 +260,7 @@ class OODBaseDetector(ABC):
         return np.array(oodness, dtype=np.bool)
 
     def compute_react_threshold(self, model: Callable, fit_dataset: DatasetType):
-        _, self.penultimate_layer_id = self.FeatureExtractorClass.find_layer(
-            model, self.feature_layers_id[-1], index_offset=-1, return_id=True
-        )
-        feature_layers_id = [self.penultimate_layer_id]
-        penult_feat_extractor = self._load_feature_extractor(model, feature_layers_id)
+        penult_feat_extractor = self._load_feature_extractor(model, [-2])
         unclipped_features, _ = penult_feat_extractor.predict(fit_dataset)
         self.react_threshold = self.op.quantile(unclipped_features, self.react_quantile)
 

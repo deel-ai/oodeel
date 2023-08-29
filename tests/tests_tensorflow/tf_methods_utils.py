@@ -117,7 +117,6 @@ def eval_detector_on_blobs(
     # /!\ do it at the end of the test because it may affect the detector's behaviour
     if check_react_clipping:
         assert detector.react_threshold is not None
-        assert detector.penultimate_layer_id is not None
         penult_feat_extractor = detector.FeatureExtractorClass(
             model=detector.feature_extractor.extractor, feature_layers_id=[-2]
         )
