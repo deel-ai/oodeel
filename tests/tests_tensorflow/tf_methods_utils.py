@@ -99,8 +99,8 @@ def eval_detector_on_blobs(
         detector.fit(model)
 
     # ood scores
-    scores_in = detector.score(ds_in)
-    scores_out = detector.score(ds_out)
+    scores_in, _ = detector.score(ds_in)
+    scores_out, _ = detector.score(ds_out)
     assert scores_in.shape == (1028,)
     assert scores_out.shape == (972,)
 
