@@ -73,12 +73,13 @@ class MLS(OODBaseDetector):
             scores
         """
 
-        pred = self.feature_extractor.predict(inputs)[1]["logits"]
+        _, info = self.feature_extractor.predict(inputs)
+        pred = info["logits"]
         if self.output_activation == "softmax":
             pred = self.op.softmax(pred)
         pred = self.op.convert_to_numpy(pred)
         scores = -np.max(pred, axis=1)
-        return scores
+        return scores, info
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """

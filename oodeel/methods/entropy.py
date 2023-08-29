@@ -73,11 +73,11 @@ class Entropy(OODBaseDetector):
 
         # compute logits (softmax(logits,axis=1) is the actual softmax
         # output minimized using binary cross entropy)
-        logits = self.feature_extractor.predict(inputs)[1]["logits"]
-        probits = self.op.softmax(logits)
+        _, info = self.feature_extractor.predict(inputs)
+        probits = self.op.softmax(info["logits"])
         probits = self.op.convert_to_numpy(probits)
         scores = np.sum(probits * np.log(probits), axis=1)
-        return -scores
+        return -scores, info
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """
