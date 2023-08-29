@@ -128,14 +128,11 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
-            penultimate_layer, penultimate_layer_id = self.find_layer(
-                self.model, self.feature_layers_id[-1], index_offset=-1, return_id=True
-            )
-            self.penultimate_layer_id = penultimate_layer_id
+            penultimate_layer = self.find_layer(self.model, -2)
             penult_extractor = tf.keras.models.Model(
                 new_input, penultimate_layer.output
             )
-            last_layer = self.find_layer(self.model, self.feature_layers_id[-1])
+            last_layer = self.find_layer(self.model, -1)
 
             # clip penultimate activations
             x = tf.clip_by_value(
@@ -144,10 +141,9 @@ class KerasFeatureExtractor(FeatureExtractor):
                 clip_value_max=self.react_threshold,
             )
             # apply ultimate layer on clipped activations
-            output_tensors[-1] = last_layer(x)
-
-        # Add model output to output_tensors
-        output_tensors.append(self.find_layer(self.model, -1).output)
+            output_tensors.append(last_layer(x))
+        else:
+            output_tensors.append(self.find_layer(self.model, -1).output)
 
         extractor = tf.keras.models.Model(new_input, output_tensors)
         return extractor
