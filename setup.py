@@ -39,11 +39,14 @@ requirements = [
     "matplotlib",
     "kneed",
     "pandas",
+    "seaborn",
+    "plotly",
 ]
 
 tensorflow_requirements = [
     "tensorflow",
     "tensorflow_datasets",
+    "tensorflow_probability",
 ]
 
 torch_requirements = ["timm", "torch", "torchvision"]

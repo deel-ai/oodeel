@@ -33,7 +33,6 @@ from torch.utils.data import Dataset
 from torch.utils.data import Subset
 from torch.utils.data import TensorDataset
 from torch.utils.data.dataloader import default_collate
-from tqdm import tqdm
 
 from ..types import Any
 from ..types import Callable
@@ -207,11 +206,7 @@ class DictDataset(Dataset):
         Returns:
             DictDataset: Filtered dataset
         """
-        indices = [
-            i
-            for i in tqdm(range(len(self)), desc="Filtering the dataset...")
-            if filter_fn(self[i])
-        ]
+        indices = [i for i in range(len(self)) if filter_fn(self[i])]
         dataset = self if inplace else copy.deepcopy(self)
         dataset._dataset = Subset(self._dataset, indices)
         return dataset
@@ -476,12 +471,7 @@ class TorchDataHandler(DataHandler):
         """
 
         features = dataset.map(lambda x: x[feature_key])
-        features = np.stack(
-            [
-                f.numpy()
-                for f in tqdm(features, desc="Extracting feature from dataset...")
-            ]
-        )
+        features = np.stack([f.numpy() for f in features])
         return features
 
     @staticmethod
@@ -601,22 +591,26 @@ class TorchDataHandler(DataHandler):
         Returns:
             DataLoader: dataloader
         """
-        preprocess_fn = preprocess_fn or (lambda x: x)
-        augment_fn = augment_fn or (lambda x: x)
         output_keys = output_keys or cls.get_ds_feature_keys(dataset)
 
         def collate_fn(batch: List[dict]):
             if dict_based_fns:
                 # preprocess + DA: List[dict] -> List[dict]
-                batch = [augment_fn(preprocess_fn(d)) for d in batch]
+                preprocess_func = preprocess_fn or (lambda x: x)
+                augment_func = augment_fn or (lambda x: x)
+                batch = [augment_func(preprocess_func(d)) for d in batch]
                 # to tuple of batchs
                 return tuple(
                     default_collate([d[key] for d in batch]) for key in output_keys
                 )
             else:
                 # preprocess + DA: List[dict] -> List[tuple]
+                preprocess_func = preprocess_fn or (lambda *x: x)
+                augment_func = augment_fn or (lambda *x: x)
                 batch = [
-                    augment_fn(preprocess_fn(tuple(d[key] for key in output_keys)))
+                    augment_func(
+                        *preprocess_func(*tuple(d[key] for key in output_keys))
+                    )
                     for d in batch
                 ]
                 # to tuple of batchs

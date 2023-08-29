@@ -71,6 +71,81 @@ def test_get_weights():
     assert b.shape == (10,)
 
 
+def test_predict_with_labels():
+    """Assert that FeatureExtractor.predict() correctly returns features and labels when
+    return_labels=True.
+
+    Multiple tests are performed:
+    - dataset with labels or without labels
+    - dataset with one-hot encoded or sparse labels
+    - single tensor instead of a dataset
+    """
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    # Generate dataset with sparse labels, with one-hot labels and without labels
+    data = generate_data_tf(
+        x_shape=input_shape,
+        num_labels=num_labels,
+        samples=samples,
+        one_hot=False,
+    ).batch(samples // 2)
+
+    data_one_hot = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    ).batch(samples // 2)
+
+    data_wo_labels = data.map(lambda x, y: x)
+
+    # Generate model and feature extractor
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+    feature_extractor = KerasFeatureExtractor(model, output_layers_id=[-3])
+
+    # Assert predict without labels returned
+    out = feature_extractor.predict(data, return_labels=False)
+    assert out.shape == (samples, 15, 15, 4)
+
+    # Assert predict with labels returned
+    out = feature_extractor.predict(data, return_labels=True)
+    assert len(out) == 2
+    assert out[0].shape == (samples, 15, 15, 4)
+    assert out[1].shape == (samples,)
+
+    # Assert predict with labels returned (labels one-hot)
+    out = feature_extractor.predict(data_one_hot, return_labels=True)
+    assert len(out) == 2
+    assert out[0].shape == (samples, 15, 15, 4)
+    assert out[1].shape == (samples,)
+
+    # Assert predict with labels returned but no labels in dataset
+    out = feature_extractor.predict(data_wo_labels, return_labels=True)
+    assert len(out) == 2
+    assert out[1] is None
+
+    # Assert predict with no labels in dataset and return_labels=False
+    out = feature_extractor.predict(data_wo_labels, return_labels=False)
+    assert out.shape == (samples, 15, 15, 4)
+
+    # Assert predict of a single tensor with return_labels=False and True
+    for batch in data_wo_labels.take(1):
+        pass
+    out = feature_extractor.predict(batch, return_labels=False)
+    assert out.shape == (50, 15, 15, 4)
+    out = feature_extractor.predict(batch, return_labels=True)
+    assert len(out) == 2
+    assert out[1] is None
+
+    # Assert predict of a tuple (tensor, labels) with return_labels=False and True
+    for batch in data_one_hot.take(1):
+        pass
+    out = feature_extractor.predict(batch, return_labels=False)
+    assert out.shape == (50, 15, 15, 4)
+    out = feature_extractor.predict(batch, return_labels=True)
+    assert len(out) == 2
+    assert out[1].shape == (50,)
+
+
 def test_postproc_fns():
     samples = 100
     input_shape = (3, 32, 32)
@@ -84,12 +159,12 @@ def test_postproc_fns():
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    postproc_fns = [tf.keras.layers.GlobalAveragePooling2D(), None]
+    postproc_fns = [tf.keras.layers.GlobalAveragePooling2D(), lambda x: x]
 
     feature_extractor = KerasFeatureExtractor(
-        model, output_layers_id=["conv2d", "flatten"], postproc_fns=postproc_fns
+        model, output_layers_id=["conv2d", "flatten"]
     )
 
-    feat0, feat1 = feature_extractor.predict(dataset)
+    feat0, feat1 = feature_extractor.predict(dataset, postproc_fns=postproc_fns)
     assert list(feat0.shape) == [100, 4]
     assert list(feat1.shape) == [100, 60]

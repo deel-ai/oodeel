@@ -183,6 +183,16 @@ class Operator(ABC):
         raise NotImplementedError()
 
     @staticmethod
+    def quantile(tensor: TensorType, q: float, dim: int = None) -> TensorType:
+        "Computes the quantile of a tensor's components"
+        raise NotImplementedError()
+
+    @staticmethod
+    def relu(tensor: TensorType) -> TensorType:
+        "Apply relu to a tensor"
+        raise NotImplementedError()
+
+    @staticmethod
     @abstractmethod
     def einsum(equation: str, *tensors: TensorType) -> TensorType:
         "Computes the einsum between tensors following equation"

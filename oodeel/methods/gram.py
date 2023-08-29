@@ -52,6 +52,16 @@ class Gram(OODBaseDetector):
         self.orders = orders
         super().__init__(output_layers_id=output_layers_id, postproc_fns=postproc_fns)
 
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return True
+
     def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
         """
         Constructs the index from ID data "fit_dataset", which will be used for
@@ -61,7 +71,7 @@ class Gram(OODBaseDetector):
             fit_dataset: input dataset (ID) to construct the index with.
         """
         fit_feature_maps = self.feature_extractor.predict(
-            fit_dataset, self.postproc_fns
+            fit_dataset, postproc_fns=self.postproc_fns
         )
 
         for i, feature_map in enumerate(fit_feature_maps):
@@ -84,7 +94,7 @@ class Gram(OODBaseDetector):
             scores
         """
 
-        input_projected = self.feature_extractor(inputs, self.postproc_fns)
+        input_projected = self.feature_extractor(inputs, postproc_fns=self.postproc_fns)
 
     def row_wise_sums(self, feature_map):
         fm_s = feature_map.shape

@@ -31,7 +31,7 @@
 
 <!-- Short description of your library -->
 
-<b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch. You can find the documentation [here](https://deel-ai.github.io/oodeel/).
+<b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch.
 
 ```python
 from oodeel.methods import MLS
@@ -45,9 +45,9 @@ scores = mls.score(ds)
 
 # Table of contents
 
-- [Table of contents](#table-of-contents)
-- [Tutorials](#tutorials)
+- [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Tutorials](#tutorials)
 - [What's Included](#whats-included)
 - [Development roadmap](#development-roadmap)
 - [Contributing](#contributing)
@@ -56,23 +56,23 @@ scores = mls.score(ds)
 - [Creator](#creator)
 - [License](#license)
 
-# Tutorials
-
-We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the [doc](https://deel-ai.github.io/oodeel/)
-
-# Quick Start
+# Installation
 
 **Oodeel** requires some stuff and several libraries including Numpy. Installation can be done using:
 
 ```bash
 git clone https://github.com/deel-ai/oodeel.git
 cd oodeel
-make prepare-dev
+make install-env-${BACKEND}
+
 ```
+where `${BACKEND}` is either `torch` or `tensorflow` depending on the user's backend.
+
+# Quick Start
 
 Now that *oodeel* is installed, here are some basic examples of what you can do with the available modules. See also the notebooks directory for more advanced examples.
 
-## For benchmarking with one dataset as in-distribution and another as out-of-distribution
+### For benchmarking with one dataset as in-distribution and another as out-of-distribution
 
 Load in-distribution and out-of-distribution datasets.
 
@@ -87,7 +87,7 @@ ds_out = OODDataset(
   backend="tensorflow").prepare(batch_size)
 ```
 
-## For benchmarking with one dataset as in-distribution and another as out-of-distribution
+### For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution
 
 Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (a common practice of anomaly detection and open set recognition).
 
@@ -99,7 +99,7 @@ oods_in, oods_out = oods_test.assign_ood_labels_by_class(in_labels=in_labels)
 ds_in = oods_in.prepare(batch_size=batch_size)
 ds_out = oods_out.prepare(batch_size=batch_size)
 ```
-## Run an OOD method
+### Run an OOD method
 
 Load an OOD method and use it on an already-trained model
 
@@ -123,6 +123,9 @@ metrics = bench_metrics(
     )
 ```
 
+# Tutorials
+
+We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the doc.
 
 # What's Included
 
@@ -143,7 +146,7 @@ Currently, **oodeel** includes the following baselines:
 | VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |avail [tensorflow](./notebooks/tensorflow/demo_vim_tf.ipynb) or  [torch](./notebooks/torch/demo_vim_torch.ipynb)  |
 | Entropy | [Likelihood Ratios for Out-of-Distribution Detection](https://proceedings.neurips.cc/paper/2019/hash/1e79596878b2320cac26dd792a6c51c9-Abstract.html) | NeurIPS 2019 |avail [tensorflow](./notebooks/tensorflow/demo_entropy_tf.ipynb) or  [torch](./notebooks/torch/demo_entropy_torch.ipynb)  |
 | GODIN | [Generalized ODIN: Detecting Out-of-Distribution Image Without Learning From Out-of-Distribution Data](https://ieeexplore.ieee.org/document/9156473/) | CVPR 2020 | planned |
-| ReAct | [ReAct: Out-of-distribution Detection With Rectified Activations](http://arxiv.org/abs/2111.12797) | NeurIPS 2021 | planned |
+| ReAct | [ReAct: Out-of-distribution Detection With Rectified Activations](http://arxiv.org/abs/2111.12797) | NeurIPS 2021 | avail [tensorflow](./notebooks/tensorflow/demo_react_tf.ipynb) or  [torch](./notebooks/torch/demo_react_torch.ipynb) |
 | NMD | [Neural Mean Discrepancy for Efficient Out-of-Distribution Detection](https://openaccess.thecvf.com/content/CVPR2022/html/Dong_Neural_Mean_Discrepancy_for_Efficient_Out-of-Distribution_Detection_CVPR_2022_paper.html) | CVPR 2022 | planned |
 | Gram | [Detecting Out-of-Distribution Examples with Gram Matrices](https://proceedings.mlr.press/v119/sastry20a.html) | ICML 2020 | planned |
 

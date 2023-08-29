@@ -36,16 +36,16 @@ class DKNN(OODBaseDetector):
     https://arxiv.org/abs/2204.06507
 
     Args:
+        output_layers_id (List[Union[int, str]]): feature space on which to compute
+            nearest neighbors.
         nearest: number of nearest neighbors to consider.
             Defaults to 1.
-        output_layers_id: feature space on which to compute nearest neighbors.
-            Defaults to [-2].
     """
 
     def __init__(
         self,
+        output_layers_id: List[Union[int, str]],
         nearest: int = 1,
-        output_layers_id: List[int] = [-2],
     ):
         super().__init__(
             output_layers_id=output_layers_id,
@@ -98,3 +98,13 @@ class DKNN(OODBaseDetector):
             np.ndarray: the normalized tensor
         """
         return feat / (np.linalg.norm(feat, ord=2, axis=-1, keepdims=True) + 1e-10)
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return True

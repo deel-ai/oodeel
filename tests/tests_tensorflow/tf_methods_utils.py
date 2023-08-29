@@ -75,7 +75,11 @@ def load_blob_mlp():
 
 
 def eval_detector_on_blobs(
-    detector, need_to_fit_dataset, auroc_thr=0.6, fpr95_thr=0.3, batch_size=128
+    detector,
+    auroc_thr=0.6,
+    fpr95_thr=0.3,
+    batch_size=128,
+    check_react_clipping=False,
 ):
     # seed
     tf.random.set_seed(0)
@@ -89,7 +93,7 @@ def eval_detector_on_blobs(
     model = load_blob_mlp()
 
     # fit ood detector
-    if need_to_fit_dataset:
+    if detector.requires_to_fit_dataset or detector.use_react:
         detector.fit(model, ds_fit)
     else:
         detector.fit(model)
@@ -108,3 +112,18 @@ def eval_detector_on_blobs(
     auroc, fpr95tpr = metrics["auroc"], metrics["fpr95tpr"]
     assert auroc >= auroc_thr, f"got a score of {auroc}, below {auroc_thr}!"
     assert fpr95tpr <= fpr95_thr, f"got a score of {fpr95tpr}, above {fpr95_thr}!"
+
+    # react specific test
+    # /!\ do it at the end of the test because it may affect the detector's behaviour
+    if check_react_clipping:
+        assert detector.react_threshold is not None
+        assert detector.penultimate_layer_id is not None
+        penult_feat_extractor = detector.FeatureExtractorClass(
+            model=detector.feature_extractor.extractor, output_layers_id=[-2]
+        )
+        penult_features = penult_feat_extractor.predict(ds_fit)
+        assert tf.reduce_max(penult_features) <= detector.react_threshold, (
+            "Maximum value of penultimate features"
+            + f" ({tf.reduce_max(penult_features)}) should be less than or equal to"
+            + f" the react threshold value ({detector.react_threshold})"
+        )

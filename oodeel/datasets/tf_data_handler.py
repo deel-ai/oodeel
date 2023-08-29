@@ -582,8 +582,8 @@ class TFDataHandler(DataHandler):
 
     @staticmethod
     def get_dataset_length(dataset: tf.data.Dataset) -> int:
-        """Get the length of a dataset. Try to access it with len(), and if not available,
-        with a reduce op.
+        """Get the length of a dataset. Try to access it with len(), and if not
+        available, with a reduce op.
 
         Args:
             dataset (tf.data.Dataset): Dataset to process

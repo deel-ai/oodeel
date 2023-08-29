@@ -29,7 +29,7 @@ from tests.tests_torch import eval_detector_on_blobs
 @pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
 def test_odin(auroc_thr, fpr95_thr):
     """
-    Test ODIN on MNIST vs FashionMNIST OOD dataset-wise task
+    Test ODIN on toy blobs OOD dataset-wise task
 
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
@@ -37,7 +37,6 @@ def test_odin(auroc_thr, fpr95_thr):
     odin = ODIN()
     eval_detector_on_blobs(
         detector=odin,
-        need_to_fit_dataset=False,
         auroc_thr=auroc_thr,
         fpr95_thr=fpr95_thr,
     )

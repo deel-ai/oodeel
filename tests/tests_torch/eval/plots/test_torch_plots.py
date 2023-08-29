@@ -20,23 +20,49 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import pytest
+import matplotlib.pyplot as plt
+import torch
 
-from oodeel.methods import DKNN
-from tests.tests_torch import eval_detector_on_blobs
+from oodeel.eval.plots import plot_2D_features
+from oodeel.eval.plots import plot_3D_features
+from oodeel.eval.plots import plot_ood_scores
+from oodeel.eval.plots import plot_roc_curve
+from oodeel.eval.plots import plotly_3D_features
+from oodeel.methods import MLS
+from tests.tests_torch.torch_methods_utils import load_blob_mlp
+from tests.tests_torch.torch_methods_utils import load_blobs_data
 
 
-@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
-def test_dknn(auroc_thr, fpr95_thr):
-    """
-    Test DKNN on toy blobs OOD dataset-wise task
+def test_mls_blobs_plots():
+    # seed
+    torch.manual_seed(1)
 
-    We check that the area under ROC is above a certain threshold, and that the FPR95TPR
-    is below an other threshold.
-    """
-    dknn = DKNN(output_layers_id=[-2])
-    eval_detector_on_blobs(
-        detector=dknn,
-        auroc_thr=auroc_thr,
-        fpr95_thr=fpr95_thr,
-    )
+    # load data
+    batch_size = 128
+    ds_fit, ds_in, ds_out = load_blobs_data(batch_size)
+
+    # get classifier
+    model = load_blob_mlp()
+
+    # fit ood detector
+    detector = MLS()
+    detector.fit(model)
+
+    # ood scores
+    scores_in = detector.score(ds_in)
+    scores_out = detector.score(ds_out)
+
+    # static plots (matplotlib + seaborn)
+    plt.figure()
+    plt.subplot(141)
+    plot_2D_features(model, ds_in, -2, ds_out, "TSNE")
+    plt.subplot(142, projection="3d")
+    plot_3D_features(model, ds_in, -2, ds_out, "PCA")
+    plt.subplot(143)
+    plot_ood_scores(scores_in, scores_out)
+    plt.subplot(144)
+    plot_roc_curve(scores_in, scores_out)
+    plt.show()
+
+    # interactive plot (plotly)
+    plotly_3D_features(model, ds_in, -2, ds_out, "PCA")

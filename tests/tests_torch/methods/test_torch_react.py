@@ -22,21 +22,60 @@
 # SOFTWARE.
 import pytest
 
-from oodeel.methods import DKNN
+from oodeel.methods import Energy
+from oodeel.methods import Entropy
+from oodeel.methods import MLS
+from oodeel.methods import ODIN
 from tests.tests_torch import eval_detector_on_blobs
 
 
-@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
-def test_dknn(auroc_thr, fpr95_thr):
+@pytest.mark.parametrize(
+    "detector_name,auroc_thr,fpr95_thr",
+    [
+        ("odin", 0.95, 0.05),
+        ("mls", 0.95, 0.05),
+        ("msp", 0.95, 0.05),
+        ("energy", 0.95, 0.23),
+        ("entropy", 0.95, 0.05),
+    ],
+)
+def test_react(detector_name, auroc_thr, fpr95_thr):
     """
-    Test DKNN on toy blobs OOD dataset-wise task
+    Test ReAct + [MLS, MSP, Energy, ODIN, Entropy] on toy blobs OOD dataset-wise task
 
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    dknn = DKNN(output_layers_id=[-2])
+    detectors = {
+        "odin": {
+            "class": ODIN,
+            "kwargs": dict(temperature=1000),
+        },
+        "mls": {
+            "class": MLS,
+            "kwargs": dict(),
+        },
+        "msp": {
+            "class": MLS,
+            "kwargs": dict(output_activation="softmax"),
+        },
+        "energy": {
+            "class": Energy,
+            "kwargs": dict(),
+        },
+        "entropy": {
+            "class": Entropy,
+            "kwargs": dict(),
+        },
+    }
+
+    d_kwargs = detectors[detector_name]["kwargs"]
+    detector = detectors[detector_name]["class"](
+        use_react=True, react_quantile=0.9, **d_kwargs
+    )
     eval_detector_on_blobs(
-        detector=dknn,
+        detector=detector,
         auroc_thr=auroc_thr,
         fpr95_thr=fpr95_thr,
+        check_react_clipping=True,
     )

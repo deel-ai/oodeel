@@ -29,15 +29,14 @@ from tests.tests_tensorflow import eval_detector_on_blobs
 @pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
 def test_dknn(auroc_thr, fpr95_thr):
     """
-    Test DKNN on MNIST vs FashionMNIST OOD dataset-wise task
+    Test DKNN on toy blobs OOD dataset-wise task
 
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    dknn = DKNN()
+    dknn = DKNN(output_layers_id=[-2])
     eval_detector_on_blobs(
         detector=dknn,
-        need_to_fit_dataset=True,
         auroc_thr=auroc_thr,
         fpr95_thr=fpr95_thr,
     )

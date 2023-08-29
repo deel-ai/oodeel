@@ -182,8 +182,8 @@ def test_assign_ood_labels_by_class(in_labels, out_labels, one_hot, expected_out
     ids=[
         "[tf] Prepare OODDataset for scoring with labels and ood labels",
         "[tf] Prepare OODDataset for scoring with only ood labels",
-        "[tf] Prepare OODDataset for training (with shuffle and augment_fn) with labels "
-        "and ood labels",
+        "[tf] Prepare OODDataset for training (with shuffle and augment_fn) with labels"
+        " and ood labels",
         "[tf] Prepare OODDataset for training (with shuffle and augment_fn) "
         "with only labels",
     ],

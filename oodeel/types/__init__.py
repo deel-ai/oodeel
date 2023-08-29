@@ -61,14 +61,15 @@ if len(avail_lib) == 2:
         torch.Tensor,
         np.ndarray,
         tuple,
+        list,
         dict,
     ]
 
 elif "tensorflow" in avail_lib:
     DatasetType = Type[tf.data.Dataset]
     TensorType = Union[tf.Tensor, np.ndarray]
-    ItemType = Union[tf.Tensor, np.ndarray, tuple, dict]
+    ItemType = Union[tf.Tensor, np.ndarray, tuple, list, dict]
 elif "torch" in avail_lib:
     DatasetType = Type[torch.utils.data.DataLoader]
     TensorType = Union[torch.Tensor, np.ndarray]
-    ItemType = Union[torch.Tensor, np.ndarray, tuple, dict]
+    ItemType = Union[torch.Tensor, np.ndarray, tuple, list, dict]

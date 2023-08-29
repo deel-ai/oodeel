@@ -34,31 +34,50 @@ from ..types import List
 from ..types import Optional
 from ..types import TensorType
 from ..types import Union
-from ..utils import is_from
+from ..utils import import_backend_specific_stuff
 
 
 class OODBaseDetector(ABC):
     """Base Class for methods that assign a score to unseen samples.
 
     Args:
-        output_layers_id (List[int]): list of str or int that identify features to output.
+        output_layers_id (List[int]): list of str or int that identify features to
+            output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [-1],
         input_layers_id (List[int]): = list of str or int that identify the input layer
             of the feature extractor.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to None.
+        use_react (bool): if true, apply ReAct method by clipping penultimate
+            activations under a threshold value.
+        react_quantile (Optional[float]): q value in the range [0, 1] used to compute
+            the react clipping threshold defined as the q-th quantile penultimate layer
+            activations. Defaults to 0.8.
     """
 
     def __init__(
         self,
-        output_layers_id: List[Union[int, str]] = [-1],
+        output_layers_id: List[Union[int, str]] = None,
         input_layers_id: Optional[Union[int, str]] = None,
-        postproc_fns: Optional[List[Callable]] = None,
+        use_react: bool = False,
+        react_quantile: float = 0.8,
+        postproc_fns: List[Callable] = None,
     ):
         self.feature_extractor: FeatureExtractor = None
+        if output_layers_id is None:
+            raise ValueError(
+                "Explicitely specify output_layers_id=[layer0, layer1,...], "
+                + "where layer0, layer1,... are the names of the desired output "
+                + "layers of your model. These can be int or str (even though str"
+                + " is safer). To know what to put, have a look at model.summary() "
+                + "with keras or model.named_modules()"
+            )
         self.output_layers_id = output_layers_id
         self.input_layers_id = input_layers_id
+        self.use_react = use_react
+        self.react_quantile = react_quantile
+        self.react_threshold = None
         self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
 
     @abstractmethod
@@ -118,6 +137,29 @@ class OODBaseDetector(ABC):
             model: model to extract the features from
             fit_dataset: dataset to fit the detector on
         """
+        (
+            self.backend,
+            self.data_handler,
+            self.op,
+            self.FeatureExtractorClass,
+        ) = import_backend_specific_stuff(model)
+
+        # if required by the method, check that fit_dataset is not None
+        if self.requires_to_fit_dataset and fit_dataset is None:
+            raise ValueError(
+                "`fit_dataset` argument must be provided for this OOD detector"
+            )
+
+        # react: compute threshold (activation percentiles)
+        if self.use_react:
+            if fit_dataset is None:
+                raise ValueError(
+                    "if react quantile is not None, fit_dataset must be"
+                    " provided to compute react activation threshold"
+                )
+            else:
+                self.compute_react_threshold(model, fit_dataset)
+
         self.feature_extractor = self._load_feature_extractor(model)
 
         if fit_dataset is not None:
@@ -126,6 +168,7 @@ class OODBaseDetector(ABC):
     def _load_feature_extractor(
         self,
         model: Callable,
+        output_layers_id: List[Union[int, str]] = None,
     ) -> Callable:
         """
         Loads feature extractor
@@ -136,33 +179,11 @@ class OODBaseDetector(ABC):
         Returns:
             FeatureExtractor: a feature extractor instance
         """
-        if is_from(model, "keras"):
-            from ..extractor.keras_feature_extractor import KerasFeatureExtractor
-            from ..datasets.tf_data_handler import TFDataHandler
-            from ..utils import TFOperator
-
-            self.data_handler = TFDataHandler()
-            self.op = TFOperator()
-            self.backend = "tensorflow"
-            FeatureExtractor = KerasFeatureExtractor
-
-        elif is_from(model, "torch"):
-            from ..extractor.torch_feature_extractor import TorchFeatureExtractor
-            from ..datasets.torch_data_handler import TorchDataHandler
-            from ..utils import TorchOperator
-
-            self.data_handler = TorchDataHandler()
-            self.op = TorchOperator(model)
-            self.backend = "torch"
-            FeatureExtractor = TorchFeatureExtractor
-
-        else:
-            raise NotImplementedError()
-
-        feature_extractor = FeatureExtractor(
+        output_layers_id = output_layers_id or self.output_layers_id
+        feature_extractor = self.FeatureExtractorClass(
             model,
-            input_layer_id=self.input_layers_id,
-            output_layers_id=self.output_layers_id,
+            output_layers_id=output_layers_id,
+            react_threshold=self.react_threshold,
         )
         return feature_extractor
 
@@ -257,6 +278,15 @@ class OODBaseDetector(ABC):
         oodness = scores < threshold
         return np.array(oodness, dtype=np.bool)
 
+    def compute_react_threshold(self, model: Callable, fit_dataset: DatasetType):
+        _, self.penultimate_layer_id = self.FeatureExtractorClass.find_layer(
+            model, self.output_layers_id[-1], index_offset=-1, return_id=True
+        )
+        output_layers_id = [self.penultimate_layer_id]
+        penult_feat_extractor = self._load_feature_extractor(model, output_layers_id)
+        unclipped_features = penult_feat_extractor.predict(fit_dataset)
+        self.react_threshold = self.op.quantile(unclipped_features, self.react_quantile)
+
     def __call__(
         self, inputs: Union[ItemType, DatasetType], threshold: float
     ) -> np.ndarray:
@@ -271,3 +301,16 @@ class OODBaseDetector(ABC):
             np.ndarray: array of 0 for ID samples and 1 for OOD samples
         """
         return self.isood(inputs, threshold)
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        raise NotImplementedError(
+            "Property `requires_to_fit_dataset` is not implemented. It should return"
+            + " a True or False boolean."
+        )

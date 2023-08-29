@@ -22,6 +22,7 @@
 # SOFTWARE.
 import numpy as np
 
+from ..types import DatasetType
 from ..types import TensorType
 from .base import OODBaseDetector
 
@@ -34,15 +35,26 @@ class ODIN(OODBaseDetector):
     Args:
         temperature (float, optional): Temperature parameter. Defaults to 1000.
         noise (float, optional): Perturbation noise. Defaults to 0.014.
+        use_react (bool): if true, apply ReAct method by clipping penultimate
+            activations under a threshold value.
+        react_quantile (Optional[float]): q value in the range [0, 1] used to compute
+            the react clipping threshold defined as the q-th quantile penultimate layer
+            activations. Defaults to 0.8.
     """
 
     def __init__(
         self,
         temperature: float = 1000,
         noise: float = 0.014,
+        use_react: bool = False,
+        react_quantile: float = 0.8,
     ):
         self.temperature = temperature
-        super().__init__(output_layers_id=[-1])
+        super().__init__(
+            output_layers_id=[-1],
+            use_react=use_react,
+            react_quantile=react_quantile,
+        )
         self.noise = noise
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -59,7 +71,7 @@ class ODIN(OODBaseDetector):
         if self.feature_extractor.backend == "torch":
             inputs = inputs.to(self.feature_extractor._device)
         x = self.input_perturbation(inputs)
-        logits = self.feature_extractor.model(x) / self.temperature
+        logits = self.feature_extractor.predict(x) / self.temperature
         pred = self.op.softmax(logits)
         pred = self.op.convert_to_numpy(pred)
         scores = -np.max(pred, axis=1)
@@ -95,3 +107,22 @@ class ODIN(OODBaseDetector):
         preds = self.feature_extractor.model(inputs) / self.temperature
         loss = self.op.CrossEntropyLoss(reduction="sum")(inputs=preds, targets=labels)
         return loss
+
+    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
+        """
+        Fits the OOD detector to fit_dataset.
+
+        Args:
+            fit_dataset: dataset to fit the OOD detector on
+        """
+        pass
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return False

@@ -52,27 +52,27 @@ class VIM(OODBaseDetector):
         projection on $P^{\\perp}$ of $x-c$ has large norm.
 
     Args:
-        princ_dims: number of principal dimensions of in distribution features to
-            consider.
-            If an int, must be less than the dimension of the feature space.
-            If a float, it must be in [0,1), it represents the ratio of explained
-            variance to consider to determine the number of principal components.
-            Defaults to 0.99.
-        pca_origin: either "pseudo" for using $W^{-1}b$ where $W^{-1}$ is the pseudo
-            inverse of the final linear layer applied to bias term (as in the VIM
-            paper), or "center" for using the mean of the data in feature space.
-            Defaults to "center".
-        output_layers_id: features to use for Residual and Energy score.
-            Defaults to [-2,-1] (-2 the features for PCA residual, -1 the logits with
-            output_activation="linear" for Energy).
+        output_layers_id (List[Union[int, str]]): features to use for Residual score.
+        princ_dims (Union[int, float]): number of principal dimensions of in
+            distribution features to consider. If an int, must be less than the
+            dimension of the feature space.
+            If a float, it must be in [0,1), it represents the ratio of
+            explained variance to consider to determine the number of principal
+            components. Defaults to 0.99.
+        pca_origin (str): either "pseudo" for using $W^{-1}b$ where $W^{-1}$ is
+            the pseudo inverse of the final linear layer applied to bias term
+            (as in the VIM paper), or "center" for using the mean of the data in
+            feature space. Defaults to "center".
     """
 
     def __init__(
         self,
+        output_layers_id: List[Union[int, str]],
         princ_dims: Union[int, float] = 0.99,
         pca_origin: str = "pseudo",
-        output_layers_id: List[int] = [-2, -1],
     ):
+        if -1 not in output_layers_id:
+            output_layers_id.append(-1)
         super().__init__(
             output_layers_id=output_layers_id,
         )
@@ -198,3 +198,13 @@ class VIM(OODBaseDetector):
         plt.legend()
         plt.ylabel("Residual explained variance")
         plt.xlabel("Number of principal dimensions")
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return True

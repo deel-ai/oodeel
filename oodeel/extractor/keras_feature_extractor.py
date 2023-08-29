@@ -30,6 +30,7 @@ from ..types import Callable
 from ..types import ItemType
 from ..types import List
 from ..types import TensorType
+from ..types import Tuple
 from ..types import Union
 from ..utils.tf_operator import sanitize_input
 from .feature_extractor import FeatureExtractor
@@ -51,6 +52,8 @@ class KerasFeatureExtractor(FeatureExtractor):
             when working on the feature space without finetuning the bottom of the
             model).
             Defaults to None.
+        react_threshold: if not None, penultimate layer activations are clipped under
+            this threshold value (useful for ReAct). Defaults to None.
     """
 
     def __init__(
@@ -58,6 +61,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         model: Callable,
         output_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Optional[Union[int, str]] = None,
+        react_threshold: Optional[float] = None,
     ):
         if input_layer_id is None:
             input_layer_id = 0
@@ -65,28 +69,48 @@ class KerasFeatureExtractor(FeatureExtractor):
             model=model,
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
+            react_threshold=react_threshold,
         )
 
         self.backend = "tensorflow"
         self.model.layers[-1].activation = getattr(tf.keras.activations, "linear")
 
-    def find_layer(self, layer_id: Union[str, int]) -> tf.keras.layers.Layer:
+    @staticmethod
+    def find_layer(
+        model: Callable,
+        layer_id: Union[str, int],
+        index_offset: int = 0,
+        return_id: bool = False,
+    ) -> Union[tf.keras.layers.Layer, Tuple[tf.keras.layers.Layer, str]]:
         """Find a layer in a model either by his name or by his index.
 
         Args:
+            model (Callable): model whose identified layer will be returned
             layer_id (Union[str, int]): layer identifier
+            index_offset (int): index offset to find layers located before (negative
+                offset) or after (positive offset) the identified layer
+            return_id (bool): if True, the layer will be returned with its id
 
         Raises:
             ValueError: if the layer is not found
 
         Returns:
-            tf.keras.layers.Layer: the corresponding layer
+            Union[tf.keras.layers.Layer, Tuple[tf.keras.layers.Layer, str]]:
+                the corresponding layer and its id if return_id is True.
         """
         if isinstance(layer_id, str):
-            return self.model.get_layer(layer_id)
+            layers_names = [layer.name for layer in model.layers]
+            layer_id = layers_names.index(layer_id)
         if isinstance(layer_id, int):
-            return self.model.get_layer(index=layer_id)
-        raise ValueError(f"Could not find any layer {layer_id}.")
+            layer_id += index_offset
+            layer = model.get_layer(index=layer_id)
+        else:
+            raise ValueError(f"Could not find any layer {layer_id}.")
+
+        if return_id:
+            return layer, layer_id
+        else:
+            return layer
 
     # @tf.function
     # TODO check with Thomas about @tf.function
@@ -96,13 +120,33 @@ class KerasFeatureExtractor(FeatureExtractor):
         Returns:
             tf.keras.models.Model: truncated model (extractor)
         """
-        output_layers = [
-            self.find_layer(ol_id).output for ol_id in self.output_layers_id
+        input_layer = self.find_layer(self.model, self.input_layer_id)
+        new_input = tf.keras.layers.Input(tensor=input_layer.input)
+        output_tensors = [
+            self.find_layer(self.model, ol_id).output for ol_id in self.output_layers_id
         ]
 
-        input_layer = self.find_layer(self.input_layer_id)
-        new_input = tf.keras.layers.Input(tensor=input_layer.input)
-        extractor = tf.keras.models.Model(new_input, output_layers)
+        # === If react method, clip activations from penultimate layer ===
+        if self.react_threshold is not None:
+            penultimate_layer, penultimate_layer_id = self.find_layer(
+                self.model, self.output_layers_id[-1], index_offset=-1, return_id=True
+            )
+            self.penultimate_layer_id = penultimate_layer_id
+            penult_extractor = tf.keras.models.Model(
+                new_input, penultimate_layer.output
+            )
+            last_layer = self.find_layer(self.model, self.output_layers_id[-1])
+
+            # clip penultimate activations
+            x = tf.clip_by_value(
+                penult_extractor(new_input),
+                clip_value_min=tf.float32.min,
+                clip_value_max=self.react_threshold,
+            )
+            # apply ultimate layer on clipped activations
+            output_tensors[-1] = last_layer(x)
+
+        extractor = tf.keras.models.Model(new_input, output_tensors)
         return extractor
 
     @sanitize_input
@@ -137,6 +181,7 @@ class KerasFeatureExtractor(FeatureExtractor):
     def predict(
         self,
         dataset: Union[ItemType, tf.data.Dataset],
+        return_labels: bool = False,
         postproc_fns: Optional[Callable] = None,
         **kwargs,
     ) -> Union[tf.Tensor, List[tf.Tensor]]:
@@ -144,16 +189,44 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         Args:
             dataset (Union[ItemType, tf.data.Dataset]): input dataset
+            return_labels (bool): if True, labels are returned in addition to the
+                features. If labels are one-hot encoded, the single label value is
+                returned instead.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
             List[tf.Tensor]: features
         """
+
+        def _get_label(item):
+            """Retrieve label tensor from item as a tuple/list. Label must be at index 1
+            in the item tuple. If one-hot encoded, labels are converted to single value.
+            """
+            label = item[1]  # labels must be at index 1 in the item tuple
+            # If labels are one-hot encoded, take the argmax
+            if tf.rank(label) > 1 and label.shape[1] > 1:
+                label = tf.reshape(label, shape=[label.shape[0], -1])
+                label = tf.argmax(label, axis=1)
+            # If labels are in two dimensions, squeeze them
+            if len(label.shape) > 1:
+                label = tf.reshape(label, [label.shape[0]])
+            return label
+
+        labels = None
+
         if isinstance(dataset, get_args(ItemType)):
             tensor = TFDataHandler.get_input_from_dataset_item(dataset)
-            return self.predict_tensor(tensor, postproc_fns)
+            features = self.predict_tensor(tensor, postproc_fns)
+
+            # Get labels if dataset is a tuple/list
+            if return_labels and isinstance(dataset, (list, tuple)):
+                labels = _get_label(dataset)
+            if return_labels:
+                return features, labels
+            return features
 
         features = [None for i in range(len(self.output_layers_id))]
+        contains_labels = TFDataHandler.get_item_length(dataset) > 1
         for elem in dataset:
             tensor = TFDataHandler.get_input_from_dataset_item(elem)
             features_batch = self.predict_tensor(tensor, postproc_fns)
@@ -164,9 +237,21 @@ class KerasFeatureExtractor(FeatureExtractor):
                     f if features[i] is None else tf.concat([features[i], f], axis=0)
                 )
 
+            # Concatenate labels of current batch with previous batches
+            if return_labels and contains_labels:
+                lbl_batch = _get_label(elem)
+
+                if labels is None:
+                    labels = lbl_batch
+                else:
+                    labels = tf.concat([labels, lbl_batch], axis=0)
+
         # No need to return a list when there is only one input layer
         if len(features) == 1:
             features = features[0]
+
+        if return_labels:
+            return features, labels
         return features
 
     def get_weights(self, layer_id: Union[int, str]) -> List[tf.Tensor]:
@@ -178,4 +263,4 @@ class KerasFeatureExtractor(FeatureExtractor):
         Returns:
             List[tf.Tensor]: weights and biases matrixes
         """
-        return self.find_layer(layer_id).get_weights()
+        return self.find_layer(self.model, layer_id).get_weights()

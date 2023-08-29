@@ -28,6 +28,7 @@ from ..types import DatasetType
 from ..types import List
 from ..types import Optional
 from ..types import TensorType
+from ..types import Tuple
 from ..types import Union
 
 
@@ -48,6 +49,8 @@ class FeatureExtractor(ABC):
             when working on the feature space without finetuning the bottom of the
             model).
             Defaults to None.
+        react_threshold: if not None, penultimate layer activations are clipped under
+            this threshold value (useful for ReAct). Defaults to None.
     """
 
     def __init__(
@@ -55,12 +58,14 @@ class FeatureExtractor(ABC):
         model: Callable,
         output_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Union[int, str] = [0],
+        react_threshold: Optional[float] = None,
     ):
         if not isinstance(output_layers_id, list):
             output_layers_id = [output_layers_id]
 
         self.output_layers_id = output_layers_id
         self.input_layer_id = input_layer_id
+        self.react_threshold = react_threshold
         self.model = model
         self.extractor = self.prepare_extractor()
 
@@ -106,6 +111,7 @@ class FeatureExtractor(ABC):
     def predict(
         self,
         dataset: Union[DatasetType, TensorType],
+        return_labels: bool = False,
         postproc_fns: Optional[Callable] = None,
     ) -> Union[TensorType, List[TensorType]]:
         """
@@ -113,9 +119,35 @@ class FeatureExtractor(ABC):
 
         Args:
             dataset (Union[DatasetType, TensorType]): iterable of tensor batches
+            return_labels (bool): if True, labels are returned in addition to the
+                features. If labels are one-hot encoded, the single label value is
+                returned instead.
 
         Returns:
             TensorType: features
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def find_layer(
+        model: Callable,
+        layer_id: Union[str, int],
+        index_offset: int = 0,
+        return_id: bool = False,
+    ) -> Union[Callable, Tuple[Callable, str]]:
+        """Find a layer in a model either by his name or by his index.
+
+        Args:
+            model (nn.Module): model whose identified layer will be returned
+            layer_id (Union[str, int]): layer identifier
+            index_offset (int): index offset to find layers located before (negative
+                offset) or after (positive offset) the identified layer
+            return_id (bool): if True, the layer will be returned with its id
+
+        Returns:
+            Union[Callable, Tuple[Callable, str]]: the corresponding layer and its id if
+                return_id is True.
         """
         raise NotImplementedError()
 

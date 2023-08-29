@@ -20,19 +20,20 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from collections import OrderedDict
 from typing import get_args
 from typing import Optional
 
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 from ..datasets.torch_data_handler import TorchDataHandler
 from ..types import Callable
 from ..types import ItemType
 from ..types import List
 from ..types import TensorType
+from ..types import Tuple
 from ..types import Union
 from ..utils.torch_operator import sanitize_input
 from .feature_extractor import FeatureExtractor
@@ -54,6 +55,8 @@ class TorchFeatureExtractor(FeatureExtractor):
             when working on the feature space without finetuning the bottom of
             the model).
             Defaults to None.
+        react_threshold: if not None, penultimate layer activations are clipped under
+            this threshold value (useful for ReAct). Defaults to None.
     """
 
     def __init__(
@@ -61,18 +64,20 @@ class TorchFeatureExtractor(FeatureExtractor):
         model: nn.Module,
         output_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
+        react_threshold: Optional[float] = None,
     ):
         model = model.eval()
         super().__init__(
             model=model,
             output_layers_id=output_layers_id,
             input_layer_id=input_layer_id,
+            react_threshold=react_threshold,
         )
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
         self.backend = "torch"
 
-    def get_features_hook(self, layer_id: Union[str, int]) -> Callable:
+    def _get_features_hook(self, layer_id: Union[str, int]) -> Callable:
         """
         Hook that stores features corresponding to a specific layer
         in a class dictionary.
@@ -93,29 +98,59 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         return hook
 
-    def find_layer(self, layer_id: Union[str, int]) -> nn.Module:
+    @staticmethod
+    def find_layer(
+        model: nn.Module,
+        layer_id: Union[str, int],
+        index_offset: int = 0,
+        return_id: bool = False,
+    ) -> Union[nn.Module, Tuple[nn.Module, str]]:
         """Find a layer in a model either by his name or by his index.
 
         Args:
+            model (nn.Module): model whose identified layer will be returned
             layer_id (Union[str, int]): layer identifier
+            index_offset (int): index offset to find layers located before (negative
+                offset) or after (positive offset) the identified layer
+            return_id (bool): if True, the layer will be returned with its id
 
         Returns:
-            nn.Module: the corresponding layer
+            Union[nn.Module, Tuple[nn.Module, str]]: the corresponding layer and its id
+                if return_id is True.
         """
         if isinstance(layer_id, int):
-            if isinstance(self.model, nn.Sequential):
-                return self.model[layer_id]
+            layer_id += index_offset
+            if isinstance(model, nn.Sequential):
+                layer = model[layer_id]
             else:
-                return list(self.model.named_modules())[layer_id][1]
+                layer = list(model.named_modules())[layer_id][1]
         else:
-            return dict(self.model.named_modules())[layer_id]
+            layer_id = list(dict(model.named_modules()).keys()).index(layer_id)
+            layer_id += index_offset
+            layer = list(model.named_modules())[layer_id][1]
+
+        if return_id:
+            return layer, layer_id
+        else:
+            return layer
 
     def prepare_extractor(self) -> None:
         """Prepare the feature extractor by adding hooks to self.model"""
+        # remove forward hooks attached to the model
+        self._clean_forward_hooks()
+
+        # === If react method, clip activations from penultimate layer ===
+        if self.react_threshold is not None:
+            pen_layer, pen_layer_id = self.find_layer(
+                self.model, self.output_layers_id[-1], index_offset=-1, return_id=True
+            )
+            self.penultimate_layer_id = pen_layer_id
+            pen_layer.register_forward_hook(self._get_clip_hook(self.react_threshold))
+
         # Register a hook to store feature values for each considered layer.
         for layer_id in self.output_layers_id:
-            layer = self.find_layer(layer_id)
-            layer.register_forward_hook(self.get_features_hook(layer_id))
+            layer = self.find_layer(self.model, layer_id)
+            layer.register_forward_hook(self._get_features_hook(layer_id))
 
         # Crop model if input layer is provided
         if not (self.input_layer_id) is None:
@@ -154,8 +189,8 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         Args:
             x (TensorType): input tensor (or dataset elem)
-            detach (bool): if True, return features detached from the computational graph.
-                Defaults to True.
+            detach (bool): if True, return features detached from the computational
+                graph. Defaults to True.
 
         Returns:
             List[torch.Tensor]: features
@@ -188,6 +223,7 @@ class TorchFeatureExtractor(FeatureExtractor):
     def predict(
         self,
         dataset: Union[DataLoader, ItemType],
+        return_labels: bool = False,
         postproc_fns: Optional[Callable] = None,
         detach: bool = True,
         **kwargs
@@ -196,22 +232,52 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         Args:
             dataset (Union[DataLoader, ItemType]): input dataset
-            detach (bool): if True, return features detached from the computational graph.
-                Defaults to True.
+            return_labels (bool): if True, labels are returned in addition to the
+                features. If labels are one-hot encoded, the single label value is
+                returned instead.
+            detach (bool): if True, return features detached from the computational
+                graph. Defaults to True.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
             List[torch.Tensor]: features
         """
 
+        def _get_label(item):
+            """Retrieve label tensor from item as a tuple/list. Label must be at index 1
+            in the item tuple. If one-hot encoded, labels are converted to single value.
+            """
+            label = item[1]  # labels must be at index 1 in the batch tuple
+            # If labels are one-hot encoded, take the argmax
+            if len(label.shape) > 1 and label.shape[1] > 1:
+                label = label.view(label.size(0), -1)
+                label = torch.argmax(label, dim=1)
+            # If labels are in two dimensions, squeeze them
+            if len(label.shape) > 1:
+                label = label.view([label.shape[0]])
+            return label
+
+        labels = None
+
         if isinstance(dataset, get_args(ItemType)):
             tensor = TorchDataHandler.get_input_from_dataset_item(dataset)
-            return self.predict_tensor(tensor, postproc_fns, detach=detach)
+            features = self.predict_tensor(tensor, postproc_fns, detach=detach)
+
+            # Get labels if dataset is a tuple/list
+            if (
+                return_labels
+                and isinstance(dataset, (list, tuple))
+                and len(dataset) > 1
+            ):
+                labels = _get_label(dataset)
+            if return_labels:
+                return features, labels
+            return features
 
         features = [None for i in range(len(self.output_layers_id))]
-        for elem in tqdm(
-            dataset, desc="Extracting the dataset features...", total=len(dataset)
-        ):
+        batch = next(iter(dataset))
+        contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
+        for elem in dataset:
             tensor = TorchDataHandler.get_input_from_dataset_item(elem)
             features_batch = self.predict_tensor(tensor, postproc_fns, detach=detach)
             if len(features) == 1:
@@ -221,9 +287,21 @@ class TorchFeatureExtractor(FeatureExtractor):
                     f if features[i] is None else torch.cat([features[i], f], dim=0)
                 )
 
+            # Concatenate labels of current batch with previous batches
+            if return_labels and contains_labels:
+                lbl_batch = _get_label(elem)
+
+                if labels is None:
+                    labels = lbl_batch
+                else:
+                    labels = torch.cat([labels, lbl_batch], dim=0)
+
         # No need to return a list when there is only one input layer
         if len(features) == 1:
             features = features[0]
+
+        if return_labels:
+            return features, labels
         return features
 
     def get_weights(self, layer_id: Union[str, int]) -> List[torch.Tensor]:
@@ -235,5 +313,38 @@ class TorchFeatureExtractor(FeatureExtractor):
         Returns:
             List[torch.Tensor]: weights and biases matrixes
         """
-        layer = self.find_layer(layer_id)
+        layer = self.find_layer(self.model, layer_id)
         return [layer.weight.detach().cpu().numpy(), layer.bias.detach().cpu().numpy()]
+
+    def _get_clip_hook(self, threshold: float) -> Callable:
+        """
+        Hook that truncate activation features under a threshold value
+
+        Args:
+            threshold (float): threshold value
+
+        Returns:
+            Callable: hook function
+        """
+
+        def hook(_, __, output):
+            output = torch.clip(output, max=threshold)
+            return output
+
+        return hook
+
+    def _clean_forward_hooks(self) -> None:
+        """
+        Remove all the forward hook attached to the model's layers. This function should
+        be called at the __init__, and prevent from accumulating the hooks when
+        defining a new TorchFeatureExtractor for the same model.
+        """
+
+        def __clean_hooks(m: nn.Module):
+            for _, child in m._modules.items():
+                if child is not None:
+                    if hasattr(child, "_forward_hooks"):
+                        child._forward_hooks = OrderedDict()
+                    __clean_hooks(child)
+
+        return __clean_hooks(self.model)

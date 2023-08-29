@@ -25,6 +25,7 @@ import numpy as np
 from ..types import DatasetType
 from ..types import List
 from ..types import TensorType
+from ..types import Union
 from oodeel.methods.base import OODBaseDetector
 
 
@@ -35,16 +36,16 @@ class Mahalanobis(OODBaseDetector):
     https://arxiv.org/abs/1807.03888
 
     Args:
+        output_layers_id (List[Union[int, str]]): feature space on which to
+            compute mahalanobis distance.
         eps (float): magnitude for gradient based input perturbation.
             Defaults to 0.02.
-        output_layers_id (List[int]): feature space on which to compute mahalanobis
-            distance. Defaults to [-2].
     """
 
     def __init__(
         self,
+        output_layers_id: List[Union[int, str]],
         eps: float = 0.002,
-        output_layers_id: List[int] = [-2],
     ):
         super(Mahalanobis, self).__init__(output_layers_id=output_layers_id)
         self.eps = eps
@@ -58,20 +59,9 @@ class Mahalanobis(OODBaseDetector):
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
         """
         # extract features and labels
-        features = list()
-        labels = list()
-        for _images, _labels in fit_dataset:
-            # if one hot encoded labels, take the argmax
-            if len(_labels.shape) > 1 and _labels.shape[1] > 1:
-                _labels = self.op.argmax(self.op.flatten(_labels), 1)
-            # get features
-            _features = self.feature_extractor.predict(_images)
-            _features = self.op.flatten(_features)
-
-            labels.append(_labels)
-            features.append(_features)
-        labels = self.op.cat(labels)
-        features = self.op.cat(features)
+        features, labels = self.feature_extractor.predict(
+            fit_dataset, return_labels=True
+        )
 
         # unique sorted classes
         self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
@@ -189,3 +179,13 @@ class Mahalanobis(OODBaseDetector):
         # concatenate scores
         gaussian_score = self.op.cat(gaussian_scores, 1)
         return gaussian_score
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return True

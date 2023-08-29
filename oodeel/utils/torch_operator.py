@@ -213,6 +213,22 @@ class TorchOperator(Operator):
         return eigval, eigvec
 
     @staticmethod
+    def quantile(tensor: TensorType, q: float, dim: int = None) -> torch.Tensor:
+        "Computes the quantile of a tensor's components. q in (0,1)"
+        if dim is None:
+            # keep the 16 millions first elements (see torch.quantile issue:
+            # https://github.com/pytorch/pytorch/issues/64947)
+            tensor_flatten = tensor.view(-1)[:16_000_000]
+            return torch.quantile(tensor_flatten, q).item()
+        else:
+            return torch.quantile(tensor, q, dim)
+
+    @staticmethod
+    def relu(tensor: TensorType) -> torch.Tensor:
+        "Apply relu to a tensor"
+        return torch.nn.functional.relu(tensor)
+
+    @staticmethod
     def einsum(equation: str, *tensors: TensorType) -> torch.Tensor:
         "Computes the einsum between tensors following equation"
         return torch.einsum(equation, *tensors)

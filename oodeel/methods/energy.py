@@ -23,6 +23,7 @@
 import numpy as np
 from scipy.special import logsumexp
 
+from ..types import DatasetType
 from ..types import TensorType
 from .base import OODBaseDetector
 
@@ -45,10 +46,25 @@ class Energy(OODBaseDetector):
     where $model(x)=(l_{c})_{c=1}^{C}$ are the logits predicted by the model on
     $x$.
     As always, training data is expected to have lower score than OOD data.
+
+    Args:
+        use_react (bool): if true, apply ReAct method by clipping penultimate
+            activations under a threshold value.
+        react_quantile (Optional[float]): q value in the range [0, 1] used to compute
+            the react clipping threshold defined as the q-th quantile penultimate layer
+            activations. Defaults to 0.8.
     """
 
-    def __init__(self):
-        super().__init__(output_layers_id=[-1])
+    def __init__(
+        self,
+        use_react: bool = False,
+        react_quantile: float = 0.8,
+    ):
+        super().__init__(
+            output_layers_id=[-1],
+            use_react=use_react,
+            react_quantile=react_quantile,
+        )
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
@@ -61,10 +77,28 @@ class Energy(OODBaseDetector):
         Returns:
             scores
         """
-
         # compute logits (softmax(logits,axis=1) is the actual softmax
         # output minimized using binary cross entropy)
         logits = self.feature_extractor(inputs)
         logits = self.op.convert_to_numpy(logits)
         scores = -logsumexp(logits, axis=1)
         return scores
+
+    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
+        """
+        Fits the OOD detector to fit_dataset.
+
+        Args:
+            fit_dataset: dataset to fit the OOD detector on
+        """
+        pass
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return False

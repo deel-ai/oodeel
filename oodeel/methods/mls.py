@@ -22,6 +22,7 @@
 # SOFTWARE.
 import numpy as np
 
+from ..types import DatasetType
 from ..types import TensorType
 from .base import OODBaseDetector
 
@@ -40,11 +41,24 @@ class MLS(OODBaseDetector):
         output_activation (str): activation function for the last layer. If "linear",
             the method is MLS and if "softmax", the method is MSS.
             Defaults to "linear".
+        use_react (bool): if true, apply ReAct method by clipping penultimate
+            activations under a threshold value.
+        react_quantile (Optional[float]): q value in the range [0, 1] used to compute
+            the react clipping threshold defined as the q-th quantile penultimate layer
+            activations. Defaults to 0.8.
     """
 
-    def __init__(self, output_activation="linear"):
-        # This line is not necessary but improves readability
-        super().__init__(output_layers_id=[-1])
+    def __init__(
+        self,
+        output_activation: str = "linear",
+        use_react: bool = False,
+        react_quantile: float = 0.8,
+    ):
+        super().__init__(
+            output_layers_id=[-1],
+            use_react=use_react,
+            react_quantile=react_quantile,
+        )
         self.output_activation = output_activation
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -65,3 +79,22 @@ class MLS(OODBaseDetector):
         pred = self.op.convert_to_numpy(pred)
         scores = -np.max(pred, axis=1)
         return scores
+
+    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
+        """
+        Fits the OOD detector to fit_dataset.
+
+        Args:
+            fit_dataset: dataset to fit the OOD detector on
+        """
+        pass
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return False
