@@ -88,7 +88,8 @@ class OODBaseDetector(ABC):
             inputs (TensorType): tensor to score
 
         Returns:
-            np.ndarray: OOD scores
+            tuple: OOD scores and a dictionary containing information as logits and
+                labels.
 
         Raises:
             NotImplementedError: _description_
@@ -190,32 +191,40 @@ class OODBaseDetector(ABC):
         dataset: Union[ItemType, DatasetType],
     ) -> np.ndarray:
         """
-        Computes an OOD score for input samples "inputs"
+        Computes an OOD score for input samples "inputs".
 
         Args:
             dataset (Union[ItemType, DatasetType]): dataset or tensors to score
 
         Returns:
-            scores or list of scores (depending on the input)
+            tuple: scores or list of scores (depending on the input) and a dictionary
+                containing logits and labels.
         """
         assert self.feature_extractor is not None, "Call .fit() before .score()"
 
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, get_args(ItemType)):
             tensor = self.data_handler.get_input_from_dataset_item(dataset)
-            scores = self._score_tensor(tensor)
+            scores, info = self._score_tensor(tensor)
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         elif isinstance(dataset, get_args(DatasetType)):
             scores = np.array([])
+            info = None
             for tensor in dataset:
                 tensor = self.data_handler.get_input_from_dataset_item(tensor)
-                score_batch = self._score_tensor(tensor)
+                score_batch, info_batch = self._score_tensor(tensor)
                 scores = np.append(scores, score_batch)
+                if info is None:
+                    info = info_batch
+                else:
+                    for key in info.keys():
+                        if info_batch[key] is not None:
+                            info[key] = self.op.cat([info[key], info_batch[key]])
         else:
             raise NotImplementedError(
                 f"OODBaseDetector.score() not implemented for {type(dataset)}"
             )
-        return scores
+        return scores, info
 
     def isood(
         self, dataset: Union[ItemType, DatasetType], threshold: float

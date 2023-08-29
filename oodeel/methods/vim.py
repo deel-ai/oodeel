@@ -185,7 +185,7 @@ class VIM(OODBaseDetector):
         res_scores = self._compute_residual_score_tensor(features)
         energy_scores = logsumexp(logits, axis=-1)
         scores = -self.alpha * res_scores + energy_scores
-        return -np.array(scores)
+        return -np.array(scores), info
 
     def plot_spectrum(self) -> None:
         """
