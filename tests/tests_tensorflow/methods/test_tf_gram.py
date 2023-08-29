@@ -28,14 +28,14 @@ from tests.tests_tensorflow import generate_data_tf
 from tests.tests_tensorflow import generate_model
 
 
-def test_gram():
+def test_gram_shape():
     """
     Test Mahalanobis on MNIST vs FashionMNIST OOD dataset-wise task
 
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    gram = Gram(output_layers_id=["conv2d", "dense"])
+    gram = Gram(output_layers_id=["max_pooling2d", "dense"])
 
     input_shape = (32, 32, 3)
     num_labels = 10
@@ -45,8 +45,28 @@ def test_gram():
         x_shape=input_shape, num_labels=num_labels, samples=samples
     ).batch(samples // 2)
 
+    dataval = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    ).batch(samples // 2)
+
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
     gram.fit(model, data)
-    assert gram.min_maxs[0].shape == (1, 961, 2)
-    assert gram.min_maxs[1].shape == (1, 10, 2)
+    score = gram.score(dataval)
+    assert score.shape == (100,)
+    assert gram.min_maxs[0].shape == (5, 4, 2)
+    assert gram.min_maxs[1].shape == (5, 1, 2)
+
+
+@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
+def test_gram(auroc_thr, fpr95_thr):
+    """
+    Test VIM on MNIST vs FashionMNIST OOD dataset-wise task
+
+    We check that the area under ROC is above a certain threshold, and that the FPR95TPR
+    is below an other threshold.
+    """
+    vim = Gram(output_layers_id=["dense", "dense_1"])
+    eval_detector_on_blobs(
+        detector=vim, need_to_fit_dataset=True, auroc_thr=auroc_thr, fpr95_thr=fpr95_thr
+    )

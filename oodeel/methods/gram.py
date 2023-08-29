@@ -44,13 +44,18 @@ class Gram(OODBaseDetector):
     def __init__(
         self,
         output_layers_id: List[int] = [-2],
-        orders: List[int] = [1],
+        orders: List[int] = [i for i in range(1, 6)],
     ):
-        postproc_fns = [self.row_wise_sums for i in range(len(output_layers_id))]
+        super().__init__(output_layers_id=output_layers_id)
+
         if isinstance(orders, int):
             orders = [orders]
         self.orders = orders
-        super().__init__(output_layers_id=output_layers_id, postproc_fns=postproc_fns)
+
+        self.postproc_fns_min_maxs = [
+            self._min_maxs for i in range(len(output_layers_id))
+        ]
+        self.postproc_fns_stat = [self._stat for i in range(len(output_layers_id))]
 
     @property
     def requires_to_fit_dataset(self) -> bool:
@@ -62,7 +67,10 @@ class Gram(OODBaseDetector):
         """
         return True
 
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
+    def _fit_to_dataset(
+        self,
+        fit_dataset: Union[TensorType, DatasetType],
+    ) -> None:
         """
         Constructs the index from ID data "fit_dataset", which will be used for
         nearest neighbor search.
@@ -71,16 +79,28 @@ class Gram(OODBaseDetector):
             fit_dataset: input dataset (ID) to construct the index with.
         """
         fit_feature_maps = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns
+            fit_dataset, postproc_fns=self.postproc_fns_min_maxs
         )
 
         for i, feature_map in enumerate(fit_feature_maps):
-            mins = self.op.unsqueeze(self.op.min(feature_map[..., 0], dim=0), -1)
-            maxs = self.op.unsqueeze(self.op.max(feature_map[..., 1], dim=0), -1)
+            mins = self.op.unsqueeze(self.op.min(feature_map[:, 0, ...], dim=0), -1)
+            maxs = self.op.unsqueeze(self.op.max(feature_map[:, 1, ...], dim=0), -1)
             min_max = self.op.cat([mins, maxs], dim=-1)
             fit_feature_maps[i] = min_max
 
         self.min_maxs = fit_feature_maps
+
+        # In the paper, they use a separate validation data to compute
+        # a normalization constant
+        val_stats = self.feature_extractor.predict(
+            fit_dataset,
+            postproc_fns=self.postproc_fns_stat,
+        )
+        devnorm = self._deviation(val_stats)
+        # For now, since class wise score is not available
+        self.devnorm = [1.0 for i in range(len(self.min_maxs))]
+        # self.devnorm = [float(self.op.mean(dev)) for dev in devnorm]
+        # MAYBE PUT STAT AS PROCESS FCTS
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
@@ -94,20 +114,50 @@ class Gram(OODBaseDetector):
             scores
         """
 
-        input_projected = self.feature_extractor(inputs, postproc_fns=self.postproc_fns)
+        tensor_stats = self.feature_extractor.predict(
+            inputs, postproc_fns=self.postproc_fns_stat
+        )
+        tensor_dev = self._deviation(tensor_stats)
+        score = self.op.mean(
+            self.op.cat(
+                [
+                    self.op.unsqueeze(tensor_dev_l, dim=0) / devnorm_l
+                    for tensor_dev_l, devnorm_l in zip(tensor_dev, self.devnorm)
+                ]
+            ),
+            dim=0,
+        )
+        return np.array(score)
 
-    def row_wise_sums(self, feature_map):
+    def _deviation(self, feature_maps):
+        deviation = []
+        for feature_map, min_max in zip(feature_maps, self.min_maxs):
+            where_min = self.op.where(feature_map < min_max[..., 0], 1.0, 0.0)
+            where_max = self.op.where(feature_map > min_max[..., 1], 1.0, 0.0)
+            deviation_min = (
+                (min_max[..., 0] - feature_map)
+                / self.op.abs(min_max[..., 0])
+                * where_min
+            )
+            deviation_max = (
+                (feature_map - min_max[..., 1])
+                / self.op.abs(min_max[..., 1])
+                * where_max
+            )
+            deviation.append(self.op.sum(deviation_min + deviation_max, dim=(1, 2)))
+        return deviation
+
+    def _stat(self, feature_map):
         fm_s = feature_map.shape
-
-        min_max_per_order_row = []
+        stat = []
         for p in self.orders:
             feature_map_p = feature_map**p
             # construct the Gram matrix
             if len(fm_s) == 2:
                 # prevents from computing a scalar per batch for layers of shape (1,)
-                feature_map_p = self.op.einsum(
-                    "bi,bj->bij", feature_map_p, feature_map_p
-                )
+                feature_map_p = self.op.einsum("bi,bj->b", feature_map_p, feature_map_p)
+                feature_map_p = self.op.unsqueeze(feature_map_p, -1)
+                feature_map_p = self.op.unsqueeze(feature_map_p, -1)
             elif len(fm_s) >= 3:
                 # flatten the feature map
                 if self.backend == "tensorflow":
@@ -119,19 +169,25 @@ class Gram(OODBaseDetector):
                         feature_map_p, (fm_s[0], fm_s[1], -1)
                     )
                 feature_map_p = self.op.einsum(
-                    "bij,bik->bjk", feature_map_p, feature_map_p
+                    "bik,bjk->bij", feature_map_p, feature_map_p
                 )
             feature_map_p = feature_map_p ** (1 / p)
             # get the lower triangular part of the matrix
-            feature_map_p = self.op.tril(feature_map_p, diagonal=-1)
+            feature_map_p = self.op.tril(feature_map_p)
             # directly sum row-wise (to limit computational burden)
             feature_map_p = self.op.sum(feature_map_p, dim=-2)
-            min_max_per_row = self.op.cat(
-                [
-                    self.op.min(feature_map_p, dim=0, keepdim=True),
-                    self.op.max(feature_map_p, dim=0, keepdim=True),
-                ],
-                dim=0,
-            )
-            min_max_per_order_row.append(self.op.transpose(min_max_per_row))
-        return self.op.unsqueeze(self.op.stack(min_max_per_order_row), 0)
+            # stat.append(self.op.transpose(feature_map_p))
+            stat.append(feature_map_p)
+        stat = self.op.stack(stat, 1)
+        return stat
+
+    def _min_maxs(self, feature_map):
+        stats = self._stat(feature_map)
+        min_max_per_row = self.op.cat(
+            [
+                self.op.min(stats, dim=0, keepdim=True),
+                self.op.max(stats, dim=0, keepdim=True),
+            ],
+            dim=0,
+        )
+        return self.op.unsqueeze(min_max_per_row, 0)
