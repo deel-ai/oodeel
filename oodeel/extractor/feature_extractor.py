@@ -91,7 +91,7 @@ class FeatureExtractor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def predict_tensor(self, tensor: TensorType) -> List[TensorType]:
+    def predict_tensor(self, tensor: TensorType) -> Tuple[List[TensorType], TensorType]:
         """
         Projects input samples "inputs" into the feature space
 
@@ -107,7 +107,7 @@ class FeatureExtractor(ABC):
     def predict(
         self,
         dataset: Union[DatasetType, TensorType],
-    ) -> Union[TensorType, List[TensorType]]:
+    ) -> Tuple[List[TensorType], dict]:
         """
         Projects input samples "inputs" into the feature space for a batched dataset
 
