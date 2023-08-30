@@ -99,7 +99,7 @@ class FeatureExtractor(ABC):
             tensor (TensorType): input tensor
 
         Returns:
-            List[TensorType]: features
+            List[TensorType], TensorType: features, logits
         """
         raise NotImplementedError()
 
