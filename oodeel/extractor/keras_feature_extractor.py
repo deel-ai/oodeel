@@ -185,21 +185,6 @@ class KerasFeatureExtractor(FeatureExtractor):
             List[tf.Tensor], dict: features and extra information (logits, labels) as a
                 dictionary.
         """
-
-        def _get_label(item):
-            """Retrieve label tensor from item as a tuple/list. Label must be at index 1
-            in the item tuple. If one-hot encoded, labels are converted to single value.
-            """
-            label = item[1]  # labels must be at index 1 in the item tuple
-            # If labels are one-hot encoded, take the argmax
-            if tf.rank(label) > 1 and label.shape[1] > 1:
-                label = tf.reshape(label, shape=[label.shape[0], -1])
-                label = tf.argmax(label, axis=1)
-            # If labels are in two dimensions, squeeze them
-            if len(label.shape) > 1:
-                label = tf.reshape(label, [label.shape[0]])
-            return label
-
         labels = None
 
         if isinstance(dataset, get_args(ItemType)):
@@ -208,7 +193,7 @@ class KerasFeatureExtractor(FeatureExtractor):
 
             # Get labels if dataset is a tuple/list
             if isinstance(dataset, (list, tuple)):
-                labels = _get_label(dataset)
+                labels = TFDataHandler.get_label_from_dataset_item(dataset)
 
         else:  # if dataset is a tf.data.Dataset
             features = [None for i in range(len(self.feature_layers_id))]
@@ -234,7 +219,7 @@ class KerasFeatureExtractor(FeatureExtractor):
                 )
                 # concatenate labels of current batch with previous batches
                 if contains_labels:
-                    lbl_batch = _get_label(elem)
+                    lbl_batch = TFDataHandler.get_label_from_dataset_item(elem)
 
                     if labels is None:
                         labels = lbl_batch

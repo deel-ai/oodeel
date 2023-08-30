@@ -225,21 +225,6 @@ class TorchFeatureExtractor(FeatureExtractor):
             List[torch.Tensor], dict: features and extra information (logits, labels) as
                 a dictionary.
         """
-
-        def _get_label(item):
-            """Retrieve label tensor from item as a tuple/list. Label must be at index 1
-            in the item tuple. If one-hot encoded, labels are converted to single value.
-            """
-            label = item[1]  # labels must be at index 1 in the batch tuple
-            # If labels are one-hot encoded, take the argmax
-            if len(label.shape) > 1 and label.shape[1] > 1:
-                label = label.view(label.size(0), -1)
-                label = torch.argmax(label, dim=1)
-            # If labels are in two dimensions, squeeze them
-            if len(label.shape) > 1:
-                label = label.view([label.shape[0]])
-            return label
-
         labels = None
 
         if isinstance(dataset, get_args(ItemType)):
@@ -248,7 +233,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
             # Get labels if dataset is a tuple/list
             if isinstance(dataset, (list, tuple)) and len(dataset) > 1:
-                labels = _get_label(dataset)
+                labels = TorchDataHandler.get_label_from_dataset_item(dataset)
 
         else:
             features = [None for i in range(len(self.feature_layers_id))]
@@ -275,7 +260,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 )
                 # concatenate labels of current batch with previous batches
                 if contains_labels:
-                    lbl_batch = _get_label(elem)
+                    lbl_batch = TorchDataHandler.get_label_from_dataset_item(elem)
 
                     if labels is None:
                         labels = lbl_batch

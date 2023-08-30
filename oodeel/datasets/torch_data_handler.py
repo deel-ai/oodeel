@@ -728,6 +728,27 @@ class TorchDataHandler(DataHandler):
         return tensor
 
     @staticmethod
+    def get_label_from_dataset_item(item: ItemType):
+        """Retrieve label tensor from item as a tuple/list. Label must be at index 1
+        in the item tuple. If one-hot encoded, labels are converted to single value.
+
+        Args:
+            elem (ItemType): dataset element to extract label from
+
+        Returns:
+            Any: Label tensor
+        """
+        label = item[1]  # labels must be at index 1 in the batch tuple
+        # If labels are one-hot encoded, take the argmax
+        if len(label.shape) > 1 and label.shape[1] > 1:
+            label = label.view(label.size(0), -1)
+            label = torch.argmax(label, dim=1)
+        # If labels are in two dimensions, squeeze them
+        if len(label.shape) > 1:
+            label = label.view([label.shape[0]])
+        return label
+
+    @staticmethod
     def get_feature(dataset: DictDataset, feature_key: Union[str, int]) -> DictDataset:
         """Extract a feature from a dataset
 
