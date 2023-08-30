@@ -631,6 +631,27 @@ class TFDataHandler(DataHandler):
         return tensor
 
     @staticmethod
+    def get_label_from_dataset_item(item: ItemType):
+        """Retrieve label tensor from item as a tuple/list. Label must be at index 1
+        in the item tuple. If one-hot encoded, labels are converted to single value.
+
+        Args:
+            elem (ItemType): dataset element to extract label from
+
+        Returns:
+            Any: Label tensor
+        """
+        label = item[1]  # labels must be at index 1 in the item tuple
+        # If labels are one-hot encoded, take the argmax
+        if tf.rank(label) > 1 and label.shape[1] > 1:
+            label = tf.reshape(label, shape=[label.shape[0], -1])
+            label = tf.argmax(label, axis=1)
+        # If labels are in two dimensions, squeeze them
+        if len(label.shape) > 1:
+            label = tf.reshape(label, [label.shape[0]])
+        return label
+
+    @staticmethod
     def get_feature(
         dataset: tf.data.Dataset, feature_key: Union[str, int]
     ) -> tf.data.Dataset:
