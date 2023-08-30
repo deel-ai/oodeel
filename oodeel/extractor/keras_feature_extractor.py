@@ -157,13 +157,18 @@ class KerasFeatureExtractor(FeatureExtractor):
             tensor (TensorType): input tensor (or dataset elem)
 
         Returns:
-            List[tf.Tensor]: features
+            List[tf.Tensor], tf.Tensor: features, logits
         """
         features = self.extractor(tensor, training=False)
 
         if type(features) is not list:
             features = [features]
-        return features
+
+        # split features and logits
+        logits = features.pop()
+        if len(features) == 1:
+            features = features[0]
+        return features, logits
 
     def predict(
         self,
@@ -199,18 +204,20 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         if isinstance(dataset, get_args(ItemType)):
             tensor = TFDataHandler.get_input_from_dataset_item(dataset)
-            features = self.predict_tensor(tensor)
+            features, logits = self.predict_tensor(tensor)
 
             # Get labels if dataset is a tuple/list
             if isinstance(dataset, (list, tuple)):
                 labels = _get_label(dataset)
 
         else:  # if dataset is a tf.data.Dataset
-            features = [None for i in range(len(self.feature_layers_id) + 1)]
+            features = [None for i in range(len(self.feature_layers_id))]
+            logits = None
             contains_labels = TFDataHandler.get_item_length(dataset) > 1
             for elem in dataset:
                 tensor = TFDataHandler.get_input_from_dataset_item(elem)
-                features_batch = self.predict_tensor(tensor)
+                features_batch, logits_batch = self.predict_tensor(tensor)
+                # concatenate features
                 if len(features) == 1:
                     features_batch = [features_batch]
                 for i, f in enumerate(features_batch):
@@ -219,8 +226,13 @@ class KerasFeatureExtractor(FeatureExtractor):
                         if features[i] is None
                         else tf.concat([features[i], f], axis=0)
                     )
-
-                # Concatenate labels of current batch with previous batches
+                # concatenate logits
+                logits = (
+                    logits_batch
+                    if logits is None
+                    else tf.concat([logits, logits_batch], axis=0)
+                )
+                # concatenate labels of current batch with previous batches
                 if contains_labels:
                     lbl_batch = _get_label(elem)
 
@@ -229,8 +241,7 @@ class KerasFeatureExtractor(FeatureExtractor):
                     else:
                         labels = tf.concat([labels, lbl_batch], axis=0)
 
-        # Remove logits from features and create extra information as a dict
-        logits = features.pop()
+        # store extra information in a dict
         info = dict(labels=labels, logits=logits)
 
         if len(features) == 1:

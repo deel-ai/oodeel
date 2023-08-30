@@ -188,7 +188,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 graph. Defaults to True.
 
         Returns:
-            List[torch.Tensor]: features
+            List[torch.Tensor], torch.Tensor: features, logits
         """
         if x.device != self._device:
             x = x.to(self._device)
@@ -201,7 +201,11 @@ class TorchFeatureExtractor(FeatureExtractor):
         else:
             features = [self._features[layer_id] for layer_id in self._hook_layers_id]
 
-        return features
+        # split features and logits
+        logits = features.pop()
+        if len(features) == 1:
+            features = features[0]
+        return features, logits
 
     def predict(
         self,
@@ -240,27 +244,36 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         if isinstance(dataset, get_args(ItemType)):
             tensor = TorchDataHandler.get_input_from_dataset_item(dataset)
-            features = self.predict_tensor(tensor, detach=detach)
+            features, logits = self.predict_tensor(tensor, detach=detach)
 
             # Get labels if dataset is a tuple/list
             if isinstance(dataset, (list, tuple)) and len(dataset) > 1:
                 labels = _get_label(dataset)
 
         else:
-            features = [None for i in range(len(self._hook_layers_id))]
+            features = [None for i in range(len(self.feature_layers_id))]
+            logits = None
             batch = next(iter(dataset))
             contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
             for elem in dataset:
                 tensor = TorchDataHandler.get_input_from_dataset_item(elem)
-                features_batch = self.predict_tensor(tensor, detach=detach)
+                features_batch, logits_batch = self.predict_tensor(
+                    tensor, detach=detach
+                )
+                # concatenate features
                 if len(features) == 1:
                     features_batch = [features_batch]
                 for i, f in enumerate(features_batch):
                     features[i] = (
                         f if features[i] is None else torch.cat([features[i], f], dim=0)
                     )
-
-                # Concatenate labels of current batch with previous batches
+                # concatenate logits
+                logits = (
+                    logits_batch
+                    if logits is None
+                    else torch.cat([logits, logits_batch], axis=0)
+                )
+                # concatenate labels of current batch with previous batches
                 if contains_labels:
                     lbl_batch = _get_label(elem)
 
@@ -269,8 +282,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                     else:
                         labels = torch.cat([labels, lbl_batch], dim=0)
 
-        # Remove logits from features and create extra information as a dict
-        logits = features.pop()
+        # store extra information in a dict
         info = dict(labels=labels, logits=logits)
 
         if len(features) == 1:
