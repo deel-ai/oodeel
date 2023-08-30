@@ -27,6 +27,7 @@ from scipy.special import logsumexp
 from ..types import DatasetType
 from ..types import List
 from ..types import TensorType
+from ..types import Tuple
 from ..types import Union
 from .base import OODBaseDetector
 
@@ -164,7 +165,7 @@ class VIM(OODBaseDetector):
         res_norm = self.op.norm(res_coordinates, dim=-1)
         return self.op.convert_to_numpy(res_norm)
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
         Computes the VIM score for input samples "inputs" as the sum of the energy
         score and a scaled (PCA) residual norm in the feature space.
@@ -173,19 +174,18 @@ class VIM(OODBaseDetector):
             inputs: input samples to score
 
         Returns:
-            np.ndarray: scores
+            Tuple[np.ndarray]: scores, logits
         """
         # extract features
-        all_features, info = self.feature_extractor.predict(inputs)
+        all_features, logits = self.feature_extractor.predict_tensor(inputs)
         features = all_features[0]
-        logits = info["logits"]
         features = self.op.flatten(features)
         logits = self.op.convert_to_numpy(logits)
         # vim score
         res_scores = self._compute_residual_score_tensor(features)
         energy_scores = logsumexp(logits, axis=-1)
         scores = -self.alpha * res_scores + energy_scores
-        return -np.array(scores), info
+        return -np.array(scores), logits
 
     def plot_spectrum(self) -> None:
         """

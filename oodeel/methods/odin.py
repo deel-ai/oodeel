@@ -24,6 +24,7 @@ import numpy as np
 
 from ..types import DatasetType
 from ..types import TensorType
+from ..types import Tuple
 from .base import OODBaseDetector
 
 
@@ -57,7 +58,7 @@ class ODIN(OODBaseDetector):
         )
         self.noise = noise
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
         Computes an OOD score for input samples "inputs" based on
         the distance to nearest neighbors in the feature space of self.model
@@ -66,17 +67,18 @@ class ODIN(OODBaseDetector):
             inputs (TensorType): input samples to score
 
         Returns:
-            np.ndarray: scores
+            Tuple[np.ndarray]: scores, logits
         """
         if self.feature_extractor.backend == "torch":
             inputs = inputs.to(self.feature_extractor._device)
         x = self.input_perturbation(inputs)
-        _, info = self.feature_extractor.predict(x)
-        logits = info["logits"] / self.temperature
-        pred = self.op.softmax(logits)
+        _, logits = self.feature_extractor.predict_tensor(x)
+        logits_s = logits / self.temperature
+        pred = self.op.softmax(logits_s)
         pred = self.op.convert_to_numpy(pred)
         scores = -np.max(pred, axis=1)
-        return scores, info
+        logits = self.op.convert_to_numpy(logits)
+        return scores, logits
 
     def input_perturbation(self, inputs: TensorType) -> TensorType:
         """Apply a small perturbation over inputs to increase their softmax score.

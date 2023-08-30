@@ -88,11 +88,7 @@ class OODBaseDetector(ABC):
             inputs (TensorType): tensor to score
 
         Returns:
-            tuple: OOD scores and a dictionary containing information as logits and
-                labels.
-
-        Raises:
-            NotImplementedError: _description_
+            Tuple[TensorType]: OOD scores, predicted logits
         """
         raise NotImplementedError()
 
@@ -201,29 +197,44 @@ class OODBaseDetector(ABC):
                 containing logits and labels.
         """
         assert self.feature_extractor is not None, "Call .fit() before .score()"
-
+        labels = None
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, get_args(ItemType)):
             tensor = self.data_handler.get_input_from_dataset_item(dataset)
-            scores, info = self._score_tensor(tensor)
+            scores, logits = self._score_tensor(tensor)
+
+            # Get labels if dataset is a tuple/list
+            if isinstance(dataset, (list, tuple)):
+                labels = self.data_handler.get_label_from_dataset_item(dataset)
+                labels = self.op.convert_to_numpy(labels)
+
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         elif isinstance(dataset, get_args(DatasetType)):
             scores = np.array([])
-            info = None
-            for tensor in dataset:
-                tensor = self.data_handler.get_input_from_dataset_item(tensor)
-                score_batch, info_batch = self._score_tensor(tensor)
+            logits = np.array([])
+
+            for item in dataset:
+                tensor = self.data_handler.get_input_from_dataset_item(item)
+                score_batch, logits_batch = self._score_tensor(tensor)
+
+                # get the label if available
+                if len(item) > 1:
+                    labels_batch = self.data_handler.get_label_from_dataset_item(item)
+                    labels = (
+                        labels_batch
+                        if labels is None
+                        else np.append(labels, self.op.convert_to_numpy(labels_batch))
+                    )
+
                 scores = np.append(scores, score_batch)
-                if info is None:
-                    info = info_batch
-                else:
-                    for key in info.keys():
-                        if info_batch[key] is not None:
-                            info[key] = self.op.cat([info[key], info_batch[key]])
+                logits = np.append(logits, logits_batch)
+
         else:
             raise NotImplementedError(
                 f"OODBaseDetector.score() not implemented for {type(dataset)}"
             )
+
+        info = dict(labels=labels, logits=logits)
         return scores, info
 
     def isood(

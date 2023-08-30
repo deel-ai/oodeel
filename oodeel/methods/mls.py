@@ -24,6 +24,7 @@ import numpy as np
 
 from ..types import DatasetType
 from ..types import TensorType
+from ..types import Tuple
 from .base import OODBaseDetector
 
 
@@ -61,7 +62,7 @@ class MLS(OODBaseDetector):
         )
         self.output_activation = output_activation
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
         Computes an OOD score for input samples "inputs" based on
         the distance to nearest neighbors in the feature space of self.model
@@ -70,16 +71,17 @@ class MLS(OODBaseDetector):
             inputs: input samples to score
 
         Returns:
-            scores
+            Tuple[np.ndarray]: scores, logits
         """
 
-        _, info = self.feature_extractor.predict(inputs)
-        pred = info["logits"]
+        _, logits = self.feature_extractor.predict_tensor(inputs)
+        pred = logits
         if self.output_activation == "softmax":
             pred = self.op.softmax(pred)
         pred = self.op.convert_to_numpy(pred)
         scores = -np.max(pred, axis=1)
-        return scores, info
+        logits = self.op.convert_to_numpy(logits)
+        return scores, logits
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """

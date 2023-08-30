@@ -24,6 +24,7 @@ import numpy as np
 
 from ..types import DatasetType
 from ..types import TensorType
+from ..types import Tuple
 from .base import OODBaseDetector
 
 
@@ -59,7 +60,7 @@ class Entropy(OODBaseDetector):
             react_quantile=react_quantile,
         )
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
         Computes an OOD score for input samples "inputs" based on
         entropy.
@@ -68,16 +69,17 @@ class Entropy(OODBaseDetector):
             inputs: input samples to score
 
         Returns:
-            scores
+            Tuple[np.ndarray]: scores, logits
         """
 
         # compute logits (softmax(logits,axis=1) is the actual softmax
         # output minimized using binary cross entropy)
-        _, info = self.feature_extractor.predict(inputs)
-        probits = self.op.softmax(info["logits"])
+        _, logits = self.feature_extractor.predict_tensor(inputs)
+        probits = self.op.softmax(logits)
         probits = self.op.convert_to_numpy(probits)
         scores = np.sum(probits * np.log(probits), axis=1)
-        return -scores, info
+        logits = self.op.convert_to_numpy(logits)
+        return -scores, logits
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """
