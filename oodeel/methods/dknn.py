@@ -26,6 +26,7 @@ import numpy as np
 from ..types import DatasetType
 from ..types import List
 from ..types import TensorType
+from ..types import Tuple
 from ..types import Union
 from .base import OODBaseDetector
 
@@ -69,7 +70,7 @@ class DKNN(OODBaseDetector):
         self.index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
         self.index.add(norm_fit_projected)
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
         Computes an OOD score for input samples "inputs" based on
         the distance to nearest neighbors in the feature space of self.model
@@ -78,15 +79,16 @@ class DKNN(OODBaseDetector):
             inputs: input samples to score
 
         Returns:
-            tuple: scores and dictionary containing logits and labels.
+            Tuple[np.ndarray]: scores, logits
         """
 
-        input_projected, info = self.feature_extractor.predict(inputs)
+        input_projected, logits = self.feature_extractor.predict_tensor(inputs)
         input_projected = self.op.convert_to_numpy(input_projected)
         input_projected = input_projected.reshape(input_projected.shape[0], -1)
         norm_input_projected = self._l2_normalization(input_projected)
         scores, _ = self.index.search(norm_input_projected, self.nearest)
-        return scores[:, -1], info
+        logits = self.op.convert_to_numpy(logits)
+        return scores[:, -1], logits
 
     def _l2_normalization(self, feat: np.ndarray) -> np.ndarray:
         """L2 normalization of a tensor along the last dimension.

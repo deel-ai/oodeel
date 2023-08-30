@@ -25,6 +25,7 @@ import numpy as np
 from ..types import DatasetType
 from ..types import List
 from ..types import TensorType
+from ..types import Tuple
 from ..types import Union
 from oodeel.methods.base import OODBaseDetector
 
@@ -84,7 +85,7 @@ class Mahalanobis(OODBaseDetector):
         self._mus = mus
         self._pinv_cov = self.op.pinv(mean_cov)
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
         Computes an OOD score for input samples "inputs" based on the mahalanobis
         distance with respect to the closest class-conditional Gaussian distribution.
@@ -93,7 +94,7 @@ class Mahalanobis(OODBaseDetector):
             inputs (TensorType): input samples
 
         Returns:
-            np.ndarray: ood scores
+            Tuple[np.ndarray]: scores, logits
         """
         # input preprocessing (perturbation)
         if self.eps > 0:
@@ -102,13 +103,14 @@ class Mahalanobis(OODBaseDetector):
             inputs_p = inputs
 
         # mahalanobis score on perturbed inputs
-        features_p, info = self.feature_extractor.predict(inputs_p)
+        features_p, logits = self.feature_extractor.predict_tensor(inputs_p)
         features_p = self.op.flatten(features_p)
         gaussian_score_p = self._mahalanobis_score(features_p)
 
         # take the highest score for each sample
         gaussian_score_p = self.op.max(gaussian_score_p, dim=1)
-        return -self.op.convert_to_numpy(gaussian_score_p), info
+        logits = self.op.convert_to_numpy(logits)
+        return -self.op.convert_to_numpy(gaussian_score_p), logits
 
     def _input_perturbation(self, inputs: TensorType) -> TensorType:
         """
