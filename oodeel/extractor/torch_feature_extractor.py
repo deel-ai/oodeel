@@ -179,7 +179,9 @@ class TorchFeatureExtractor(FeatureExtractor):
                 raise NotImplementedError
 
     @sanitize_input
-    def predict_tensor(self, x: TensorType, detach: bool = True) -> List[torch.Tensor]:
+    def predict_tensor(
+        self, x: TensorType, detach: bool = True
+    ) -> Tuple[List[torch.Tensor], torch.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
@@ -212,7 +214,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         dataset: Union[DataLoader, ItemType],
         detach: bool = True,
         **kwargs,
-    ) -> Union[torch.Tensor, List[torch.Tensor]]:
+    ) -> Tuple[List[torch.Tensor], dict]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:

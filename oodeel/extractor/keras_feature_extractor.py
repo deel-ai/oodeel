@@ -150,14 +150,14 @@ class KerasFeatureExtractor(FeatureExtractor):
 
     @sanitize_input
     @tf.function
-    def predict_tensor(self, tensor: TensorType) -> List[tf.Tensor]:
+    def predict_tensor(self, tensor: TensorType) -> Tuple[List[tf.Tensor], tf.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
             tensor (TensorType): input tensor (or dataset elem)
 
         Returns:
-            List[tf.Tensor], tf.Tensor: features, logits
+            Tuple[List[tf.Tensor], tf.Tensor]: features, logits
         """
         features = self.extractor(tensor, training=False)
 
@@ -174,7 +174,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         self,
         dataset: Union[ItemType, tf.data.Dataset],
         **kwargs,
-    ) -> Union[tf.Tensor, List[tf.Tensor]]:
+    ) -> Tuple[List[tf.Tensor], dict]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
