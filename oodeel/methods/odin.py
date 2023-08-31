@@ -52,7 +52,6 @@ class ODIN(OODBaseDetector):
     ):
         self.temperature = temperature
         super().__init__(
-            feature_layers_id=[],
             use_react=use_react,
             react_quantile=react_quantile,
         )
@@ -122,6 +121,16 @@ class ODIN(OODBaseDetector):
 
     @property
     def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return False
+
+    @property
+    def requires_internal_features(self) -> bool:
         """
         Whether an OOD detector needs a `fit_dataset` argument in the fit function.
 

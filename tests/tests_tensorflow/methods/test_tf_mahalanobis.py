@@ -34,7 +34,7 @@ def test_mahalanobis(auroc_thr, fpr95_thr):
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    mahalanobis = Mahalanobis(feature_layers_id=[-2])
+    mahalanobis = Mahalanobis()
     eval_detector_on_blobs(
         detector=mahalanobis,
         auroc_thr=auroc_thr,
