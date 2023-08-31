@@ -202,7 +202,7 @@ class OODDataset(object):
 
         return output_ds
 
-    def assign_ood_labels_by_class(
+    def split_by_class(
         self,
         in_labels: Optional[Union[np.ndarray, list]] = None,
         out_labels: Optional[Union[np.ndarray, list]] = None,

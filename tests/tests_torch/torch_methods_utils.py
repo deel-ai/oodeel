@@ -55,8 +55,8 @@ def load_blobs_data(batch_size=128, num_samples=10000, train_ratio=0.8):
     # === id / ood split ===
     blobs_train = OODDataset((X_train, y_train), backend="torch")
     blobs_test = OODDataset((X_test, y_test), backend="torch")
-    oods_fit, _ = blobs_train.assign_ood_labels_by_class(in_labels, out_labels)
-    oods_in, oods_out = blobs_test.assign_ood_labels_by_class(in_labels, out_labels)
+    oods_fit, _ = blobs_train.split_by_class(in_labels, out_labels)
+    oods_in, oods_out = blobs_test.split_by_class(in_labels, out_labels)
 
     # === prepare data (shuffle, batch) => torch dataloaders ===
     ds_fit = oods_fit.prepare(batch_size=batch_size, shuffle=True)

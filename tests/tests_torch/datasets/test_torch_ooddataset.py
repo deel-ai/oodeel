@@ -112,8 +112,8 @@ def test_add_ood_data(ds2_from_numpy, expected_output):
         "[torch] Assign OOD labels by class with ID and OOD labels",
     ],
 )
-def test_assign_ood_labels_by_class(in_labels, out_labels, one_hot, expected_output):
-    """Test the assign_ood_labels_by_class method."""
+def test_split_by_class(in_labels, out_labels, one_hot, expected_output):
+    """Test the split_by_class method."""
 
     # generate data
     x_shape = (3, 32, 32)
@@ -143,7 +143,7 @@ def test_assign_ood_labels_by_class(in_labels, out_labels, one_hot, expected_out
 
     dataset = OODDataset(dataset_id=(images, labels), backend="torch")
 
-    in_dataset, out_dataset = dataset.assign_ood_labels_by_class(
+    in_dataset, out_dataset = dataset.split_by_class(
         in_labels=in_labels,
         out_labels=out_labels,
     )
