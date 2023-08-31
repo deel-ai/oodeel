@@ -111,6 +111,7 @@ from oodeel.methods import MLS
 
 mls = MLS()
 mls.fit(model)
+# info contains model predictions and labels if avail
 scores_in, info_in = mls.score(ds_in)
 scores_out, info_out = mls.score(ds_out)
 ```
