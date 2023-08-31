@@ -95,7 +95,7 @@ Load a dataset and split it into an in-distribution dataset and ou-of-distributi
 from oodeel.datasets import OODDataset
 
 in_labels = [0, 1, 2, 3, 4]
-oods_in, oods_out = oods_test.assign_ood_labels_by_class(in_labels=in_labels)
+oods_in, oods_out = oods_test.split_by_class(in_labels=in_labels)
 # info contains model predictions and labels if avail
 ds_in = oods_in.prepare(batch_size=batch_size)
 ds_out = oods_out.prepare(batch_size=batch_size)
