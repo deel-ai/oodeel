@@ -23,10 +23,8 @@
 import numpy as np
 
 from ..types import DatasetType
-from ..types import List
 from ..types import TensorType
 from ..types import Tuple
-from ..types import Union
 from oodeel.methods.base import OODBaseDetector
 
 
@@ -37,18 +35,15 @@ class Mahalanobis(OODBaseDetector):
     https://arxiv.org/abs/1807.03888
 
     Args:
-        feature_layers_id (List[Union[int, str]]): feature space on which to
-            compute mahalanobis distance.
         eps (float): magnitude for gradient based input perturbation.
             Defaults to 0.02.
     """
 
     def __init__(
         self,
-        feature_layers_id: List[Union[int, str]],
         eps: float = 0.002,
     ):
-        super(Mahalanobis, self).__init__(feature_layers_id=feature_layers_id)
+        super(Mahalanobis, self).__init__()
         self.eps = eps
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
@@ -183,6 +178,16 @@ class Mahalanobis(OODBaseDetector):
 
     @property
     def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return True
+
+    @property
+    def requires_internal_features(self) -> bool:
         """
         Whether an OOD detector needs a `fit_dataset` argument in the fit function.
 

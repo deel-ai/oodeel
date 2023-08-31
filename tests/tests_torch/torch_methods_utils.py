@@ -100,7 +100,7 @@ def eval_detector_on_blobs(
 
     # fit ood detector
     if detector.requires_to_fit_dataset or detector.use_react:
-        detector.fit(model, ds_fit)
+        detector.fit(model, feature_layers_id=[-2], fit_dataset=ds_fit)
     else:
         detector.fit(model)
 

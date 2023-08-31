@@ -24,7 +24,6 @@ import faiss
 import numpy as np
 
 from ..types import DatasetType
-from ..types import List
 from ..types import TensorType
 from ..types import Tuple
 from ..types import Union
@@ -37,20 +36,15 @@ class DKNN(OODBaseDetector):
     https://arxiv.org/abs/2204.06507
 
     Args:
-        feature_layers_id (List[Union[int, str]]): feature space on which to compute
-            nearest neighbors.
         nearest: number of nearest neighbors to consider.
             Defaults to 1.
     """
 
     def __init__(
         self,
-        feature_layers_id: List[Union[int, str]],
         nearest: int = 1,
     ):
-        super().__init__(
-            feature_layers_id=feature_layers_id,
-        )
+        super().__init__()
 
         self.index = None
         self.nearest = nearest
@@ -103,6 +97,16 @@ class DKNN(OODBaseDetector):
 
     @property
     def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return True
+
+    @property
+    def requires_internal_features(self) -> bool:
         """
         Whether an OOD detector needs a `fit_dataset` argument in the fit function.
 

@@ -37,7 +37,7 @@ from tests.tests_torch import sequential_model
     "kwargs_factory,expected_sz",
     [
         (lambda: dict(model=Net(), feature_layers_id=["fc2"]), [100, 84]),
-        (lambda: dict(model=sequential_model(), feature_layers_id=[-2]), [100, 84]),
+        (lambda: dict(model=sequential_model(), feature_layers_id=[8]), [100, 84]),
         (
             lambda: dict(model=named_sequential_model(), feature_layers_id=["fc2"]),
             [100, 84],

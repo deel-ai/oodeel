@@ -93,8 +93,12 @@ def eval_detector_on_blobs(
     model = load_blob_mlp()
 
     # fit ood detector
-    if detector.requires_to_fit_dataset or detector.use_react:
-        detector.fit(model, ds_fit)
+    if (
+        detector.requires_to_fit_dataset or detector.use_react
+    ) and detector.requires_internal_features:
+        detector.fit(model, feature_layers_id=[-2], fit_dataset=ds_fit)
+    elif detector.requires_to_fit_dataset or detector.use_react:
+        detector.fit(model, fit_dataset=ds_fit)
     else:
         detector.fit(model)
 

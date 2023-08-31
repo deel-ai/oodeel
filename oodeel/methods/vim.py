@@ -25,7 +25,6 @@ import numpy as np
 from scipy.special import logsumexp
 
 from ..types import DatasetType
-from ..types import List
 from ..types import TensorType
 from ..types import Tuple
 from ..types import Union
@@ -53,7 +52,6 @@ class VIM(OODBaseDetector):
         projection on $P^{\\perp}$ of $x-c$ has large norm.
 
     Args:
-        feature_layers_id (List[Union[int, str]]): features to use for Residual score.
         princ_dims (Union[int, float]): number of principal dimensions of in
             distribution features to consider. If an int, must be less than the
             dimension of the feature space.
@@ -68,15 +66,10 @@ class VIM(OODBaseDetector):
 
     def __init__(
         self,
-        feature_layers_id: List[Union[int, str]],
         princ_dims: Union[int, float] = 0.99,
         pca_origin: str = "pseudo",
     ):
-        if -1 not in feature_layers_id:
-            feature_layers_id.append(-1)
-        super().__init__(
-            feature_layers_id=feature_layers_id,
-        )
+        super().__init__()
         self._princ_dim = princ_dims
         self.pca_origin = pca_origin
 
@@ -93,7 +86,7 @@ class VIM(OODBaseDetector):
         """
         # extract features from fit dataset
         all_features_train, info = self.feature_extractor.predict(fit_dataset)
-        features_train = all_features_train[0]
+        features_train = all_features_train
         logits_train = info["logits"]
         features_train = self.op.flatten(features_train)
         self.feature_dim = features_train.shape[1]
@@ -103,7 +96,10 @@ class VIM(OODBaseDetector):
         if self.pca_origin == "center":
             self.center = self.op.mean(features_train, dim=0)
         elif self.pca_origin == "pseudo":
-            W, b = self.feature_extractor.get_weights(self.feature_layers_id[1])
+            # W, b = self.feature_extractor.get_weights(
+            #    self.feature_extractor.feature_layers_id[0]
+            # )
+            W, b = self.feature_extractor.get_weights(-1)
             W, b = self.op.from_numpy(W), self.op.from_numpy(b.reshape(-1, 1))
             _W = self.op.transpose(W) if self.backend == "tensorflow" else W
             self.center = -self.op.reshape(self.op.matmul(self.op.pinv(_W), b), (-1,))
@@ -177,8 +173,7 @@ class VIM(OODBaseDetector):
             Tuple[np.ndarray]: scores, logits
         """
         # extract features
-        all_features, logits = self.feature_extractor.predict_tensor(inputs)
-        features = all_features[0]
+        features, logits = self.feature_extractor.predict_tensor(inputs)
         features = self.op.flatten(features)
         logits = self.op.convert_to_numpy(logits)
         # vim score
@@ -205,6 +200,16 @@ class VIM(OODBaseDetector):
 
     @property
     def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return True
+
+    @property
+    def requires_internal_features(self) -> bool:
         """
         Whether an OOD detector needs a `fit_dataset` argument in the fit function.
 
