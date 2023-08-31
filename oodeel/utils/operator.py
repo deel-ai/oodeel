@@ -148,7 +148,7 @@ class Operator(ABC):
 
     @staticmethod
     @abstractmethod
-    def transpose(tensor: TensorType) -> TensorType:
+    def t(tensor: TensorType) -> TensorType:
         "Transpose function for tensor of rank 2"
         raise NotImplementedError()
 

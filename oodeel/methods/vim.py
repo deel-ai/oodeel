@@ -102,7 +102,7 @@ class VIM(OODBaseDetector):
         elif self.pca_origin == "pseudo":
             W, b = self.feature_extractor.get_weights(self.output_layers_id[1])
             W, b = self.op.from_numpy(W), self.op.from_numpy(b.reshape(-1, 1))
-            _W = self.op.transpose(W) if self.backend == "tensorflow" else W
+            _W = self.op.t(W) if self.backend == "tensorflow" else W
             self.center = -self.op.reshape(self.op.matmul(self.op.pinv(_W), b), (-1,))
         else:
             raise NotImplementedError(
@@ -112,7 +112,7 @@ class VIM(OODBaseDetector):
         # compute eigvalues and eigvectors of empirical covariance matrix
         centered_features = features_train - self.center
         emp_cov = (
-            self.op.matmul(self.op.transpose(centered_features), centered_features)
+            self.op.matmul(self.op.t(centered_features), centered_features)
             / centered_features.shape[0]
         )
         eig_vals, eigen_vectors = self.op.eigh(emp_cov)

@@ -164,7 +164,7 @@ class TFOperator(Operator):
         return tf.constant(arr, dtype=tf.float32)
 
     @staticmethod
-    def transpose(tensor: TensorType) -> tf.Tensor:
+    def t(tensor: TensorType) -> tf.Tensor:
         "Transpose function for tensor of rank 2"
         return tf.transpose(tensor)
 

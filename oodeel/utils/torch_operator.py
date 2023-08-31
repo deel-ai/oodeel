@@ -182,7 +182,7 @@ class TorchOperator(Operator):
         return torch.from_numpy(arr).double().to(self._device)
 
     @staticmethod
-    def transpose(tensor: TensorType) -> torch.Tensor:
+    def t(tensor: TensorType) -> torch.Tensor:
         "Transpose function for tensor of rank 2"
         return tensor.t()
 

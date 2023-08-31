@@ -75,7 +75,7 @@ class Mahalanobis(OODBaseDetector):
             mus[cls] = self.op.mean(_features_cls, dim=0)
             _zero_f_cls = _features_cls - mus[cls]
             covs[cls] = (
-                self.op.matmul(self.op.transpose(_zero_f_cls), _zero_f_cls)
+                self.op.matmul(self.op.t(_zero_f_cls), _zero_f_cls)
                 / _zero_f_cls.shape[0]
             )
 
@@ -172,7 +172,7 @@ class Mahalanobis(OODBaseDetector):
             # gaussian log prob density (mahalanobis)
             log_probs_f = -0.5 * self.op.diag(
                 self.op.matmul(
-                    self.op.matmul(zero_f, self._pinv_cov), self.op.transpose(zero_f)
+                    self.op.matmul(zero_f, self._pinv_cov), self.op.t(zero_f)
                 )
             )
             gaussian_scores.append(self.op.reshape(log_probs_f, (-1, 1)))
