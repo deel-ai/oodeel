@@ -37,7 +37,6 @@ requirements = [
     "scipy",
     "setuptools",
     "matplotlib",
-    "kneed",
     "pandas",
     "seaborn",
     "plotly",
@@ -96,7 +95,8 @@ setup(
     author="DEEL Core Team",
     author_email="paul.novello@irt-saintexupery.com",
     # Description of the package:
-    description="Short description",
+    description="Simple, compact, and hackable post-hoc deep OOD detection for already"
+    + "trained tensorflow or pytorch image classifiers.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     # Plugins entry point
