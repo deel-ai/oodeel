@@ -66,7 +66,7 @@ class Mahalanobis(OODBaseDetector):
         covs = dict()
         for cls in self._classes:
             indexes = self.op.equal(labels, cls)
-            _features_cls = features[indexes]
+            _features_cls = self.op.flatten(features[indexes])
             mus[cls] = self.op.mean(_features_cls, dim=0)
             _zero_f_cls = _features_cls - mus[cls]
             covs[cls] = (
