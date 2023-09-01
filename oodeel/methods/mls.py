@@ -104,9 +104,10 @@ class MLS(OODBaseDetector):
     @property
     def requires_internal_features(self) -> bool:
         """
-        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+        Whether an OOD detector acts on internal model features.
 
         Returns:
-            bool: True if `fit_dataset` is required else False.
+            bool: True if the detector perform computations on an intermediate layer
+            else False.
         """
         return False

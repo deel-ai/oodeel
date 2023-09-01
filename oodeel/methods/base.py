@@ -75,8 +75,8 @@ class OODBaseDetector(ABC):
     def fit(
         self,
         model: Callable,
-        feature_layers_id: List[Union[int, str]] = [],
         fit_dataset: Optional[Union[ItemType, DatasetType]] = None,
+        feature_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
     ) -> None:
         """Prepare the detector for scoring:
@@ -87,6 +87,10 @@ class OODBaseDetector(ABC):
         Args:
             model: model to extract the features from
             fit_dataset: dataset to fit the detector on
+            feature_layers_id (List[int]): list of str or int that identify
+                features to output.
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to [-1]
             input_layer_id (List[int]): = list of str or int that identify the input
                 layer of the feature extractor.
                 If int, the rank of the layer in the layer list
@@ -117,11 +121,11 @@ class OODBaseDetector(ABC):
 
         if (feature_layers_id == []) and (self.requires_internal_features):
             raise ValueError(
-                "Explicitely specify output_layers_id=[layer0, layer1,...], "
+                "Explicitly specify feature_layers_id=[layer0, layer1,...], "
                 + "where layer0, layer1,... are the names of the desired output "
                 + "layers of your model. These can be int or str (even though str"
                 + " is safer). To know what to put, have a look at model.summary() "
-                + "with keras or model.named_modules()"
+                + "with keras or model.named_modules() with pytorch"
             )
 
         self.feature_extractor = self._load_feature_extractor(
@@ -142,14 +146,14 @@ class OODBaseDetector(ABC):
 
         Args:
             model: a model (Keras or PyTorch) to load.
+            feature_layers_id (List[int]): list of str or int that identify
+                features to output.
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to [-1]
             input_layer_id (List[int]): = list of str or int that identify the input
                 layer of the feature extractor.
                 If int, the rank of the layer in the layer list
                 If str, the name of the layer. Defaults to None.
-            feature_layers_id (List[int]): list of str or int that identify
-                features to output.
-                If int, the rank of the layer in the layer list
-                If str, the name of the layer. Defaults to [-1],
 
         Returns:
             FeatureExtractor: a feature extractor instance
@@ -312,10 +316,11 @@ class OODBaseDetector(ABC):
     @property
     def requires_internal_features(self) -> bool:
         """
-        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+        Whether an OOD detector acts on internal model features.
 
         Returns:
-            bool: True if `fit_dataset` is required else False.
+            bool: True if the detector perform computations on an intermediate layer
+            else False.
         """
         raise NotImplementedError(
             "Property `requires_internal_dataset` is not implemented. It should return"
