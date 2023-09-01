@@ -44,8 +44,6 @@ mls.fit(model) # A tensorflow or torch model
 scores, info = mls.score(ds) # ds is a tf.data.Dataset or a torch.DataLoader
 ```
 
-**Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully!
-
 # Table of contents
 
 - [Installation](#installation)
@@ -61,15 +59,19 @@ scores, info = mls.score(ds) # ds is a tf.data.Dataset or a torch.DataLoader
 
 # Installation
 
-**Oodeel** requires some stuff and several libraries including Numpy. Installation can be done using:
+Installation can be done using:
 
 ```bash
-git clone https://github.com/deel-ai/oodeel.git
-cd oodeel
-make install-env-${BACKEND}
-
+pip install oodeel
 ```
-where `${BACKEND}` is either `torch` or `tensorflow` depending on the user's backend.
+
+oodeel requires either `tensorflow` or `pytorch` to be already installed (it will not install them automatically not to mess-up with existing installations). It is regularly tested with:
+
+|Python version|Pytorch version|Tensorflow version|
+|---|---|---|
+|`3.8`| `1.11`| `2.5`|
+|`3.9`|`1.13` | `2.8`|
+|`3.10`| `2.00` | `2.11`|
 
 # Quick Start
 
@@ -127,6 +129,27 @@ metrics = bench_metrics(
     )
 ```
 
+### And visualize the results!
+
+2D t-SNE (3D is also available).
+
+```python
+plot_2D_features(
+    model=model,
+    in_dataset=ds_in,
+    out_dataset=ds_out,
+    output_layer_id=-2,
+)
+```
+![T-SNE](docs/assets/tsne.png)
+
+Classical histograms and AUROC curve.
+```python
+plot_ood_scores(scores_in, scores_out, log_scale=False)
+plot_roc_curve(scores_in, scores_out)
+```
+![AUROC](docs/assets/auroc.png)
+
 # Tutorials
 
 We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the [doc](https://deel-ai.github.io/oodeel/)
@@ -161,17 +184,8 @@ Currently, **oodeel** includes the following baselines:
 **Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for toy convnet models or models from `keras.applications` in [tf_training_tools.py](https://github.com/deel-ai/oodeel/tree/master/oodeel/utils/tf_training_tools.py) and `torchvision.models` in [torch_training_tools.py](https://github.com/deel-ai/oodeel/tree/master/oodeel/utils/torch_training_tools.py) files. These functions come in handy for benchmarks like *leave-k-classes-out* that requires retraining models on a subset of dataset classes.
 # Development Roadmap
 
-## Roadmap to first release:
-- [x] The library works for `keras` models
-- [x] Unification of tutorial notebooks
-- [x] Validation of all methods for pytorch using `TorchOperator`, making oodeel compatible with both tensorflow and pytorch models.
-- [x] Integration of `TorchDataHandler` to alleviate the need of `tf.data.Dataset` when using pytorch. At this stage, oodeel will no more require any tensorflow components when using pytorch, and vice-versa.
-- [x] Revise docstring and type hinting
-- [x] Set up the doc
-
-## What's next?
 - [ ] More baselines!
-- [ ] A module for thorough visualizations (result plots and feature space visualizations)
+- [x] A module for thorough visualizations (result plots and feature space visualizations)
 - [ ] Integrate model loading and uploading with [hugginface's transformers](https://huggingface.co/docs/transformers/index) library for pretraining
 - [ ] Extend the library to more diverse tasks like object detection, segmentation, NLP ...
 - [ ] Towards OOD Generalization?
