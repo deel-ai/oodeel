@@ -103,10 +103,14 @@ def eval_detector_on_blobs(
         detector.fit(model)
 
     # ood scores
-    scores_in, _ = detector.score(ds_in)
-    scores_out, _ = detector.score(ds_out)
+    scores_in, info_in = detector.score(ds_in)
+    scores_out, info_out = detector.score(ds_out)
     assert scores_in.shape == (1028,)
+    assert info_in["labels"].shape == (1028,)
+    assert info_in["logits"].shape == (1028, 2)
     assert scores_out.shape == (972,)
+    assert info_out["labels"].shape == (972,)
+    assert info_out["logits"].shape == (972, 2)
 
     # ood metrics: auroc, fpr95tpr
     metrics = bench_metrics(
