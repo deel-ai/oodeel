@@ -169,6 +169,11 @@ class TFOperator(Operator):
         return tf.transpose(tensor)
 
     @staticmethod
+    def permute(tensor: TensorType, dims) -> tf.Tensor:
+        "Transpose function for tensor of rank 2"
+        return tf.transpose(tensor, dims)
+
+    @staticmethod
     def diag(tensor: TensorType) -> tf.Tensor:
         "Diagonal function: return the diagonal of a 2D tensor"
         return tf.linalg.diag_part(tensor)
@@ -239,3 +244,7 @@ class TFOperator(Operator):
     ) -> tf.Tensor:
         "Applies where function to condition"
         return tf.where(condition, input, other)
+
+    @staticmethod
+    def percentile(x, q):
+        return tfp.stats.percentile(x, q)

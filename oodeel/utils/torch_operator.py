@@ -187,6 +187,11 @@ class TorchOperator(Operator):
         return tensor.t()
 
     @staticmethod
+    def permute(tensor: TensorType, dims) -> torch.Tensor:
+        "Transpose function for tensor of rank 2"
+        return torch.permute(tensor, dims)
+
+    @staticmethod
     def diag(tensor: TensorType) -> torch.Tensor:
         "Diagonal function: return the diagonal of a 2D tensor"
         return tensor.diag()
@@ -260,5 +265,5 @@ class TorchOperator(Operator):
         input: Union[TensorType, float],
         other: Union[TensorType, float],
     ) -> torch.Tensor:
-        "Applies where function to condition"
+        "Applies where function , to condition"
         return torch.where(condition, input, other)

@@ -154,6 +154,12 @@ class Operator(ABC):
 
     @staticmethod
     @abstractmethod
+    def permute(tensor: TensorType) -> TensorType:
+        "Transpose function for tensor of rank 2"
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
     def diag(tensor: TensorType) -> TensorType:
         "Diagonal function: return the diagonal of a 2D tensor"
         raise NotImplementedError()
