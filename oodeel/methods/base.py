@@ -207,7 +207,7 @@ class OODBaseDetector(ABC):
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         elif isinstance(dataset, get_args(DatasetType)):
             scores = np.array([])
-            logits = np.array([])
+            logits = np.empty((0, 2))
 
             for item in dataset:
                 tensor = self.data_handler.get_input_from_dataset_item(item)
@@ -226,7 +226,7 @@ class OODBaseDetector(ABC):
                     )
 
                 scores = np.append(scores, score_batch)
-                logits = np.append(logits, logits_batch)
+                logits = np.concatenate([logits, logits_batch])
 
         else:
             raise NotImplementedError(
