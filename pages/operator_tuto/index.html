@@ -332,7 +332,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting_started/" class="md-nav__link">
+      <a href="../../notebooks/tensorflow/demo_mls_msp_tf/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -424,6 +424,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_react_tf/" class="md-nav__link">
+        React
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -463,7 +477,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting_started/" class="md-nav__link">
+      <a href="../../notebooks/torch/demo_mls_msp_torch/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -549,6 +563,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_mahalanobis_torch/" class="md-nav__link">
         Mahalanobis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_react_torch/" class="md-nav__link">
+        React
       </a>
     </li>
   
@@ -1010,6 +1038,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/plots/" class="md-nav__link">
+        Plots
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1132,7 +1174,7 @@
   <h1>Seamlessly handling torch and tf Tensors with Operator</h1>
 
 <p>Oodeel is designed to work with both Tensorflow and Pytorch models. However, we wanted to avoid duplicate code as much as possible.</p>
-<p>Hence, we created the class <code>Operator</code> and the child classes <code>TFOperator</code> (API <a href="/api/tf_operator">here</a>) and <code>TorchOperator</code> (API <a href="/api/torch_operator">here</a>) to seamlessly perform basic operations on <code>tf.Tensor</code>or <code>torch.tensor</code>, for instance <code>mean</code>, <code>matmul</code>, <code>cat</code>, <code>softmax</code>...</p>
+<p>Hence, we created the class <code>Operator</code> and the child classes <code>TFOperator</code> (API <a href="../../api/tf_operator">here</a>) and <code>TorchOperator</code> (API <a href="../../api/torch_operator">here</a>) to seamlessly perform basic operations on <code>tf.Tensor</code>or <code>torch.tensor</code>, for instance <code>mean</code>, <code>matmul</code>, <code>cat</code>, <code>softmax</code>...</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>Using this feature is not required to implement your own baselines with your favorite library, but only if you want your baseline to be usable with both Tensorflow and Pytorch.</p>
@@ -1164,7 +1206,7 @@ Then you could conditionally load the correct <code>Operator</code>:</p>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>If you do not know in advance from which library the input tensor will come from, there is a nice function we implemented for you: <code>is_from</code> (see <a href="/api/utils">here</a>)</p>
+<p>If you do not know in advance from which library the input tensor will come from, there is a nice function we implemented for you: <code>is_from</code> (see <a href="../../api/utils">here</a>)</p>
 </div>
 <p>now it is possible to seamlessly use your <code>operator</code> to process your <code>tensor</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="n">tensor_mean</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1213,7 +1255,7 @@ The operator.gradient() function takes the function and the input tensor as argu
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">one_hot</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
 </code></pre></div>
 <h4 id="or-simply-user">Or simply User?<a class="headerlink" href="#or-simply-user" title="Permanent link">&para;</a></h4>
-<p>If you just want to use Oodeel for your research, you can simply use your favorite lib and develop your brand new baseline like usual, following the tuto <a href="/pages/implementing_baselines_tuto">here</a> without bothering with <code>Operator</code>.</p>
+<p>If you just want to use Oodeel for your research, you can simply use your favorite lib and develop your brand new baseline like usual, following the tuto <a href="../implementing_baselines_tuto/">here</a> without bothering with <code>Operator</code>.</p>
 
 
 

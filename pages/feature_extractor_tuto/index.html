@@ -403,7 +403,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting_started/" class="md-nav__link">
+      <a href="../../notebooks/tensorflow/demo_mls_msp_tf/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -495,6 +495,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_react_tf/" class="md-nav__link">
+        React
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -534,7 +548,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting_started/" class="md-nav__link">
+      <a href="../../notebooks/torch/demo_mls_msp_torch/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -620,6 +634,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_mahalanobis_torch/" class="md-nav__link">
         Mahalanobis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_react_torch/" class="md-nav__link">
+        React
       </a>
     </li>
   
@@ -989,6 +1017,20 @@
     <li class="md-nav__item">
       <a href="../../api/utils/" class="md-nav__link">
         Utils
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/plots/" class="md-nav__link">
+        Plots
       </a>
     </li>
   
@@ -2417,16 +2459,16 @@ $d-3$-th, with $d$ the depth of the network. To achieve that instantiate the
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">extractor</span> <span class="o">=</span> <span class="n">KerasFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">extractor</span> <span class="o">=</span> <span class="n">KerasFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
 
 <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-<span class="n">x_latent</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x_latent</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">x_latent</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
-<div id="cell-4" class="clipboard-copy-txt">extractor = KerasFeatureExtractor(model, output_layers_id=[-3])
+<div id="cell-4" class="clipboard-copy-txt">extractor = KerasFeatureExtractor(model, feature_layers_id=[-3])
 
 x = tf.ones((100, 32, 32, 3))
-x_latent = extractor(x)
+x_latent, _ = extractor(x)
 print(x_latent.shape)</div>
     
         </div>
@@ -2466,6 +2508,9 @@ print(x_latent.shape)</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<blockquote><p>Tip</p>
+<p>For convenience, the logits are always returned when calling a <code>FeatureExtractor</code>. We do not use them in this notebook, if you want to get them, just replace <code>x_latent, _ = extractor(x)</code> with <code>x_latent, logits = extractor(x)</code></p>
+</blockquote>
 <p>Alternatively, you can identify the layer by its name:</p>
 
 </div>
@@ -2492,16 +2537,16 @@ print(x_latent.shape)</div>
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">extractor</span> <span class="o">=</span> <span class="n">KerasFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;flatten&quot;</span><span class="p">])</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">extractor</span> <span class="o">=</span> <span class="n">KerasFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;flatten&quot;</span><span class="p">])</span>
 
 <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-<span class="n">x_latent</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x_latent</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">x_latent</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
-<div id="cell-5" class="clipboard-copy-txt">extractor = KerasFeatureExtractor(model, output_layers_id=["flatten"])
+<div id="cell-5" class="clipboard-copy-txt">extractor = KerasFeatureExtractor(model, feature_layers_id=["flatten"])
 
 x = tf.ones((100, 32, 32, 3))
-x_latent = extractor(x)
+x_latent, _ = extractor(x)
 print(x_latent.shape)</div>
     
         </div>
@@ -2569,21 +2614,21 @@ repeated forward passes:</p>
             </clipboard-copy>
         </div>
             <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">extractor_2</span> <span class="o">=</span> <span class="n">KerasFeatureExtractor</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">,</span> <span class="n">input_layer_id</span><span class="o">=</span><span class="s2">&quot;dense&quot;</span><span class="p">,</span> <span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;activation&quot;</span><span class="p">]</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">input_layer_id</span><span class="o">=</span><span class="s2">&quot;dense&quot;</span><span class="p">,</span> <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;activation&quot;</span><span class="p">]</span>
 <span class="p">)</span>
 
-<span class="n">x_latent</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x_latent</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">x_latent</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">extractor_2</span><span class="p">(</span><span class="n">x_latent</span><span class="p">)</span>
+<span class="n">y</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor_2</span><span class="p">(</span><span class="n">x_latent</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 <div id="cell-6" class="clipboard-copy-txt">extractor_2 = KerasFeatureExtractor(
-    model, input_layer_id="dense", output_layers_id=["activation"]
+    model, input_layer_id="dense", feature_layers_id=["activation"]
 )
 
-x_latent = extractor(x)
+x_latent, _ = extractor(x)
 print(x_latent.shape)
-y = extractor_2(x_latent)
+y, _ = extractor_2(x_latent)
 print(y.shape)</div>
     
         </div>
@@ -2658,16 +2703,16 @@ instead of <code>list</code>)</li>
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">extractor</span> <span class="o">=</span> <span class="n">KerasFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">extractor</span> <span class="o">=</span> <span class="n">KerasFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
 <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-<span class="n">x_latent</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x_latent</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">x_latent</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">x_latent</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
-<div id="cell-7" class="clipboard-copy-txt">extractor = KerasFeatureExtractor(model, output_layers_id=[-3, -1])
+<div id="cell-7" class="clipboard-copy-txt">extractor = KerasFeatureExtractor(model, feature_layers_id=[-3, -1])
 
 x = tf.ones((100, 32, 32, 3))
-x_latent = extractor(x)
+x_latent, _ = extractor(x)
 print(x_latent[0].shape, x_latent[1].shape)</div>
     
         </div>
@@ -2734,7 +2779,7 @@ your only option is to rely on the identification by layer name, as referred in
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[2]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -2952,7 +2997,7 @@ model = Net()</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[11]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -2967,40 +3012,40 @@ model = Net()</div>
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">extractor</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">extractor</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
 
 <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
-<span class="n">x_latent</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x_latent</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;numbered output:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">x_latent</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-<span class="n">extractor</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">])</span>
+<span class="n">extractor</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">])</span>
 
 <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
-<span class="n">x_latent</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x_latent</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;named output:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">x_latent</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-<span class="n">extractor</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">,</span> <span class="s2">&quot;fc3&quot;</span><span class="p">])</span>
+<span class="n">extractor</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">,</span> <span class="s2">&quot;fc3&quot;</span><span class="p">])</span>
 
 <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
-<span class="n">x_latent</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x_latent</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;multi output:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">x_latent</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">x_latent</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
-<div id="cell-11" class="clipboard-copy-txt">extractor = TorchFeatureExtractor(model, output_layers_id=[-3])
+<div id="cell-11" class="clipboard-copy-txt">extractor = TorchFeatureExtractor(model, feature_layers_id=[-3])
 
 x = torch.ones((100, 3, 32, 32))
-x_latent = extractor(x)
+x_latent, _ = extractor(x)
 print("numbered output:\n", x_latent.shape)
 
-extractor = TorchFeatureExtractor(model, output_layers_id=["fc1"])
+extractor = TorchFeatureExtractor(model, feature_layers_id=["fc1"])
 
 x = torch.ones((100, 3, 32, 32))
-x_latent = extractor(x)
+x_latent, _ = extractor(x)
 print("named output:\n", x_latent.shape)
 
-extractor = TorchFeatureExtractor(model, output_layers_id=["fc1", "fc3"])
+extractor = TorchFeatureExtractor(model, feature_layers_id=["fc1", "fc3"])
 
 x = torch.ones((100, 3, 32, 32))
-x_latent = extractor(x)
+x_latent, _ = extractor(x)
 print("multi output:\n", x_latent[0].shape, x_latent[1].shape)</div>
     
         </div>
@@ -3075,24 +3120,24 @@ multi output:
                 </div>
             </clipboard-copy>
         </div>
-            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">extractor</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">])</span>
+            <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">extractor</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">])</span>
 <span class="n">extractor_2</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">,</span> <span class="n">input_layer_id</span><span class="o">=</span><span class="s2">&quot;fc2&quot;</span><span class="p">,</span> <span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc3&quot;</span><span class="p">]</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">input_layer_id</span><span class="o">=</span><span class="s2">&quot;fc2&quot;</span><span class="p">,</span> <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc3&quot;</span><span class="p">]</span>
 <span class="p">)</span>
 
-<span class="n">x_latent</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x_latent</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">x_latent</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">extractor_2</span><span class="p">(</span><span class="n">x_latent</span><span class="p">)</span>
+<span class="n">y</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor_2</span><span class="p">(</span><span class="n">x_latent</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
-<div id="cell-12" class="clipboard-copy-txt">extractor = TorchFeatureExtractor(model, output_layers_id=["fc1"])
+<div id="cell-12" class="clipboard-copy-txt">extractor = TorchFeatureExtractor(model, feature_layers_id=["fc1"])
 extractor_2 = TorchFeatureExtractor(
-    model, input_layer_id="fc2", output_layers_id=["fc3"]
+    model, input_layer_id="fc2", feature_layers_id=["fc3"]
 )
 
-x_latent = extractor(x)
+x_latent, _ = extractor(x)
 print(x_latent.shape)
-y = extractor_2(x_latent)
+y, _ = extractor_2(x_latent)
 print(y.shape)</div>
     
         </div>
@@ -3120,7 +3165,7 @@ print(y.shape)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[13]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -3158,14 +3203,18 @@ print(y.shape)</div>
 
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">named_sequential_model</span><span class="p">()</span>
-<span class="n">extractor</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">])</span>
-<span class="n">extractor_2</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">,</span> <span class="n">input_layer_id</span><span class="o">=</span><span class="s2">&quot;fc2&quot;</span><span class="p">,</span> <span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc3&quot;</span><span class="p">]</span>
-<span class="p">)</span>
+<span class="n">extractor</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">])</span>
 
-<span class="n">x_latent</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
+<span class="n">x_latent</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">x_latent</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">extractor_2</span><span class="p">(</span><span class="n">x_latent</span><span class="p">)</span>
+
+<span class="c1"># Be careful, once extractor_2 is instanciated, extractor no longer works</span>
+<span class="c1"># because hooks are cleaned</span>
+<span class="n">extractor_2</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">input_layer_id</span><span class="o">=</span><span class="s2">&quot;fc2&quot;</span><span class="p">,</span> <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc3&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="n">y</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extractor_2</span><span class="p">(</span><span class="n">x_latent</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 <div id="cell-13" class="clipboard-copy-txt">from collections import OrderedDict
@@ -3191,14 +3240,18 @@ def named_sequential_model():
 
 
 model = named_sequential_model()
-extractor = TorchFeatureExtractor(model, output_layers_id=["fc1"])
-extractor_2 = TorchFeatureExtractor(
-    model, input_layer_id="fc2", output_layers_id=["fc3"]
-)
+extractor = TorchFeatureExtractor(model, feature_layers_id=["fc1"])
 
-x_latent = extractor(x)
+x = torch.ones((100, 3, 32, 32))
+x_latent, _ = extractor(x)
 print(x_latent.shape)
-y = extractor_2(x_latent)
+
+# Be careful, once extractor_2 is instanciated, extractor no longer works
+# because hooks are cleaned
+extractor_2 = TorchFeatureExtractor(
+    model, input_layer_id="fc2", feature_layers_id=["fc3"]
+)
+y, _ = extractor_2(x_latent)
 print(y.shape)</div>
     
         </div>
@@ -3251,7 +3304,7 @@ torch.Size([100, 10])
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <p>Once you have identified the way you want to extract data from your model, which boils
-down to correctly identifying what to put under the <code>output_layers_id</code>and
+down to correctly identifying what to put under the <code>feature_layers_id</code> and
 <code>input_layer_id</code> arguments, you can properly instantiate your <code>OODBaseDetector</code> like this
 (example with DKNN):</p>
 
@@ -3264,7 +3317,7 @@ down to correctly identifying what to put under the <code>output_layers_id</code
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[14]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -3281,15 +3334,21 @@ down to correctly identifying what to put under the <code>output_layers_id</code
         </div>
             <div class="highlight-ipynb hl-python"><pre><span></span><span class="kn">from</span> <span class="nn">oodeel.methods</span> <span class="kn">import</span> <span class="n">DKNN</span>
 
-<span class="n">dknn</span> <span class="o">=</span> <span class="n">DKNN</span><span class="p">(</span><span class="n">output_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">])</span>
-<span class="c1"># Then:</span>
-<span class="c1"># dknn.fit(model, #some_fit_dataset)</span>
+<span class="n">dknn</span> <span class="o">=</span> <span class="n">DKNN</span><span class="p">()</span>
+<span class="n">dknn</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> 
+    <span class="n">feature_layers_id</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">],</span> 
+    <span class="c1">#some_fit_dataset)</span>
+<span class="p">)</span>
 </pre></div>
 <div id="cell-14" class="clipboard-copy-txt">from oodeel.methods import DKNN
 
-dknn = DKNN(output_layers_id=["fc1"])
-# Then:
-# dknn.fit(model, #some_fit_dataset)</div>
+dknn = DKNN()
+dknn.fit(
+    model, 
+    feature_layers_id=["fc1"], 
+    #some_fit_dataset)
+)</div>
     
         </div>
     </div>
@@ -3324,17 +3383,6 @@ input to <code>OODBaseDetector</code>.</p>
 <p>We recommend that you only identify layers by name; we found it to be less error
 prone.</p>
 </blockquote>
-
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 
 </div>
 </div>
@@ -3379,7 +3427,7 @@ prone.</p>
       
       
         
-        <a href="../getting_started/" class="md-footer__link md-footer__link--next" aria-label="Next: MLS/MSP" rel="next">
+        <a href="../../notebooks/tensorflow/demo_mls_msp_tf/" class="md-footer__link md-footer__link--next" aria-label="Next: MLS/MSP" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">

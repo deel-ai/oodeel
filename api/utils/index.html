@@ -330,7 +330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pages/getting_started/" class="md-nav__link">
+      <a href="../../notebooks/tensorflow/demo_mls_msp_tf/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -422,6 +422,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_react_tf/" class="md-nav__link">
+        React
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -461,7 +475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pages/getting_started/" class="md-nav__link">
+      <a href="../../notebooks/torch/demo_mls_msp_torch/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -547,6 +561,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_mahalanobis_torch/" class="md-nav__link">
         Mahalanobis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_react_torch/" class="md-nav__link">
+        React
       </a>
     </li>
   
@@ -953,6 +981,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#oodeel.utils.general_utils.import_backend_specific_stuff" class="md-nav__link">
+    import_backend_specific_stuff()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#oodeel.utils.general_utils.is_from" class="md-nav__link">
     is_from()
   </a>
@@ -963,6 +998,20 @@
   
 </nav>
       
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plots/" class="md-nav__link">
+        Plots
+      </a>
     </li>
   
 
@@ -1021,6 +1070,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#oodeel.utils.general_utils.import_backend_specific_stuff" class="md-nav__link">
+    import_backend_specific_stuff()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#oodeel.utils.general_utils.is_from" class="md-nav__link">
     is_from()
   </a>
@@ -1066,6 +1122,155 @@
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="oodeel.utils.general_utils.import_backend_specific_stuff" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">import_backend_specific_stuff</span><span class="p">(</span><span class="n">model</span><span class="p">)</span></code>
+
+<a href="#oodeel.utils.general_utils.import_backend_specific_stuff" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get backend specific data handler, operator and feature extractor class.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>model</code></td>
+          <td>
+                <code><span title="oodeel.types.Callable">Callable</span></code>
+          </td>
+          <td><p>a model (Keras or PyTorch) used to identify the backend.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>str</code></td>          <td>
+          </td>
+          <td><p>backend name</p></td>
+        </tr>
+        <tr>
+<td><code>DataHandler</code></td>          <td>
+          </td>
+          <td><p>torch or tf data handler</p></td>
+        </tr>
+        <tr>
+<td><code>Operator</code></td>          <td>
+          </td>
+          <td><p>torch or tf operator</p></td>
+        </tr>
+        <tr>
+<td><code>FeatureExtractor</code></td>          <td>
+          </td>
+          <td><p>torch or tf feature extractor class</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+      <details class="quote">
+        <summary>Source code in <code>oodeel/utils/general_utils.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">import_backend_specific_stuff</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">Callable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get backend specific data handler, operator and feature extractor class.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (Callable): a model (Keras or PyTorch) used to identify the backend.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: backend name</span>
+<span class="sd">        DataHandler: torch or tf data handler</span>
+<span class="sd">        Operator: torch or tf operator</span>
+<span class="sd">        FeatureExtractor: torch or tf feature extractor class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">is_from</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;keras&quot;</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">..extractor.keras_feature_extractor</span> <span class="kn">import</span> <span class="n">KerasFeatureExtractor</span>
+        <span class="kn">from</span> <span class="nn">..datasets.tf_data_handler</span> <span class="kn">import</span> <span class="n">TFDataHandler</span>
+        <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">TFOperator</span>
+
+        <span class="n">backend</span> <span class="o">=</span> <span class="s2">&quot;tensorflow&quot;</span>
+        <span class="n">data_handler</span> <span class="o">=</span> <span class="n">TFDataHandler</span><span class="p">()</span>
+        <span class="n">op</span> <span class="o">=</span> <span class="n">TFOperator</span><span class="p">()</span>
+        <span class="n">FeatureExtractorClass</span> <span class="o">=</span> <span class="n">KerasFeatureExtractor</span>
+
+    <span class="k">elif</span> <span class="n">is_from</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;torch&quot;</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">..extractor.torch_feature_extractor</span> <span class="kn">import</span> <span class="n">TorchFeatureExtractor</span>
+        <span class="kn">from</span> <span class="nn">..datasets.torch_data_handler</span> <span class="kn">import</span> <span class="n">TorchDataHandler</span>
+        <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">TorchOperator</span>
+
+        <span class="n">backend</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span>
+        <span class="n">data_handler</span> <span class="o">=</span> <span class="n">TorchDataHandler</span><span class="p">()</span>
+        <span class="n">op</span> <span class="o">=</span> <span class="n">TorchOperator</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">FeatureExtractorClass</span> <span class="o">=</span> <span class="n">TorchFeatureExtractor</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">backend</span><span class="p">,</span> <span class="n">data_handler</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">FeatureExtractorClass</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
 
 <div class="doc doc-object doc-function">
 
@@ -1135,8 +1340,7 @@
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/general_utils.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">26</span>
-<span class="normal">27</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">27</span>
 <span class="normal">28</span>
 <span class="normal">29</span>
 <span class="normal">30</span>
@@ -1151,7 +1355,8 @@
 <span class="normal">39</span>
 <span class="normal">40</span>
 <span class="normal">41</span>
-<span class="normal">42</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_from</span><span class="p">(</span><span class="n">model_or_tensor</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">framework</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="normal">42</span>
+<span class="normal">43</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_from</span><span class="p">(</span><span class="n">model_or_tensor</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">framework</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check whether a model or tensor belongs to a specific framework</span>
 
 <span class="sd">    Args:</span>
@@ -1217,13 +1422,13 @@
       
       
         
-        <a href="../../CONTRIBUTING/" class="md-footer__link md-footer__link--next" aria-label="Next: Contributing" rel="next">
+        <a href="../plots/" class="md-footer__link md-footer__link--next" aria-label="Next: Plots" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Contributing
+              Plots
             </div>
           </div>
           <div class="md-footer__button md-icon">

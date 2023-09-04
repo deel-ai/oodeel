@@ -330,7 +330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pages/getting_started/" class="md-nav__link">
+      <a href="../../notebooks/tensorflow/demo_mls_msp_tf/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -422,6 +422,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_react_tf/" class="md-nav__link">
+        React
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -461,7 +475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pages/getting_started/" class="md-nav__link">
+      <a href="../../notebooks/torch/demo_mls_msp_torch/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -547,6 +561,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_mahalanobis_torch/" class="md-nav__link">
         Mahalanobis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_react_torch/" class="md-nav__link">
+        React
       </a>
     </li>
   
@@ -996,6 +1024,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plots/" class="md-nav__link">
+        Plots
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1181,8 +1223,7 @@
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_training_tools.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">37</span>
-<span class="normal">38</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">38</span>
 <span class="normal">39</span>
 <span class="normal">40</span>
 <span class="normal">41</span>
@@ -1200,7 +1241,8 @@
 <span class="normal">53</span>
 <span class="normal">54</span>
 <span class="normal">55</span>
-<span class="normal">56</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_toy_keras_convnet</span><span class="p">(</span><span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span><span class="p">:</span>
+<span class="normal">56</span>
+<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_toy_keras_convnet</span><span class="p">(</span><span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Basic keras convolutional classifier for toy datasets.</span>
 
 <span class="sd">    Args:</span>
@@ -1231,7 +1273,7 @@
 
 
 <h2 id="oodeel.utils.tf_training_tools.train_tf_model" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">train_tf_model</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">is_prepared</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;sparse_categorical_crossentropy&#39;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;adam&#39;</span><span class="p">,</span> <span class="n">lr_scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;accuracy&#39;</span><span class="p">],</span> <span class="n">imagenet_pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">train_tf_model</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;sparse_categorical_crossentropy&#39;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;adam&#39;</span><span class="p">,</span> <span class="n">lr_scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;accuracy&#39;</span><span class="p">],</span> <span class="n">imagenet_pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_best_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
 <a href="#oodeel.utils.tf_training_tools.train_tf_model" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -1263,11 +1305,12 @@ If the dataset is different from imagenet, trains on provided dataset.</p>
           </td>
         </tr>
         <tr>
-          <td><code>model_name</code></td>
+          <td><code>model</code></td>
           <td>
-                <code>str</code>
+                <code><span title="oodeel.types.Union">Union</span>[<span title="tensorflow">tf</span>.<span title="tensorflow.keras">keras</span>.<span title="tf.keras.Model">Model</span>, str]</code>
           </td>
-          <td><p>must be a model from tf.keras.applications or "toy_convnet"</p></td>
+          <td><p>if a string is provided, must be a model
+from tf.keras.applications or "toy_convnet"</p></td>
           <td>
               <em>required</em>
           </td>
@@ -1290,17 +1333,6 @@ If the dataset is different from imagenet, trains on provided dataset.</p>
           <td><p>Number of output classes.</p></td>
           <td>
               <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>is_prepared</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td><p>If train_data is a pipeline already prepared
-for training (with batch, shufle, cache etc...). Defaults to False.</p></td>
-          <td>
-                <code>True</code>
           </td>
         </tr>
         <tr>
@@ -1405,6 +1437,17 @@ Defaults to None.</p></td>
                 <code>None</code>
           </td>
         </tr>
+        <tr>
+          <td><code>save_best_only</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td><p>If False, saved model will be the last one. Defaults to
+True.</p></td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
     </tbody>
   </table>
 
@@ -1428,8 +1471,7 @@ Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_training_tools.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 59</span>
-<span class="normal"> 60</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 60</span>
 <span class="normal"> 61</span>
 <span class="normal"> 62</span>
 <span class="normal"> 63</span>
@@ -1565,51 +1607,11 @@ Defaults to None.</p></td>
 <span class="normal">193</span>
 <span class="normal">194</span>
 <span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span>
-<span class="normal">199</span>
-<span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span>
-<span class="normal">234</span>
-<span class="normal">235</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">train_tf_model</span><span class="p">(</span>
+<span class="normal">196</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">train_tf_model</span><span class="p">(</span>
     <span class="n">train_data</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
-    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
     <span class="n">input_shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
     <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">is_prepared</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
     <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
     <span class="n">loss</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sparse_categorical_crossentropy&quot;</span><span class="p">,</span>
@@ -1620,17 +1622,17 @@ Defaults to None.</p></td>
     <span class="n">imagenet_pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">validation_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">save_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">save_best_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads a model from tensorflow.python.keras.applications.</span>
 <span class="sd">    If the dataset is different from imagenet, trains on provided dataset.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        train_data (tf.data.Dataset): training dataset.</span>
-<span class="sd">        model_name (str): must be a model from tf.keras.applications or &quot;toy_convnet&quot;</span>
+<span class="sd">        model (Union[tf.keras.Model, str]): if a string is provided, must be a model</span>
+<span class="sd">            from tf.keras.applications or &quot;toy_convnet&quot;</span>
 <span class="sd">        input_shape (tuple): Shape of the input images.</span>
 <span class="sd">        num_classes (int): Number of output classes.</span>
-<span class="sd">        is_prepared (bool, optional): If train_data is a pipeline already prepared</span>
-<span class="sd">            for training (with batch, shufle, cache etc...). Defaults to False.</span>
 <span class="sd">        batch_size (int, optional): Defaults to 128.</span>
 <span class="sd">        epochs (int, optional): Defaults to 50.</span>
 <span class="sd">        loss (str, optional): Defaults to &quot;sparse_categorical_crossentropy&quot;.</span>
@@ -1643,84 +1645,45 @@ Defaults to None.</p></td>
 <span class="sd">        validation_data (Optional[tf.data.Dataset], optional): Defaults to None.</span>
 <span class="sd">        save_dir (Optional[str], optional): Directory to save the model.</span>
 <span class="sd">            Defaults to None.</span>
+<span class="sd">        save_best_only (bool): If False, saved model will be the last one. Defaults to</span>
+<span class="sd">            True.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        tf.keras.Model: Trained model</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1"># Prepare model</span>
-    <span class="k">if</span> <span class="n">imagenet_pretrained</span><span class="p">:</span>
-        <span class="n">backbone</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="p">,</span> <span class="n">model_name</span><span class="p">)(</span>
-            <span class="n">include_top</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;imagenet&quot;</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="n">input_shape</span>
-        <span class="p">)</span>
+    <span class="c1"># get data infos from dataset</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_data</span><span class="o">.</span><span class="n">element_spec</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">input_id</span> <span class="o">=</span> <span class="s2">&quot;image&quot;</span>
+        <span class="n">label_id</span> <span class="o">=</span> <span class="s2">&quot;label&quot;</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_data</span><span class="o">.</span><span class="n">element_spec</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">input_id</span> <span class="o">=</span> <span class="s2">&quot;image&quot;</span>
-            <span class="n">label_id</span> <span class="o">=</span> <span class="s2">&quot;label&quot;</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">input_id</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">label_id</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-        <span class="k">if</span> <span class="n">input_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">input_shape</span> <span class="o">=</span> <span class="n">TFDataHandler</span><span class="o">.</span><span class="n">get_feature_shape</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">input_id</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">classes</span> <span class="o">=</span> <span class="n">TFDataHandler</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">label_id</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
-            <span class="n">num_classes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">classes</span><span class="o">.</span><span class="n">as_numpy_iterator</span><span class="p">()))</span>
+        <span class="n">input_id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">label_id</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">input_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">input_shape</span> <span class="o">=</span> <span class="n">TFDataHandler</span><span class="o">.</span><span class="n">get_feature_shape</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">input_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">classes</span> <span class="o">=</span> <span class="n">TFDataHandler</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">label_id</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">classes</span><span class="o">.</span><span class="n">as_numpy_iterator</span><span class="p">()))</span>
 
-        <span class="k">if</span> <span class="n">model_name</span> <span class="o">!=</span> <span class="s2">&quot;toy_convnet&quot;</span><span class="p">:</span>
-            <span class="n">backbone</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="p">,</span> <span class="n">model_name</span><span class="p">)(</span>
-                <span class="n">include_top</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="n">input_shape</span>
+    <span class="c1"># prepare model</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;toy_convnet&quot;</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">get_toy_keras_convnet</span><span class="p">(</span><span class="n">num_classes</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="s2">&quot;imagenet&quot;</span> <span class="k">if</span> <span class="n">imagenet_pretrained</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">backbone</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="p">,</span> <span class="n">model</span><span class="p">)(</span>
+                <span class="n">include_top</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="n">input_shape</span>
             <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;toy_convnet&quot;</span><span class="p">:</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">get_toy_keras_convnet</span><span class="p">(</span><span class="n">num_classes</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">features</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Flatten</span><span class="p">()(</span><span class="n">backbone</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span>
-            <span class="n">num_classes</span><span class="p">,</span>
-            <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;softmax&quot;</span><span class="p">,</span>
-        <span class="p">)(</span><span class="n">features</span><span class="p">)</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">backbone</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">input</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Flatten</span><span class="p">()(</span><span class="n">backbone</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span>
+                <span class="n">num_classes</span><span class="p">,</span>
+                <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;softmax&quot;</span><span class="p">,</span>
+            <span class="p">)(</span><span class="n">features</span><span class="p">)</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">backbone</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">input</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
 
     <span class="n">n_samples</span> <span class="o">=</span> <span class="n">TFDataHandler</span><span class="o">.</span><span class="n">get_dataset_length</span><span class="p">(</span><span class="n">train_data</span><span class="p">)</span>
-
-    <span class="c1"># Prepare data</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_prepared</span><span class="p">:</span>
-
-        <span class="k">def</span> <span class="nf">_preprocess_fn</span><span class="p">(</span><span class="o">*</span><span class="n">inputs</span><span class="p">):</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">255</span>
-            <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">x</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
-
-        <span class="n">padding</span> <span class="o">=</span> <span class="mi">4</span>
-        <span class="n">image_size</span> <span class="o">=</span> <span class="n">input_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">target_size</span> <span class="o">=</span> <span class="n">image_size</span> <span class="o">+</span> <span class="n">padding</span> <span class="o">*</span> <span class="mi">2</span>
-        <span class="n">nb_channels</span> <span class="o">=</span> <span class="n">input_shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-
-        <span class="k">def</span> <span class="nf">_augment_fn</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
-            <span class="n">images</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">pad_to_bounding_box</span><span class="p">(</span>
-                <span class="n">images</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">target_size</span><span class="p">,</span> <span class="n">target_size</span>
-            <span class="p">)</span>
-            <span class="n">images</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">random_crop</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="p">(</span><span class="n">image_size</span><span class="p">,</span> <span class="n">image_size</span><span class="p">,</span> <span class="n">nb_channels</span><span class="p">))</span>
-            <span class="n">images</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">random_flip_left_right</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span>
-
-        <span class="n">train_data</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">train_data</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
-                <span class="n">_preprocess_fn</span><span class="p">,</span> <span class="n">num_parallel_calls</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">experimental</span><span class="o">.</span><span class="n">AUTOTUNE</span>
-            <span class="p">)</span>
-            <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">_augment_fn</span><span class="p">,</span> <span class="n">num_parallel_calls</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">experimental</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">prefetch</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">experimental</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">validation_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">validation_data</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">validation_data</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
-                    <span class="n">_preprocess_fn</span><span class="p">,</span> <span class="n">num_parallel_calls</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">experimental</span><span class="o">.</span><span class="n">AUTOTUNE</span>
-                <span class="p">)</span>
-                <span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">prefetch</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">experimental</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
-            <span class="p">)</span>
 
     <span class="c1"># Prepare callbacks</span>
     <span class="n">model_checkpoint_callback</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1733,7 +1696,7 @@ Defaults to None.</p></td>
                 <span class="n">save_weights_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">monitor</span><span class="o">=</span><span class="s2">&quot;val_accuracy&quot;</span><span class="p">,</span>
                 <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;max&quot;</span><span class="p">,</span>
-                <span class="n">save_best_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">save_best_only</span><span class="o">=</span><span class="n">save_best_only</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
 
@@ -1867,8 +1830,7 @@ Defaults to None.</p></td>
 
         <details class="quote">
           <summary>Source code in <code>oodeel/utils/torch_training_tools.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">37</span>
-<span class="normal">38</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">38</span>
 <span class="normal">39</span>
 <span class="normal">40</span>
 <span class="normal">41</span>
@@ -1914,7 +1876,8 @@ Defaults to None.</p></td>
 <span class="normal">81</span>
 <span class="normal">82</span>
 <span class="normal">83</span>
-<span class="normal">84</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ToyTorchConvnet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
+<span class="normal">84</span>
+<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ToyTorchConvnet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Basic torch convolutional classifier for toy datasets.</span>
 
 <span class="sd">    Args:</span>
@@ -1991,7 +1954,7 @@ Defaults to None.</p></td>
 
 
 <h2 id="oodeel.utils.torch_training_tools.train_torch_model" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">train_torch_model</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;CrossEntropyLoss&#39;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;Adam&#39;</span><span class="p">,</span> <span class="n">lr_scheduler</span><span class="o">=</span><span class="s1">&#39;cosine&#39;</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">imagenet_pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cuda_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">train_torch_model</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;CrossEntropyLoss&#39;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;Adam&#39;</span><span class="p">,</span> <span class="n">lr_scheduler</span><span class="o">=</span><span class="s1">&#39;cosine&#39;</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">imagenet_pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cuda_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
 
 <a href="#oodeel.utils.torch_training_tools.train_torch_model" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -2023,11 +1986,12 @@ it over a torch dataloader.</p>
           </td>
         </tr>
         <tr>
-          <td><code>model_name</code></td>
+          <td><code>model</code></td>
           <td>
-                <code>str</code>
+                <code><span title="oodeel.types.Union">Union</span>[<span title="torch.nn">nn</span>.<span title="torch.nn.Module">Module</span>, str]</code>
           </td>
-          <td><p>must be a model from torchvision.models or "toy_convnet".</p></td>
+          <td><p>if a string is provided, must be a model from
+torchvision.models or "toy_convnet".</p></td>
           <td>
               <em>required</em>
           </td>
@@ -2157,8 +2121,7 @@ Defaults to None.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/torch_training_tools.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 87</span>
-<span class="normal"> 88</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 88</span>
 <span class="normal"> 89</span>
 <span class="normal"> 90</span>
 <span class="normal"> 91</span>
@@ -2235,9 +2198,17 @@ Defaults to None.</p></td>
 <span class="normal">162</span>
 <span class="normal">163</span>
 <span class="normal">164</span>
-<span class="normal">165</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">train_torch_model</span><span class="p">(</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">train_torch_model</span><span class="p">(</span>
     <span class="n">train_data</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
-    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
     <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
     <span class="n">loss</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;CrossEntropyLoss&quot;</span><span class="p">,</span>
@@ -2255,7 +2226,8 @@ Defaults to None.</p></td>
 
 <span class="sd">    Args:</span>
 <span class="sd">        train_data (DataLoader): train dataloader</span>
-<span class="sd">        model_name (str): must be a model from torchvision.models or &quot;toy_convnet&quot;.</span>
+<span class="sd">        model (Union[nn.Module, str]): if a string is provided, must be a model from</span>
+<span class="sd">            torchvision.models or &quot;toy_convnet&quot;.</span>
 <span class="sd">        num_classes (int): Number of output classes.</span>
 <span class="sd">        epochs (int, optional): Defaults to 50.</span>
 <span class="sd">        loss (str, optional): Defaults to &quot;CrossEntropyLoss&quot;.</span>
@@ -2273,27 +2245,33 @@ Defaults to None.</p></td>
 <span class="sd">        nn.Module: trained model</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># device</span>
-    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">cuda_idx</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">cuda_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">cuda_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="ow">and</span> <span class="n">cuda_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+    <span class="p">)</span>
 
     <span class="c1"># Prepare model</span>
-    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;toy_convnet&quot;</span><span class="p">:</span>
-        <span class="c1"># toy model</span>
-        <span class="n">input_shape</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">train_data</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">ToyTorchConvnet</span><span class="p">(</span><span class="n">input_shape</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># torchvision model</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="p">,</span> <span class="n">model_name</span><span class="p">)(</span>
-            <span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">imagenet_pretrained</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;toy_convnet&quot;</span><span class="p">:</span>
+            <span class="c1"># toy model</span>
+            <span class="n">input_shape</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">train_data</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">ToyTorchConvnet</span><span class="p">(</span><span class="n">input_shape</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># torchvision model</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="p">,</span> <span class="n">model</span><span class="p">)(</span>
+                <span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">imagenet_pretrained</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 
     <span class="c1"># define optimizer and learning rate scheduler</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">optim</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">)</span>
     <span class="n">n_steps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_data</span><span class="p">)</span> <span class="o">*</span> <span class="n">epochs</span>
     <span class="k">if</span> <span class="n">lr_scheduler</span> <span class="o">==</span> <span class="s2">&quot;cosine&quot;</span><span class="p">:</span>
-        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">)</span>
         <span class="n">lr_scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">lr_scheduler</span> <span class="o">==</span> <span class="s2">&quot;steps&quot;</span><span class="p">:</span>
         <span class="n">boundaries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">n_steps</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span> <span class="o">/</span> <span class="mi">3</span><span class="p">]))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
-        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">)</span>
         <span class="n">lr_scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">MultiStepLR</span><span class="p">(</span>
             <span class="n">optimizer</span><span class="p">,</span> <span class="n">milestones</span><span class="o">=</span><span class="n">boundaries</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">0.1</span>
         <span class="p">)</span>

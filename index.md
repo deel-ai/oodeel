@@ -31,23 +31,21 @@
 
 <!-- Short description of your library -->
 
-<b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch. You can find the documentation [here](https://deel-ai.github.io/oodeel/).
+<b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow **and** pytorch.
 
 ```python
 from oodeel.methods import MLS
 
 mls = MLS()
-mls.fit(model)
-scores = mls.score(ds)
+mls.fit(model) # A tensorflow or torch model
+scores, info = mls.score(ds) # ds is a tf.data.Dataset or a torch.DataLoader
 ```
-
-**Disclaimer**: It is still very much a work in progress, see issues and [development roadmap](#development-roadmap). Please use the lib carefully!
 
 # Table of contents
 
-- [Table of contents](#table-of-contents)
-- [Tutorials](#tutorials)
+- [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Tutorials](#tutorials)
 - [What's Included](#whats-included)
 - [Development roadmap](#development-roadmap)
 - [Contributing](#contributing)
@@ -56,23 +54,26 @@ scores = mls.score(ds)
 - [Creator](#creator)
 - [License](#license)
 
-# Tutorials
+# Installation
 
-We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the [doc](https://deel-ai.github.io/oodeel/)
+Installation can be done using:
+
+```bash
+pip install oodeel
+```
+oodeel requires either `tensorflow` or `pytorch` to be already installed (it will not install them automatically not to mess-up with existing installations). It is regularly tested with:
+
+|Python version|Pytorch version|Tensorflow version|
+|---|---|---|
+|`3.8`| `1.11`| `2.5`|
+|`3.9`|`1.13` | `2.8`|
+|`3.10`| `2.00` | `2.11`|
 
 # Quick Start
 
-**Oodeel** requires some stuff and several libraries including Numpy. Installation can be done using:
-
-```bash
-git clone https://github.com/deel-ai/oodeel.git
-cd oodeel
-make prepare-dev
-```
-
 Now that *oodeel* is installed, here are some basic examples of what you can do with the available modules. See also the notebooks directory for more advanced examples.
 
-## For benchmarking with one dataset as in-distribution and another as out-of-distribution
+### For benchmarking with one dataset as in-distribution and another as out-of-distribution
 
 Load in-distribution and out-of-distribution datasets.
 
@@ -87,7 +88,7 @@ ds_out = OODDataset(
   backend="tensorflow").prepare(batch_size)
 ```
 
-## For benchmarking with one dataset as in-distribution and another as out-of-distribution
+### For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution
 
 Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (a common practice of anomaly detection and open set recognition).
 
@@ -95,11 +96,12 @@ Load a dataset and split it into an in-distribution dataset and ou-of-distributi
 from oodeel.datasets import OODDataset
 
 in_labels = [0, 1, 2, 3, 4]
-oods_in, oods_out = oods_test.assign_ood_labels_by_class(in_labels=in_labels)
+oods_in, oods_out = oods_test.split_by_class(in_labels=in_labels)
+# info contains model predictions and labels if avail
 ds_in = oods_in.prepare(batch_size=batch_size)
 ds_out = oods_out.prepare(batch_size=batch_size)
 ```
-## Run an OOD method
+### Run an OOD method
 
 Load an OOD method and use it on an already-trained model
 
@@ -108,8 +110,8 @@ from oodeel.methods import MLS
 
 mls = MLS()
 mls.fit(model)
-scores_in = mls.score(ds_in)
-scores_out = mls.score(ds_in)
+scores_in, info_in = mls.score(ds_in)
+scores_out, info_out = mls.score(ds_in)
 ```
 
 Evaluate the method
@@ -122,7 +124,34 @@ metrics = bench_metrics(
     metrics = ["auroc", "fpr95tpr"],
     )
 ```
+### And visualize the results!
 
+2D t-SNE (3D is also available).
+
+```python
+plot_2D_features(
+    model=model,
+    in_dataset=ds_in,
+    out_dataset=ds_out,
+    output_layer_id=-2,
+)
+```
+<p align="center">
+  <img src="assets/tsne.png" alt="TSNE" />
+</p>
+
+Classical histograms and AUROC curve.
+```python
+plot_ood_scores(scores_in, scores_out, log_scale=False)
+plot_roc_curve(scores_in, scores_out)
+```
+<p align="center">
+  <img src="assets/auroc.png" alt="AUROC" />
+</p>
+
+# Tutorials
+
+We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the doc.
 
 # What's Included
 
@@ -143,7 +172,7 @@ Currently, **oodeel** includes the following baselines:
 | VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |avail [tensorflow](./notebooks/tensorflow/demo_vim_tf.ipynb) or  [torch](./notebooks/torch/demo_vim_torch.ipynb)  |
 | Entropy | [Likelihood Ratios for Out-of-Distribution Detection](https://proceedings.neurips.cc/paper/2019/hash/1e79596878b2320cac26dd792a6c51c9-Abstract.html) | NeurIPS 2019 |avail [tensorflow](./notebooks/tensorflow/demo_entropy_tf.ipynb) or  [torch](./notebooks/torch/demo_entropy_torch.ipynb)  |
 | GODIN | [Generalized ODIN: Detecting Out-of-Distribution Image Without Learning From Out-of-Distribution Data](https://ieeexplore.ieee.org/document/9156473/) | CVPR 2020 | planned |
-| ReAct | [ReAct: Out-of-distribution Detection With Rectified Activations](http://arxiv.org/abs/2111.12797) | NeurIPS 2021 | planned |
+| ReAct | [ReAct: Out-of-distribution Detection With Rectified Activations](http://arxiv.org/abs/2111.12797) | NeurIPS 2021 | avail [tensorflow](./notebooks/tensorflow/demo_react_tf.ipynb) or  [torch](./notebooks/torch/demo_react_torch.ipynb) |
 | NMD | [Neural Mean Discrepancy for Efficient Out-of-Distribution Detection](https://openaccess.thecvf.com/content/CVPR2022/html/Dong_Neural_Mean_Discrepancy_for_Efficient_Out-of-Distribution_Detection_CVPR_2022_paper.html) | CVPR 2022 | planned |
 | Gram | [Detecting Out-of-Distribution Examples with Gram Matrices](https://proceedings.mlr.press/v119/sastry20a.html) | ICML 2020 | planned |
 
@@ -152,15 +181,6 @@ Currently, **oodeel** includes the following baselines:
 **Oodeel** also includes standard training functions with data augmentation and learning rate scheduler for toy convnet models or models from `keras.applications` in [tf_training_tools.py](https://github.com/deel-ai/oodeel/tree/master/oodeel/utils/tf_training_tools.py) and `torchvision.models` in [torch_training_tools.py](https://github.com/deel-ai/oodeel/tree/master/oodeel/utils/torch_training_tools.py) files. These functions come in handy for benchmarks like *leave-k-classes-out* that requires retraining models on a subset of dataset classes.
 # Development Roadmap
 
-## Roadmap to first release:
-- [x] The library works for `keras` models
-- [x] Unification of tutorial notebooks
-- [x] Validation of all methods for pytorch using `TorchOperator`, making oodeel compatible with both tensorflow and pytorch models.
-- [x] Integration of `TorchDataHandler` to alleviate the need of `tf.data.Dataset` when using pytorch. At this stage, oodeel will no more require any tensorflow components when using pytorch, and vice-versa.
-- [x] Revise docstring and type hinting
-- [x] Set up the doc
-
-## What's next?
 - [ ] More baselines!
 - [ ] A module for thorough visualizations (result plots and feature space visualizations)
 - [ ] Integrate model loading and uploading with [hugginface's transformers](https://huggingface.co/docs/transformers/index) library for pretraining

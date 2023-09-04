@@ -340,7 +340,7 @@
   
   
     <li class="md-nav__item">
-      <a href="pages/getting_started/" class="md-nav__link">
+      <a href="notebooks/tensorflow/demo_mls_msp_tf/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -432,6 +432,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="notebooks/tensorflow/demo_react_tf/" class="md-nav__link">
+        React
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -471,7 +485,7 @@
   
   
     <li class="md-nav__item">
-      <a href="pages/getting_started/" class="md-nav__link">
+      <a href="notebooks/torch/demo_mls_msp_torch/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -557,6 +571,20 @@
     <li class="md-nav__item">
       <a href="notebooks/torch/demo_mahalanobis_torch/" class="md-nav__link">
         Mahalanobis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="notebooks/torch/demo_react_torch/" class="md-nav__link">
+        React
       </a>
     </li>
   
@@ -932,6 +960,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/plots/" class="md-nav__link">
+        Plots
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1021,19 +1063,18 @@
 <p><br></p>
 <!-- Short description of your library -->
 
-<p><b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow <strong>and</strong> pytorch. You can find the documentation <a href="https://deel-ai.github.io/oodeel/">here</a>.</p>
+<p><b>Oodeel</b> is a library that performs post-hoc deep OOD detection on already trained neural network image classifiers. The philosophy of the library is to favor quality over quantity and to foster easy adoption. As a result, we provide a simple, compact and easily customizable API and carefully integrate and test each proposed baseline into a coherent framework that is designed to enable their use in tensorflow <strong>and</strong> pytorch.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">oodeel.methods</span> <span class="kn">import</span> <span class="n">MLS</span>
 
 <span class="n">mls</span> <span class="o">=</span> <span class="n">MLS</span><span class="p">()</span>
-<span class="n">mls</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="n">scores</span> <span class="o">=</span> <span class="n">mls</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+<span class="n">mls</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="c1"># A tensorflow or torch model</span>
+<span class="n">scores</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">mls</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span> <span class="c1"># ds is a tf.data.Dataset or a torch.DataLoader</span>
 </code></pre></div>
-<p><strong>Disclaimer</strong>: It is still very much a work in progress, see issues and <a href="#development-roadmap">development roadmap</a>. Please use the lib carefully!</p>
 <h1 id="table-of-contents">Table of contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h1>
 <ul>
-<li><a href="#table-of-contents">Table of contents</a></li>
-<li><a href="#tutorials">Tutorials</a></li>
+<li><a href="#installation">Installation</a></li>
 <li><a href="#quick-start">Quick Start</a></li>
+<li><a href="#tutorials">Tutorials</a></li>
 <li><a href="#whats-included">What's Included</a></li>
 <li><a href="#development-roadmap">Development roadmap</a></li>
 <li><a href="#contributing">Contributing</a></li>
@@ -1042,16 +1083,40 @@
 <li><a href="#creator">Creator</a></li>
 <li><a href="#license">License</a></li>
 </ul>
-<h1 id="tutorials">Tutorials<a class="headerlink" href="#tutorials" title="Permanent link">&para;</a></h1>
-<p>We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the <a href="https://deel-ai.github.io/oodeel/">doc</a></p>
-<h1 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h1>
-<p><strong>Oodeel</strong> requires some stuff and several libraries including Numpy. Installation can be done using:</p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/deel-ai/oodeel.git
-<span class="nb">cd</span><span class="w"> </span>oodeel
-make<span class="w"> </span>prepare-dev
+<h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
+<p>Installation can be done using:</p>
+<p><div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>oodeel
 </code></pre></div>
+oodeel requires either <code>tensorflow</code> or <code>pytorch</code> to be already installed (it will not install them automatically not to mess-up with existing installations). It is regularly tested with:</p>
+<table>
+<thead>
+<tr>
+<th>Python version</th>
+<th>Pytorch version</th>
+<th>Tensorflow version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>3.8</code></td>
+<td><code>1.11</code></td>
+<td><code>2.5</code></td>
+</tr>
+<tr>
+<td><code>3.9</code></td>
+<td><code>1.13</code></td>
+<td><code>2.8</code></td>
+</tr>
+<tr>
+<td><code>3.10</code></td>
+<td><code>2.00</code></td>
+<td><code>2.11</code></td>
+</tr>
+</tbody>
+</table>
+<h1 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h1>
 <p>Now that <em>oodeel</em> is installed, here are some basic examples of what you can do with the available modules. See also the notebooks directory for more advanced examples.</p>
-<h2 id="for-benchmarking-with-one-dataset-as-in-distribution-and-another-as-out-of-distribution">For benchmarking with one dataset as in-distribution and another as out-of-distribution<a class="headerlink" href="#for-benchmarking-with-one-dataset-as-in-distribution-and-another-as-out-of-distribution" title="Permanent link">&para;</a></h2>
+<h3 id="for-benchmarking-with-one-dataset-as-in-distribution-and-another-as-out-of-distribution">For benchmarking with one dataset as in-distribution and another as out-of-distribution<a class="headerlink" href="#for-benchmarking-with-one-dataset-as-in-distribution-and-another-as-out-of-distribution" title="Permanent link">&para;</a></h3>
 <p>Load in-distribution and out-of-distribution datasets.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">oodeel.datasets</span> <span class="kn">import</span> <span class="n">OODDataset</span>
 
@@ -1062,23 +1127,24 @@ make<span class="w"> </span>prepare-dev
   <span class="s1">&#39;fashion_mnist&#39;</span><span class="p">,</span> <span class="n">load_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;split&quot;</span><span class="p">:</span><span class="s2">&quot;test&quot;</span><span class="p">},</span>
   <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;tensorflow&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
 </code></pre></div>
-<h2 id="for-benchmarking-with-one-dataset-as-in-distribution-and-another-as-out-of-distribution_1">For benchmarking with one dataset as in-distribution and another as out-of-distribution<a class="headerlink" href="#for-benchmarking-with-one-dataset-as-in-distribution-and-another-as-out-of-distribution_1" title="Permanent link">&para;</a></h2>
+<h3 id="for-benchmarking-with-a-classes-subset-as-in-distribution-and-another-classes-subset-as-out-of-distribution">For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution<a class="headerlink" href="#for-benchmarking-with-a-classes-subset-as-in-distribution-and-another-classes-subset-as-out-of-distribution" title="Permanent link">&para;</a></h3>
 <p>Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (a common practice of anomaly detection and open set recognition).</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">oodeel.datasets</span> <span class="kn">import</span> <span class="n">OODDataset</span>
 
 <span class="n">in_labels</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
-<span class="n">oods_in</span><span class="p">,</span> <span class="n">oods_out</span> <span class="o">=</span> <span class="n">oods_test</span><span class="o">.</span><span class="n">assign_ood_labels_by_class</span><span class="p">(</span><span class="n">in_labels</span><span class="o">=</span><span class="n">in_labels</span><span class="p">)</span>
+<span class="n">oods_in</span><span class="p">,</span> <span class="n">oods_out</span> <span class="o">=</span> <span class="n">oods_test</span><span class="o">.</span><span class="n">split_by_class</span><span class="p">(</span><span class="n">in_labels</span><span class="o">=</span><span class="n">in_labels</span><span class="p">)</span>
+<span class="c1"># info contains model predictions and labels if avail</span>
 <span class="n">ds_in</span> <span class="o">=</span> <span class="n">oods_in</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
 <span class="n">ds_out</span> <span class="o">=</span> <span class="n">oods_out</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
 </code></pre></div>
-<h2 id="run-an-ood-method">Run an OOD method<a class="headerlink" href="#run-an-ood-method" title="Permanent link">&para;</a></h2>
+<h3 id="run-an-ood-method">Run an OOD method<a class="headerlink" href="#run-an-ood-method" title="Permanent link">&para;</a></h3>
 <p>Load an OOD method and use it on an already-trained model</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">oodeel.methods</span> <span class="kn">import</span> <span class="n">MLS</span>
 
 <span class="n">mls</span> <span class="o">=</span> <span class="n">MLS</span><span class="p">()</span>
 <span class="n">mls</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="n">scores_in</span> <span class="o">=</span> <span class="n">mls</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">ds_in</span><span class="p">)</span>
-<span class="n">scores_out</span> <span class="o">=</span> <span class="n">mls</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">ds_in</span><span class="p">)</span>
+<span class="n">scores_in</span><span class="p">,</span> <span class="n">info_in</span> <span class="o">=</span> <span class="n">mls</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">ds_in</span><span class="p">)</span>
+<span class="n">scores_out</span><span class="p">,</span> <span class="n">info_out</span> <span class="o">=</span> <span class="n">mls</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">ds_in</span><span class="p">)</span>
 </code></pre></div>
 <p>Evaluate the method</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">oodeel.eval.metrics</span> <span class="kn">import</span> <span class="n">bench_metrics</span>
@@ -1088,6 +1154,29 @@ make<span class="w"> </span>prepare-dev
     <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;auroc&quot;</span><span class="p">,</span> <span class="s2">&quot;fpr95tpr&quot;</span><span class="p">],</span>
     <span class="p">)</span>
 </code></pre></div>
+<h3 id="and-visualize-the-results">And visualize the results!<a class="headerlink" href="#and-visualize-the-results" title="Permanent link">&para;</a></h3>
+<p>2D t-SNE (3D is also available).</p>
+<div class="highlight"><pre><span></span><code><span class="n">plot_2D_features</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">in_dataset</span><span class="o">=</span><span class="n">ds_in</span><span class="p">,</span>
+    <span class="n">out_dataset</span><span class="o">=</span><span class="n">ds_out</span><span class="p">,</span>
+    <span class="n">output_layer_id</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p align="center">
+  <img src="assets/tsne.png" alt="TSNE" />
+</p>
+
+<p>Classical histograms and AUROC curve.
+<div class="highlight"><pre><span></span><code><span class="n">plot_ood_scores</span><span class="p">(</span><span class="n">scores_in</span><span class="p">,</span> <span class="n">scores_out</span><span class="p">,</span> <span class="n">log_scale</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plot_roc_curve</span><span class="p">(</span><span class="n">scores_in</span><span class="p">,</span> <span class="n">scores_out</span><span class="p">)</span>
+</code></pre></div></p>
+<p align="center">
+  <img src="assets/auroc.png" alt="AUROC" />
+</p>
+
+<h1 id="tutorials">Tutorials<a class="headerlink" href="#tutorials" title="Permanent link">&para;</a></h1>
+<p>We propose some tutorials to get familiar with the library and its API. See the Tutorial section of the doc.</p>
 <h1 id="whats-included">What's Included<a class="headerlink" href="#whats-included" title="Permanent link">&para;</a></h1>
 <p>The library is based on a class, <code>OODBaseDetector</code>, that fits a model and then scores new samples. Some baselines use extra data, so <code>OODBaseDetector</code> can also fit additional data if needed. The library uses <code>OODDataset</code> to properly load data from different sources and prepare it for OOD detection. It can perform OOD-specific operations like adding extra OOD data for tuning with Outlier Exposure or filters according to label values for anomaly detection or open set recognition benchmarks.</p>
 <p>Currently, <strong>oodeel</strong> includes the following baselines:</p>
@@ -1159,7 +1248,7 @@ make<span class="w"> </span>prepare-dev
 <td>ReAct</td>
 <td><a href="http://arxiv.org/abs/2111.12797">ReAct: Out-of-distribution Detection With Rectified Activations</a></td>
 <td>NeurIPS 2021</td>
-<td>planned</td>
+<td>avail <a href="notebooks/tensorflow/demo_react_tf/">tensorflow</a> or  <a href="notebooks/torch/demo_react_torch/">torch</a></td>
 </tr>
 <tr>
 <td>NMD</td>
@@ -1177,16 +1266,6 @@ make<span class="w"> </span>prepare-dev
 </table>
 <p><strong>Oodeel</strong> also includes standard training functions with data augmentation and learning rate scheduler for toy convnet models or models from <code>keras.applications</code> in <a href="https://github.com/deel-ai/oodeel/tree/master/oodeel/utils/tf_training_tools.py">tf_training_tools.py</a> and <code>torchvision.models</code> in <a href="https://github.com/deel-ai/oodeel/tree/master/oodeel/utils/torch_training_tools.py">torch_training_tools.py</a> files. These functions come in handy for benchmarks like <em>leave-k-classes-out</em> that requires retraining models on a subset of dataset classes.</p>
 <h1 id="development-roadmap">Development Roadmap<a class="headerlink" href="#development-roadmap" title="Permanent link">&para;</a></h1>
-<h2 id="roadmap-to-first-release">Roadmap to first release:<a class="headerlink" href="#roadmap-to-first-release" title="Permanent link">&para;</a></h2>
-<ul class="task-list">
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" checked/><span class="task-list-indicator"></span></label> The library works for <code>keras</code> models</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" checked/><span class="task-list-indicator"></span></label> Unification of tutorial notebooks</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" checked/><span class="task-list-indicator"></span></label> Validation of all methods for pytorch using <code>TorchOperator</code>, making oodeel compatible with both tensorflow and pytorch models.</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" checked/><span class="task-list-indicator"></span></label> Integration of <code>TorchDataHandler</code> to alleviate the need of <code>tf.data.Dataset</code> when using pytorch. At this stage, oodeel will no more require any tensorflow components when using pytorch, and vice-versa.</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" checked/><span class="task-list-indicator"></span></label> Revise docstring and type hinting</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" checked/><span class="task-list-indicator"></span></label> Set up the doc</li>
-</ul>
-<h2 id="whats-next">What's next?<a class="headerlink" href="#whats-next" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox"/><span class="task-list-indicator"></span></label> More baselines!</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox"/><span class="task-list-indicator"></span></label> A module for thorough visualizations (result plots and feature space visualizations)</li>

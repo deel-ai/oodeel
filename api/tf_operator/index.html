@@ -330,7 +330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pages/getting_started/" class="md-nav__link">
+      <a href="../../notebooks/tensorflow/demo_mls_msp_tf/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -422,6 +422,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_react_tf/" class="md-nav__link">
+        React
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -461,7 +475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pages/getting_started/" class="md-nav__link">
+      <a href="../../notebooks/torch/demo_mls_msp_torch/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -547,6 +561,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_mahalanobis_torch/" class="md-nav__link">
         Mahalanobis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_react_torch/" class="md-nav__link">
+        React
       </a>
     </li>
   
@@ -979,6 +1007,20 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#oodeel.utils.tf_operator.TFOperator.quantile" class="md-nav__link">
+    quantile()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oodeel.utils.tf_operator.TFOperator.relu" class="md-nav__link">
+    relu()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#oodeel.utils.tf_operator.TFOperator.reshape" class="md-nav__link">
     reshape()
   </a>
@@ -1124,6 +1166,20 @@
     <li class="md-nav__item">
       <a href="../utils/" class="md-nav__link">
         Utils
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plots/" class="md-nav__link">
+        Plots
       </a>
     </li>
   
@@ -1303,6 +1359,20 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#oodeel.utils.tf_operator.TFOperator.quantile" class="md-nav__link">
+    quantile()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oodeel.utils.tf_operator.TFOperator.relu" class="md-nav__link">
+    relu()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#oodeel.utils.tf_operator.TFOperator.reshape" class="md-nav__link">
     reshape()
   </a>
@@ -1409,8 +1479,7 @@
 
         <details class="quote">
           <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 51</span>
-<span class="normal"> 52</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 52</span>
 <span class="normal"> 53</span>
 <span class="normal"> 54</span>
 <span class="normal"> 55</span>
@@ -1544,7 +1613,18 @@
 <span class="normal">183</span>
 <span class="normal">184</span>
 <span class="normal">185</span>
-<span class="normal">186</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TFOperator</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TFOperator</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to handle tensorflow operations with a unified API&quot;&quot;&quot;</span>
 
     <span class="nd">@staticmethod</span>
@@ -1604,7 +1684,6 @@
         <span class="k">return</span> <span class="n">tensor</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
     <span class="k">def</span> <span class="nf">gradient</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute gradients for a batch of samples.</span>
 
@@ -1680,6 +1759,17 @@
         <span class="s2">&quot;Computes the eigen decomposition of a self-adjoint matrix.&quot;</span>
         <span class="n">eigval</span><span class="p">,</span> <span class="n">eigvec</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">eigval</span><span class="p">,</span> <span class="n">eigvec</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">quantile</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="s2">&quot;Computes the quantile of a tensor&#39;s components. q in (0,1)&quot;</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">q</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="k">if</span> <span class="n">dim</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">q</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">relu</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="s2">&quot;Apply relu to a tensor&quot;</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
         </details>
 
@@ -1715,8 +1805,7 @@
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">81</span>
-<span class="normal">82</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
 <span class="normal">83</span>
 <span class="normal">84</span>
 <span class="normal">85</span>
@@ -1726,7 +1815,8 @@
 <span class="normal">89</span>
 <span class="normal">90</span>
 <span class="normal">91</span>
-<span class="normal">92</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">92</span>
+<span class="normal">93</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">CrossEntropyLoss</span><span class="p">(</span><span class="n">reduction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Cross Entropy Loss from logits&quot;&quot;&quot;</span>
 
@@ -1764,12 +1854,12 @@
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">59</span>
-<span class="normal">60</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">60</span>
 <span class="normal">61</span>
 <span class="normal">62</span>
 <span class="normal">63</span>
-<span class="normal">64</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">64</span>
+<span class="normal">65</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">argmax</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Argmax function&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1834,10 +1924,10 @@
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">105</span>
-<span class="normal">106</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">106</span>
 <span class="normal">107</span>
-<span class="normal">108</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">108</span>
+<span class="normal">109</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">convert_to_numpy</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert tensor into a np.ndarray&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">tensor</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
@@ -2109,8 +2199,7 @@ tensorflow differentiable operations only, and return a scalar.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">110</span>
-<span class="normal">111</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">111</span>
 <span class="normal">112</span>
 <span class="normal">113</span>
 <span class="normal">114</span>
@@ -2128,7 +2217,6 @@ tensorflow differentiable operations only, and return a scalar.</p></td>
 <span class="normal">126</span>
 <span class="normal">127</span>
 <span class="normal">128</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
-<span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
 <span class="k">def</span> <span class="nf">gradient</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute gradients for a batch of samples.</span>
 
@@ -2172,11 +2260,11 @@ tensorflow differentiable operations only, and return a scalar.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 99</span>
-<span class="normal">100</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">100</span>
 <span class="normal">101</span>
 <span class="normal">102</span>
-<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">103</span>
+<span class="normal">104</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
 <span class="k">def</span> <span class="nf">matmul</span><span class="p">(</span><span class="n">tensor_1</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">tensor_2</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Matmul operation&quot;&quot;&quot;</span>
@@ -2207,10 +2295,10 @@ tensorflow differentiable operations only, and return a scalar.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">66</span>
-<span class="normal">67</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">67</span>
 <span class="normal">68</span>
-<span class="normal">69</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">69</span>
+<span class="normal">70</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">max</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Max function&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_max</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
@@ -2273,10 +2361,10 @@ tensorflow differentiable operations only, and return a scalar.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">94</span>
-<span class="normal">95</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">95</span>
 <span class="normal">96</span>
-<span class="normal">97</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">97</span>
+<span class="normal">98</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">norm</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Tensor Norm&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
@@ -2306,10 +2394,10 @@ tensorflow differentiable operations only, and return a scalar.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">71</span>
-<span class="normal">72</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">72</span>
 <span class="normal">73</span>
-<span class="normal">74</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">74</span>
+<span class="normal">75</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">one_hot</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;One hot function&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">one_hot</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
@@ -2346,6 +2434,74 @@ tensorflow differentiable operations only, and return a scalar.</p></td>
 <span class="k">def</span> <span class="nf">pinv</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="s2">&quot;Computes the pseudoinverse (Moore-Penrose inverse) of a matrix.&quot;</span>
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="oodeel.utils.tf_operator.TFOperator.quantile" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">quantile</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#oodeel.utils.tf_operator.TFOperator.quantile" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Computes the quantile of a tensor's components. q in (0,1)</p>
+
+      <details class="quote">
+        <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span> <span class="nf">quantile</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="s2">&quot;Computes the quantile of a tensor&#39;s components. q in (0,1)&quot;</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">q</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="k">if</span> <span class="n">dim</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">q</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="oodeel.utils.tf_operator.TFOperator.relu" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">relu</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#oodeel.utils.tf_operator.TFOperator.relu" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Apply relu to a tensor</p>
+
+      <details class="quote">
+        <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span> <span class="nf">relu</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="s2">&quot;Apply relu to a tensor&quot;</span>
+    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -2405,10 +2561,10 @@ tensorflow differentiable operations only, and return a scalar.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">76</span>
-<span class="normal">77</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">77</span>
 <span class="normal">78</span>
-<span class="normal">79</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">79</span>
+<span class="normal">80</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">sign</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sign function&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
@@ -2438,10 +2594,10 @@ tensorflow differentiable operations only, and return a scalar.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">54</span>
-<span class="normal">55</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">55</span>
 <span class="normal">56</span>
-<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">57</span>
+<span class="normal">58</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">softmax</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Softmax function along the last dimension&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">activations</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
@@ -2542,8 +2698,7 @@ tensorflow differentiable operations only, and return a scalar.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/utils/tf_operator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">35</span>
-<span class="normal">36</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">36</span>
 <span class="normal">37</span>
 <span class="normal">38</span>
 <span class="normal">39</span>
@@ -2555,7 +2710,8 @@ tensorflow differentiable operations only, and return a scalar.</p></td>
 <span class="normal">45</span>
 <span class="normal">46</span>
 <span class="normal">47</span>
-<span class="normal">48</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">sanitize_input</span><span class="p">(</span><span class="n">tensor_arg_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">):</span>
+<span class="normal">48</span>
+<span class="normal">49</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">sanitize_input</span><span class="p">(</span><span class="n">tensor_arg_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;ensures the decorated function receives a tf.Tensor&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>

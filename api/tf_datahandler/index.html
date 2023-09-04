@@ -330,7 +330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pages/getting_started/" class="md-nav__link">
+      <a href="../../notebooks/tensorflow/demo_mls_msp_tf/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -422,6 +422,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_react_tf/" class="md-nav__link">
+        React
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -461,7 +475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pages/getting_started/" class="md-nav__link">
+      <a href="../../notebooks/torch/demo_mls_msp_torch/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -547,6 +561,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_mahalanobis_torch/" class="md-nav__link">
         Mahalanobis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_react_torch/" class="md-nav__link">
+        React
       </a>
     </li>
   
@@ -862,6 +890,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#oodeel.datasets.tf_data_handler.TFDataHandler.get_label_from_dataset_item" class="md-nav__link">
+    get_label_from_dataset_item()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#oodeel.datasets.tf_data_handler.TFDataHandler.has_feature_key" class="md-nav__link">
     has_feature_key()
   </a>
@@ -1123,6 +1158,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plots/" class="md-nav__link">
+        Plots
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1249,6 +1298,13 @@
           <li class="md-nav__item">
   <a href="#oodeel.datasets.tf_data_handler.TFDataHandler.get_item_length" class="md-nav__link">
     get_item_length()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oodeel.datasets.tf_data_handler.TFDataHandler.get_label_from_dataset_item" class="md-nav__link">
+    get_label_from_dataset_item()
   </a>
   
 </li>
@@ -1974,7 +2030,28 @@ tensorflow syntax.</p>
 <span class="normal">647</span>
 <span class="normal">648</span>
 <span class="normal">649</span>
-<span class="normal">650</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TFDataHandler</span><span class="p">(</span><span class="n">DataHandler</span><span class="p">):</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span>
+<span class="normal">669</span>
+<span class="normal">670</span>
+<span class="normal">671</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TFDataHandler</span><span class="p">(</span><span class="n">DataHandler</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class to manage tf.data.Dataset. The aim is to provide a simple interface for</span>
 <span class="sd">    working with tf.data.Datasets and manage them without having to use</span>
@@ -2486,8 +2563,8 @@ tensorflow syntax.</p>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_dataset_length</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the length of a dataset. Try to access it with len(), and if not available,</span>
-<span class="sd">        with a reduce op.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the length of a dataset. Try to access it with len(), and if not</span>
+<span class="sd">        available, with a reduce op.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            dataset (tf.data.Dataset): Dataset to process</span>
@@ -2533,6 +2610,27 @@ tensorflow syntax.</p>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tensor</span> <span class="o">=</span> <span class="n">elem</span>
         <span class="k">return</span> <span class="n">tensor</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_label_from_dataset_item</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">ItemType</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve label tensor from item as a tuple/list. Label must be at index 1</span>
+<span class="sd">        in the item tuple. If one-hot encoded, labels are converted to single value.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            elem (ItemType): dataset element to extract label from</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Any: Label tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># labels must be at index 1 in the item tuple</span>
+        <span class="c1"># If labels are one-hot encoded, take the argmax</span>
+        <span class="k">if</span> <span class="n">tf</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># If labels are in two dimensions, squeeze them</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="p">[</span><span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">label</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_feature</span><span class="p">(</span>
@@ -3013,8 +3111,8 @@ with Feature_key value included in Values. Defaults to False.</p></td>
 
   <div class="doc doc-contents ">
   
-      <p>Get the length of a dataset. Try to access it with len(), and if not available,
-with a reduce op.</p>
+      <p>Get the length of a dataset. Try to access it with len(), and if not
+available, with a reduce op.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3077,8 +3175,8 @@ with a reduce op.</p>
 <span class="normal">597</span>
 <span class="normal">598</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">get_dataset_length</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the length of a dataset. Try to access it with len(), and if not available,</span>
-<span class="sd">    with a reduce op.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the length of a dataset. Try to access it with len(), and if not</span>
+<span class="sd">    available, with a reduce op.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        dataset (tf.data.Dataset): Dataset to process</span>
@@ -3260,24 +3358,24 @@ with a reduce op.</p>
 
       <details class="quote">
         <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">633</span>
-<span class="normal">634</span>
-<span class="normal">635</span>
-<span class="normal">636</span>
-<span class="normal">637</span>
-<span class="normal">638</span>
-<span class="normal">639</span>
-<span class="normal">640</span>
-<span class="normal">641</span>
-<span class="normal">642</span>
-<span class="normal">643</span>
-<span class="normal">644</span>
-<span class="normal">645</span>
-<span class="normal">646</span>
-<span class="normal">647</span>
-<span class="normal">648</span>
-<span class="normal">649</span>
-<span class="normal">650</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span>
+<span class="normal">669</span>
+<span class="normal">670</span>
+<span class="normal">671</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">get_feature</span><span class="p">(</span>
     <span class="n">dataset</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">feature_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
@@ -3719,6 +3817,113 @@ one and if it is a sequence (list or tuple), it is len(elem).</p>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">element_spec</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">element_spec</span><span class="p">)</span>
     <span class="k">return</span> <span class="mi">1</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="oodeel.datasets.tf_data_handler.TFDataHandler.get_label_from_dataset_item" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">get_label_from_dataset_item</span><span class="p">(</span><span class="n">item</span><span class="p">)</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#oodeel.datasets.tf_data_handler.TFDataHandler.get_label_from_dataset_item" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Retrieve label tensor from item as a tuple/list. Label must be at index 1
+in the item tuple. If one-hot encoded, labels are converted to single value.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>elem</code></td>
+          <td>
+                <code><span title="oodeel.types.ItemType">ItemType</span></code>
+          </td>
+          <td><p>dataset element to extract label from</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>Any</code></td>          <td>
+          </td>
+          <td><p>Label tensor</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+      <details class="quote">
+        <summary>Source code in <code>oodeel/datasets/tf_data_handler.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
+<span class="normal">639</span>
+<span class="normal">640</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span> <span class="nf">get_label_from_dataset_item</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">ItemType</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve label tensor from item as a tuple/list. Label must be at index 1</span>
+<span class="sd">    in the item tuple. If one-hot encoded, labels are converted to single value.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        elem (ItemType): dataset element to extract label from</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Any: Label tensor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># labels must be at index 1 in the item tuple</span>
+    <span class="c1"># If labels are one-hot encoded, take the argmax</span>
+    <span class="k">if</span> <span class="n">tf</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># If labels are in two dimensions, squeeze them</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="p">[</span><span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+    <span class="k">return</span> <span class="n">label</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>

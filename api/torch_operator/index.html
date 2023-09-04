@@ -330,7 +330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pages/getting_started/" class="md-nav__link">
+      <a href="../../notebooks/tensorflow/demo_mls_msp_tf/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -422,6 +422,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/tensorflow/demo_react_tf/" class="md-nav__link">
+        React
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -461,7 +475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pages/getting_started/" class="md-nav__link">
+      <a href="../../notebooks/torch/demo_mls_msp_torch/" class="md-nav__link">
         MLS/MSP
       </a>
     </li>
@@ -547,6 +561,20 @@
     <li class="md-nav__item">
       <a href="../../notebooks/torch/demo_mahalanobis_torch/" class="md-nav__link">
         Mahalanobis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/torch/demo_react_torch/" class="md-nav__link">
+        React
       </a>
     </li>
   
@@ -972,6 +1000,20 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#oodeel.utils.torch_operator.TorchOperator.quantile" class="md-nav__link">
+    quantile()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oodeel.utils.torch_operator.TorchOperator.relu" class="md-nav__link">
+    relu()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#oodeel.utils.torch_operator.TorchOperator.reshape" class="md-nav__link">
     reshape()
   </a>
@@ -1131,6 +1173,20 @@
     <li class="md-nav__item">
       <a href="../utils/" class="md-nav__link">
         Utils
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plots/" class="md-nav__link">
+        Plots
       </a>
     </li>
   
@@ -1312,6 +1368,20 @@
           <li class="md-nav__item">
   <a href="#oodeel.utils.torch_operator.TorchOperator.pinv" class="md-nav__link">
     pinv()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oodeel.utils.torch_operator.TorchOperator.quantile" class="md-nav__link">
+    quantile()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oodeel.utils.torch_operator.TorchOperator.relu" class="md-nav__link">
+    relu()
   </a>
   
 </li>
@@ -1572,7 +1642,23 @@
 <span class="normal">198</span>
 <span class="normal">199</span>
 <span class="normal">200</span>
-<span class="normal">201</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TorchOperator</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TorchOperator</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to handle torch operations with a unified API&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
@@ -1722,6 +1808,22 @@
         <span class="s2">&quot;Computes the eigen decomposition of a self-adjoint matrix.&quot;</span>
         <span class="n">eigval</span><span class="p">,</span> <span class="n">eigvec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">eigval</span><span class="p">,</span> <span class="n">eigvec</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">quantile</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="s2">&quot;Computes the quantile of a tensor&#39;s components. q in (0,1)&quot;</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># keep the 16 millions first elements (see torch.quantile issue:</span>
+            <span class="c1"># https://github.com/pytorch/pytorch/issues/64947)</span>
+            <span class="n">tensor_flatten</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[:</span><span class="mi">16_000_000</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">tensor_flatten</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">relu</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="s2">&quot;Apply relu to a tensor&quot;</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
         </details>
 
@@ -2424,6 +2526,84 @@ torch differentiable operations only, and return a scalar.</p></td>
 <span class="k">def</span> <span class="nf">pinv</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="s2">&quot;Computes the pseudoinverse (Moore-Penrose inverse) of a matrix.&quot;</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="oodeel.utils.torch_operator.TorchOperator.quantile" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">quantile</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#oodeel.utils.torch_operator.TorchOperator.quantile" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Computes the quantile of a tensor's components. q in (0,1)</p>
+
+      <details class="quote">
+        <summary>Source code in <code>oodeel/utils/torch_operator.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span> <span class="nf">quantile</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="s2">&quot;Computes the quantile of a tensor&#39;s components. q in (0,1)&quot;</span>
+    <span class="k">if</span> <span class="n">dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># keep the 16 millions first elements (see torch.quantile issue:</span>
+        <span class="c1"># https://github.com/pytorch/pytorch/issues/64947)</span>
+        <span class="n">tensor_flatten</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[:</span><span class="mi">16_000_000</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">tensor_flatten</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="oodeel.utils.torch_operator.TorchOperator.relu" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">relu</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#oodeel.utils.torch_operator.TorchOperator.relu" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Apply relu to a tensor</p>
+
+      <details class="quote">
+        <summary>Source code in <code>oodeel/utils/torch_operator.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span> <span class="nf">relu</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="s2">&quot;Apply relu to a tensor&quot;</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
