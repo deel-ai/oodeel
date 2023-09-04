@@ -73,11 +73,10 @@ class ODIN(OODBaseDetector):
         x = self.input_perturbation(inputs)
         _, logits = self.feature_extractor.predict_tensor(x)
         logits_s = logits / self.temperature
-        pred = self.op.softmax(logits_s)
-        pred = self.op.convert_to_numpy(pred)
-        scores = -np.max(pred, axis=1)
-        logits = self.op.convert_to_numpy(logits)
-        return scores, logits
+        probits = self.op.softmax(logits_s)
+        probits = self.op.convert_to_numpy(probits)
+        scores = -np.max(probits, axis=1)
+        return scores
 
     def input_perturbation(self, inputs: TensorType) -> TensorType:
         """Apply a small perturbation over inputs to increase their softmax score.

@@ -82,7 +82,7 @@ class Energy(OODBaseDetector):
         _, logits = self.feature_extractor.predict_tensor(inputs)
         logits = self.op.convert_to_numpy(logits)
         scores = -logsumexp(logits, axis=1)
-        return scores, logits
+        return scores
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """

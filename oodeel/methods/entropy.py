@@ -77,8 +77,7 @@ class Entropy(OODBaseDetector):
         probits = self.op.softmax(logits)
         probits = self.op.convert_to_numpy(probits)
         scores = np.sum(probits * np.log(probits), axis=1)
-        logits = self.op.convert_to_numpy(logits)
-        return -scores, logits
+        return -scores
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """

@@ -175,12 +175,12 @@ class VIM(OODBaseDetector):
         # extract features
         features, logits = self.feature_extractor.predict_tensor(inputs)
         features = self.op.flatten(features)
-        logits = self.op.convert_to_numpy(logits)
         # vim score
         res_scores = self._compute_residual_score_tensor(features)
+        logits = self.op.convert_to_numpy(logits)
         energy_scores = logsumexp(logits, axis=-1)
         scores = -self.alpha * res_scores + energy_scores
-        return -np.array(scores), logits
+        return -np.array(scores)
 
     def plot_spectrum(self) -> None:
         """
