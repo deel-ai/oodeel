@@ -136,14 +136,18 @@ plot_2D_features(
     output_layer_id=-2,
 )
 ```
-![T-SNE](assets/tsne.png)
+<p align="center">
+  <img src="assets/tsne.png" alt="TSNE" />
+</p>
 
 Classical histograms and AUROC curve.
 ```python
 plot_ood_scores(scores_in, scores_out, log_scale=False)
 plot_roc_curve(scores_in, scores_out)
 ```
-![AUROC](assets/auroc.png)
+<p align="center">
+  <img src="assets/auroc.png" alt="AUROC" />
+</p>
 
 # Tutorials
 
