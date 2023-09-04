@@ -37,7 +37,7 @@ class Gram(OODBaseDetector):
     **Important Disclaimer**: Taking the statistics of min/max deviation,
     as in the paper raises some problems.
 
-    First, the obtained performances are way worser than in the paper. This is in line
+    First, the obtained performances are way worser than in the paper. We tried the implementation of the original peper, This is in line
     with the recent [benchmark tables of OpenOOD](https://zjysteven.github.io/OpenOOD/) so
     we assume that our implementation is correct.
 
