@@ -22,10 +22,10 @@
 # SOFTWARE.
 import pytest
 
+from oodeel.datasets import OODDataset
 from oodeel.methods import Gram
-from tests.tests_tensorflow import eval_detector_on_blobs
-from tests.tests_tensorflow import generate_data_tf
-from tests.tests_tensorflow import generate_model
+from tests.tests_torch import generate_data_torch
+from tests.tests_torch import Net
 
 
 def test_gram_shape():
@@ -35,24 +35,26 @@ def test_gram_shape():
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    gram = Gram(output_layers_id=["max_pooling2d", "dense"])
+    gram = Gram(output_layers_id=["conv2", "fc2"])
 
-    input_shape = (32, 32, 3)
+    input_shape = (3, 32, 32)
     num_labels = 10
     samples = 100
 
-    data = generate_data_tf(
+    data = generate_data_torch(
         x_shape=input_shape, num_labels=num_labels, samples=samples
-    ).batch(samples // 2)
+    )
+    data = OODDataset(data, backend="torch").prepare(batch_size=samples // 2)
 
-    dataval = generate_data_tf(
+    dataval = generate_data_torch(
         x_shape=input_shape, num_labels=num_labels, samples=samples
-    ).batch(samples // 2)
+    )
+    dataval = OODDataset(dataval, backend="torch").prepare(batch_size=samples // 2)
 
-    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+    model = Net(num_classes=num_labels)
 
-    gram.fit(model, data)
+    gram.fit(model, data, val_dataset=dataval)
     score = gram.score(dataval)
     assert score.shape == (100,)
-    assert gram.min_maxs[0][0].shape == (5, 4, 2)
+    assert gram.min_maxs[0][0].shape == (5, 16, 2)
     assert gram.min_maxs[0][1].shape == (5, 1, 2)

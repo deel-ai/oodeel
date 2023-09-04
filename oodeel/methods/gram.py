@@ -30,32 +30,70 @@ from .base import OODBaseDetector
 
 
 class Gram(OODBaseDetector):
-    """
-    "Out-of-Distribution Detection with Deep Nearest Neighbors"
-    https://arxiv.org/abs/2204.06507
+    r"""
+    "Detecting Out-of-Distribution Examples with Gram Matrices"
+    [link](https://proceedings.mlr.press/v119/sastry20a.html)
+
+    **Important Disclaimer**: Taking the statistics of min/max deviation,
+    as in the paper raises some problems.
+
+    First, the obtained performances are way worser than in the paper. This is in line
+    with the recent [benchmark tables of OpenOOD](https://zjysteven.github.io/OpenOOD/) so
+    we assume that our implementation is correct.
+
+    Second, the method often yields a score of zero for some tasks.
+    This is expected since the min/max among the samples of a random
+    variable becomes more and more extreme with the sample
+    size. As a result, computing the min/max over the training set is likely to produce
+    min/max values that are so extreme that none of the in distribution correlations of
+    the validation set goes beyond these threshold. The worst is that a significant
+    part of ood data does not exceed the thresholds either. This can be aleviated by
+    computing the min/max over a limited number of sample. However, it is
+    counter-intuitive and, in our opinion, not desirable: adding
+    some more information should only improve a method.
+
+    Hence, we decided to replace the min/max by the q / 1-q quantile, with q a new
+    parameter of the method. Specifically, instead of the deviation as defined in
+    eq. 3 of the paper, we use the definition
+    $$
+    \delta(t_q, t_{1-q}, value) =
+    \begin{cases}
+        0 & \text{if} \; t_q \leq value \leq t_{1-q},  \;\;
+        \frac{t_q - value}{|t_q|} & \text{if } value < t_q,  \;\;
+        \frac{value - t_{1-q}}{|t_q|} & \text{if } value < t_q
+    \end{cases}
+    $$
+    With this new deviation, the more point we add, the more accurate the quantile
+    becomes. In addition, the method can be made more or less discriminative by toggling
+    the value of q.
+
+    Finally, we found that this approach improved the performance of the baseline in
+    our experiments.
 
     Args:
-        nearest: number of nearest neighbors to consider.
-            Defaults to 1.
         output_layers_id: feature space on which to compute nearest neighbors.
             Defaults to [-2].
+        orders: power orders to consider for the correlation matrix
+        quantile: quantile to consider for the correlations to build the deviation
+            threshold.
+
     """
 
     def __init__(
         self,
         output_layers_id: List[int] = [-2],
-        orders: List[int] = [i for i in range(1, 6)],
+        orders: List[int] = [i for i in range(1, 10)],
+        quantile=0.01,
     ):
+        if -1 not in output_layers_id:
+            output_layers_id.append(-1)
         super().__init__(output_layers_id=output_layers_id)
 
         if isinstance(orders, int):
             orders = [orders]
         self.orders = orders
-
-        self.postproc_fns_min_maxs = [
-            self._min_maxs for i in range(len(output_layers_id))
-        ]
         self.postproc_fns_stat = [self._stat for i in range(len(output_layers_id))]
+        self.quantile = quantile
 
     @property
     def requires_to_fit_dataset(self) -> bool:
@@ -70,6 +108,7 @@ class Gram(OODBaseDetector):
     def _fit_to_dataset(
         self,
         fit_dataset: Union[TensorType, DatasetType],
+        val_dataset: Union[TensorType, DatasetType],
     ) -> None:
         """
         Constructs the index from ID data "fit_dataset", which will be used for
@@ -78,29 +117,54 @@ class Gram(OODBaseDetector):
         Args:
             fit_dataset: input dataset (ID) to construct the index with.
         """
-        fit_feature_maps = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns_min_maxs
+        fit_feature_maps, labels = self.feature_extractor.predict(
+            fit_dataset, postproc_fns=self.postproc_fns_stat, return_labels=True
         )
+        fit_feature_maps = fit_feature_maps[:-1]
 
-        for i, feature_map in enumerate(fit_feature_maps):
-            mins = self.op.unsqueeze(self.op.min(feature_map[:, 0, ...], dim=0), -1)
-            maxs = self.op.unsqueeze(self.op.max(feature_map[:, 1, ...], dim=0), -1)
-            min_max = self.op.cat([mins, maxs], dim=-1)
-            fit_feature_maps[i] = min_max
+        self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
 
-        self.min_maxs = fit_feature_maps
+        self.min_maxs = dict()
+        for cls in self._classes:
+            indexes = self.op.equal(labels, cls)
+            min_maxs = []
+            for feature_map in fit_feature_maps:
+                feature_map = feature_map[indexes]
+                mins = self.op.unsqueeze(
+                    self.op.quantile(feature_map, self.quantile, dim=0), -1
+                )
+                maxs = self.op.unsqueeze(
+                    self.op.quantile(feature_map, 1 - self.quantile, dim=0), -1
+                )
+                min_max = self.op.cat([mins, maxs], dim=-1)
+                min_maxs.append(min_max)
+
+            self.min_maxs[cls] = min_maxs
 
         # In the paper, they use a separate validation data to compute
-        # a normalization constant
-        val_stats = self.feature_extractor.predict(
-            fit_dataset,
-            postproc_fns=self.postproc_fns_stat,
+        # a normalization constant, but here we use the training data
+        # Since it comes from the same distrib
+        fit_feature_maps, labels = self.feature_extractor.predict(
+            val_dataset, postproc_fns=self.postproc_fns_stat, return_labels=True
         )
-        devnorm = self._deviation(val_stats)
-        # For now, since class wise score is not available
-        self.devnorm = [1.0 for i in range(len(self.min_maxs))]
-        # self.devnorm = [float(self.op.mean(dev)) for dev in devnorm]
-        # MAYBE PUT STAT AS PROCESS FCTS
+        fit_feature_maps = fit_feature_maps[:-1]
+
+        devnorm = []
+        for cls in self._classes:
+            min_maxs = []
+            for min_max in self.min_maxs[cls]:
+                min_maxs.append(
+                    self.op.stack(
+                        [min_max for i in range(fit_feature_maps[0].shape[0])]
+                    )
+                )
+            devnorm.append(
+                [
+                    float(self.op.mean(dev))
+                    for dev in self._deviation(fit_feature_maps, min_maxs)
+                ]
+            )
+        self.devnorm = np.mean(np.array(devnorm), axis=0)
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
@@ -117,7 +181,17 @@ class Gram(OODBaseDetector):
         tensor_stats = self.feature_extractor.predict(
             inputs, postproc_fns=self.postproc_fns_stat
         )
-        tensor_dev = self._deviation(tensor_stats)
+        tensor_stats = tensor_stats[:-1]
+
+        features = self.feature_extractor.predict(inputs)
+        preds = np.array(self.op.argmax(features[-1], dim=1))
+
+        # I have to get the predictions
+        min_maxs = []
+        for i in range(len(tensor_stats)):
+            min_maxs.append(self.op.stack([self.min_maxs[label][i] for label in preds]))
+
+        tensor_dev = self._deviation(tensor_stats, min_maxs)
         score = self.op.mean(
             self.op.cat(
                 [
@@ -127,24 +201,25 @@ class Gram(OODBaseDetector):
             ),
             dim=0,
         )
-        return np.array(score)
+        return np.array(score) + np.random.random_sample(size=score.shape) * 10e-6
 
-    def _deviation(self, feature_maps):
+    def _deviation(self, feature_maps, min_maxs):
         deviation = []
-        for feature_map, min_max in zip(feature_maps, self.min_maxs):
+        for feature_map, min_max in zip(feature_maps, min_maxs):
             where_min = self.op.where(feature_map < min_max[..., 0], 1.0, 0.0)
             where_max = self.op.where(feature_map > min_max[..., 1], 1.0, 0.0)
             deviation_min = (
                 (min_max[..., 0] - feature_map)
-                / self.op.abs(min_max[..., 0])
+                / (self.op.abs(min_max[..., 0]) + 1e-6)
                 * where_min
             )
             deviation_max = (
                 (feature_map - min_max[..., 1])
-                / self.op.abs(min_max[..., 1])
+                / (self.op.abs(min_max[..., 1]) + 1e-6)
                 * where_max
             )
             deviation.append(self.op.sum(deviation_min + deviation_max, dim=(1, 2)))
+            # deviation.append(self.op.sum(deviation_max, dim=(1, 2)))
         return deviation
 
     def _stat(self, feature_map):
@@ -168,26 +243,20 @@ class Gram(OODBaseDetector):
                     feature_map_p = self.op.reshape(
                         feature_map_p, (fm_s[0], fm_s[1], -1)
                     )
-                feature_map_p = self.op.einsum(
-                    "bik,bjk->bij", feature_map_p, feature_map_p
+                # feature_map_p = self.op.einsum(
+                #    "bik,bjk->bij", feature_map_p, feature_map_p
+                # )
+                feature_map_p = self.op.matmul(
+                    feature_map_p, self.op.permute(feature_map_p, (0, 2, 1))
                 )
-            feature_map_p = feature_map_p ** (1 / p)
+            feature_map_p = self.op.sign(feature_map_p) * (
+                self.op.abs(feature_map_p) ** (1 / p)
+            )
             # get the lower triangular part of the matrix
             feature_map_p = self.op.tril(feature_map_p)
             # directly sum row-wise (to limit computational burden)
-            feature_map_p = self.op.sum(feature_map_p, dim=-2)
-            # stat.append(self.op.transpose(feature_map_p))
+            feature_map_p = self.op.sum(feature_map_p, dim=2)
+            # stat.append(self.op.t(feature_map_p))
             stat.append(feature_map_p)
         stat = self.op.stack(stat, 1)
         return stat
-
-    def _min_maxs(self, feature_map):
-        stats = self._stat(feature_map)
-        min_max_per_row = self.op.cat(
-            [
-                self.op.min(stats, dim=0, keepdim=True),
-                self.op.max(stats, dim=0, keepdim=True),
-            ],
-            dim=0,
-        )
-        return self.op.unsqueeze(min_max_per_row, 0)

@@ -88,7 +88,6 @@ class OODBaseDetector(ABC):
 
         Args:
             inputs (TensorType): tensor to score
-
         Returns:
             np.ndarray: OOD scores
 
@@ -104,8 +103,8 @@ class OODBaseDetector(ABC):
         """Sanitize postproc fns used at each layer output of the feature extractor.
 
         Args:
-            postproc_fns (Optional[List[Callable]], optional): List of postproc functions,
-                one per output layer. Defaults to None.
+            postproc_fns (Optional[List[Callable]], optional): List of postproc
+                functions, one per output layer. Defaults to None.
 
         Returns:
             List[Callable]: Sanitized postproc_fns list
