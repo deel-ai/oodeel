@@ -88,7 +88,7 @@ setup(
     # Name of the package:
     name="oodeel",
     # Version of the package:
-    version="0.1.0",
+    version="0.1.1",
     # Find the package automatically (include everything):
     packages=find_packages(),
     # Author information:
