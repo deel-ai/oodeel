@@ -74,6 +74,7 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         self.backend = "tensorflow"
         self.model.layers[-1].activation = getattr(tf.keras.activations, "linear")
+        self._last_logits = None
 
     @staticmethod
     def find_layer(
@@ -149,7 +150,6 @@ class KerasFeatureExtractor(FeatureExtractor):
         return extractor
 
     @sanitize_input
-    @tf.function
     def predict_tensor(self, tensor: TensorType) -> Tuple[List[tf.Tensor], tf.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
@@ -159,7 +159,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         Returns:
             Tuple[List[tf.Tensor], tf.Tensor]: features, logits
         """
-        features = self.extractor(tensor, training=False)
+        features = self.forward(tensor)
 
         if type(features) is not list:
             features = [features]
@@ -168,7 +168,13 @@ class KerasFeatureExtractor(FeatureExtractor):
         logits = features.pop()
         if len(features) == 1:
             features = features[0]
+
+        self._last_logits = logits
         return features, logits
+
+    @tf.function
+    def forward(self, tensor: TensorType) -> List[tf.Tensor]:
+        return self.extractor(tensor, training=False)
 
     def predict(
         self,

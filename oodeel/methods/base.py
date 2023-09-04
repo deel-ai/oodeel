@@ -167,21 +167,6 @@ class OODBaseDetector(ABC):
         """
         raise NotImplementedError()
 
-    def calibrate_threshold(
-        self,
-        fit_dataset: Union[ItemType, DatasetType],
-        scores: np.ndarray,
-    ) -> None:
-        """
-        Calibrates the model on ID data "id_dataset".
-        Placeholder for now
-
-        Args:
-            fit_dataset: dataset to callibrate the threshold on
-            scores: scores of OOD detector
-        """
-        raise NotImplementedError()
-
     def score(
         self,
         dataset: Union[ItemType, DatasetType],
@@ -201,7 +186,8 @@ class OODBaseDetector(ABC):
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, get_args(ItemType)):
             tensor = self.data_handler.get_input_from_dataset_item(dataset)
-            scores, logits = self._score_tensor(tensor)
+            scores = self._score_tensor(tensor)
+            logits = self.op.convert_to_numpy(self.feature_extractor._last_logits)
 
             # Get labels if dataset is a tuple/list
             if isinstance(dataset, (list, tuple)):
@@ -215,7 +201,10 @@ class OODBaseDetector(ABC):
 
             for item in dataset:
                 tensor = self.data_handler.get_input_from_dataset_item(item)
-                score_batch, logits_batch = self._score_tensor(tensor)
+                score_batch = self._score_tensor(tensor)
+                logits_batch = self.op.convert_to_numpy(
+                    self.feature_extractor._last_logits
+                )
 
                 # get the label if available
                 if len(item) > 1:
@@ -237,49 +226,14 @@ class OODBaseDetector(ABC):
         info = dict(labels=labels, logits=logits)
         return scores, info
 
-    def isood(
-        self, dataset: Union[ItemType, DatasetType], threshold: float
-    ) -> np.ndarray:
-        """
-        Returns whether the input samples "inputs" are OOD or not, given a threshold
-
-        Args:
-            dataset (Union[ItemType, DatasetType]): dataset or tensors to score
-            threshold (float): threshold to use for distinguishing between OOD and ID
-
-        Returns:
-            np.ndarray: array of 0 for ID samples and 1 for OOD samples
-        """
-        assert self.feature_extractor is not None, "Call .fit() before .isood()"
-
-        # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
-        if isinstance(dataset, get_args(ItemType)):
-            tensor = self.data_handler.get_input_from_dataset_item(dataset)
-            scores = self._score_tensor(tensor)
-        # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
-        elif isinstance(dataset, get_args(DatasetType)):
-            scores = np.array([])
-            for tensor in dataset:
-                tensor = self.data_handler.get_input_from_dataset_item(tensor)
-                score_batch = self._score_tensor(tensor)
-                scores = np.append(scores, score_batch)
-        else:
-            raise NotImplementedError(
-                f"OODBaseDetector.isood() not implemented for {type(dataset)}"
-            )
-        oodness = scores < threshold
-        return np.array(oodness, dtype=np.bool)
-
     def compute_react_threshold(self, model: Callable, fit_dataset: DatasetType):
         penult_feat_extractor = self._load_feature_extractor(model, [-2])
         unclipped_features, _ = penult_feat_extractor.predict(fit_dataset)
         self.react_threshold = self.op.quantile(unclipped_features, self.react_quantile)
 
-    def __call__(
-        self, inputs: Union[ItemType, DatasetType], threshold: float
-    ) -> np.ndarray:
+    def __call__(self, inputs: Union[ItemType, DatasetType]) -> np.ndarray:
         """
-        Convenience wrapper for isood
+        Convenience wrapper for score
 
         Args:
             inputs (Union[ItemType, DatasetType]): dataset or tensors to score.
@@ -288,7 +242,7 @@ class OODBaseDetector(ABC):
         Returns:
             np.ndarray: array of 0 for ID samples and 1 for OOD samples
         """
-        return self.isood(inputs, threshold)
+        return self.score(inputs)
 
     @property
     def requires_to_fit_dataset(self) -> bool:

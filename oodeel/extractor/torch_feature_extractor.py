@@ -75,6 +75,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         )
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in self._hook_layers_id}
+        self._last_logits = None
         self.backend = "torch"
 
     @property
@@ -207,6 +208,8 @@ class TorchFeatureExtractor(FeatureExtractor):
         logits = features.pop()
         if len(features) == 1:
             features = features[0]
+
+        self._last_logits = logits
         return features, logits
 
     def predict(

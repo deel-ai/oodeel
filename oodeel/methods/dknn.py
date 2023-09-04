@@ -82,13 +82,12 @@ class DKNN(OODBaseDetector):
             Tuple[np.ndarray]: scores, logits
         """
 
-        input_projected, logits = self.feature_extractor.predict_tensor(inputs)
+        input_projected, _ = self.feature_extractor.predict_tensor(inputs)
         input_projected = self.op.convert_to_numpy(input_projected)
         input_projected = input_projected.reshape(input_projected.shape[0], -1)
         norm_input_projected = self._l2_normalization(input_projected)
         scores, _ = self.index.search(norm_input_projected, self.nearest)
-        logits = self.op.convert_to_numpy(logits)
-        return scores[:, -1], logits
+        return scores[:, -1]
 
     def _l2_normalization(self, feat: np.ndarray) -> np.ndarray:
         """L2 normalization of a tensor along the last dimension.

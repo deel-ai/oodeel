@@ -103,14 +103,13 @@ class Mahalanobis(OODBaseDetector):
             inputs_p = inputs
 
         # mahalanobis score on perturbed inputs
-        features_p, logits = self.feature_extractor.predict_tensor(inputs_p)
+        features_p, _ = self.feature_extractor.predict_tensor(inputs_p)
         features_p = self.op.flatten(features_p)
         gaussian_score_p = self._mahalanobis_score(features_p)
 
         # take the highest score for each sample
         gaussian_score_p = self.op.max(gaussian_score_p, dim=1)
-        logits = self.op.convert_to_numpy(logits)
-        return -self.op.convert_to_numpy(gaussian_score_p), logits
+        return -self.op.convert_to_numpy(gaussian_score_p)
 
     def _input_perturbation(self, inputs: TensorType) -> TensorType:
         """
