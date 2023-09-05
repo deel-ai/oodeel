@@ -37,11 +37,7 @@ class Gram(OODBaseDetector):
     **Important Disclaimer**: Taking the statistics of min/max deviation,
     as in the paper raises some problems.
 
-    First, the obtained performances are way worser than in the paper. We tried the implementation of the original peper, This is in line
-    with the recent [benchmark tables of OpenOOD](https://zjysteven.github.io/OpenOOD/) so
-    we assume that our implementation is correct.
-
-    Second, the method often yields a score of zero for some tasks.
+    The method often yields a score of zero for some tasks.
     This is expected since the min/max among the samples of a random
     variable becomes more and more extreme with the sample
     size. As a result, computing the min/max over the training set is likely to produce
@@ -60,30 +56,30 @@ class Gram(OODBaseDetector):
     \begin{cases}
         0 & \text{if} \; t_q \leq value \leq t_{1-q},  \;\;
         \frac{t_q - value}{|t_q|} & \text{if } value < t_q,  \;\;
-        \frac{value - t_{1-q}}{|t_q|} & \text{if } value < t_q
+        \frac{value - t_{1-q}}{|t_q|} & \text{if } value > t_{1-q}
     \end{cases}
     $$
     With this new deviation, the more point we add, the more accurate the quantile
-    becomes. In addition, the method can be made more or less discriminative by toggling
-    the value of q.
+    becomes. In addition, the method can be made more or less discriminative by
+    toggling the value of q.
 
     Finally, we found that this approach improved the performance of the baseline in
     our experiments.
 
     Args:
-        output_layers_id: feature space on which to compute nearest neighbors.
-            Defaults to [-2].
-        orders: power orders to consider for the correlation matrix
-        quantile: quantile to consider for the correlations to build the deviation
-            threshold.
+        output_layers_id (List[Union[int, str]]): feature space on which to compute
+            nearest neighbors. Defaults to [-2].
+        orders (List[int]): power orders to consider for the correlation matrix
+        quantile (float): quantile to consider for the correlations to build the
+            deviation threshold.
 
     """
 
     def __init__(
         self,
-        output_layers_id: List[int] = [-2],
-        orders: List[int] = [i for i in range(1, 10)],
-        quantile=0.01,
+        output_layers_id: List[Union[int, str]] = [-2],
+        orders: List[int] = [i for i in range(1, 11)],
+        quantile: float = 0.01,
     ):
         if -1 not in output_layers_id:
             output_layers_id.append(-1)
@@ -92,35 +88,31 @@ class Gram(OODBaseDetector):
         if isinstance(orders, int):
             orders = [orders]
         self.orders = orders
-        self.postproc_fns_stat = [self._stat for i in range(len(output_layers_id))]
+        self.postproc_fns = [self._stat for i in range(len(output_layers_id))]
         self.quantile = quantile
-
-    @property
-    def requires_to_fit_dataset(self) -> bool:
-        """
-        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
-
-        Returns:
-            bool: True if `fit_dataset` is required else False.
-        """
-        return True
 
     def _fit_to_dataset(
         self,
         fit_dataset: Union[TensorType, DatasetType],
-        val_dataset: Union[TensorType, DatasetType],
+        val_dataset: Union[TensorType, DatasetType] = None,
     ) -> None:
         """
-        Constructs the index from ID data "fit_dataset", which will be used for
-        nearest neighbor search.
+        Compute the quantiles of channelwise correlations for each layer, power of
+        gram matrices, and class. Then, compute the normalization constants for the
+        deviation. To stay faithful to the spirit of the original method, we still name
+        the quantiles min/max
 
         Args:
-            fit_dataset: input dataset (ID) to construct the index with.
+            fit_dataset (Union[TensorType, DatasetType]): input dataset (ID) to
+                construct the index with.
+            val_dataset (Union[TensorType, DatasetType]): validation dataset used to
+                compute the normalization of the deviations. When None, fit_dataset
+                is used to compute the normalization. Default to None.
         """
-        fit_feature_maps, labels = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns_stat, return_labels=True
+        fit_stats, labels = self.feature_extractor.predict(
+            fit_dataset, postproc_fns=self.postproc_fns, return_labels=True
         )
-        fit_feature_maps = fit_feature_maps[:-1]
+        fit_stats = fit_stats[:-1]
 
         self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
 
@@ -128,13 +120,13 @@ class Gram(OODBaseDetector):
         for cls in self._classes:
             indexes = self.op.equal(labels, cls)
             min_maxs = []
-            for feature_map in fit_feature_maps:
-                feature_map = feature_map[indexes]
+            for fit_stat in fit_stats:
+                fit_stat = fit_stat[indexes]
                 mins = self.op.unsqueeze(
-                    self.op.quantile(feature_map, self.quantile, dim=0), -1
+                    self.op.quantile(fit_stat, self.quantile, dim=0), -1
                 )
                 maxs = self.op.unsqueeze(
-                    self.op.quantile(feature_map, 1 - self.quantile, dim=0), -1
+                    self.op.quantile(fit_stat, 1 - self.quantile, dim=0), -1
                 )
                 min_max = self.op.cat([mins, maxs], dim=-1)
                 min_maxs.append(min_max)
@@ -142,26 +134,26 @@ class Gram(OODBaseDetector):
             self.min_maxs[cls] = min_maxs
 
         # In the paper, they use a separate validation data to compute
-        # a normalization constant, but here we use the training data
-        # Since it comes from the same distrib
-        fit_feature_maps, labels = self.feature_extractor.predict(
-            val_dataset, postproc_fns=self.postproc_fns_stat, return_labels=True
+        # a normalization constant. If None, take the training data
+        # (Which is fine IMO)
+        if val_dataset is None:
+            val_dataset = fit_dataset
+        val_stats, labels = self.feature_extractor.predict(
+            val_dataset, postproc_fns=self.postproc_fns, return_labels=True
         )
-        fit_feature_maps = fit_feature_maps[:-1]
+        val_stats = val_stats[:-1]
 
         devnorm = []
         for cls in self._classes:
             min_maxs = []
             for min_max in self.min_maxs[cls]:
                 min_maxs.append(
-                    self.op.stack(
-                        [min_max for i in range(fit_feature_maps[0].shape[0])]
-                    )
+                    self.op.stack([min_max for i in range(val_stats[0].shape[0])])
                 )
             devnorm.append(
                 [
                     float(self.op.mean(dev))
-                    for dev in self._deviation(fit_feature_maps, min_maxs)
+                    for dev in self._deviation(val_stats, min_maxs)
                 ]
             )
         self.devnorm = np.mean(np.array(devnorm), axis=0)
@@ -169,7 +161,8 @@ class Gram(OODBaseDetector):
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on
-        the distance to nearest neighbors in the feature space of self.model
+        the aggregation of deviations from quantiles of in-distribution channel-wise
+        correlations evaluate for each layer, power of gram matrices, and class.
 
         Args:
             inputs: input samples to score
@@ -179,14 +172,15 @@ class Gram(OODBaseDetector):
         """
 
         tensor_stats = self.feature_extractor.predict(
-            inputs, postproc_fns=self.postproc_fns_stat
+            inputs, postproc_fns=self.postproc_fns
         )
         tensor_stats = tensor_stats[:-1]
 
         features = self.feature_extractor.predict(inputs)
-        preds = np.array(self.op.argmax(features[-1], dim=1))
+        preds = self.op.convert_to_numpy(self.op.argmax(features[-1], dim=1))
 
-        # I have to get the predictions
+        # We stack the min_maxs for each class depending on the prediction for each
+        # samples
         min_maxs = []
         for i in range(len(tensor_stats)):
             min_maxs.append(self.op.stack([self.min_maxs[label][i] for label in preds]))
@@ -201,28 +195,50 @@ class Gram(OODBaseDetector):
             ),
             dim=0,
         )
-        return np.array(score) + np.random.random_sample(size=score.shape) * 10e-6
+        return self.op.convert_to_numpy(score)
 
-    def _deviation(self, feature_maps, min_maxs):
+    def _deviation(
+        self, stats: List[TensorType], min_maxs: List[TensorType]
+    ) -> List[TensorType]:
+        """Compute the deviation wrt quantiles (min/max) for feature_maps
+
+        Args:
+            stats (TensorType): The list of gram matrices (stacked power-wise)
+                for which we want to compute the deviation.
+            min_maxs (TensorType): The quantiles (tensorised) to compute the deviation
+                against.
+
+        Returns:
+            List(TensorType): A list with one element per layer containing a tensor of
+                per-sample deviation.
+        """
         deviation = []
-        for feature_map, min_max in zip(feature_maps, min_maxs):
-            where_min = self.op.where(feature_map < min_max[..., 0], 1.0, 0.0)
-            where_max = self.op.where(feature_map > min_max[..., 1], 1.0, 0.0)
+        for stat, min_max in zip(stats, min_maxs):
+            where_min = self.op.where(stat < min_max[..., 0], 1.0, 0.0)
+            where_max = self.op.where(stat > min_max[..., 1], 1.0, 0.0)
             deviation_min = (
-                (min_max[..., 0] - feature_map)
+                (min_max[..., 0] - stat)
                 / (self.op.abs(min_max[..., 0]) + 1e-6)
                 * where_min
             )
             deviation_max = (
-                (feature_map - min_max[..., 1])
+                (stat - min_max[..., 1])
                 / (self.op.abs(min_max[..., 1]) + 1e-6)
                 * where_max
             )
             deviation.append(self.op.sum(deviation_min + deviation_max, dim=(1, 2)))
-            # deviation.append(self.op.sum(deviation_max, dim=(1, 2)))
         return deviation
 
-    def _stat(self, feature_map):
+    def _stat(self, feature_map: TensorType) -> TensorType:
+        """Compute the correlation map (stat) for a given feature map. The values
+        for each power of gram matrix are contained in the same tensor
+
+        Args:
+            feature_map (TensorType): The input feature_map
+
+        Returns:
+            TensorType: The stacked gram matrices power-wise.
+        """
         fm_s = feature_map.shape
         stat = []
         for p in self.orders:
@@ -243,9 +259,6 @@ class Gram(OODBaseDetector):
                     feature_map_p = self.op.reshape(
                         feature_map_p, (fm_s[0], fm_s[1], -1)
                     )
-                # feature_map_p = self.op.einsum(
-                #    "bik,bjk->bij", feature_map_p, feature_map_p
-                # )
                 feature_map_p = self.op.matmul(
                     feature_map_p, self.op.permute(feature_map_p, (0, 2, 1))
                 )
@@ -260,3 +273,13 @@ class Gram(OODBaseDetector):
             stat.append(feature_map_p)
         stat = self.op.stack(stat, 1)
         return stat
+
+    @property
+    def requires_to_fit_dataset(self) -> bool:
+        """
+        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+
+        Returns:
+            bool: True if `fit_dataset` is required else False.
+        """
+        return True

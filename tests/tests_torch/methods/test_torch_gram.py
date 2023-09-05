@@ -35,7 +35,7 @@ def test_gram_shape():
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    gram = Gram(output_layers_id=["conv2", "fc2"])
+    gram = Gram(output_layers_id=["conv2", "fc2"], orders=range(1, 6))
 
     input_shape = (3, 32, 32)
     num_labels = 10
