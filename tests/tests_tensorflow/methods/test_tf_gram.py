@@ -20,10 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import pytest
-
 from oodeel.methods import Gram
-from tests.tests_tensorflow import eval_detector_on_blobs
 from tests.tests_tensorflow import generate_data_tf
 from tests.tests_tensorflow import generate_model
 
