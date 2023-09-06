@@ -81,7 +81,7 @@ def plotly_3D_features(
 
     # === extract id features ===
     # features
-    in_features = feature_extractor.predict(in_dataset)
+    in_features, _ = feature_extractor.predict(in_dataset)
     in_features = op.convert_to_numpy(op.flatten(in_features))[:max_samples]
 
     # labels
@@ -94,7 +94,7 @@ def plotly_3D_features(
     # === extract ood features ===
     if out_dataset is not None:
         # features
-        out_features = feature_extractor.predict(out_dataset)
+        out_features, _ = feature_extractor.predict(out_dataset)
         out_features = op.convert_to_numpy(op.flatten(out_features))[:max_samples]
 
         # labels

@@ -45,7 +45,7 @@ class KerasFeatureExtractor(FeatureExtractor):
 
     Args:
         model: model to extract the features from
-        output_layers_id: list of str or int that identify features to output.
+        feature_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [].
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
@@ -59,7 +59,7 @@ class KerasFeatureExtractor(FeatureExtractor):
     def __init__(
         self,
         model: Callable,
-        output_layers_id: List[Union[int, str]] = [-1],
+        feature_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
     ):
@@ -67,13 +67,14 @@ class KerasFeatureExtractor(FeatureExtractor):
             input_layer_id = 0
         super().__init__(
             model=model,
-            output_layers_id=output_layers_id,
+            feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
         )
 
         self.backend = "tensorflow"
         self.model.layers[-1].activation = getattr(tf.keras.activations, "linear")
+        self._last_logits = None
 
     @staticmethod
     def find_layer(
@@ -123,19 +124,16 @@ class KerasFeatureExtractor(FeatureExtractor):
         input_layer = self.find_layer(self.model, self.input_layer_id)
         new_input = tf.keras.layers.Input(tensor=input_layer.input)
         output_tensors = [
-            self.find_layer(self.model, ol_id).output for ol_id in self.output_layers_id
+            self.find_layer(self.model, id).output for id in self.feature_layers_id
         ]
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
-            penultimate_layer, penultimate_layer_id = self.find_layer(
-                self.model, self.output_layers_id[-1], index_offset=-1, return_id=True
-            )
-            self.penultimate_layer_id = penultimate_layer_id
+            penultimate_layer = self.find_layer(self.model, -2)
             penult_extractor = tf.keras.models.Model(
                 new_input, penultimate_layer.output
             )
-            last_layer = self.find_layer(self.model, self.output_layers_id[-1])
+            last_layer = self.find_layer(self.model, -1)
 
             # clip penultimate activations
             x = tf.clip_by_value(
@@ -144,7 +142,9 @@ class KerasFeatureExtractor(FeatureExtractor):
                 clip_value_max=self.react_threshold,
             )
             # apply ultimate layer on clipped activations
-            output_tensors[-1] = last_layer(x)
+            output_tensors.append(last_layer(x))
+        else:
+            output_tensors.append(self.find_layer(self.model, -1).output)
 
         extractor = tf.keras.models.Model(new_input, output_tensors)
         return extractor
@@ -154,16 +154,25 @@ class KerasFeatureExtractor(FeatureExtractor):
         self,
         tensor: TensorType,
         postproc_fns: Optional[Callable] = None,
-    ) -> Union[tf.Tensor, List[tf.Tensor]]:
+    ) -> Tuple[List[tf.Tensor], tf.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
             tensor (TensorType): input tensor (or dataset elem)
+            postproc_fns (Optional[Callable]): postprocessing function to apply to each
+                feature immediately after forward. Default to None.
 
         Returns:
-            tf.Tensor: features
+            Tuple[List[tf.Tensor], tf.Tensor]: features, logits
         """
-        features = self.extractor(tensor, training=False)
+        features = self.forward(tensor)
+
+        if type(features) is not list:
+            features = [features]
+
+        # split features and logits
+        logits = features.pop()
+
         if postproc_fns is not None:
             if len(postproc_fns) == 1:
                 features = [postproc_fns[0](features)]
@@ -172,11 +181,15 @@ class KerasFeatureExtractor(FeatureExtractor):
                     postproc_fn(feature)
                     for feature, postproc_fn in zip(features, postproc_fns)
                 ]
-
         if len(features) == 1:
             features = features[0]
 
-        return features
+        self._last_logits = logits
+        return features, logits
+
+    @tf.function
+    def forward(self, tensor: TensorType) -> List[tf.Tensor]:
+        return self.extractor(tensor, training=False)
 
     def predict(
         self,
@@ -184,7 +197,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         return_labels: bool = False,
         postproc_fns: Optional[Callable] = None,
         **kwargs,
-    ) -> Union[tf.Tensor, List[tf.Tensor]]:
+    ) -> Tuple[List[tf.Tensor], dict]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
@@ -192,67 +205,62 @@ class KerasFeatureExtractor(FeatureExtractor):
             return_labels (bool): if True, labels are returned in addition to the
                 features. If labels are one-hot encoded, the single label value is
                 returned instead.
+            postproc_fns (Optional[Callable]): postprocessing function to apply to each
+                feature immediately after forward. Default to None.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
-            List[tf.Tensor]: features
+            List[tf.Tensor], dict: features and extra information (logits, labels) as a
+                dictionary.
         """
-
-        def _get_label(item):
-            """Retrieve label tensor from item as a tuple/list. Label must be at index 1
-            in the item tuple. If one-hot encoded, labels are converted to single value.
-            """
-            label = item[1]  # labels must be at index 1 in the item tuple
-            # If labels are one-hot encoded, take the argmax
-            if tf.rank(label) > 1 and label.shape[1] > 1:
-                label = tf.reshape(label, shape=[label.shape[0], -1])
-                label = tf.argmax(label, axis=1)
-            # If labels are in two dimensions, squeeze them
-            if len(label.shape) > 1:
-                label = tf.reshape(label, [label.shape[0]])
-            return label
-
         labels = None
 
         if isinstance(dataset, get_args(ItemType)):
             tensor = TFDataHandler.get_input_from_dataset_item(dataset)
-            features = self.predict_tensor(tensor, postproc_fns)
+            features, logits = self.predict_tensor(tensor, postproc_fns)
 
             # Get labels if dataset is a tuple/list
-            if return_labels and isinstance(dataset, (list, tuple)):
-                labels = _get_label(dataset)
-            if return_labels:
-                return features, labels
-            return features
+            if isinstance(dataset, (list, tuple)):
+                labels = TFDataHandler.get_label_from_dataset_item(dataset)
 
-        features = [None for i in range(len(self.output_layers_id))]
-        contains_labels = TFDataHandler.get_item_length(dataset) > 1
-        for elem in dataset:
-            tensor = TFDataHandler.get_input_from_dataset_item(elem)
-            features_batch = self.predict_tensor(tensor, postproc_fns)
-            if len(features) == 1:
-                features_batch = [features_batch]
-            for i, f in enumerate(features_batch):
-                features[i] = (
-                    f if features[i] is None else tf.concat([features[i], f], axis=0)
+        else:  # if dataset is a tf.data.Dataset
+            features = [None for i in range(len(self.feature_layers_id))]
+            logits = None
+            contains_labels = TFDataHandler.get_item_length(dataset) > 1
+            for elem in dataset:
+                tensor = TFDataHandler.get_input_from_dataset_item(elem)
+                features_batch, logits_batch = self.predict_tensor(tensor, postproc_fns)
+                # concatenate features
+                if len(features) == 1:
+                    features_batch = [features_batch]
+                for i, f in enumerate(features_batch):
+                    features[i] = (
+                        f
+                        if features[i] is None
+                        else tf.concat([features[i], f], axis=0)
+                    )
+                # concatenate logits
+                logits = (
+                    logits_batch
+                    if logits is None
+                    else tf.concat([logits, logits_batch], axis=0)
                 )
+                # concatenate labels of current batch with previous batches
+                if contains_labels:
+                    lbl_batch = TFDataHandler.get_label_from_dataset_item(elem)
 
-            # Concatenate labels of current batch with previous batches
-            if return_labels and contains_labels:
-                lbl_batch = _get_label(elem)
+                    if labels is None:
+                        labels = lbl_batch
+                    else:
+                        labels = tf.concat([labels, lbl_batch], axis=0)
 
-                if labels is None:
-                    labels = lbl_batch
-                else:
-                    labels = tf.concat([labels, lbl_batch], axis=0)
+        # store extra information in a dict
+        info = dict(labels=labels, logits=logits)
 
-        # No need to return a list when there is only one input layer
         if len(features) == 1:
             features = features[0]
 
-        if return_labels:
-            return features, labels
-        return features
+        return features, info
 
     def get_weights(self, layer_id: Union[int, str]) -> List[tf.Tensor]:
         """Get the weights of a layer

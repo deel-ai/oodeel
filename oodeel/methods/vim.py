@@ -25,8 +25,8 @@ import numpy as np
 from scipy.special import logsumexp
 
 from ..types import DatasetType
-from ..types import List
 from ..types import TensorType
+from ..types import Tuple
 from ..types import Union
 from .base import OODBaseDetector
 
@@ -52,7 +52,6 @@ class VIM(OODBaseDetector):
         projection on $P^{\\perp}$ of $x-c$ has large norm.
 
     Args:
-        output_layers_id (List[Union[int, str]]): features to use for Residual score.
         princ_dims (Union[int, float]): number of principal dimensions of in
             distribution features to consider. If an int, must be less than the
             dimension of the feature space.
@@ -67,15 +66,10 @@ class VIM(OODBaseDetector):
 
     def __init__(
         self,
-        output_layers_id: List[Union[int, str]],
         princ_dims: Union[int, float] = 0.99,
         pca_origin: str = "pseudo",
     ):
-        if -1 not in output_layers_id:
-            output_layers_id.append(-1)
-        super().__init__(
-            output_layers_id=output_layers_id,
-        )
+        super().__init__()
         self._princ_dim = princ_dims
         self.pca_origin = pca_origin
 
@@ -91,7 +85,9 @@ class VIM(OODBaseDetector):
             fit_dataset: input dataset (ID) to construct the index with.
         """
         # extract features from fit dataset
-        features_train, logits_train = self.feature_extractor.predict(fit_dataset)
+        all_features_train, info = self.feature_extractor.predict(fit_dataset)
+        features_train = all_features_train
+        logits_train = info["logits"]
         features_train = self.op.flatten(features_train)
         self.feature_dim = features_train.shape[1]
         logits_train = self.op.convert_to_numpy(logits_train)
@@ -100,7 +96,10 @@ class VIM(OODBaseDetector):
         if self.pca_origin == "center":
             self.center = self.op.mean(features_train, dim=0)
         elif self.pca_origin == "pseudo":
-            W, b = self.feature_extractor.get_weights(self.output_layers_id[1])
+            # W, b = self.feature_extractor.get_weights(
+            #    self.feature_extractor.feature_layers_id[0]
+            # )
+            W, b = self.feature_extractor.get_weights(-1)
             W, b = self.op.from_numpy(W), self.op.from_numpy(b.reshape(-1, 1))
             _W = self.op.t(W) if self.backend == "tensorflow" else W
             self.center = -self.op.reshape(self.op.matmul(self.op.pinv(_W), b), (-1,))
@@ -162,7 +161,7 @@ class VIM(OODBaseDetector):
         res_norm = self.op.norm(res_coordinates, dim=-1)
         return self.op.convert_to_numpy(res_norm)
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
         Computes the VIM score for input samples "inputs" as the sum of the energy
         score and a scaled (PCA) residual norm in the feature space.
@@ -171,14 +170,14 @@ class VIM(OODBaseDetector):
             inputs: input samples to score
 
         Returns:
-            np.ndarray: scores
+            Tuple[np.ndarray]: scores, logits
         """
         # extract features
-        features, logits = self.feature_extractor(inputs)
+        features, logits = self.feature_extractor.predict_tensor(inputs)
         features = self.op.flatten(features)
-        logits = self.op.convert_to_numpy(logits)
         # vim score
         res_scores = self._compute_residual_score_tensor(features)
+        logits = self.op.convert_to_numpy(logits)
         energy_scores = logsumexp(logits, axis=-1)
         scores = -self.alpha * res_scores + energy_scores
         return -np.array(scores)
@@ -206,5 +205,16 @@ class VIM(OODBaseDetector):
 
         Returns:
             bool: True if `fit_dataset` is required else False.
+        """
+        return True
+
+    @property
+    def requires_internal_features(self) -> bool:
+        """
+        Whether an OOD detector acts on internal model features.
+
+        Returns:
+            bool: True if the detector perform computations on an intermediate layer
+            else False.
         """
         return True

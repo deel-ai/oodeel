@@ -48,7 +48,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     Args:
         model: model to extract the features from
-        output_layers_id: list of str or int that identify features to output.
+        feature_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [].
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
@@ -62,20 +62,25 @@ class TorchFeatureExtractor(FeatureExtractor):
     def __init__(
         self,
         model: nn.Module,
-        output_layers_id: List[Union[int, str]] = [],
+        feature_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
     ):
         model = model.eval()
         super().__init__(
             model=model,
-            output_layers_id=output_layers_id,
+            feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
         )
         self._device = next(model.parameters()).device
-        self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
+        self._features = {layer: torch.empty(0) for layer in self._hook_layers_id}
+        self._last_logits = None
         self.backend = "torch"
+
+    @property
+    def _hook_layers_id(self):
+        return self.feature_layers_id + [-1]
 
     def _get_features_hook(self, layer_id: Union[str, int]) -> Callable:
         """
@@ -88,7 +93,6 @@ class TorchFeatureExtractor(FeatureExtractor):
         Returns:
             Callable: hook function
         """
-        self._features = {layer: torch.empty(0) for layer in self.output_layers_id}
 
         def hook(_, __, output):
             if isinstance(output, torch.Tensor):
@@ -141,14 +145,11 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
-            pen_layer, pen_layer_id = self.find_layer(
-                self.model, self.output_layers_id[-1], index_offset=-1, return_id=True
-            )
-            self.penultimate_layer_id = pen_layer_id
+            pen_layer = self.find_layer(self.model, -2)
             pen_layer.register_forward_hook(self._get_clip_hook(self.react_threshold))
 
-        # Register a hook to store feature values for each considered layer.
-        for layer_id in self.output_layers_id:
+        # Register a hook to store feature values for each considered layer + last layer
+        for layer_id in self._hook_layers_id:
             layer = self.find_layer(self.model, layer_id)
             layer.register_forward_hook(self._get_features_hook(layer_id))
 
@@ -184,7 +185,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         x: TensorType,
         postproc_fns: Optional[Callable] = None,
         detach: bool = True,
-    ) -> Union[torch.Tensor, List[torch.Tensor]]:
+    ) -> Tuple[List[torch.Tensor], torch.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
@@ -193,7 +194,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 graph. Defaults to True.
 
         Returns:
-            List[torch.Tensor]: features
+            List[torch.Tensor], torch.Tensor: features, logits
         """
         if x.device != self._device:
             x = x.to(self._device)
@@ -201,10 +202,13 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         if detach:
             features = [
-                self._features[layer_id].detach() for layer_id in self.output_layers_id
+                self._features[layer_id].detach() for layer_id in self._hook_layers_id
             ]
         else:
-            features = [self._features[layer_id] for layer_id in self.output_layers_id]
+            features = [self._features[layer_id] for layer_id in self._hook_layers_id]
+
+        # split features and logits
+        logits = features.pop()
 
         if postproc_fns is not None:
             if len(postproc_fns) == 1:
@@ -218,91 +222,77 @@ class TorchFeatureExtractor(FeatureExtractor):
         if len(features) == 1:
             features = features[0]
 
-        return features
+        self._last_logits = logits
+        return features, logits
 
     def predict(
         self,
         dataset: Union[DataLoader, ItemType],
-        return_labels: bool = False,
         postproc_fns: Optional[Callable] = None,
         detach: bool = True,
-        **kwargs
-    ) -> Union[torch.Tensor, List[torch.Tensor]]:
+        **kwargs,
+    ) -> Tuple[List[torch.Tensor], dict]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
             dataset (Union[DataLoader, ItemType]): input dataset
-            return_labels (bool): if True, labels are returned in addition to the
-                features. If labels are one-hot encoded, the single label value is
-                returned instead.
             detach (bool): if True, return features detached from the computational
                 graph. Defaults to True.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
-            List[torch.Tensor]: features
+            List[torch.Tensor], dict: features and extra information (logits, labels) as
+                a dictionary.
         """
-
-        def _get_label(item):
-            """Retrieve label tensor from item as a tuple/list. Label must be at index 1
-            in the item tuple. If one-hot encoded, labels are converted to single value.
-            """
-            label = item[1]  # labels must be at index 1 in the batch tuple
-            # If labels are one-hot encoded, take the argmax
-            if len(label.shape) > 1 and label.shape[1] > 1:
-                label = label.view(label.size(0), -1)
-                label = torch.argmax(label, dim=1)
-            # If labels are in two dimensions, squeeze them
-            if len(label.shape) > 1:
-                label = label.view([label.shape[0]])
-            return label
-
         labels = None
 
         if isinstance(dataset, get_args(ItemType)):
             tensor = TorchDataHandler.get_input_from_dataset_item(dataset)
-            features = self.predict_tensor(tensor, postproc_fns, detach=detach)
+            features, logits = self.predict_tensor(tensor, postproc_fns, detach=detach)
 
             # Get labels if dataset is a tuple/list
-            if (
-                return_labels
-                and isinstance(dataset, (list, tuple))
-                and len(dataset) > 1
-            ):
-                labels = _get_label(dataset)
-            if return_labels:
-                return features, labels
-            return features
+            if isinstance(dataset, (list, tuple)) and len(dataset) > 1:
+                labels = TorchDataHandler.get_label_from_dataset_item(dataset)
 
-        features = [None for i in range(len(self.output_layers_id))]
-        batch = next(iter(dataset))
-        contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
-        for elem in dataset:
-            tensor = TorchDataHandler.get_input_from_dataset_item(elem)
-            features_batch = self.predict_tensor(tensor, postproc_fns, detach=detach)
-            if len(features) == 1:
-                features_batch = [features_batch]
-            for i, f in enumerate(features_batch):
-                features[i] = (
-                    f if features[i] is None else torch.cat([features[i], f], dim=0)
+        else:
+            features = [None for i in range(len(self.feature_layers_id))]
+            logits = None
+            batch = next(iter(dataset))
+            contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
+            for elem in dataset:
+                tensor = TorchDataHandler.get_input_from_dataset_item(elem)
+                features_batch, logits_batch = self.predict_tensor(
+                    tensor, postproc_fns, detach=detach
                 )
+                # concatenate features
+                if len(features) == 1:
+                    features_batch = [features_batch]
+                for i, f in enumerate(features_batch):
+                    features[i] = (
+                        f if features[i] is None else torch.cat([features[i], f], dim=0)
+                    )
+                # concatenate logits
+                logits = (
+                    logits_batch
+                    if logits is None
+                    else torch.cat([logits, logits_batch], axis=0)
+                )
+                # concatenate labels of current batch with previous batches
+                if contains_labels:
+                    lbl_batch = TorchDataHandler.get_label_from_dataset_item(elem)
 
-            # Concatenate labels of current batch with previous batches
-            if return_labels and contains_labels:
-                lbl_batch = _get_label(elem)
+                    if labels is None:
+                        labels = lbl_batch
+                    else:
+                        labels = torch.cat([labels, lbl_batch], dim=0)
 
-                if labels is None:
-                    labels = lbl_batch
-                else:
-                    labels = torch.cat([labels, lbl_batch], dim=0)
+        # store extra information in a dict
+        info = dict(labels=labels, logits=logits)
 
-        # No need to return a list when there is only one input layer
         if len(features) == 1:
             features = features[0]
 
-        if return_labels:
-            return features, labels
-        return features
+        return features, info
 
     def get_weights(self, layer_id: Union[str, int]) -> List[torch.Tensor]:
         """Get the weights of a layer

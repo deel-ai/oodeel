@@ -37,15 +37,15 @@ from tests.tests_torch import sequential_model
 @pytest.mark.parametrize(
     "kwargs_factory,expected_sz",
     [
-        (lambda: dict(model=Net(), output_layers_id=["fc2"]), [100, 84]),
-        (lambda: dict(model=sequential_model(), output_layers_id=[-2]), [100, 84]),
+        (lambda: dict(model=Net(), feature_layers_id=["fc2"]), [100, 84]),
+        (lambda: dict(model=sequential_model(), feature_layers_id=[8]), [100, 84]),
         (
-            lambda: dict(model=named_sequential_model(), output_layers_id=["fc2"]),
+            lambda: dict(model=named_sequential_model(), feature_layers_id=["fc2"]),
             [100, 84],
         ),
-        (lambda: dict(model=ComplexNet(), output_layers_id=["fcs.fc2"]), [100, 84]),
+        (lambda: dict(model=ComplexNet(), feature_layers_id=["fcs.fc2"]), [100, 84]),
         (
-            lambda: dict(model=ComplexNet(), output_layers_id=["fcs.fc2"]),
+            lambda: dict(model=ComplexNet(), feature_layers_id=["fcs.fc2"]),
             [100, 84],
         ),
     ],
@@ -66,7 +66,7 @@ def test_params_torch_feature_extractor(kwargs_factory, expected_sz):
     dataset = DataLoader(x, batch_size=n_samples // 2)
 
     feature_extractor = TorchFeatureExtractor(**kwargs_factory())
-    pred_feature_extractor = feature_extractor.predict(dataset)
+    pred_feature_extractor, _ = feature_extractor.predict(dataset)
 
     assert list(pred_feature_extractor.size()) == expected_sz
 
@@ -76,7 +76,7 @@ def test_params_torch_feature_extractor(kwargs_factory, expected_sz):
     [
         (
             lambda: dict(
-                model=sequential_model(), input_layer_id=4, output_layers_id=[-2]
+                model=sequential_model(), input_layer_id=4, feature_layers_id=[-2]
             ),
             [100, 84],
         ),
@@ -84,7 +84,7 @@ def test_params_torch_feature_extractor(kwargs_factory, expected_sz):
             lambda: dict(
                 model=named_sequential_model(),
                 input_layer_id="conv2",
-                output_layers_id=["fc2"],
+                feature_layers_id=["fc2"],
             ),
             [100, 84],
         ),
@@ -101,7 +101,7 @@ def test_pytorch_feature_extractor_with_input_ids(kwargs_factory, expected_sz):
     dataset = DataLoader(x, batch_size=n_samples // 2)
 
     feature_extractor = TorchFeatureExtractor(**kwargs_factory())
-    pred_feature_extractor = feature_extractor.predict(dataset)
+    pred_feature_extractor, _ = feature_extractor.predict(dataset)
 
     assert list(pred_feature_extractor.size()) == expected_sz
 
@@ -109,7 +109,7 @@ def test_pytorch_feature_extractor_with_input_ids(kwargs_factory, expected_sz):
 def test_get_weights():
     model = named_sequential_model()
 
-    model_fe = TorchFeatureExtractor(model, output_layers_id=[-1])
+    model_fe = TorchFeatureExtractor(model, feature_layers_id=[-1])
     W, b = model_fe.get_weights(-1)
 
     assert W.shape == (10, 84)
@@ -143,48 +143,39 @@ def test_predict_with_labels():
 
     # Generate model and feature extractor
     model = ComplexNet()
-    feature_extractor = TorchFeatureExtractor(model, output_layers_id=["fcs.fc2"])
+    feature_extractor = TorchFeatureExtractor(model, feature_layers_id=["fcs.fc2"])
 
-    # Assert predict without labels returned
-    out = feature_extractor.predict(dataset, return_labels=False)
+    # Assert predict() outputs have expected shape
+    out, info = feature_extractor.predict(dataset)
     assert out.shape == (n_samples, 84)
+    assert info["logits"].shape == (n_samples, 10)
+    assert info["labels"].shape == (n_samples,)
 
-    # Assert predict with labels returned
-    out = feature_extractor.predict(dataset, return_labels=True)
-    assert len(out) == 2
-    assert out[0].shape == (n_samples, 84)
-    assert out[1].shape == (n_samples,)
-
-    # Assert predict with labels returned (labels one-hot)
-    out = feature_extractor.predict(dataset_one_hot, return_labels=True)
-    assert len(out) == 2
-    assert out[0].shape == (n_samples, 84)
-    assert out[1].shape == (n_samples,)
-
-    # Assert predict with labels returned but no labels in dataset
-    out = feature_extractor.predict(dataset_wo_labels, return_labels=True)
-    assert len(out) == 2
-    assert out[1] is None
-
-    # Assert predict with no labels in dataset and return_labels=False
-    out = feature_extractor.predict(dataset_wo_labels, return_labels=False)
+    # Assert predict() outputs have expected shape (dataset has one-hot encoded labels)
+    out, info = feature_extractor.predict(dataset_one_hot)
     assert out.shape == (n_samples, 84)
+    assert info["logits"].shape == (n_samples, 10)
+    assert info["labels"].shape == (n_samples,)
 
-    # Assert predict of a single tensor with return_labels=False and True
+    # Assert predict() outputs have expected shape (dataset has no labels)
+    out, info = feature_extractor.predict(dataset_wo_labels)
+    assert out.shape == (n_samples, 84)
+    assert info["logits"].shape == (n_samples, 10)
+    assert info["labels"] is None
+
+    # Assert predict() outputs for a single input tensor (no label provided)
     batch = next(iter(dataset_wo_labels))
-    out = feature_extractor.predict(batch, return_labels=False)
+    out, info = feature_extractor.predict(batch)
     assert out.shape == (33, 84)
-    out = feature_extractor.predict(batch, return_labels=True)
-    assert len(out) == 2
-    assert out[1] is None
+    assert info["logits"].shape == (33, 10)
+    assert info["labels"] is None
 
-    # Assert predict of a tuple (tensor, labels) with return_labels=False and True
+    # Assert predict() outputs for a single input tensor with label provided
     batch = next(iter(dataset_one_hot))
-    out = feature_extractor.predict(batch, return_labels=False)
+    out, info = feature_extractor.predict(batch)
     assert out.shape == (33, 84)
-    out = feature_extractor.predict(batch, return_labels=True)
-    assert len(out) == 2
-    assert out[1].shape == (33,)
+    assert info["logits"].shape == (33, 10)
+    assert info["labels"].shape == (33,)
 
 
 def test_postproc_fns():
@@ -204,6 +195,7 @@ def test_postproc_fns():
     postproc_fns = [globalavg, lambda x: x]
     feature_extractor = TorchFeatureExtractor(model, output_layers_id=["relu2", "fc2"])
 
-    feat0, feat1 = feature_extractor.predict(dataset, postproc_fns=postproc_fns)
+    feats, _ = feature_extractor.predict(dataset, postproc_fns=postproc_fns)
+    feat0, feat1 = feats
     assert list(feat0.size()) == [100, 16, 1, 1]
     assert list(feat1.size()) == [100, 84]

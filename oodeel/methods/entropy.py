@@ -24,6 +24,7 @@ import numpy as np
 
 from ..types import DatasetType
 from ..types import TensorType
+from ..types import Tuple
 from .base import OODBaseDetector
 
 
@@ -54,12 +55,11 @@ class Entropy(OODBaseDetector):
         react_quantile: float = 0.8,
     ):
         super().__init__(
-            output_layers_id=[-1],
             use_react=use_react,
             react_quantile=react_quantile,
         )
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
         Computes an OOD score for input samples "inputs" based on
         entropy.
@@ -68,12 +68,12 @@ class Entropy(OODBaseDetector):
             inputs: input samples to score
 
         Returns:
-            scores
+            Tuple[np.ndarray]: scores, logits
         """
 
         # compute logits (softmax(logits,axis=1) is the actual softmax
         # output minimized using binary cross entropy)
-        logits = self.feature_extractor(inputs)
+        _, logits = self.feature_extractor.predict_tensor(inputs)
         probits = self.op.softmax(logits)
         probits = self.op.convert_to_numpy(probits)
         scores = np.sum(probits * np.log(probits), axis=1)
@@ -95,5 +95,16 @@ class Entropy(OODBaseDetector):
 
         Returns:
             bool: True if `fit_dataset` is required else False.
+        """
+        return False
+
+    @property
+    def requires_internal_features(self) -> bool:
+        """
+        Whether an OOD detector acts on internal model features.
+
+        Returns:
+            bool: True if the detector perform computations on an intermediate layer
+            else False.
         """
         return False

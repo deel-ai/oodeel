@@ -41,14 +41,6 @@ class OODBaseDetector(ABC):
     """Base Class for methods that assign a score to unseen samples.
 
     Args:
-        output_layers_id (List[int]): list of str or int that identify features to
-            output.
-            If int, the rank of the layer in the layer list
-            If str, the name of the layer. Defaults to [-1],
-        input_layers_id (List[int]): = list of str or int that identify the input layer
-            of the feature extractor.
-            If int, the rank of the layer in the layer list
-            If str, the name of the layer. Defaults to None.
         use_react (bool): if true, apply ReAct method by clipping penultimate
             activations under a threshold value.
         react_quantile (Optional[float]): q value in the range [0, 1] used to compute
@@ -58,23 +50,11 @@ class OODBaseDetector(ABC):
 
     def __init__(
         self,
-        output_layers_id: List[Union[int, str]] = None,
-        input_layers_id: Optional[Union[int, str]] = None,
         use_react: bool = False,
         react_quantile: float = 0.8,
         postproc_fns: List[Callable] = None,
     ):
         self.feature_extractor: FeatureExtractor = None
-        if output_layers_id is None:
-            raise ValueError(
-                "Explicitely specify output_layers_id=[layer0, layer1,...], "
-                + "where layer0, layer1,... are the names of the desired output "
-                + "layers of your model. These can be int or str (even though str"
-                + " is safer). To know what to put, have a look at model.summary() "
-                + "with keras or model.named_modules()"
-            )
-        self.output_layers_id = output_layers_id
-        self.input_layers_id = input_layers_id
         self.use_react = use_react
         self.react_quantile = react_quantile
         self.react_threshold = None
@@ -89,10 +69,7 @@ class OODBaseDetector(ABC):
         Args:
             inputs (TensorType): tensor to score
         Returns:
-            np.ndarray: OOD scores
-
-        Raises:
-            NotImplementedError: _description_
+            Tuple[TensorType]: OOD scores, predicted logits
         """
         raise NotImplementedError()
 
@@ -125,6 +102,8 @@ class OODBaseDetector(ABC):
         self,
         model: Callable,
         fit_dataset: Optional[Union[ItemType, DatasetType]] = None,
+        feature_layers_id: List[Union[int, str]] = [],
+        input_layer_id: Optional[Union[int, str]] = None,
         **kwargs,
     ) -> None:
         """Prepare the detector for scoring:
@@ -135,6 +114,14 @@ class OODBaseDetector(ABC):
         Args:
             model: model to extract the features from
             fit_dataset: dataset to fit the detector on
+            feature_layers_id (List[int]): list of str or int that identify
+                features to output.
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to [-1]
+            input_layer_id (List[int]): = list of str or int that identify the input
+                layer of the feature extractor.
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to None.
         """
         (
             self.backend,
@@ -159,7 +146,18 @@ class OODBaseDetector(ABC):
             else:
                 self.compute_react_threshold(model, fit_dataset)
 
-        self.feature_extractor = self._load_feature_extractor(model)
+        if (feature_layers_id == []) and (self.requires_internal_features):
+            raise ValueError(
+                "Explicitly specify feature_layers_id=[layer0, layer1,...], "
+                + "where layer0, layer1,... are the names of the desired output "
+                + "layers of your model. These can be int or str (even though str"
+                + " is safer). To know what to put, have a look at model.summary() "
+                + "with keras or model.named_modules() with pytorch"
+            )
+
+        self.feature_extractor = self._load_feature_extractor(
+            model, feature_layers_id, input_layer_id
+        )
 
         if fit_dataset is not None:
             self._fit_to_dataset(fit_dataset, **kwargs)
@@ -167,21 +165,30 @@ class OODBaseDetector(ABC):
     def _load_feature_extractor(
         self,
         model: Callable,
-        output_layers_id: List[Union[int, str]] = None,
+        feature_layers_id: List[Union[int, str]] = None,
+        input_layer_id: Optional[Union[int, str]] = None,
     ) -> Callable:
         """
         Loads feature extractor
 
         Args:
             model: a model (Keras or PyTorch) to load.
+            feature_layers_id (List[int]): list of str or int that identify
+                features to output.
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to [-1]
+            input_layer_id (List[int]): = list of str or int that identify the input
+                layer of the feature extractor.
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to None.
 
         Returns:
             FeatureExtractor: a feature extractor instance
         """
-        output_layers_id = output_layers_id or self.output_layers_id
         feature_extractor = self.FeatureExtractorClass(
             model,
-            output_layers_id=output_layers_id,
+            feature_layers_id=feature_layers_id,
+            input_layer_id=input_layer_id,
             react_threshold=self.react_threshold,
         )
         return feature_extractor
@@ -197,100 +204,77 @@ class OODBaseDetector(ABC):
         """
         raise NotImplementedError()
 
-    def calibrate_threshold(
-        self,
-        fit_dataset: Union[ItemType, DatasetType],
-        scores: np.ndarray,
-    ) -> None:
-        """
-        Calibrates the model on ID data "id_dataset".
-        Placeholder for now
-
-        Args:
-            fit_dataset: dataset to callibrate the threshold on
-            scores: scores of OOD detector
-        """
-        raise NotImplementedError()
-
     def score(
         self,
         dataset: Union[ItemType, DatasetType],
     ) -> np.ndarray:
         """
-        Computes an OOD score for input samples "inputs"
+        Computes an OOD score for input samples "inputs".
 
         Args:
             dataset (Union[ItemType, DatasetType]): dataset or tensors to score
 
         Returns:
-            scores or list of scores (depending on the input)
+            tuple: scores or list of scores (depending on the input) and a dictionary
+                containing logits and labels.
         """
         assert self.feature_extractor is not None, "Call .fit() before .score()"
-
+        labels = None
         # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
         if isinstance(dataset, get_args(ItemType)):
             tensor = self.data_handler.get_input_from_dataset_item(dataset)
             scores = self._score_tensor(tensor)
+            logits = self.op.convert_to_numpy(self.feature_extractor._last_logits)
+
+            # Get labels if dataset is a tuple/list
+            if isinstance(dataset, (list, tuple)):
+                labels = self.data_handler.get_label_from_dataset_item(dataset)
+                labels = self.op.convert_to_numpy(labels)
+
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         elif isinstance(dataset, get_args(DatasetType)):
             scores = np.array([])
-            for tensor in dataset:
-                tensor = self.data_handler.get_input_from_dataset_item(tensor)
+            logits = None
+
+            for item in dataset:
+                tensor = self.data_handler.get_input_from_dataset_item(item)
                 score_batch = self._score_tensor(tensor)
+                logits_batch = self.op.convert_to_numpy(
+                    self.feature_extractor._last_logits
+                )
+
+                # get the label if available
+                if len(item) > 1:
+                    labels_batch = self.data_handler.get_label_from_dataset_item(item)
+                    labels = (
+                        labels_batch
+                        if labels is None
+                        else np.append(labels, self.op.convert_to_numpy(labels_batch))
+                    )
+
                 scores = np.append(scores, score_batch)
+                logits = (
+                    logits_batch
+                    if logits is None
+                    else np.concatenate([logits, logits_batch], axis=0)
+                )
+
         else:
             raise NotImplementedError(
                 f"OODBaseDetector.score() not implemented for {type(dataset)}"
             )
-        return scores
 
-    def isood(
-        self, dataset: Union[ItemType, DatasetType], threshold: float
-    ) -> np.ndarray:
-        """
-        Returns whether the input samples "inputs" are OOD or not, given a threshold
-
-        Args:
-            dataset (Union[ItemType, DatasetType]): dataset or tensors to score
-            threshold (float): threshold to use for distinguishing between OOD and ID
-
-        Returns:
-            np.ndarray: array of 0 for ID samples and 1 for OOD samples
-        """
-        assert self.feature_extractor is not None, "Call .fit() before .isood()"
-
-        # Case 1: dataset is neither a tf.data.Dataset nor a torch.DataLoader
-        if isinstance(dataset, get_args(ItemType)):
-            tensor = self.data_handler.get_input_from_dataset_item(dataset)
-            scores = self._score_tensor(tensor)
-        # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
-        elif isinstance(dataset, get_args(DatasetType)):
-            scores = np.array([])
-            for tensor in dataset:
-                tensor = self.data_handler.get_input_from_dataset_item(tensor)
-                score_batch = self._score_tensor(tensor)
-                scores = np.append(scores, score_batch)
-        else:
-            raise NotImplementedError(
-                f"OODBaseDetector.isood() not implemented for {type(dataset)}"
-            )
-        oodness = scores < threshold
-        return np.array(oodness, dtype=np.bool)
+        info = dict(labels=labels, logits=logits)
+        return scores, info
 
     def compute_react_threshold(self, model: Callable, fit_dataset: DatasetType):
-        _, self.penultimate_layer_id = self.FeatureExtractorClass.find_layer(
-            model, self.output_layers_id[-1], index_offset=-1, return_id=True
-        )
-        output_layers_id = [self.penultimate_layer_id]
-        penult_feat_extractor = self._load_feature_extractor(model, output_layers_id)
-        unclipped_features = penult_feat_extractor.predict(fit_dataset)
+        penult_feat_extractor = self._load_feature_extractor(model, [-2])
+        unclipped_features, _ = penult_feat_extractor.predict(fit_dataset)
         self.react_threshold = self.op.quantile(unclipped_features, self.react_quantile)
 
-    def __call__(
-        self, inputs: Union[ItemType, DatasetType], threshold: float
-    ) -> np.ndarray:
+    def __call__(self, inputs: Union[ItemType, DatasetType]) -> np.ndarray:
         """
-        Convenience wrapper for isood
+        Convenience wrapper for score
 
         Args:
             inputs (Union[ItemType, DatasetType]): dataset or tensors to score.
@@ -299,7 +283,7 @@ class OODBaseDetector(ABC):
         Returns:
             np.ndarray: array of 0 for ID samples and 1 for OOD samples
         """
-        return self.isood(inputs, threshold)
+        return self.score(inputs)
 
     @property
     def requires_to_fit_dataset(self) -> bool:
@@ -311,5 +295,19 @@ class OODBaseDetector(ABC):
         """
         raise NotImplementedError(
             "Property `requires_to_fit_dataset` is not implemented. It should return"
+            + " a True or False boolean."
+        )
+
+    @property
+    def requires_internal_features(self) -> bool:
+        """
+        Whether an OOD detector acts on internal model features.
+
+        Returns:
+            bool: True if the detector perform computations on an intermediate layer
+            else False.
+        """
+        raise NotImplementedError(
+            "Property `requires_internal_dataset` is not implemented. It should return"
             + " a True or False boolean."
         )

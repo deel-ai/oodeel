@@ -24,6 +24,7 @@ import numpy as np
 
 from ..types import DatasetType
 from ..types import TensorType
+from ..types import Tuple
 from .base import OODBaseDetector
 
 
@@ -51,13 +52,12 @@ class ODIN(OODBaseDetector):
     ):
         self.temperature = temperature
         super().__init__(
-            output_layers_id=[-1],
             use_react=use_react,
             react_quantile=react_quantile,
         )
         self.noise = noise
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
         Computes an OOD score for input samples "inputs" based on
         the distance to nearest neighbors in the feature space of self.model
@@ -66,15 +66,16 @@ class ODIN(OODBaseDetector):
             inputs (TensorType): input samples to score
 
         Returns:
-            np.ndarray: scores
+            Tuple[np.ndarray]: scores, logits
         """
         if self.feature_extractor.backend == "torch":
             inputs = inputs.to(self.feature_extractor._device)
         x = self.input_perturbation(inputs)
-        logits = self.feature_extractor.predict(x) / self.temperature
-        pred = self.op.softmax(logits)
-        pred = self.op.convert_to_numpy(pred)
-        scores = -np.max(pred, axis=1)
+        _, logits = self.feature_extractor.predict_tensor(x)
+        logits_s = logits / self.temperature
+        probits = self.op.softmax(logits_s)
+        probits = self.op.convert_to_numpy(probits)
+        scores = -np.max(probits, axis=1)
         return scores
 
     def input_perturbation(self, inputs: TensorType) -> TensorType:
@@ -124,5 +125,16 @@ class ODIN(OODBaseDetector):
 
         Returns:
             bool: True if `fit_dataset` is required else False.
+        """
+        return False
+
+    @property
+    def requires_internal_features(self) -> bool:
+        """
+        Whether an OOD detector acts on internal model features.
+
+        Returns:
+            bool: True if the detector perform computations on an intermediate layer
+            else False.
         """
         return False

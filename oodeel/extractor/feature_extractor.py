@@ -41,7 +41,7 @@ class FeatureExtractor(ABC):
 
     Args:
         model: model to extract the features from
-        output_layers_id: list of str or int that identify features to output.
+        feature_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer.
             Defaults to [].
@@ -56,14 +56,14 @@ class FeatureExtractor(ABC):
     def __init__(
         self,
         model: Callable,
-        output_layers_id: List[Union[int, str]] = [-1],
+        feature_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Union[int, str] = [0],
         react_threshold: Optional[float] = None,
     ):
-        if not isinstance(output_layers_id, list):
-            output_layers_id = [output_layers_id]
+        if not isinstance(feature_layers_id, list):
+            feature_layers_id = [feature_layers_id]
 
-        self.output_layers_id = output_layers_id
+        self.feature_layers_id = feature_layers_id
         self.input_layer_id = input_layer_id
         self.react_threshold = react_threshold
         self.model = model
@@ -95,36 +95,37 @@ class FeatureExtractor(ABC):
         self,
         tensor: TensorType,
         postproc_fns: Optional[Callable] = None,
-    ) -> Union[TensorType, List[TensorType]]:
-        """
-        Projects input samples "inputs" into the feature space
+    ) -> Tuple[List[TensorType], TensorType]:
+        """Get the projection of tensor in the feature space of self.model
 
         Args:
-            tensor (TensorType): input tensor
+            tensor (TensorType): input tensor (or dataset elem)
+            postproc_fns (Optional[Callable]): postprocessing function to apply to each
+                feature immediately after forward. Default to None.
 
         Returns:
-            TensorType: features
+            Tuple[List[TensorType], TensorType]: features, logits
         """
         raise NotImplementedError()
 
     @abstractmethod
     def predict(
         self,
-        dataset: Union[DatasetType, TensorType],
-        return_labels: bool = False,
+        dataset: Union[ItemType, DatasetType],
         postproc_fns: Optional[Callable] = None,
-    ) -> Union[TensorType, List[TensorType]]:
-        """
-        Projects input samples "inputs" into the feature space for a batched dataset
+        **kwargs,
+    ) -> Tuple[List[TensorType], dict]:
+        """Get the projection of the dataset in the feature space of self.model
 
         Args:
-            dataset (Union[DatasetType, TensorType]): iterable of tensor batches
-            return_labels (bool): if True, labels are returned in addition to the
-                features. If labels are one-hot encoded, the single label value is
-                returned instead.
+            dataset (Union[ItemType, DatasetType]): input dataset
+            postproc_fns (Optional[Callable]): postprocessing function to apply to each
+                feature immediately after forward. Default to None.
+            kwargs (dict): additional arguments not considered for prediction
 
         Returns:
-            TensorType: features
+            List[TensorType], dict: features and extra information (logits, labels) as a
+                dictionary.
         """
         raise NotImplementedError()
 

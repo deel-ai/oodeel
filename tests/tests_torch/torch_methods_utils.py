@@ -55,8 +55,8 @@ def load_blobs_data(batch_size=128, num_samples=10000, train_ratio=0.8):
     # === id / ood split ===
     blobs_train = OODDataset((X_train, y_train), backend="torch")
     blobs_test = OODDataset((X_test, y_test), backend="torch")
-    oods_fit, _ = blobs_train.assign_ood_labels_by_class(in_labels, out_labels)
-    oods_in, oods_out = blobs_test.assign_ood_labels_by_class(in_labels, out_labels)
+    oods_fit, _ = blobs_train.split_by_class(in_labels, out_labels)
+    oods_in, oods_out = blobs_test.split_by_class(in_labels, out_labels)
 
     # === prepare data (shuffle, batch) => torch dataloaders ===
     ds_fit = oods_fit.prepare(batch_size=batch_size, shuffle=True)
@@ -100,15 +100,19 @@ def eval_detector_on_blobs(
 
     # fit ood detector
     if detector.requires_to_fit_dataset or detector.use_react:
-        detector.fit(model, ds_fit)
+        detector.fit(model, feature_layers_id=[-2], fit_dataset=ds_fit)
     else:
         detector.fit(model)
 
     # ood scores
-    scores_in = detector.score(ds_in)
-    scores_out = detector.score(ds_out)
+    scores_in, info_in = detector.score(ds_in)
+    scores_out, info_out = detector.score(ds_out)
     assert scores_in.shape == (1028,)
+    assert info_in["labels"].shape == (1028,)
+    assert info_in["logits"].shape == (1028, 2)
     assert scores_out.shape == (972,)
+    assert info_out["labels"].shape == (972,)
+    assert info_out["logits"].shape == (972, 2)
 
     # ood metrics: auroc, fpr95tpr
     metrics = bench_metrics(
@@ -123,15 +127,10 @@ def eval_detector_on_blobs(
     # /!\ do it at the end of the test because it may affect the detector's behaviour
     if check_react_clipping:
         assert detector.react_threshold is not None
-        assert detector.penultimate_layer_id is not None
         penult_feat_extractor = detector._load_feature_extractor(
-            model=model,
-            output_layers_id=[
-                detector.penultimate_layer_id,
-                detector.output_layers_id[-1],
-            ],
+            model=model, feature_layers_id=[-2, -1]
         )
-        penult_features = penult_feat_extractor.predict(ds_fit)[0]
+        penult_features = penult_feat_extractor.predict(ds_fit)[0][0]
         assert torch.max(penult_features) <= detector.react_threshold, (
             f"Maximum value of penultimate features ({torch.max(penult_features)})"
             + " should be less than or equal to the react threshold value"

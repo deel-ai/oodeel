@@ -14,6 +14,7 @@ nav:
       - Energy: notebooks/tensorflow/demo_energy_tf.ipynb
       - Entropy: notebooks/tensorflow/demo_entropy_tf.ipynb
       - Mahalanobis: notebooks/tensorflow/demo_mahalanobis_tf.ipynb
+      - React: notebooks/tensorflow/demo_react_tf.ipynb
     - OOD Baselines (Torch):
       - MLS/MSP: notebooks/torch/demo_mls_msp_torch.ipynb
       - ODIN: notebooks/torch/demo_odin_torch.ipynb
@@ -22,6 +23,7 @@ nav:
       - Energy: notebooks/torch/demo_energy_torch.ipynb
       - Entropy: notebooks/torch/demo_entropy_torch.ipynb
       - Mahalanobis: notebooks/torch/demo_mahalanobis_torch.ipynb
+      - React: notebooks/torch/demo_react_torch.ipynb
     - Advanced Topics:
       - Seamlessly handling torch and tf datasets with DataHandler: pages/datahandler_tuto.md
       - Seamlessly handling torch and tf Tensors with Operator: pages/operator_tuto.md
@@ -41,6 +43,7 @@ nav:
       - TorchFeatureExtractor: api/torch_feature_extractor.md
     - Training tools: api/training_tools.md
     - Utils: api/utils.md
+    - Plots: api/plots.md
   - Contributing: CONTRIBUTING.md
 
 theme:

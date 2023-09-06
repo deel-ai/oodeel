@@ -49,8 +49,8 @@ def test_mls_blobs_plots():
     detector.fit(model)
 
     # ood scores
-    scores_in = detector.score(ds_in)
-    scores_out = detector.score(ds_out)
+    scores_in, _ = detector.score(ds_in)
+    scores_out, _ = detector.score(ds_out)
 
     # static plots (matplotlib + seaborn)
     plt.figure()

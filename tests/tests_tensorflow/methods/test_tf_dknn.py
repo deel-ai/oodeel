@@ -34,7 +34,7 @@ def test_dknn(auroc_thr, fpr95_thr):
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    dknn = DKNN(output_layers_id=[-2])
+    dknn = DKNN()
     eval_detector_on_blobs(
         detector=dknn,
         auroc_thr=auroc_thr,

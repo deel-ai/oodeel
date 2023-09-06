@@ -23,9 +23,8 @@
 import numpy as np
 
 from ..types import DatasetType
-from ..types import List
 from ..types import TensorType
-from ..types import Union
+from ..types import Tuple
 from oodeel.methods.base import OODBaseDetector
 
 
@@ -36,18 +35,15 @@ class Mahalanobis(OODBaseDetector):
     https://arxiv.org/abs/1807.03888
 
     Args:
-        output_layers_id (List[Union[int, str]]): feature space on which to
-            compute mahalanobis distance.
         eps (float): magnitude for gradient based input perturbation.
             Defaults to 0.02.
     """
 
     def __init__(
         self,
-        output_layers_id: List[Union[int, str]],
         eps: float = 0.002,
     ):
-        super(Mahalanobis, self).__init__(output_layers_id=output_layers_id)
+        super(Mahalanobis, self).__init__()
         self.eps = eps
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
@@ -59,9 +55,8 @@ class Mahalanobis(OODBaseDetector):
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
         """
         # extract features and labels
-        features, labels = self.feature_extractor.predict(
-            fit_dataset, return_labels=True
-        )
+        features, infos = self.feature_extractor.predict(fit_dataset)
+        labels = infos["labels"]
 
         # unique sorted classes
         self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
@@ -71,7 +66,7 @@ class Mahalanobis(OODBaseDetector):
         covs = dict()
         for cls in self._classes:
             indexes = self.op.equal(labels, cls)
-            _features_cls = features[indexes]
+            _features_cls = self.op.flatten(features[indexes])
             mus[cls] = self.op.mean(_features_cls, dim=0)
             _zero_f_cls = _features_cls - mus[cls]
             covs[cls] = (
@@ -85,7 +80,7 @@ class Mahalanobis(OODBaseDetector):
         self._mus = mus
         self._pinv_cov = self.op.pinv(mean_cov)
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
         Computes an OOD score for input samples "inputs" based on the mahalanobis
         distance with respect to the closest class-conditional Gaussian distribution.
@@ -94,7 +89,7 @@ class Mahalanobis(OODBaseDetector):
             inputs (TensorType): input samples
 
         Returns:
-            np.ndarray: ood scores
+            Tuple[np.ndarray]: scores, logits
         """
         # input preprocessing (perturbation)
         if self.eps > 0:
@@ -103,7 +98,7 @@ class Mahalanobis(OODBaseDetector):
             inputs_p = inputs
 
         # mahalanobis score on perturbed inputs
-        features_p = self.feature_extractor.predict(inputs_p)
+        features_p, _ = self.feature_extractor.predict_tensor(inputs_p)
         features_p = self.op.flatten(features_p)
         gaussian_score_p = self._mahalanobis_score(features_p)
 
@@ -136,7 +131,7 @@ class Mahalanobis(OODBaseDetector):
                 TensorType: loss value
             """
             # extract features
-            out_features = self.feature_extractor.predict(inputs, detach=False)
+            out_features, _ = self.feature_extractor.predict(inputs, detach=False)
             out_features = self.op.flatten(out_features)
             # get mahalanobis score for the class maximizing it
             gaussian_score = self._mahalanobis_score(out_features)
@@ -187,5 +182,16 @@ class Mahalanobis(OODBaseDetector):
 
         Returns:
             bool: True if `fit_dataset` is required else False.
+        """
+        return True
+
+    @property
+    def requires_internal_features(self) -> bool:
+        """
+        Whether an OOD detector acts on internal model features.
+
+        Returns:
+            bool: True if the detector perform computations on an intermediate layer
+            else False.
         """
         return True

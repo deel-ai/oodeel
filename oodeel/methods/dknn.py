@@ -24,8 +24,8 @@ import faiss
 import numpy as np
 
 from ..types import DatasetType
-from ..types import List
 from ..types import TensorType
+from ..types import Tuple
 from ..types import Union
 from .base import OODBaseDetector
 
@@ -36,20 +36,15 @@ class DKNN(OODBaseDetector):
     https://arxiv.org/abs/2204.06507
 
     Args:
-        output_layers_id (List[Union[int, str]]): feature space on which to compute
-            nearest neighbors.
         nearest: number of nearest neighbors to consider.
             Defaults to 1.
     """
 
     def __init__(
         self,
-        output_layers_id: List[Union[int, str]],
         nearest: int = 1,
     ):
-        super().__init__(
-            output_layers_id=output_layers_id,
-        )
+        super().__init__()
 
         self.index = None
         self.nearest = nearest
@@ -62,14 +57,14 @@ class DKNN(OODBaseDetector):
         Args:
             fit_dataset: input dataset (ID) to construct the index with.
         """
-        fit_projected = self.feature_extractor.predict(fit_dataset)
+        fit_projected, _ = self.feature_extractor.predict(fit_dataset)
         fit_projected = self.op.convert_to_numpy(fit_projected)
         fit_projected = fit_projected.reshape(fit_projected.shape[0], -1)
         norm_fit_projected = self._l2_normalization(fit_projected)
         self.index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
         self.index.add(norm_fit_projected)
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
         Computes an OOD score for input samples "inputs" based on
         the distance to nearest neighbors in the feature space of self.model
@@ -78,10 +73,10 @@ class DKNN(OODBaseDetector):
             inputs: input samples to score
 
         Returns:
-            scores
+            Tuple[np.ndarray]: scores, logits
         """
 
-        input_projected = self.feature_extractor(inputs)
+        input_projected, _ = self.feature_extractor.predict_tensor(inputs)
         input_projected = self.op.convert_to_numpy(input_projected)
         input_projected = input_projected.reshape(input_projected.shape[0], -1)
         norm_input_projected = self._l2_normalization(input_projected)
@@ -106,5 +101,16 @@ class DKNN(OODBaseDetector):
 
         Returns:
             bool: True if `fit_dataset` is required else False.
+        """
+        return True
+
+    @property
+    def requires_internal_features(self) -> bool:
+        """
+        Whether an OOD detector acts on internal model features.
+
+        Returns:
+            bool: True if the detector perform computations on an intermediate layer
+            else False.
         """
         return True
