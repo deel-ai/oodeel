@@ -127,7 +127,7 @@ def check_common_operators(backend):
     assert operator.flatten(x).shape == (25, 12 * 6)
 
     # Transpose
-    assert operator.transpose(x[0]).shape == (6, 12)
+    assert operator.t(x[0]).shape == (6, 12)
 
     # Diag
     assert operator.diag(x[0]).shape == (6,)
@@ -144,7 +144,7 @@ def check_common_operators(backend):
     assert operator.pinv(x[0]).shape == (6, 12)
 
     # einsum
-    ein = operator.einsum("bij,jk->bik", x, operator.transpose(x[0]))
+    ein = operator.einsum("bij,jk->bik", x, operator.t(x[0]))
     assert ein.shape == (25, 12, 12)
 
     # tril

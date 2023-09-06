@@ -124,8 +124,8 @@ def test_predict_with_labels():
     for batch in data_wo_labels.take(1):
         pass
     out, info = feature_extractor.predict(batch)
-    assert out.shape == (33, 15, 15, 4)
-    assert info["logits"].shape == (33, 10)
+    assert out.shape == (50, 15, 15, 4)
+    assert info["logits"].shape == (50, 10)
     assert info["labels"] is None
 
     # Assert predict() outputs for a single input tensor with label provided
@@ -133,7 +133,7 @@ def test_predict_with_labels():
         pass
     out, info = feature_extractor.predict(batch)
     assert out.shape == (50, 15, 15, 4)
-    assert info["logits"].shape == (33, 10)
+    assert info["logits"].shape == (50, 10)
     assert info["labels"].shape == (50,)
 
 
@@ -153,7 +153,7 @@ def test_postproc_fns():
     postproc_fns = [tf.keras.layers.GlobalAveragePooling2D(), lambda x: x]
 
     feature_extractor = KerasFeatureExtractor(
-        model, output_layers_id=["conv2d", "flatten"]
+        model, feature_layers_id=["conv2d", "flatten"]
     )
 
     feats, _ = feature_extractor.predict(dataset, postproc_fns=postproc_fns)

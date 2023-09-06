@@ -193,7 +193,7 @@ def test_postproc_fns():
         return nn.AvgPool2d(height, width)(x)
 
     postproc_fns = [globalavg, lambda x: x]
-    feature_extractor = TorchFeatureExtractor(model, output_layers_id=["relu2", "fc2"])
+    feature_extractor = TorchFeatureExtractor(model, feature_layers_id=["relu2", "fc2"])
 
     feats, _ = feature_extractor.predict(dataset, postproc_fns=postproc_fns)
     feat0, feat1 = feats
