@@ -174,15 +174,10 @@ class KerasFeatureExtractor(FeatureExtractor):
         logits = features.pop()
 
         if postproc_fns is not None:
-            if len(postproc_fns) == 1:
-                features = [postproc_fns[0](features)]
-            else:
-                features = [
-                    postproc_fn(feature)
-                    for feature, postproc_fn in zip(features, postproc_fns)
-                ]
-        if len(features) == 1:
-            features = features[0]
+            features = [
+                postproc_fn(feature)
+                for feature, postproc_fn in zip(features, postproc_fns)
+            ]
 
         self._last_logits = logits
         return features, logits
@@ -227,8 +222,6 @@ class KerasFeatureExtractor(FeatureExtractor):
                 tensor = TFDataHandler.get_input_from_dataset_item(elem)
                 features_batch, logits_batch = self.predict_tensor(tensor, postproc_fns)
                 # concatenate features
-                if len(features) == 1:
-                    features_batch = [features_batch]
                 for i, f in enumerate(features_batch):
                     features[i] = (
                         f
@@ -255,7 +248,6 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         if len(features) == 1:
             features = features[0]
-
         return features, info
 
     def get_weights(self, layer_id: Union[int, str]) -> List[tf.Tensor]:

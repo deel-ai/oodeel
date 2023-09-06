@@ -272,3 +272,8 @@ class TorchOperator(Operator):
     ) -> torch.Tensor:
         "Applies where function , to condition"
         return torch.where(condition, input, other)
+
+    @staticmethod
+    def avg_pool_2d(tensor: TensorType) -> torch.Tensor:
+        """Perform avg pool in 2d as in torch.nn.functional.adaptive_avg_pool2d"""
+        return torch.mean(tensor, dim=(-2, -1))

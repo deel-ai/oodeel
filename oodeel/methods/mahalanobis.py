@@ -45,6 +45,12 @@ class Mahalanobis(OODBaseDetector):
     ):
         super(Mahalanobis, self).__init__()
         self.eps = eps
+        self.postproc_fns = None
+
+    def postproc_feature_maps(self, feature_map):
+        if len(feature_map.shape) > 2:
+            feature_map = self.op.avg_pool_2d(feature_map)
+        return self.op.flatten(feature_map)
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """
@@ -55,30 +61,48 @@ class Mahalanobis(OODBaseDetector):
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
         """
         # extract features and labels
-        features, infos = self.feature_extractor.predict(fit_dataset)
+
+        self.postproc_fns = [
+            self.postproc_feature_maps
+            for i in range(len(self.feature_extractor.feature_layers_id))
+        ]
+        features, infos = self.feature_extractor.predict(
+            fit_dataset, postproc_fns=self.postproc_fns
+        )
         labels = infos["labels"]
 
         # unique sorted classes
         self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
 
         # compute mus and covs
-        mus = dict()
-        covs = dict()
-        for cls in self._classes:
-            indexes = self.op.equal(labels, cls)
-            _features_cls = self.op.flatten(features[indexes])
-            mus[cls] = self.op.mean(_features_cls, dim=0)
-            _zero_f_cls = _features_cls - mus[cls]
-            covs[cls] = (
-                self.op.matmul(self.op.t(_zero_f_cls), _zero_f_cls)
-                / _zero_f_cls.shape[0]
-            )
+        mus_l = list()
+        pinv_covs_l = list()
+        if not isinstance(features, list):
+            features = [features]
+        for feature in features:
+            mus = dict()
+            covs = dict()
+            for cls in self._classes:
+                indexes = self.op.equal(labels, cls)
+                _feature_cls = feature[indexes]
+                mus[cls] = self.op.mean(_feature_cls, dim=0)
+                _zero_f_cls = _feature_cls - mus[cls]
+                covs[cls] = (
+                    self.op.matmul(self.op.t(_zero_f_cls), _zero_f_cls)
+                    / _zero_f_cls.shape[0]
+                )
 
-        # mean cov and its inverse
-        mean_cov = self.op.mean(self.op.stack(list(covs.values())), dim=0)
+            # mean cov and its inverse
+            mus_l.append(mus)
+            # mean_cov = self.op.mean(self.op.stack(list(covs.values())), dim=0)
+            # classical maha
+            # pinv_covs = dict([(cls, self.op.pinv(mean_cov)) for cls in self._classes])
+            # class wise
+            pinv_covs = dict([(cls, self.op.pinv(covs[cls])) for cls in self._classes])
+            pinv_covs_l.append(pinv_covs)
 
-        self._mus = mus
-        self._pinv_cov = self.op.pinv(mean_cov)
+        self._mus_l = mus_l
+        self._pinv_covs_l = pinv_covs_l
 
     def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
@@ -97,14 +121,30 @@ class Mahalanobis(OODBaseDetector):
         else:
             inputs_p = inputs
 
+        scores = np.empty((0, inputs.shape[0]))
         # mahalanobis score on perturbed inputs
-        features_p, _ = self.feature_extractor.predict_tensor(inputs_p)
-        features_p = self.op.flatten(features_p)
-        gaussian_score_p = self._mahalanobis_score(features_p)
+        features_p, _ = self.feature_extractor.predict_tensor(
+            inputs_p, postproc_fns=self.postproc_fns
+        )
+        if not isinstance(features_p, list):
+            features_p = [features_p]
+        for mus, pinv_covs, feature_p in zip(
+            self._mus_l, self._pinv_covs_l, features_p
+        ):
+            gaussian_score_p = self._mahalanobis_score(feature_p, mus, pinv_covs)
 
-        # take the highest score for each sample
-        gaussian_score_p = self.op.max(gaussian_score_p, dim=1)
-        return -self.op.convert_to_numpy(gaussian_score_p)
+            # take the highest score for each sample
+            gaussian_score_p = self.op.max(gaussian_score_p, dim=1)
+            scores = np.append(
+                scores,
+                np.expand_dims(
+                    -self.op.convert_to_numpy(gaussian_score_p)
+                    / np.sqrt(feature_p.shape[1]),
+                    axis=0,
+                ),
+                axis=0,
+            )
+        return np.mean(scores, axis=0)
 
     def _input_perturbation(self, inputs: TensorType) -> TensorType:
         """
@@ -131,12 +171,21 @@ class Mahalanobis(OODBaseDetector):
                 TensorType: loss value
             """
             # extract features
-            out_features, _ = self.feature_extractor.predict(inputs, detach=False)
-            out_features = self.op.flatten(out_features)
+            out_features, _ = self.feature_extractor.predict(
+                inputs, detach=False, postproc_fns=self.postproc_fns
+            )
             # get mahalanobis score for the class maximizing it
-            gaussian_score = self._mahalanobis_score(out_features)
-            log_probs_f = self.op.max(gaussian_score, dim=1)
-            return self.op.mean(-log_probs_f)
+            logprob = 0
+            if not isinstance(out_features, list):
+                out_features = [out_features]
+            for i, out_feature in enumerate(out_features):
+                gaussian_score = self._mahalanobis_score(
+                    out_feature, self._mus_l[i], self._pinv_covs_l[i]
+                )
+                log_probs_f = self.op.max(gaussian_score, dim=1)
+                logprob = logprob + self.op.mean(-log_probs_f)
+
+            return logprob / i
 
         # compute gradient
         gradient = self.op.gradient(__loss_fn, inputs)
@@ -145,7 +194,9 @@ class Mahalanobis(OODBaseDetector):
         inputs_p = inputs - self.eps * gradient
         return inputs_p
 
-    def _mahalanobis_score(self, out_features: TensorType) -> TensorType:
+    def _mahalanobis_score(
+        self, out_features: TensorType, mus, pinv_covs
+    ) -> TensorType:
         """
         Mahalanobis distance-based confidence score. For each test sample, it computes
         the log of the probability densities of some observations (assuming a
@@ -162,12 +213,12 @@ class Mahalanobis(OODBaseDetector):
         # compute scores conditionally to each class
         for cls in self._classes:
             # center features wrt class-cond dist.
-            mu = self._mus[cls]
+            mu = mus[cls]
             zero_f = out_features - mu
             # gaussian log prob density (mahalanobis)
             log_probs_f = -0.5 * self.op.diag(
                 self.op.matmul(
-                    self.op.matmul(zero_f, self._pinv_cov), self.op.t(zero_f)
+                    self.op.matmul(zero_f, pinv_covs[cls]), self.op.t(zero_f)
                 )
             )
             gaussian_scores.append(self.op.reshape(log_probs_f, (-1, 1)))

@@ -174,6 +174,8 @@ class VIM(OODBaseDetector):
         """
         # extract features
         features, logits = self.feature_extractor.predict_tensor(inputs)
+        if len(features) == 1:
+            features = features[0]
         features = self.op.flatten(features)
         # vim score
         res_scores = self._compute_residual_score_tensor(features)

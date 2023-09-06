@@ -252,7 +252,7 @@ class OODBaseDetector(ABC):
                         else np.append(labels, self.op.convert_to_numpy(labels_batch))
                     )
 
-                scores = np.append(scores, score_batch)
+                scores = np.append(scores, score_batch, axis=0)
                 logits = (
                     logits_batch
                     if logits is None

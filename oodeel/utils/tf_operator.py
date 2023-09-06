@@ -253,3 +253,8 @@ class TFOperator(Operator):
     @staticmethod
     def percentile(x, q):
         return tfp.stats.percentile(x, q)
+
+    @staticmethod
+    def avg_pool_2d(tensor: TensorType) -> tf.Tensor:
+        """Perform avg pool in 2d as in torch.nn.functional.adaptive_avg_pool2d"""
+        return tf.reduce_mean(tensor, axis=(-3, -2))

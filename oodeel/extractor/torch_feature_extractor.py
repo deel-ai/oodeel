@@ -211,16 +211,10 @@ class TorchFeatureExtractor(FeatureExtractor):
         logits = features.pop()
 
         if postproc_fns is not None:
-            if len(postproc_fns) == 1:
-                features = [postproc_fns[0](features)]
-            else:
-                features = [
-                    postproc_fn(feature)
-                    for feature, postproc_fn in zip(features, postproc_fns)
-                ]
-
-        if len(features) == 1:
-            features = features[0]
+            features = [
+                postproc_fn(feature)
+                for feature, postproc_fn in zip(features, postproc_fns)
+            ]
 
         self._last_logits = logits
         return features, logits
@@ -265,8 +259,6 @@ class TorchFeatureExtractor(FeatureExtractor):
                     tensor, postproc_fns, detach=detach
                 )
                 # concatenate features
-                if len(features) == 1:
-                    features_batch = [features_batch]
                 for i, f in enumerate(features_batch):
                     features[i] = (
                         f if features[i] is None else torch.cat([features[i], f], dim=0)
@@ -291,7 +283,6 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         if len(features) == 1:
             features = features[0]
-
         return features, info
 
     def get_weights(self, layer_id: Union[str, int]) -> List[torch.Tensor]:
