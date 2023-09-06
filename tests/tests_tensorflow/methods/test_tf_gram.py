@@ -44,7 +44,7 @@ def test_gram_shape():
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    gram.fit(model, data, feature_layers_id=["max_pooling2d", "dense"])
+    gram.fit(model, data, feature_layers_id=[-5, -2])
     score, _ = gram.score(data)
     assert score.shape == (100,)
     assert gram.min_maxs[0][0].shape == (5, 4, 2)
