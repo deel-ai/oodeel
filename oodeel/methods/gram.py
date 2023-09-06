@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import numpy as np
+from sklearn.model_selection import train_test_split
 
 from ..types import DatasetType
 from ..types import List
@@ -67,8 +68,6 @@ class Gram(OODBaseDetector):
     our experiments.
 
     Args:
-        output_layers_id (List[Union[int, str]]): feature space on which to compute
-            nearest neighbors. Defaults to [-2].
         orders (List[int]): power orders to consider for the correlation matrix
         quantile (float): quantile to consider for the correlations to build the
             deviation threshold.
@@ -77,24 +76,20 @@ class Gram(OODBaseDetector):
 
     def __init__(
         self,
-        output_layers_id: List[Union[int, str]] = [-2],
         orders: List[int] = [i for i in range(1, 11)],
         quantile: float = 0.01,
     ):
-        if -1 not in output_layers_id:
-            output_layers_id.append(-1)
-        super().__init__(output_layers_id=output_layers_id)
-
+        super().__init__()
         if isinstance(orders, int):
             orders = [orders]
         self.orders = orders
-        self.postproc_fns = [self._stat for i in range(len(output_layers_id))]
+        self.postproc_fns = None
         self.quantile = quantile
 
     def _fit_to_dataset(
         self,
         fit_dataset: Union[TensorType, DatasetType],
-        val_dataset: Union[TensorType, DatasetType] = None,
+        val_split: float = 0.2,
     ) -> None:
         """
         Compute the quantiles of channelwise correlations for each layer, power of
@@ -105,16 +100,31 @@ class Gram(OODBaseDetector):
         Args:
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID) to
                 construct the index with.
-            val_dataset (Union[TensorType, DatasetType]): validation dataset used to
-                compute the normalization of the deviations. When None, fit_dataset
-                is used to compute the normalization. Default to None.
+            val_split (float): The percentage of fit data to use as validation data for
+                normalization. Default to 0.2.
         """
-        fit_stats, labels = self.feature_extractor.predict(
+        self.postproc_fns = [
+            self._stat for i in range(len(self.feature_extractor.feature_layers_id))
+        ]
+
+        fit_stats, info = self.feature_extractor.predict(
             fit_dataset, postproc_fns=self.postproc_fns, return_labels=True
         )
-        fit_stats = fit_stats[:-1]
-
+        labels = info["labels"]
         self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
+
+        full_indices = np.arange(labels.shape[0])
+        train_indices, val_indices = train_test_split(full_indices, test_size=val_split)
+        train_indices = self.op.convert_to_tensor(
+            [bool(ind in train_indices) for ind in full_indices]
+        )
+        val_indices = self.op.convert_to_tensor(
+            [bool(ind in val_indices) for ind in full_indices]
+        )
+
+        val_stats = [fit_stat[val_indices] for fit_stat in fit_stats]
+        fit_stats = [fit_stat[train_indices] for fit_stat in fit_stats]
+        labels = labels[train_indices]
 
         self.min_maxs = dict()
         for cls in self._classes:
@@ -132,16 +142,6 @@ class Gram(OODBaseDetector):
                 min_maxs.append(min_max)
 
             self.min_maxs[cls] = min_maxs
-
-        # In the paper, they use a separate validation data to compute
-        # a normalization constant. If None, take the training data
-        # (Which is fine IMO)
-        if val_dataset is None:
-            val_dataset = fit_dataset
-        val_stats, labels = self.feature_extractor.predict(
-            val_dataset, postproc_fns=self.postproc_fns, return_labels=True
-        )
-        val_stats = val_stats[:-1]
 
         devnorm = []
         for cls in self._classes:
@@ -171,13 +171,12 @@ class Gram(OODBaseDetector):
             scores
         """
 
-        tensor_stats = self.feature_extractor.predict(
+        tensor_stats, _ = self.feature_extractor.predict_tensor(
             inputs, postproc_fns=self.postproc_fns
         )
-        tensor_stats = tensor_stats[:-1]
 
-        features = self.feature_extractor.predict(inputs)
-        preds = self.op.convert_to_numpy(self.op.argmax(features[-1], dim=1))
+        _, logits = self.feature_extractor.predict_tensor(inputs)
+        preds = self.op.convert_to_numpy(self.op.argmax(logits, dim=1))
 
         # We stack the min_maxs for each class depending on the prediction for each
         # samples
@@ -283,3 +282,14 @@ class Gram(OODBaseDetector):
             bool: True if `fit_dataset` is required else False.
         """
         return True
+
+    @property
+    def requires_internal_features(self) -> bool:
+        """
+        Whether an OOD detector acts on internal model features.
+
+        Returns:
+            bool: True if the detector perform computations on an intermediate layer
+            else False.
+        """
+        return False

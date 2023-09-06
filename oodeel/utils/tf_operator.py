@@ -53,6 +53,11 @@ class TFOperator(Operator):
     """Class to handle tensorflow operations with a unified API"""
 
     @staticmethod
+    def convert_to_tensor(array: np.ndarray) -> TensorType:
+        """Convert array to tensor"""
+        return tf.convert_to_tensor(array)
+
+    @staticmethod
     def softmax(tensor: TensorType) -> tf.Tensor:
         """Softmax function along the last dimension"""
         return tf.keras.activations.softmax(tensor, axis=-1)

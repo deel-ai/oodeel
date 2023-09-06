@@ -194,7 +194,6 @@ class KerasFeatureExtractor(FeatureExtractor):
     def predict(
         self,
         dataset: Union[ItemType, tf.data.Dataset],
-        return_labels: bool = False,
         postproc_fns: Optional[Callable] = None,
         **kwargs,
     ) -> Tuple[List[tf.Tensor], dict]:
@@ -202,9 +201,6 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         Args:
             dataset (Union[ItemType, tf.data.Dataset]): input dataset
-            return_labels (bool): if True, labels are returned in addition to the
-                features. If labels are one-hot encoded, the single label value is
-                returned instead.
             postproc_fns (Optional[Callable]): postprocessing function to apply to each
                 feature immediately after forward. Default to None.
             kwargs (dict): additional arguments not considered for prediction

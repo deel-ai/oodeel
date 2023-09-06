@@ -35,7 +35,7 @@ def test_gram_shape():
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    gram = Gram(output_layers_id=["conv2", "fc2"], orders=range(1, 6))
+    gram = Gram(orders=range(1, 6))
 
     input_shape = (3, 32, 32)
     num_labels = 10
@@ -46,15 +46,10 @@ def test_gram_shape():
     )
     data = OODDataset(data, backend="torch").prepare(batch_size=samples // 2)
 
-    dataval = generate_data_torch(
-        x_shape=input_shape, num_labels=num_labels, samples=samples
-    )
-    dataval = OODDataset(dataval, backend="torch").prepare(batch_size=samples // 2)
-
     model = Net(num_classes=num_labels)
 
-    gram.fit(model, data, val_dataset=dataval)
-    score = gram.score(dataval)
+    gram.fit(model, data, feature_layers_id=["conv2", "fc2"])
+    score, _ = gram.score(data)
     assert score.shape == (100,)
     assert gram.min_maxs[0][0].shape == (5, 16, 2)
     assert gram.min_maxs[0][1].shape == (5, 1, 2)

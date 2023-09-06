@@ -25,6 +25,7 @@ from abc import abstractmethod
 
 from ..types import Callable
 from ..types import DatasetType
+from ..types import ItemType
 from ..types import List
 from ..types import Optional
 from ..types import TensorType

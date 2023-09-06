@@ -37,6 +37,12 @@ class Operator(ABC):
 
     @staticmethod
     @abstractmethod
+    def convert_to_tensor(array: np.ndarray) -> TensorType:
+        """Convert array to tensor"""
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
     def softmax(tensor: TensorType) -> TensorType:
         """Softmax function along the last dimension"""
         raise NotImplementedError()
