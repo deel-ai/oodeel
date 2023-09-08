@@ -49,6 +49,11 @@ class DKNN(OODBaseDetector):
         self.index = None
         self.nearest = nearest
 
+    def postproc_feature_maps(self, feature_map):
+        if len(feature_map.shape) > 2:
+            feature_map = self.op.avg_pool_2d(feature_map)
+        return self.op.flatten(feature_map)
+
     def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
         """
         Constructs the index from ID data "fit_dataset", which will be used for
@@ -57,12 +62,33 @@ class DKNN(OODBaseDetector):
         Args:
             fit_dataset: input dataset (ID) to construct the index with.
         """
-        fit_projected, _ = self.feature_extractor.predict(fit_dataset)
-        fit_projected = self.op.convert_to_numpy(fit_projected)
-        fit_projected = fit_projected.reshape(fit_projected.shape[0], -1)
-        norm_fit_projected = self._l2_normalization(fit_projected)
-        self.index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
-        self.index.add(norm_fit_projected)
+        self.postproc_fns = [
+            self.postproc_feature_maps
+            for i in range(len(self.feature_extractor.feature_layers_id))
+        ]
+
+        features, infos = self.feature_extractor.predict(
+            fit_dataset, postproc_fns=self.postproc_fns
+        )
+        labels = infos["labels"]
+
+        # unique sorted classes
+        self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
+
+        self._nn_indexes = []
+        if not isinstance(features, list):
+            features = [features]
+        for feature in features:
+            nn_indexes = dict()
+            for cls in self._classes:
+                indexes = self.op.equal(labels, cls)
+                _feature_cls = feature[indexes]
+                _feature_cls = self.op.convert_to_numpy(_feature_cls)
+                _feature_cls = _feature_cls.reshape(_feature_cls.shape[0], -1)
+                norm_feature = self._l2_normalization(_feature_cls)
+                nn_indexes[cls] = faiss.IndexFlatL2(norm_feature.shape[1])
+                nn_indexes[cls].add(norm_feature)
+            self._nn_indexes.append(nn_indexes)
 
     def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
@@ -76,12 +102,28 @@ class DKNN(OODBaseDetector):
             Tuple[np.ndarray]: scores, logits
         """
 
-        input_projected, _ = self.feature_extractor.predict_tensor(inputs)
-        input_projected = self.op.convert_to_numpy(input_projected)
-        input_projected = input_projected.reshape(input_projected.shape[0], -1)
-        norm_input_projected = self._l2_normalization(input_projected)
-        scores, _ = self.index.search(norm_input_projected, self.nearest)
-        return scores[:, -1]
+        features, logits = self.feature_extractor.predict_tensor(
+            inputs, postproc_fns=self.postproc_fns
+        )
+        preds = self.op.argmax(logits, dim=1)
+        preds = self.op.convert_to_numpy(preds)
+
+        scores_l = np.empty((0, preds.shape[0]))
+        if not isinstance(features, list):
+            features = [features]
+        for nn_indexes, feature in zip(self._nn_indexes, features):
+            feature_l = self.op.convert_to_numpy(feature)
+            feature_l = feature_l.reshape(feature_l.shape[0], -1)
+            norm_feature = self._l2_normalization(feature_l)
+            scores = np.empty((0, preds.shape[0]))
+            for cls in self._classes:
+                scores_cls, _ = nn_indexes[cls].search(norm_feature, self.nearest)
+                scores = np.concatenate([scores, np.expand_dims(scores_cls[:, -1], 0)])
+            scores = scores[preds, np.arange(preds.shape[0])]
+            scores_l = np.concatenate(
+                [scores_l, np.expand_dims(scores, 0) / np.sqrt(feature_l.shape[1])]
+            )
+        return np.mean(scores_l, axis=0)
 
     def _l2_normalization(self, feat: np.ndarray) -> np.ndarray:
         """L2 normalization of a tensor along the last dimension.
