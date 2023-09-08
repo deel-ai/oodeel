@@ -43,7 +43,7 @@ class Mahalanobis(OODBaseDetector):
         self,
         eps: float = 0.002,
     ):
-        super(Mahalanobis, self).__init__()
+        super().__init__()
         self.eps = eps
         self.postproc_fns = None
 
@@ -123,9 +123,11 @@ class Mahalanobis(OODBaseDetector):
 
         scores = np.empty((0, inputs.shape[0]))
         # mahalanobis score on perturbed inputs
-        features_p, _ = self.feature_extractor.predict_tensor(
+        features_p, logits = self.feature_extractor.predict_tensor(
             inputs_p, postproc_fns=self.postproc_fns
         )
+        preds = self.op.argmax(logits, dim=1)
+        preds = self.op.convert_to_numpy(preds)
         if not isinstance(features_p, list):
             features_p = [features_p]
         for mus, pinv_covs, feature_p in zip(
@@ -134,15 +136,18 @@ class Mahalanobis(OODBaseDetector):
             gaussian_score_p = self._mahalanobis_score(feature_p, mus, pinv_covs)
 
             # take the highest score for each sample
-            gaussian_score_p = self.op.max(gaussian_score_p, dim=1)
-            scores = np.append(
-                scores,
-                np.expand_dims(
-                    -self.op.convert_to_numpy(gaussian_score_p)
-                    / np.sqrt(feature_p.shape[1]),
-                    axis=0,
-                ),
-                axis=0,
+            # gaussian_score_p = self.op.max(gaussian_score_p, dim=1)
+            gaussian_score_p = self.op.convert_to_numpy(gaussian_score_p)
+            gaussian_score_p = gaussian_score_p[np.arange(preds.shape[0]), preds]
+            scores = np.concatenate(
+                [
+                    scores,
+                    np.expand_dims(
+                        -gaussian_score_p
+                        / np.sqrt(feature_p.shape[1]),  # PERSONAL ADDING TO NORM
+                        axis=0,
+                    ),
+                ]
             )
         return np.mean(scores, axis=0)
 
