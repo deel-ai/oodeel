@@ -115,10 +115,10 @@ class Gram(OODBaseDetector):
 
         full_indices = np.arange(labels.shape[0])
         train_indices, val_indices = train_test_split(full_indices, test_size=val_split)
-        train_indices = self.op.convert_to_tensor(
+        train_indices = self.op.from_numpy(
             [bool(ind in train_indices) for ind in full_indices]
         )
-        val_indices = self.op.convert_to_tensor(
+        val_indices = self.op.from_numpy(
             [bool(ind in val_indices) for ind in full_indices]
         )
 

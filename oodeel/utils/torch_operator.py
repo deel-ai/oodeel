@@ -59,11 +59,6 @@ class TorchOperator(Operator):
             self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     @staticmethod
-    def convert_to_tensor(array: np.ndarray) -> TensorType:
-        """Convert array to tensor"""
-        return torch.tensor(array)
-
-    @staticmethod
     def softmax(tensor: TensorType) -> torch.Tensor:
         """Softmax function along the last dimension"""
         return torch.nn.functional.softmax(tensor, dim=-1)
