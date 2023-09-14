@@ -161,7 +161,7 @@ class TFOperator(Operator):
     def from_numpy(arr: np.ndarray) -> tf.Tensor:
         "Convert a NumPy array to a tensor"
         # TODO change dtype
-        return tf.constant(arr, dtype=tf.float32)
+        return tf.convert_to_tensor(arr)
 
     @staticmethod
     def t(tensor: TensorType) -> tf.Tensor:

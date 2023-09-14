@@ -179,7 +179,7 @@ class TorchOperator(Operator):
     def from_numpy(self, arr: np.ndarray) -> torch.Tensor:
         "Convert a NumPy array to a tensor"
         # TODO change dtype
-        return torch.from_numpy(arr).double().to(self._device)
+        return torch.tensor(arr).to(self._device)
 
     @staticmethod
     def t(tensor: TensorType) -> torch.Tensor:
