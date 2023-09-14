@@ -252,7 +252,8 @@ class Gram(OODBaseDetector):
                 # flatten the feature map
                 if self.backend == "tensorflow":
                     feature_map_p = self.op.reshape(
-                        feature_map_p, (fm_s[0], fm_s[-1], -1)
+                        self.op.einsum("i...j->ij...", feature_map_p),
+                        (fm_s[0], fm_s[-1], -1),
                     )
                 else:
                     feature_map_p = self.op.reshape(
