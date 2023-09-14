@@ -58,7 +58,7 @@ class DKNN(OODBaseDetector):
             fit_dataset: input dataset (ID) to construct the index with.
         """
         fit_projected, _ = self.feature_extractor.predict(fit_dataset)
-        fit_projected = self.op.convert_to_numpy(fit_projected)
+        fit_projected = self.op.convert_to_numpy(fit_projected[0])
         fit_projected = fit_projected.reshape(fit_projected.shape[0], -1)
         norm_fit_projected = self._l2_normalization(fit_projected)
         self.index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
@@ -77,7 +77,7 @@ class DKNN(OODBaseDetector):
         """
 
         input_projected, _ = self.feature_extractor.predict_tensor(inputs)
-        input_projected = self.op.convert_to_numpy(input_projected)
+        input_projected = self.op.convert_to_numpy(input_projected[0])
         input_projected = input_projected.reshape(input_projected.shape[0], -1)
         norm_input_projected = self._l2_normalization(input_projected)
         scores, _ = self.index.search(norm_input_projected, self.nearest)

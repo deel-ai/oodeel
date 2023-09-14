@@ -95,7 +95,7 @@ class FeatureExtractor(ABC):
     def predict_tensor(
         self,
         tensor: TensorType,
-        postproc_fns: Optional[Callable] = None,
+        postproc_fns: Optional[List[Callable]] = None,
     ) -> Tuple[List[TensorType], TensorType]:
         """Get the projection of tensor in the feature space of self.model
 
@@ -113,7 +113,7 @@ class FeatureExtractor(ABC):
     def predict(
         self,
         dataset: Union[ItemType, DatasetType],
-        postproc_fns: Optional[Callable] = None,
+        postproc_fns: Optional[List[Callable]] = None,
         **kwargs,
     ) -> Tuple[List[TensorType], dict]:
         """Get the projection of the dataset in the feature space of self.model

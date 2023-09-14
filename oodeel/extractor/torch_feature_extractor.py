@@ -183,13 +183,15 @@ class TorchFeatureExtractor(FeatureExtractor):
     def predict_tensor(
         self,
         x: TensorType,
-        postproc_fns: Optional[Callable] = None,
+        postproc_fns: Optional[List[Callable]] = None,
         detach: bool = True,
     ) -> Tuple[List[torch.Tensor], torch.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
             x (TensorType): input tensor (or dataset elem)
+            postproc_fns (Optional[Callable]): postprocessing function to apply to each
+                feature immediately after forward. Default to None.
             detach (bool): if True, return features detached from the computational
                 graph. Defaults to True.
 
@@ -211,16 +213,10 @@ class TorchFeatureExtractor(FeatureExtractor):
         logits = features.pop()
 
         if postproc_fns is not None:
-            if len(postproc_fns) == 1:
-                features = [postproc_fns[0](features)]
-            else:
-                features = [
-                    postproc_fn(feature)
-                    for feature, postproc_fn in zip(features, postproc_fns)
-                ]
-
-        if len(features) == 1:
-            features = features[0]
+            features = [
+                postproc_fn(feature)
+                for feature, postproc_fn in zip(features, postproc_fns)
+            ]
 
         self._last_logits = logits
         return features, logits
@@ -264,9 +260,6 @@ class TorchFeatureExtractor(FeatureExtractor):
                 features_batch, logits_batch = self.predict_tensor(
                     tensor, postproc_fns, detach=detach
                 )
-                # concatenate features
-                if len(features) == 1:
-                    features_batch = [features_batch]
                 for i, f in enumerate(features_batch):
                     features[i] = (
                         f if features[i] is None else torch.cat([features[i], f], dim=0)
@@ -288,10 +281,6 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # store extra information in a dict
         info = dict(labels=labels, logits=logits)
-
-        if len(features) == 1:
-            features = features[0]
-
         return features, info
 
     def get_weights(self, layer_id: Union[str, int]) -> List[torch.Tensor]:

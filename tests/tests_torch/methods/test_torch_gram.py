@@ -51,3 +51,8 @@ def test_gram_shape():
     assert score.shape == (100,)
     assert gram.min_maxs[0][0].shape == (5, 16, 2)
     assert gram.min_maxs[0][1].shape == (5, 1, 2)
+
+    gram.fit(model, data, feature_layers_id=["fc2"])
+    score, _ = gram.score(data)
+    assert score.shape == (100,)
+    assert gram.min_maxs[0][0].shape == (5, 1, 2)

@@ -86,7 +86,7 @@ class VIM(OODBaseDetector):
         """
         # extract features from fit dataset
         all_features_train, info = self.feature_extractor.predict(fit_dataset)
-        features_train = all_features_train
+        features_train = all_features_train[0]
         logits_train = info["logits"]
         features_train = self.op.flatten(features_train)
         self.feature_dim = features_train.shape[1]
@@ -174,7 +174,7 @@ class VIM(OODBaseDetector):
         """
         # extract features
         features, logits = self.feature_extractor.predict_tensor(inputs)
-        features = self.op.flatten(features)
+        features = self.op.flatten(features[0])
         # vim score
         res_scores = self._compute_residual_score_tensor(features)
         logits = self.op.convert_to_numpy(logits)

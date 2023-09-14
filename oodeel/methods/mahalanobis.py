@@ -66,7 +66,7 @@ class Mahalanobis(OODBaseDetector):
         covs = dict()
         for cls in self._classes:
             indexes = self.op.equal(labels, cls)
-            _features_cls = self.op.flatten(features[indexes])
+            _features_cls = self.op.flatten(features[0][indexes])
             mus[cls] = self.op.mean(_features_cls, dim=0)
             _zero_f_cls = _features_cls - mus[cls]
             covs[cls] = (
@@ -99,7 +99,7 @@ class Mahalanobis(OODBaseDetector):
 
         # mahalanobis score on perturbed inputs
         features_p, _ = self.feature_extractor.predict_tensor(inputs_p)
-        features_p = self.op.flatten(features_p)
+        features_p = self.op.flatten(features_p[0])
         gaussian_score_p = self._mahalanobis_score(features_p)
 
         # take the highest score for each sample
@@ -132,7 +132,7 @@ class Mahalanobis(OODBaseDetector):
             """
             # extract features
             out_features, _ = self.feature_extractor.predict(inputs, detach=False)
-            out_features = self.op.flatten(out_features)
+            out_features = self.op.flatten(out_features[0])
             # get mahalanobis score for the class maximizing it
             gaussian_score = self._mahalanobis_score(out_features)
             log_probs_f = self.op.max(gaussian_score, dim=1)
