@@ -73,7 +73,7 @@ tensor_2 = tf.ones((10,5))
 
 # The following code does not depend on the underlying library
 def mult(x):
-    return operator.matmul(x, operator.transpose(tensor_2))
+    return operator.matmul(x, operator.t(tensor_2))
 
 grads = operator.gradient(mult, tensor_1)
 

@@ -86,7 +86,7 @@ class VIM(OODBaseDetector):
         """
         # extract features from fit dataset
         all_features_train, info = self.feature_extractor.predict(fit_dataset)
-        features_train = all_features_train
+        features_train = all_features_train[0]
         logits_train = info["logits"]
         features_train = self.op.flatten(features_train)
         self.feature_dim = features_train.shape[1]
@@ -101,7 +101,7 @@ class VIM(OODBaseDetector):
             # )
             W, b = self.feature_extractor.get_weights(-1)
             W, b = self.op.from_numpy(W), self.op.from_numpy(b.reshape(-1, 1))
-            _W = self.op.transpose(W) if self.backend == "tensorflow" else W
+            _W = self.op.t(W) if self.backend == "tensorflow" else W
             self.center = -self.op.reshape(self.op.matmul(self.op.pinv(_W), b), (-1,))
         else:
             raise NotImplementedError(
@@ -111,7 +111,7 @@ class VIM(OODBaseDetector):
         # compute eigvalues and eigvectors of empirical covariance matrix
         centered_features = features_train - self.center
         emp_cov = (
-            self.op.matmul(self.op.transpose(centered_features), centered_features)
+            self.op.matmul(self.op.t(centered_features), centered_features)
             / centered_features.shape[0]
         )
         eig_vals, eigen_vectors = self.op.eigh(emp_cov)
@@ -174,7 +174,7 @@ class VIM(OODBaseDetector):
         """
         # extract features
         features, logits = self.feature_extractor.predict_tensor(inputs)
-        features = self.op.flatten(features)
+        features = self.op.flatten(features[0])
         # vim score
         res_scores = self._compute_residual_score_tensor(features)
         logits = self.op.convert_to_numpy(logits)

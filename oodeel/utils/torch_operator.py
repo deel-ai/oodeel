@@ -69,12 +69,24 @@ class TorchOperator(Operator):
         return torch.argmax(tensor, dim=dim)
 
     @staticmethod
-    def max(tensor: TensorType, dim: Optional[int] = None) -> torch.Tensor:
+    def max(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: Optional[bool] = False
+    ) -> torch.Tensor:
         """Max function"""
         if dim is None:
             return torch.max(tensor)
         else:
-            return torch.max(tensor, dim)[0]
+            return torch.max(tensor, dim, keepdim=keepdim)[0]
+
+    @staticmethod
+    def min(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+    ) -> torch.Tensor:
+        """Min function"""
+        if dim is None:
+            return torch.min(tensor)
+        else:
+            return torch.min(tensor, dim, keepdim=keepdim)[0]
 
     @staticmethod
     def one_hot(tensor: TensorType, num_classes: int) -> torch.Tensor:
@@ -167,12 +179,17 @@ class TorchOperator(Operator):
     def from_numpy(self, arr: np.ndarray) -> torch.Tensor:
         "Convert a NumPy array to a tensor"
         # TODO change dtype
-        return torch.from_numpy(arr).double().to(self._device)
+        return torch.tensor(arr).to(self._device)
 
     @staticmethod
-    def transpose(tensor: TensorType) -> torch.Tensor:
+    def t(tensor: TensorType) -> torch.Tensor:
         "Transpose function for tensor of rank 2"
         return tensor.t()
+
+    @staticmethod
+    def permute(tensor: TensorType, dims) -> torch.Tensor:
+        "Transpose function for tensor of rank 2"
+        return torch.permute(tensor, dims)
 
     @staticmethod
     def diag(tensor: TensorType) -> torch.Tensor:
@@ -215,3 +232,38 @@ class TorchOperator(Operator):
     def relu(tensor: TensorType) -> torch.Tensor:
         "Apply relu to a tensor"
         return torch.nn.functional.relu(tensor)
+
+    @staticmethod
+    def einsum(equation: str, *tensors: TensorType) -> torch.Tensor:
+        "Computes the einsum between tensors following equation"
+        return torch.einsum(equation, *tensors)
+
+    @staticmethod
+    def tril(tensor: TensorType, diagonal: int = 0) -> torch.Tensor:
+        "Set the upper triangle of the matrix formed by the last two dimensions of"
+        "tensor to zero"
+        return torch.tril(tensor, diagonal)
+
+    @staticmethod
+    def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> torch.Tensor:
+        "sum along dim"
+        return torch.sum(tensor, dim)
+
+    @staticmethod
+    def unsqueeze(tensor: TensorType, dim: int) -> torch.Tensor:
+        "unsqueeze along dim"
+        return torch.unsqueeze(tensor, dim)
+
+    @staticmethod
+    def abs(tensor: TensorType) -> torch.Tensor:
+        "compute absolute value"
+        return torch.abs(tensor)
+
+    @staticmethod
+    def where(
+        condition: TensorType,
+        input: Union[TensorType, float],
+        other: Union[TensorType, float],
+    ) -> torch.Tensor:
+        "Applies where function , to condition"
+        return torch.where(condition, input, other)

@@ -25,6 +25,7 @@ from abc import abstractmethod
 
 from ..types import Callable
 from ..types import DatasetType
+from ..types import ItemType
 from ..types import List
 from ..types import Optional
 from ..types import TensorType
@@ -91,28 +92,37 @@ class FeatureExtractor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def predict_tensor(self, tensor: TensorType) -> Tuple[List[TensorType], TensorType]:
-        """
-        Projects input samples "inputs" into the feature space
+    def predict_tensor(
+        self,
+        tensor: TensorType,
+        postproc_fns: Optional[List[Callable]] = None,
+    ) -> Tuple[List[TensorType], TensorType]:
+        """Get the projection of tensor in the feature space of self.model
 
         Args:
-            tensor (TensorType): input tensor
+            tensor (TensorType): input tensor (or dataset elem)
+            postproc_fns (Optional[Callable]): postprocessing function to apply to each
+                feature immediately after forward. Default to None.
 
         Returns:
-            List[TensorType], TensorType: features, logits
+            Tuple[List[TensorType], TensorType]: features, logits
         """
         raise NotImplementedError()
 
     @abstractmethod
     def predict(
         self,
-        dataset: Union[DatasetType, TensorType],
+        dataset: Union[ItemType, DatasetType],
+        postproc_fns: Optional[List[Callable]] = None,
+        **kwargs,
     ) -> Tuple[List[TensorType], dict]:
-        """
-        Projects input samples "inputs" into the feature space for a batched dataset
+        """Get the projection of the dataset in the feature space of self.model
 
         Args:
-            dataset (Union[DatasetType, TensorType]): iterable of tensor batches
+            dataset (Union[ItemType, DatasetType]): input dataset
+            postproc_fns (Optional[Callable]): postprocessing function to apply to each
+                feature immediately after forward. Default to None.
+            kwargs (dict): additional arguments not considered for prediction
 
         Returns:
             List[TensorType], dict: features and extra information (logits, labels) as a

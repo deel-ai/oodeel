@@ -20,13 +20,37 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .dknn import DKNN
-from .energy import Energy
-from .entropy import Entropy
-from .gram import Gram
-from .mahalanobis import Mahalanobis
-from .mls import MLS
-from .odin import ODIN
-from .vim import VIM
+from oodeel.methods import Gram
+from tests.tests_tensorflow import generate_data_tf
+from tests.tests_tensorflow import generate_model
 
-__all__ = ["MLS", "DKNN", "ODIN", "Energy", "VIM", "Mahalanobis", "Entropy", "Gram"]
+
+def test_gram_shape():
+    """
+    Test Mahalanobis on MNIST vs FashionMNIST OOD dataset-wise task
+
+    We check that the area under ROC is above a certain threshold, and that the FPR95TPR
+    is below an other threshold.
+    """
+    gram = Gram(orders=range(1, 6))
+
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    ).batch(samples // 2)
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    gram.fit(model, data, feature_layers_id=[-5, -2])
+    score, _ = gram.score(data)
+    assert score.shape == (100,)
+    assert gram.min_maxs[0][0].shape == (5, 4, 2)
+    assert gram.min_maxs[0][1].shape == (5, 900, 2)
+
+    gram.fit(model, data, feature_layers_id=[-2])
+    score, _ = gram.score(data)
+    assert score.shape == (100,)
+    assert gram.min_maxs[0][0].shape == (5, 900, 2)

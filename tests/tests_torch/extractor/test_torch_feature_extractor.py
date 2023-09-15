@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import pytest
+import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from oodeel.extractor.torch_feature_extractor import TorchFeatureExtractor
@@ -67,7 +68,7 @@ def test_params_torch_feature_extractor(kwargs_factory, expected_sz):
     feature_extractor = TorchFeatureExtractor(**kwargs_factory())
     pred_feature_extractor, _ = feature_extractor.predict(dataset)
 
-    assert list(pred_feature_extractor.size()) == expected_sz
+    assert list(pred_feature_extractor[0].size()) == expected_sz
 
 
 @pytest.mark.parametrize(
@@ -102,7 +103,7 @@ def test_pytorch_feature_extractor_with_input_ids(kwargs_factory, expected_sz):
     feature_extractor = TorchFeatureExtractor(**kwargs_factory())
     pred_feature_extractor, _ = feature_extractor.predict(dataset)
 
-    assert list(pred_feature_extractor.size()) == expected_sz
+    assert list(pred_feature_extractor[0].size()) == expected_sz
 
 
 def test_get_weights():
@@ -146,32 +147,55 @@ def test_predict_with_labels():
 
     # Assert predict() outputs have expected shape
     out, info = feature_extractor.predict(dataset)
-    assert out.shape == (n_samples, 84)
+    assert out[0].shape == (n_samples, 84)
     assert info["logits"].shape == (n_samples, 10)
     assert info["labels"].shape == (n_samples,)
 
     # Assert predict() outputs have expected shape (dataset has one-hot encoded labels)
     out, info = feature_extractor.predict(dataset_one_hot)
-    assert out.shape == (n_samples, 84)
+    assert out[0].shape == (n_samples, 84)
     assert info["logits"].shape == (n_samples, 10)
     assert info["labels"].shape == (n_samples,)
 
     # Assert predict() outputs have expected shape (dataset has no labels)
     out, info = feature_extractor.predict(dataset_wo_labels)
-    assert out.shape == (n_samples, 84)
+    assert out[0].shape == (n_samples, 84)
     assert info["logits"].shape == (n_samples, 10)
     assert info["labels"] is None
 
     # Assert predict() outputs for a single input tensor (no label provided)
     batch = next(iter(dataset_wo_labels))
     out, info = feature_extractor.predict(batch)
-    assert out.shape == (33, 84)
+    assert out[0].shape == (33, 84)
     assert info["logits"].shape == (33, 10)
     assert info["labels"] is None
 
     # Assert predict() outputs for a single input tensor with label provided
     batch = next(iter(dataset_one_hot))
     out, info = feature_extractor.predict(batch)
-    assert out.shape == (33, 84)
+    assert out[0].shape == (33, 84)
     assert info["logits"].shape == (33, 10)
     assert info["labels"].shape == (33,)
+
+
+def test_postproc_fns():
+    n_samples = 100
+    input_shape = (3, 32, 32)
+    num_labels = 10
+
+    x = generate_data_torch(input_shape, num_labels, n_samples)
+    dataset = DataLoader(x, batch_size=n_samples // 2)
+
+    model = named_sequential_model()
+
+    def globalavg(x):
+        _, _, height, width = x.size()
+        return nn.AvgPool2d(height, width)(x)
+
+    postproc_fns = [globalavg, lambda x: x]
+    feature_extractor = TorchFeatureExtractor(model, feature_layers_id=["relu2", "fc2"])
+
+    feats, _ = feature_extractor.predict(dataset, postproc_fns=postproc_fns)
+    feat0, feat1 = feats
+    assert list(feat0.size()) == [100, 16, 1, 1]
+    assert list(feat1.size()) == [100, 84]

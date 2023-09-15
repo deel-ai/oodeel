@@ -49,8 +49,18 @@ class Operator(ABC):
 
     @staticmethod
     @abstractmethod
-    def max(tensor: TensorType, dim: Optional[int] = None) -> TensorType:
+    def max(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+    ) -> TensorType:
         """Max function"""
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def min(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+    ) -> TensorType:
+        """Min function"""
         raise NotImplementedError()
 
     @staticmethod
@@ -138,7 +148,13 @@ class Operator(ABC):
 
     @staticmethod
     @abstractmethod
-    def transpose(tensor: TensorType) -> TensorType:
+    def t(tensor: TensorType) -> TensorType:
+        "Transpose function for tensor of rank 2"
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def permute(tensor: TensorType) -> TensorType:
         "Transpose function for tensor of rank 2"
         raise NotImplementedError()
 
@@ -180,4 +196,41 @@ class Operator(ABC):
     @staticmethod
     def relu(tensor: TensorType) -> TensorType:
         "Apply relu to a tensor"
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def einsum(equation: str, *tensors: TensorType) -> TensorType:
+        "Computes the einsum between tensors following equation"
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def tril(tensor: TensorType, diagonal: int = 0) -> TensorType:
+        "Set the upper triangle of the matrix formed by the last two dimensions of"
+        "tensor to zero"
+        raise NotImplementedError()
+
+    @staticmethod
+    def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> TensorType:
+        "sum along dim"
+        raise NotImplementedError()
+
+    @staticmethod
+    def unsqueeze(tensor: TensorType, dim: int) -> TensorType:
+        "unsqueeze/expand_dim along dim"
+        raise NotImplementedError()
+
+    @staticmethod
+    def abs(tensor: TensorType) -> TensorType:
+        "compute absolute value"
+        raise NotImplementedError()
+
+    @staticmethod
+    def where(
+        condition: TensorType,
+        input: Union[TensorType, float],
+        other: Union[TensorType, float],
+    ) -> TensorType:
+        "Applies where function to condition"
         raise NotImplementedError()

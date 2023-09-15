@@ -65,9 +65,18 @@ class TFOperator(Operator):
         return tf.argmax(tensor, axis=dim)
 
     @staticmethod
-    def max(tensor: TensorType, dim: Optional[int] = None) -> tf.Tensor:
+    def max(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+    ) -> tf.Tensor:
         """Max function"""
-        return tf.reduce_max(tensor, axis=dim)
+        return tf.reduce_max(tensor, axis=dim, keepdims=keepdim)
+
+    @staticmethod
+    def min(
+        tensor: TensorType, dim: Optional[int] = None, keepdim: bool = False
+    ) -> tf.Tensor:
+        """Min function"""
+        return tf.reduce_min(tensor, axis=dim, keepdims=keepdim)
 
     @staticmethod
     def one_hot(tensor: TensorType, num_classes: int) -> tf.Tensor:
@@ -152,12 +161,17 @@ class TFOperator(Operator):
     def from_numpy(arr: np.ndarray) -> tf.Tensor:
         "Convert a NumPy array to a tensor"
         # TODO change dtype
-        return tf.constant(arr, dtype=tf.float32)
+        return tf.convert_to_tensor(arr)
 
     @staticmethod
-    def transpose(tensor: TensorType) -> tf.Tensor:
+    def t(tensor: TensorType) -> tf.Tensor:
         "Transpose function for tensor of rank 2"
         return tf.transpose(tensor)
+
+    @staticmethod
+    def permute(tensor: TensorType, dims) -> tf.Tensor:
+        "Transpose function for tensor of rank 2"
+        return tf.transpose(tensor, dims)
 
     @staticmethod
     def diag(tensor: TensorType) -> tf.Tensor:
@@ -195,3 +209,42 @@ class TFOperator(Operator):
     def relu(tensor: TensorType) -> tf.Tensor:
         "Apply relu to a tensor"
         return tf.nn.relu(tensor)
+
+    @staticmethod
+    def einsum(equation: str, *tensors: TensorType) -> tf.Tensor:
+        "Computes the einsum between tensors following equation"
+        return tf.einsum(equation, *tensors)
+
+    @staticmethod
+    def tril(tensor: TensorType, diagonal: int = 0) -> tf.Tensor:
+        "Set the upper triangle of the matrix formed by the last two dimensions of"
+        "tensor to zero"
+        return tf.experimental.numpy.tril(tensor, k=diagonal)
+
+    @staticmethod
+    def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> tf.Tensor:
+        "sum along dim"
+        return tf.reduce_sum(tensor, axis=dim)
+
+    @staticmethod
+    def unsqueeze(tensor: TensorType, dim: int) -> tf.Tensor:
+        "expand_dim along dim"
+        return tf.expand_dims(tensor, dim)
+
+    @staticmethod
+    def abs(tensor: TensorType) -> tf.Tensor:
+        "compute absolute value"
+        return tf.abs(tensor)
+
+    @staticmethod
+    def where(
+        condition: TensorType,
+        input: Union[TensorType, float],
+        other: Union[TensorType, float],
+    ) -> tf.Tensor:
+        "Applies where function to condition"
+        return tf.where(condition, input, other)
+
+    @staticmethod
+    def percentile(x, q):
+        return tfp.stats.percentile(x, q)

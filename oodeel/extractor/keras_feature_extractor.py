@@ -150,11 +150,17 @@ class KerasFeatureExtractor(FeatureExtractor):
         return extractor
 
     @sanitize_input
-    def predict_tensor(self, tensor: TensorType) -> Tuple[List[tf.Tensor], tf.Tensor]:
+    def predict_tensor(
+        self,
+        tensor: TensorType,
+        postproc_fns: Optional[List[Callable]] = None,
+    ) -> Tuple[List[tf.Tensor], tf.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
             tensor (TensorType): input tensor (or dataset elem)
+            postproc_fns (Optional[List[Callable]]): postprocessing function to apply to
+                each feature immediately after forward. Default to None.
 
         Returns:
             Tuple[List[tf.Tensor], tf.Tensor]: features, logits
@@ -166,8 +172,12 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         # split features and logits
         logits = features.pop()
-        if len(features) == 1:
-            features = features[0]
+
+        if postproc_fns is not None:
+            features = [
+                postproc_fn(feature)
+                for feature, postproc_fn in zip(features, postproc_fns)
+            ]
 
         self._last_logits = logits
         return features, logits
@@ -179,12 +189,15 @@ class KerasFeatureExtractor(FeatureExtractor):
     def predict(
         self,
         dataset: Union[ItemType, tf.data.Dataset],
+        postproc_fns: Optional[List[Callable]] = None,
         **kwargs,
     ) -> Tuple[List[tf.Tensor], dict]:
         """Get the projection of the dataset in the feature space of self.model
 
         Args:
             dataset (Union[ItemType, tf.data.Dataset]): input dataset
+            postproc_fns (Optional[Callable]): postprocessing function to apply to each
+                feature immediately after forward. Default to None.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
@@ -195,7 +208,7 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         if isinstance(dataset, get_args(ItemType)):
             tensor = TFDataHandler.get_input_from_dataset_item(dataset)
-            features, logits = self.predict_tensor(tensor)
+            features, logits = self.predict_tensor(tensor, postproc_fns)
 
             # Get labels if dataset is a tuple/list
             if isinstance(dataset, (list, tuple)):
@@ -207,10 +220,8 @@ class KerasFeatureExtractor(FeatureExtractor):
             contains_labels = TFDataHandler.get_item_length(dataset) > 1
             for elem in dataset:
                 tensor = TFDataHandler.get_input_from_dataset_item(elem)
-                features_batch, logits_batch = self.predict_tensor(tensor)
-                # concatenate features
-                if len(features) == 1:
-                    features_batch = [features_batch]
+                features_batch, logits_batch = self.predict_tensor(tensor, postproc_fns)
+
                 for i, f in enumerate(features_batch):
                     features[i] = (
                         f
@@ -234,10 +245,6 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         # store extra information in a dict
         info = dict(labels=labels, logits=logits)
-
-        if len(features) == 1:
-            features = features[0]
-
         return features, info
 
     def get_weights(self, layer_id: Union[int, str]) -> List[tf.Tensor]:

@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import tensorflow as tf
+
 from oodeel.extractor.keras_feature_extractor import KerasFeatureExtractor
 from tests.tests_tensorflow import almost_equal
 from tests.tests_tensorflow import generate_data_tf
@@ -50,10 +52,10 @@ def test_predict():
     # pred_feature_extractor = tf.data.Dataset.from_tensor_slices(
     #    pred_feature_extractor
     # ).batch(samples // 2)
-    pred_last_layer, _ = last_layer.predict(pred_feature_extractor)
+    pred_last_layer, _ = last_layer.predict(pred_feature_extractor[0])
 
-    assert almost_equal(pred_model, pred_model_fe)
-    assert almost_equal(pred_model, pred_last_layer)
+    assert almost_equal(pred_model, pred_model_fe[0])
+    assert almost_equal(pred_model, pred_last_layer[0])
 
 
 def test_get_weights():
@@ -88,11 +90,11 @@ def test_predict_with_labels():
         num_labels=num_labels,
         samples=samples,
         one_hot=False,
-    ).batch(samples // 3)
+    ).batch(samples // 2)
 
     data_one_hot = generate_data_tf(
         x_shape=input_shape, num_labels=num_labels, samples=samples
-    ).batch(samples // 3)
+    ).batch(samples // 2)
 
     data_wo_labels = data.map(lambda x, y: x)
 
@@ -102,19 +104,19 @@ def test_predict_with_labels():
 
     # Assert predict() outputs have expected shape
     out, info = feature_extractor.predict(data)
-    assert out.shape == (samples, 15, 15, 4)
+    assert out[0].shape == (samples, 15, 15, 4)
     assert info["logits"].shape == (samples, 10)
     assert info["labels"].shape == (samples,)
 
     # Assert predict() outputs have expected shape (dataset has one-hot encoded labels)
     out, info = feature_extractor.predict(data_one_hot)
-    assert out.shape == (samples, 15, 15, 4)
+    assert out[0].shape == (samples, 15, 15, 4)
     assert info["logits"].shape == (samples, 10)
     assert info["labels"].shape == (samples,)
 
     # Assert predict() outputs have expected shape (dataset has no labels)
     out, info = feature_extractor.predict(data_wo_labels)
-    assert out.shape == (samples, 15, 15, 4)
+    assert out[0].shape == (samples, 15, 15, 4)
     assert info["logits"].shape == (samples, 10)
     assert info["labels"] is None
 
@@ -122,14 +124,39 @@ def test_predict_with_labels():
     for batch in data_wo_labels.take(1):
         pass
     out, info = feature_extractor.predict(batch)
-    assert out.shape == (33, 15, 15, 4)
-    assert info["logits"].shape == (33, 10)
+    assert out[0].shape == (50, 15, 15, 4)
+    assert info["logits"].shape == (50, 10)
     assert info["labels"] is None
 
     # Assert predict() outputs for a single input tensor with label provided
     for batch in data_one_hot.take(1):
         pass
     out, info = feature_extractor.predict(batch)
-    assert out.shape == (33, 15, 15, 4)
-    assert info["logits"].shape == (33, 10)
-    assert info["labels"].shape == (33,)
+    assert out[0].shape == (50, 15, 15, 4)
+    assert info["logits"].shape == (50, 10)
+    assert info["labels"].shape == (50,)
+
+
+def test_postproc_fns():
+    samples = 100
+    input_shape = (3, 32, 32)
+    num_labels = 10
+
+    tf.keras.backend.clear_session()
+
+    dataset = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    ).batch(samples // 2)
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    postproc_fns = [tf.keras.layers.GlobalAveragePooling2D(), lambda x: x]
+
+    feature_extractor = KerasFeatureExtractor(
+        model, feature_layers_id=["conv2d", "flatten"]
+    )
+
+    feats, _ = feature_extractor.predict(dataset, postproc_fns=postproc_fns)
+    feat0, feat1 = feats
+    assert list(feat0.shape) == [100, 4]
+    assert list(feat1.shape) == [100, 60]

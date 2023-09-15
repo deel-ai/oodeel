@@ -35,14 +35,14 @@ def almost_equal(arr1, arr2, epsilon=1e-6):
 
 
 class Net(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes=10):
         super().__init__()
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.fc3 = nn.Linear(84, num_classes)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
@@ -55,7 +55,7 @@ class Net(nn.Module):
 
 
 class ComplexNet(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes=10):
         super().__init__()
 
         self.feature_extractor = nn.Sequential(
@@ -77,7 +77,7 @@ class ComplexNet(nn.Module):
                 [
                     ("fc1", nn.Linear(16 * 5 * 5, 120)),
                     ("fc2", nn.Linear(120, 84)),
-                    ("fc3", nn.Linear(84, 10)),
+                    ("fc3", nn.Linear(84, num_classes)),
                 ]
             )
         )
@@ -88,7 +88,7 @@ class ComplexNet(nn.Module):
         return x
 
 
-def sequential_model():
+def sequential_model(num_classes=10):
     return nn.Sequential(
         nn.Conv2d(3, 6, 5),
         nn.ReLU(),
@@ -99,11 +99,11 @@ def sequential_model():
         nn.Flatten(),
         nn.Linear(16 * 5 * 5, 120),
         nn.Linear(120, 84),
-        nn.Linear(84, 10),
+        nn.Linear(84, num_classes),
     )
 
 
-def named_sequential_model():
+def named_sequential_model(num_classes=10):
     return nn.Sequential(
         OrderedDict(
             [
@@ -116,13 +116,13 @@ def named_sequential_model():
                 ("flatten", nn.Flatten()),
                 ("fc1", nn.Linear(16 * 5 * 5, 120)),
                 ("fc2", nn.Linear(120, 84)),
-                ("fc3", nn.Linear(84, 10)),
+                ("fc3", nn.Linear(84, num_classes)),
             ]
         )
     )
 
 
-def simplest_mlp(num_features, num_classes):
+def simplest_mlp(num_features, num_classes=10):
     return nn.Sequential(
         nn.Linear(num_features, 64),
         nn.ReLU(),

@@ -52,11 +52,13 @@ class OODBaseDetector(ABC):
         self,
         use_react: bool = False,
         react_quantile: float = 0.8,
+        postproc_fns: List[Callable] = None,
     ):
         self.feature_extractor: FeatureExtractor = None
         self.use_react = use_react
         self.react_quantile = react_quantile
         self.react_threshold = None
+        self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
 
     @abstractmethod
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -66,11 +68,35 @@ class OODBaseDetector(ABC):
 
         Args:
             inputs (TensorType): tensor to score
-
         Returns:
             Tuple[TensorType]: OOD scores, predicted logits
         """
         raise NotImplementedError()
+
+    def _sanitize_posproc_fns(
+        self,
+        postproc_fns: Union[List[Callable], None],
+    ) -> List[Callable]:
+        """Sanitize postproc fns used at each layer output of the feature extractor.
+
+        Args:
+            postproc_fns (Optional[List[Callable]], optional): List of postproc
+                functions, one per output layer. Defaults to None.
+
+        Returns:
+            List[Callable]: Sanitized postproc_fns list
+        """
+        if postproc_fns is not None:
+            assert len(postproc_fns) == len(
+                self.output_layers_id
+            ), "len of postproc_fns and output_layers_id must match"
+
+            def identity(x):
+                return x
+
+            postproc_fns = [identity if fn is None else fn for fn in postproc_fns]
+
+        return postproc_fns
 
     def fit(
         self,
@@ -78,6 +104,7 @@ class OODBaseDetector(ABC):
         fit_dataset: Optional[Union[ItemType, DatasetType]] = None,
         feature_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
+        **kwargs,
     ) -> None:
         """Prepare the detector for scoring:
         * Constructs the feature extractor based on the model
@@ -133,7 +160,7 @@ class OODBaseDetector(ABC):
         )
 
         if fit_dataset is not None:
-            self._fit_to_dataset(fit_dataset)
+            self._fit_to_dataset(fit_dataset, **kwargs)
 
     def _load_feature_extractor(
         self,
@@ -243,7 +270,9 @@ class OODBaseDetector(ABC):
     def compute_react_threshold(self, model: Callable, fit_dataset: DatasetType):
         penult_feat_extractor = self._load_feature_extractor(model, [-2])
         unclipped_features, _ = penult_feat_extractor.predict(fit_dataset)
-        self.react_threshold = self.op.quantile(unclipped_features, self.react_quantile)
+        self.react_threshold = self.op.quantile(
+            unclipped_features[0], self.react_quantile
+        )
 
     def __call__(self, inputs: Union[ItemType, DatasetType]) -> np.ndarray:
         """

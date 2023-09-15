@@ -181,12 +181,17 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     @sanitize_input
     def predict_tensor(
-        self, x: TensorType, detach: bool = True
+        self,
+        x: TensorType,
+        postproc_fns: Optional[List[Callable]] = None,
+        detach: bool = True,
     ) -> Tuple[List[torch.Tensor], torch.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
             x (TensorType): input tensor (or dataset elem)
+            postproc_fns (Optional[List[Callable]]): postprocessing function to apply to
+                each feature immediately after forward. Default to None.
             detach (bool): if True, return features detached from the computational
                 graph. Defaults to True.
 
@@ -206,8 +211,12 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # split features and logits
         logits = features.pop()
-        if len(features) == 1:
-            features = features[0]
+
+        if postproc_fns is not None:
+            features = [
+                postproc_fn(feature)
+                for feature, postproc_fn in zip(features, postproc_fns)
+            ]
 
         self._last_logits = logits
         return features, logits
@@ -215,6 +224,7 @@ class TorchFeatureExtractor(FeatureExtractor):
     def predict(
         self,
         dataset: Union[DataLoader, ItemType],
+        postproc_fns: Optional[List[Callable]] = None,
         detach: bool = True,
         **kwargs,
     ) -> Tuple[List[torch.Tensor], dict]:
@@ -222,6 +232,8 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         Args:
             dataset (Union[DataLoader, ItemType]): input dataset
+            postproc_fns (Optional[List[Callable]]): postprocessing function to apply to
+                each feature immediately after forward. Default to None.
             detach (bool): if True, return features detached from the computational
                 graph. Defaults to True.
             kwargs (dict): additional arguments not considered for prediction
@@ -234,7 +246,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         if isinstance(dataset, get_args(ItemType)):
             tensor = TorchDataHandler.get_input_from_dataset_item(dataset)
-            features, logits = self.predict_tensor(tensor, detach=detach)
+            features, logits = self.predict_tensor(tensor, postproc_fns, detach=detach)
 
             # Get labels if dataset is a tuple/list
             if isinstance(dataset, (list, tuple)) and len(dataset) > 1:
@@ -248,11 +260,8 @@ class TorchFeatureExtractor(FeatureExtractor):
             for elem in dataset:
                 tensor = TorchDataHandler.get_input_from_dataset_item(elem)
                 features_batch, logits_batch = self.predict_tensor(
-                    tensor, detach=detach
+                    tensor, postproc_fns, detach=detach
                 )
-                # concatenate features
-                if len(features) == 1:
-                    features_batch = [features_batch]
                 for i, f in enumerate(features_batch):
                     features[i] = (
                         f if features[i] is None else torch.cat([features[i], f], dim=0)
@@ -274,10 +283,6 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # store extra information in a dict
         info = dict(labels=labels, logits=logits)
-
-        if len(features) == 1:
-            features = features[0]
-
         return features, info
 
     def get_weights(self, layer_id: Union[str, int]) -> List[torch.Tensor]:
