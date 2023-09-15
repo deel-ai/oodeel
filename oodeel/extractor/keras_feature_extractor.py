@@ -153,14 +153,14 @@ class KerasFeatureExtractor(FeatureExtractor):
     def predict_tensor(
         self,
         tensor: TensorType,
-        postproc_fns: Optional[Callable] = None,
+        postproc_fns: Optional[List[Callable]] = None,
     ) -> Tuple[List[tf.Tensor], tf.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
             tensor (TensorType): input tensor (or dataset elem)
-            postproc_fns (Optional[Callable]): postprocessing function to apply to each
-                feature immediately after forward. Default to None.
+            postproc_fns (Optional[List[Callable]]): postprocessing function to apply to
+                each feature immediately after forward. Default to None.
 
         Returns:
             Tuple[List[tf.Tensor], tf.Tensor]: features, logits

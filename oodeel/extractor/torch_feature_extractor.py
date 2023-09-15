@@ -190,8 +190,8 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         Args:
             x (TensorType): input tensor (or dataset elem)
-            postproc_fns (Optional[Callable]): postprocessing function to apply to each
-                feature immediately after forward. Default to None.
+            postproc_fns (Optional[List[Callable]]): postprocessing function to apply to
+                each feature immediately after forward. Default to None.
             detach (bool): if True, return features detached from the computational
                 graph. Defaults to True.
 
@@ -224,7 +224,7 @@ class TorchFeatureExtractor(FeatureExtractor):
     def predict(
         self,
         dataset: Union[DataLoader, ItemType],
-        postproc_fns: Optional[Callable] = None,
+        postproc_fns: Optional[List[Callable]] = None,
         detach: bool = True,
         **kwargs,
     ) -> Tuple[List[torch.Tensor], dict]:
@@ -232,6 +232,8 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         Args:
             dataset (Union[DataLoader, ItemType]): input dataset
+            postproc_fns (Optional[List[Callable]]): postprocessing function to apply to
+                each feature immediately after forward. Default to None.
             detach (bool): if True, return features detached from the computational
                 graph. Defaults to True.
             kwargs (dict): additional arguments not considered for prediction
