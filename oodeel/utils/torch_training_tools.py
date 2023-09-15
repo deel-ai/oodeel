@@ -35,6 +35,31 @@ from ..types import Optional
 from ..types import Union
 
 
+class ToyTorchMLP(nn.Sequential):
+    """Basic torch MLP classifier for toy datasets.
+
+    Args:
+        input_shape (tuple): Input data shape.
+        num_classes (int): Number of classes for the classification task.
+    """
+
+    def __init__(self, input_shape: tuple, num_classes: int):
+        self.input_shape = input_shape
+
+        # build toy mlp
+        mlp_modules = OrderedDict(
+            [
+                ("flatten", nn.Flatten()),
+                ("dense1", nn.Linear(np.prod(input_shape), 300)),
+                ("relu1", nn.ReLU()),
+                ("dense2", nn.Linear(300, 150)),
+                ("relu2", nn.ReLU()),
+                ("fc1", nn.Linear(150, num_classes)),
+            ]
+        )
+        super().__init__(mlp_modules)
+
+
 class ToyTorchConvnet(nn.Sequential):
     """Basic torch convolutional classifier for toy datasets.
 
@@ -106,7 +131,7 @@ def train_torch_model(
     Args:
         train_data (DataLoader): train dataloader
         model (Union[nn.Module, str]): if a string is provided, must be a model from
-            torchvision.models or "toy_convnet".
+            torchvision.models or "toy_convnet" or "toy_mlp.
         num_classes (int): Number of output classes.
         epochs (int, optional): Defaults to 50.
         loss (str, optional): Defaults to "CrossEntropyLoss".
@@ -136,8 +161,12 @@ def train_torch_model(
     elif isinstance(model, str):
         if model == "toy_convnet":
             # toy model
-            input_shape = next(iter(train_data))[0].shape[1:]
+            input_shape = tuple(next(iter(train_data))[0].shape[1:])
             model = ToyTorchConvnet(input_shape, num_classes).to(device)
+        elif model == "toy_mlp":
+            # toy model
+            input_shape = tuple(next(iter(train_data))[0].shape[1:])
+            model = ToyTorchMLP(input_shape, num_classes).to(device)
         else:
             # torchvision model
             model = getattr(torchvision.models, model)(

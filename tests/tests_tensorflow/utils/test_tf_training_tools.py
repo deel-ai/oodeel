@@ -44,6 +44,26 @@ def test_convnet_classifier():
     train_tf_model(data, **train_config)
 
 
+def test_mlp_classifier():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    train_config = {
+        "model": "toy_mlp",
+        "batch_size": 5,
+        "epochs": 3,
+        "input_shape": input_shape,
+        "num_classes": num_labels,
+    }
+
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    ).batch(samples // 2)
+
+    train_tf_model(data, **train_config)
+
+
 def test_train_tf_model_imagenet():
     input_shape = (224, 224, 3)
     num_labels = 1000

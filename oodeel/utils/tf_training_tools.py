@@ -35,6 +35,27 @@ from ..types import Optional
 from ..types import Union
 
 
+def get_toy_mlp(input_shape: tuple, num_classes: int) -> tf.keras.Model:
+    """Basic keras MLP classifier for toy datasets.
+
+    Args:
+        input_shape (tuple): Input data shape.
+        num_classes (int): Number of classes for the classification task.
+
+    Returns:
+        tf.keras.Model: model
+    """
+    return tf.keras.models.Sequential(
+        [
+            tf.keras.layers.Input(shape=input_shape),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(300, activation="relu"),
+            tf.keras.layers.Dense(150, activation="relu"),
+            tf.keras.layers.Dense(num_classes, activation="softmax"),
+        ]
+    )
+
+
 def get_toy_keras_convnet(num_classes: int) -> tf.keras.Model:
     """Basic keras convolutional classifier for toy datasets.
 
@@ -80,7 +101,7 @@ def train_tf_model(
     Args:
         train_data (tf.data.Dataset): training dataset.
         model (Union[tf.keras.Model, str]): if a string is provided, must be a model
-            from tf.keras.applications or "toy_convnet"
+            from tf.keras.applications or "toy_convnet" or "toy_mlp"
         input_shape (tuple): Shape of the input images.
         num_classes (int): Number of output classes.
         batch_size (int, optional): Defaults to 128.
@@ -120,6 +141,8 @@ def train_tf_model(
     elif isinstance(model, str):
         if model == "toy_convnet":
             model = get_toy_keras_convnet(num_classes)
+        elif model == "toy_mlp":
+            model = get_toy_mlp(input_shape, num_classes)
         else:
             weights = "imagenet" if imagenet_pretrained else None
             backbone = getattr(tf.keras.applications, model)(

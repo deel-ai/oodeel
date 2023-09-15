@@ -45,6 +45,25 @@ def test_convnet_classifier():
     train_torch_model(data, **train_config)
 
 
+def test_mlp_classifier():
+    input_shape = (3, 32, 32)
+    num_labels = 10
+    samples = 100
+
+    train_config = {
+        "model": "toy_mlp",
+        "epochs": 3,
+        "num_classes": num_labels,
+        "cuda_idx": None,
+    }
+
+    data = generate_data_torch(
+        x_shape=input_shape, num_labels=num_labels, samples=samples, one_hot=False
+    )
+    data = DataLoader(data, batch_size=samples // 2)
+    train_torch_model(data, **train_config)
+
+
 def test_train_torch_model_imagenet():
     input_shape = (3, 224, 224)
     num_labels = 1000
