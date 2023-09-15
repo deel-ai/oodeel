@@ -244,10 +244,10 @@ class Gram(OODBaseDetector):
             feature_map_p = feature_map**p
             # construct the Gram matrix
             if len(fm_s) == 2:
-                # prevents from computing a scalar per batch for layers of shape (1,)
-                feature_map_p = self.op.einsum("bi,bj->b", feature_map_p, feature_map_p)
-                feature_map_p = self.op.unsqueeze(feature_map_p, -1)
-                feature_map_p = self.op.unsqueeze(feature_map_p, -1)
+                # build gram matrix for feature map of shape [dim_dense_layer, 1]
+                feature_map_p = self.op.einsum(
+                    "bi,bj->bij", feature_map_p, feature_map_p
+                )
             elif len(fm_s) >= 3:
                 # flatten the feature map
                 if self.backend == "tensorflow":
