@@ -270,7 +270,9 @@ class OODBaseDetector(ABC):
     def compute_react_threshold(self, model: Callable, fit_dataset: DatasetType):
         penult_feat_extractor = self._load_feature_extractor(model, [-2])
         unclipped_features, _ = penult_feat_extractor.predict(fit_dataset)
-        self.react_threshold = self.op.quantile(unclipped_features, self.react_quantile)
+        self.react_threshold = self.op.quantile(
+            unclipped_features[0], self.react_quantile
+        )
 
     def __call__(self, inputs: Union[ItemType, DatasetType]) -> np.ndarray:
         """
