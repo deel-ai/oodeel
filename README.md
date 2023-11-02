@@ -12,23 +12,17 @@
 <!-- Badge section -->
 <div align="center">
     <a href="#">
-        <img src="https://img.shields.io/badge/python-3.8%2B-blue">
-    </a>
+        <img src="https://img.shields.io/badge/python-3.8%2B-blue"></a>
     <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml">
-        <img alt="Flake8" src="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml/badge.svg">
-    </a>
+        <img alt="Flake8" src="https://github.com/deel-ai/oodeel/actions/workflows/python-linters.yml/badge.svg"></a>
     <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml">
-        <img alt="Tests tf" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml/badge.svg">
-    </a>
+        <img alt="Tests tf" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-tf.yml/badge.svg"></a>
     <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml">
-        <img alt="Tests torch" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml/badge.svg">
-    </a>
+        <img alt="Tests torch" src="https://github.com/deel-ai/oodeel/actions/workflows/python-tests-torch.yml/badge.svg"></a>
     <a href="https://github.com/deel-ai/oodeel/actions/workflows/python-coverage-shield.yml">
-        <img alt="Coverage" src="https://github.com/deel-ai/oodeel/raw/gh-shields/coverage.svg">
-    </a>
+        <img alt="Coverage" src="https://github.com/deel-ai/oodeel/raw/gh-shields/coverage.svg"></a>
     <a href="https://github.com/deel-ai/oodeel/blob/master/LICENSE">
-        <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-efefef">
-    </a>
+        <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-efefef"></a>
 </div>
 <br>
 
