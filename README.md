@@ -48,7 +48,8 @@ scores, info = mls.score(ds) # ds is a tf.data.Dataset or a torch.DataLoader
 - [Contributing](#contributing)
 - [See Also](#see-also)
 - [Acknowledgments](#acknowledgments)
-- [Creator](#creator)
+- [Creators](#creators)
+- [Citation](#citation)
 - [License](#license)
 
 # Installation
@@ -225,6 +226,19 @@ This project received funding from the French ”Investing for the Future – PI
 
 The library was created by Paul Novello to streamline DEEL research on post-hoc deep OOD methods and foster their adoption by DEEL industrial partners. He was soon joined by Yann Pequignot, Yannick Prudent, Corentin Friedrich and Matthieu Le Goff.
 
+# Citation
+
+If you use OODEEL for your research project, please consider citing:
+```
+@misc{oodeel,
+  author = {Novello, Paul and Prudent, Yannick and Friedrich, Corentin and Pequignot, Yann and Le Goff, Matthieu},
+  title = {OODEEL, a simple, compact, and hackable post-hoc deep OOD detection for already trained tensorflow or pytorch image classifiers.},
+  year = {2023},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/deel-ai/oodeel}},
+}
+```
 # License
 
 The package is released under [MIT license](LICENSE).
