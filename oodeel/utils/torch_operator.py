@@ -53,7 +53,7 @@ class TorchOperator(Operator):
     """Class to handle torch operations with a unified API"""
 
     def __init__(self, model: Optional[torch.nn.Module] = None):
-        if model is not None:
+        if (model is not None) and (is_from(model, "torch")):
             self._device = next(model.parameters()).device
         else:
             self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

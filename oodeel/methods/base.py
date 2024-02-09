@@ -25,6 +25,7 @@ from abc import abstractmethod
 from typing import get_args
 
 import numpy as np
+from tqdm import tqdm
 
 from ..extractor.feature_extractor import FeatureExtractor
 from ..types import Callable
@@ -59,6 +60,7 @@ class OODBaseDetector(ABC):
         self.react_quantile = react_quantile
         self.react_threshold = None
         self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
+        self.extractor_backend = None
 
     @abstractmethod
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -104,6 +106,7 @@ class OODBaseDetector(ABC):
         fit_dataset: Optional[Union[ItemType, DatasetType]] = None,
         feature_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
+        backend=None,
         **kwargs,
     ) -> None:
         """Prepare the detector for scoring:
@@ -128,7 +131,8 @@ class OODBaseDetector(ABC):
             self.data_handler,
             self.op,
             self.FeatureExtractorClass,
-        ) = import_backend_specific_stuff(model)
+            self.extractor_backend,
+        ) = import_backend_specific_stuff(model, backend)
 
         # if required by the method, check that fit_dataset is not None
         if self.requires_to_fit_dataset and fit_dataset is None:
@@ -146,7 +150,11 @@ class OODBaseDetector(ABC):
             else:
                 self.compute_react_threshold(model, fit_dataset)
 
-        if (feature_layers_id == []) and (self.requires_internal_features):
+        if (
+            (feature_layers_id == [])
+            and (self.requires_internal_features)
+            and (self.extractor_backend != "custom")
+        ):
             raise ValueError(
                 "Explicitly specify feature_layers_id=[layer0, layer1,...], "
                 + "where layer0, layer1,... are the names of the desired output "
@@ -155,9 +163,12 @@ class OODBaseDetector(ABC):
                 + "with keras or model.named_modules() with pytorch"
             )
 
-        self.feature_extractor = self._load_feature_extractor(
-            model, feature_layers_id, input_layer_id
-        )
+        if self.extractor_backend == "custom":
+            self.feature_extractor = self.FeatureExtractorClass
+        else:
+            self.feature_extractor = self._load_feature_extractor(
+                model, feature_layers_id, input_layer_id
+            )
 
         if fit_dataset is not None:
             self._fit_to_dataset(fit_dataset, **kwargs)
@@ -224,40 +235,55 @@ class OODBaseDetector(ABC):
         if isinstance(dataset, get_args(ItemType)):
             tensor = self.data_handler.get_input_from_dataset_item(dataset)
             scores = self._score_tensor(tensor)
-            logits = self.op.convert_to_numpy(self.feature_extractor._last_logits)
+            if self.extractor_backend != "custom":
+                logits = self.op.convert_to_numpy(self.feature_extractor._last_logits)
 
-            # Get labels if dataset is a tuple/list
-            if isinstance(dataset, (list, tuple)):
-                labels = self.data_handler.get_label_from_dataset_item(dataset)
-                labels = self.op.convert_to_numpy(labels)
+                # Get labels if dataset is a tuple/list
+                if isinstance(dataset, (list, tuple)):
+                    labels = self.data_handler.get_label_from_dataset_item(dataset)
+                    labels = self.op.convert_to_numpy(labels)
+            else:
+                logits = list(self.feature_extractor._last_logits)
 
         # Case 2: dataset is a tf.data.Dataset or a torch.DataLoader
         elif isinstance(dataset, get_args(DatasetType)):
             scores = np.array([])
             logits = None
-
-            for item in dataset:
+            for item in tqdm(dataset):
                 tensor = self.data_handler.get_input_from_dataset_item(item)
                 score_batch = self._score_tensor(tensor)
-                logits_batch = self.op.convert_to_numpy(
-                    self.feature_extractor._last_logits
-                )
-
-                # get the label if available
-                if len(item) > 1:
-                    labels_batch = self.data_handler.get_label_from_dataset_item(item)
-                    labels = (
-                        labels_batch
-                        if labels is None
-                        else np.append(labels, self.op.convert_to_numpy(labels_batch))
-                    )
 
                 scores = np.append(scores, score_batch)
-                logits = (
-                    logits_batch
-                    if logits is None
-                    else np.concatenate([logits, logits_batch], axis=0)
-                )
+
+                if self.extractor_backend != "custom":
+                    logits_batch = self.op.convert_to_numpy(
+                        self.feature_extractor._last_logits
+                    )
+
+                    # get the label if available
+                    if len(item) > 1:
+                        labels_batch = self.data_handler.get_label_from_dataset_item(
+                            item
+                        )
+                        labels = (
+                            labels_batch
+                            if labels is None
+                            else np.append(
+                                labels, self.op.convert_to_numpy(labels_batch)
+                            )
+                        )
+
+                    logits = (
+                        logits_batch
+                        if logits is None
+                        else np.concatenate([logits, logits_batch], axis=0)
+                    )
+                else:
+                    if logits is None:
+                        logits = list(self.feature_extractor._last_logits)
+                    else:
+                        for i in range(len(logits)):
+                            logits[i] += self.feature_extractor._last_logits[i]
 
         else:
             raise NotImplementedError(

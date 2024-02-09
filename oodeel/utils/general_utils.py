@@ -43,7 +43,7 @@ def is_from(model_or_tensor: Any, framework: str) -> bool:
     return framework in keywords_list
 
 
-def import_backend_specific_stuff(model: Callable):
+def import_backend_specific_stuff(model: Callable, backend: str):
     """Get backend specific data handler, operator and feature extractor class.
 
     Args:
@@ -61,6 +61,7 @@ def import_backend_specific_stuff(model: Callable):
         from ..utils import TFOperator
 
         backend = "tensorflow"
+        extractor_backend = backend
         data_handler = TFDataHandler()
         op = TFOperator()
         FeatureExtractorClass = KerasFeatureExtractor
@@ -71,11 +72,34 @@ def import_backend_specific_stuff(model: Callable):
         from ..utils import TorchOperator
 
         backend = "torch"
+        extractor_backend = backend
         data_handler = TorchDataHandler()
         op = TorchOperator(model)
         FeatureExtractorClass = TorchFeatureExtractor
 
     else:
-        raise NotImplementedError()
+        print(
+            "The model is neither a tf or torch NN. Assuming it is a custom feature",
+            "extractor",
+        )
+        assert (
+            backend is not None
+        ), "For custom feature extractors, backend must be specified"
+        if backend == "torch":
+            from ..datasets.torch_data_handler import TorchDataHandler
+            from ..utils import TorchOperator
 
-    return backend, data_handler, op, FeatureExtractorClass
+            data_handler = TorchDataHandler()
+            op = TorchOperator(model)
+
+        elif backend == "tensorflow":
+            from ..datasets.tf_data_handler import TFDataHandler
+            from ..utils import TFOperator
+
+            data_handler = TFDataHandler()
+            op = TFOperator()
+
+        FeatureExtractorClass = model
+        extractor_backend = "custom"
+
+    return backend, data_handler, op, FeatureExtractorClass, extractor_backend
