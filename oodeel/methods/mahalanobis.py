@@ -55,7 +55,7 @@ class Mahalanobis(OODBaseDetector):
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
         """
         # extract features and labels
-        features, infos = self.feature_extractor.predict(fit_dataset)
+        features, infos = self.feature_extractor.predict(fit_dataset, fit=True)
         labels = infos["labels"]
 
         # unique sorted classes
