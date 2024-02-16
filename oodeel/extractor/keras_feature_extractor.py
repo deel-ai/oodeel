@@ -62,6 +62,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         feature_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
+        use_rankfeat: Optional[bool] = False,
     ):
         if input_layer_id is None:
             input_layer_id = 0
@@ -70,6 +71,7 @@ class KerasFeatureExtractor(FeatureExtractor):
             feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
+            use_rankfeat=use_rankfeat,
         )
 
         self.backend = "tensorflow"
@@ -143,6 +145,24 @@ class KerasFeatureExtractor(FeatureExtractor):
             )
             # apply ultimate layer on clipped activations
             output_tensors.append(last_layer(x))
+
+        elif self.use_rankfeat:
+            penultimate_layer = self.find_layer(self.model, -2)
+            penult_extractor = tf.keras.models.Model(
+                new_input, penultimate_layer.output
+            )
+            last_layer = self.find_layer(self.model, -1)
+
+            # remove rank-1 features from penultimate layer activations
+            x = penult_extractor(new_input)
+            B, H, W, C = x.shape
+            x = tf.reshape(x, (B, H * W, C))
+            s, u, v = tf.linalg.svd(x)
+            x = x - s[:, 0] * tf.tensordot(u[:, 0], v[:, 0], axes=0)
+            x = tf.reshape(x, (B, H, W, C))
+
+            output_tensors.append(last_layer(x))
+
         else:
             output_tensors.append(self.find_layer(self.model, -1).output)
 
