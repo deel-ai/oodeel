@@ -52,11 +52,15 @@ class OODBaseDetector(ABC):
         self,
         use_react: bool = False,
         react_quantile: float = 0.8,
+        use_rankfeat: bool = False,
+        rankfeat_layer_id: Optional[Union[int, str]] = None,
         postproc_fns: List[Callable] = None,
     ):
         self.feature_extractor: FeatureExtractor = None
         self.use_react = use_react
         self.react_quantile = react_quantile
+        self.use_rankfeat = use_rankfeat
+        self.rankfeat_layer_id = rankfeat_layer_id if use_rankfeat else None
         self.react_threshold = None
         self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
 
@@ -136,6 +140,19 @@ class OODBaseDetector(ABC):
                 "`fit_dataset` argument must be provided for this OOD detector"
             )
 
+        # Assert that ReAct and RankFeat are not set together
+        if self.use_react and self.use_rankfeat:
+            raise ValueError(
+                "ReAct and RankFeat cannot be used together. Please set only one of "
+                "them"
+            )
+
+        # Assert that RankFeat is set with a valid rankfeat_layer_id
+        if self.use_rankfeat and self.rankfeat_layer_id is None:
+            raise ValueError(
+                "RankFeat is set to True, please provide a valid rankfeat_layer_id"
+            )
+
         # react: compute threshold (activation percentiles)
         if self.use_react:
             if fit_dataset is None:
@@ -190,6 +207,7 @@ class OODBaseDetector(ABC):
             feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=self.react_threshold,
+            rankfeat_layer_id=self.rankfeat_layer_id,
         )
         return feature_extractor
 
