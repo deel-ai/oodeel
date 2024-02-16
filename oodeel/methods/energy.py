@@ -24,8 +24,10 @@ import numpy as np
 from scipy.special import logsumexp
 
 from ..types import DatasetType
+from ..types import Optional
 from ..types import TensorType
 from ..types import Tuple
+from ..types import Union
 from .base import OODBaseDetector
 
 
@@ -54,16 +56,22 @@ class Energy(OODBaseDetector):
         react_quantile (Optional[float]): q value in the range [0, 1] used to compute
             the react clipping threshold defined as the q-th quantile penultimate layer
             activations. Defaults to 0.8.
+        use_rankfeat (bool): if true, apply RankFeat method by removing the rank-1
+            features from the penultimate layer activations.
     """
 
     def __init__(
         self,
         use_react: bool = False,
         react_quantile: float = 0.8,
+        use_rankfeat: bool = False,
+        rankfeat_layer_id: Optional[Union[int, str]] = None,
     ):
         super().__init__(
             use_react=use_react,
             react_quantile=react_quantile,
+            use_rankfeat=use_rankfeat,
+            rankfeat_layer_id=rankfeat_layer_id,
         )
 
     def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:

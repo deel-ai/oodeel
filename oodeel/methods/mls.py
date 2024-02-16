@@ -23,8 +23,10 @@
 import numpy as np
 
 from ..types import DatasetType
+from ..types import Optional
 from ..types import TensorType
 from ..types import Tuple
+from ..types import Union
 from .base import OODBaseDetector
 
 
@@ -54,10 +56,14 @@ class MLS(OODBaseDetector):
         output_activation: str = "linear",
         use_react: bool = False,
         react_quantile: float = 0.8,
+        use_rankfeat: bool = False,
+        rankfeat_layer_id: Optional[Union[int, str]] = None,
     ):
         super().__init__(
             use_react=use_react,
             react_quantile=react_quantile,
+            use_rankfeat=use_rankfeat,
+            rankfeat_layer_id=rankfeat_layer_id,
         )
         self.output_activation = output_activation
 
