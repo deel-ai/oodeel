@@ -65,6 +65,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         feature_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
+        rankfeat_layer_id: Optional[Union[int, str]] = None,
     ):
         model = model.eval()
         super().__init__(
@@ -72,6 +73,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
+            rankfeat_layer_id=rankfeat_layer_id,
         )
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in self._hook_layers_id}
@@ -147,6 +149,10 @@ class TorchFeatureExtractor(FeatureExtractor):
         if self.react_threshold is not None:
             pen_layer = self.find_layer(self.model, -2)
             pen_layer.register_forward_hook(self._get_clip_hook(self.react_threshold))
+
+        if self.rankfeat_layer_id is not None:
+            pen_layer = self.find_layer(self.model, self.rankfeat_layer_id)
+            pen_layer.register_forward_hook(self._get_rankfeat_hook())
 
         # Register a hook to store feature values for each considered layer + last layer
         for layer_id in self._hook_layers_id:
@@ -311,6 +317,32 @@ class TorchFeatureExtractor(FeatureExtractor):
         def hook(_, __, output):
             output = torch.clip(output, max=threshold)
             return output
+
+        return hook
+
+    def _get_rankfeat_hook(self) -> Callable:
+        """
+        Hook that removes the rank-1 features from the penultimate layer activations
+
+        Returns:
+            Callable: hook function
+        """
+
+        def hook(_, __, output):
+            # Reshape tensor by flattening H and W dimensions
+            B, C, H, W = output.size()
+            feat1 = output.view(B, C, H * W)
+
+            # Compute SVD, one per element in the batch
+            u, s, v = torch.linalg.svd(feat1, full_matrices=False)
+
+            # RankFeat: remove the matrix corresponding to the first singular value
+            # u1*s1*v1^T
+            feat1 = feat1 - s[:, 0:1].unsqueeze(2) * u[:, :, 0:1].bmm(v[:, 0:1, :])
+
+            # Reshape back to original shape
+            feat1 = feat1.view(B, C, H, W)
+            return feat1
 
         return hook
 

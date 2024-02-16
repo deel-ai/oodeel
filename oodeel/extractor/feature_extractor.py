@@ -60,6 +60,7 @@ class FeatureExtractor(ABC):
         feature_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Union[int, str] = [0],
         react_threshold: Optional[float] = None,
+        rankfeat_layer_id: Optional[Union[int, str]] = None,
     ):
         if not isinstance(feature_layers_id, list):
             feature_layers_id = [feature_layers_id]
@@ -67,6 +68,7 @@ class FeatureExtractor(ABC):
         self.feature_layers_id = feature_layers_id
         self.input_layer_id = input_layer_id
         self.react_threshold = react_threshold
+        self.rankfeat_layer_id = rankfeat_layer_id
         self.model = model
         self.extractor = self.prepare_extractor()
 
