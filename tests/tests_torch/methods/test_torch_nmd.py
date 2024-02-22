@@ -20,24 +20,24 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .dknn import DKNN
-from .energy import Energy
-from .entropy import Entropy
-from .gram import Gram
-from .mahalanobis import Mahalanobis
-from .mls import MLS
-from .nmd import NeuralMeanDiscrepancy
-from .odin import ODIN
-from .vim import VIM
+import pytest
 
-__all__ = [
-    "MLS",
-    "DKNN",
-    "ODIN",
-    "Energy",
-    "VIM",
-    "Mahalanobis",
-    "Entropy",
-    "Gram",
-    "NeuralMeanDiscrepancy",
-]
+from oodeel.methods import NeuralMeanDiscrepancy
+from tests.tests_torch import eval_detector_on_blobs
+
+
+@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
+def test_mahalanobis(auroc_thr, fpr95_thr):
+    """
+    Test Mahalanobis on toy blobs OOD dataset-wise task
+
+    We check that the area under ROC is above a certain threshold, and that the FPR95TPR
+    is below an other threshold.
+    """
+    mahalanobis = NeuralMeanDiscrepancy()
+    eval_detector_on_blobs(
+        detector=mahalanobis,
+        auroc_thr=auroc_thr,
+        fpr95_thr=fpr95_thr,
+        feature_layers_id=[-3, -2],
+    )

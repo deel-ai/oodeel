@@ -88,6 +88,7 @@ def eval_detector_on_blobs(
     fpr95_thr=0.3,
     batch_size=128,
     check_react_clipping=False,
+    feature_layers_id=None,
 ):
     # seed
     torch.manual_seed(1)
@@ -99,10 +100,21 @@ def eval_detector_on_blobs(
     model = load_blob_mlp()
 
     # fit ood detector
-    if detector.requires_to_fit_dataset or detector.use_react:
-        detector.fit(model, feature_layers_id=[-2], fit_dataset=ds_fit)
-    else:
-        detector.fit(model)
+    fit_kwargs = {
+        "feature_layers_id": [],
+        "fit_dataset": None,
+    }
+    if detector.requires_to_fit_dataset:
+        fit_kwargs["fit_dataset"] = ds_fit
+    if detector.requires_internal_features:
+        fit_kwargs["feature_layers_id"] = feature_layers_id or [-2]
+    if detector.use_react:
+        if feature_layers_id is not None:
+            raise ValueError("Cannot only use ReAct with penultimate layer")
+        fit_kwargs["feature_layers_id"] = [-2]
+        fit_kwargs["fit_dataset"] = ds_fit
+
+    detector.fit(model, **fit_kwargs)
 
     # ood scores
     scores_in, info_in = detector.score(ds_in)
