@@ -293,4 +293,4 @@ class Gram(OODBaseDetector):
             bool: True if the detector perform computations on an intermediate layer
             else False.
         """
-        return False
+        return True
