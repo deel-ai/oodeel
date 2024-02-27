@@ -23,10 +23,21 @@
 from .dknn import DKNN
 from .energy import Energy
 from .entropy import Entropy
+from .gen import GEN
 from .gram import Gram
 from .mahalanobis import Mahalanobis
 from .mls import MLS
 from .odin import ODIN
 from .vim import VIM
 
-__all__ = ["MLS", "DKNN", "ODIN", "Energy", "VIM", "Mahalanobis", "Entropy", "Gram"]
+__all__ = [
+    "DKNN",
+    "Energy",
+    "Entropy",
+    "GEN",
+    "Gram",
+    "Mahalanobis",
+    "MLS",
+    "ODIN",
+    "VIM",
+]
