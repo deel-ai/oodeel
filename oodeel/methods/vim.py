@@ -61,7 +61,7 @@ class VIM(OODBaseDetector):
         pca_origin (str): either "pseudo" for using $W^{-1}b$ where $W^{-1}$ is
             the pseudo inverse of the final linear layer applied to bias term
             (as in the VIM paper), or "center" for using the mean of the data in
-            feature space. Defaults to "center".
+            feature space. Defaults to "pseudo".
     """
 
     def __init__(
