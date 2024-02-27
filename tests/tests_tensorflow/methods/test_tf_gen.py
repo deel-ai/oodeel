@@ -20,24 +20,23 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .dknn import DKNN
-from .energy import Energy
-from .entropy import Entropy
-from .gen import GEN
-from .gram import Gram
-from .mahalanobis import Mahalanobis
-from .mls import MLS
-from .odin import ODIN
-from .vim import VIM
+import pytest
 
-__all__ = [
-    "DKNN",
-    "Energy",
-    "Entropy",
-    "GEN",
-    "Gram",
-    "Mahalanobis",
-    "MLS",
-    "ODIN",
-    "VIM",
-]
+from oodeel.methods import GEN
+from tests.tests_tensorflow import eval_detector_on_blobs
+
+
+@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
+def test_gen(auroc_thr, fpr95_thr):
+    """
+    Test GEN on toy blobs OOD dataset-wise task
+
+    We check that the area under ROC is above a certain threshold, and that the FPR95TPR
+    is below an other threshold.
+    """
+    gen = GEN()
+    eval_detector_on_blobs(
+        detector=gen,
+        auroc_thr=auroc_thr,
+        fpr95_thr=fpr95_thr,
+    )
