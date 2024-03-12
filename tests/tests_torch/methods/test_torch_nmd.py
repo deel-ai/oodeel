@@ -22,30 +22,38 @@
 # SOFTWARE.
 import pytest
 
+from oodeel.datasets import OODDataset
 from oodeel.methods import NeuralMeanDiscrepancy
-from tests.tests_torch import eval_detector_on_blobs
-from tests.tests_torch import load_blob_mlp
-from tests.tests_torch import load_blobs_data
+from tests.tests_torch import generate_data_torch
+from tests.tests_torch import Net
 
 
 def test_nmd_shape():
     """
     Test Neural Mean Discrepancy execution
     """
-
-    # load data
-    ds_fit, ds_in, ds_out = load_blobs_data()
-
-    # get classifier
-    model = load_blob_mlp()
     nmd = NeuralMeanDiscrepancy()
-    nmd.fit(model, fit_dataset=ds_in, ood_dataset=ds_out, feature_layers_id=[-3, -2])
 
-    scores_in, info_in = nmd.score(ds_in)
-    scores_out, info_out = nmd.score(ds_out)
-    assert scores_in.shape == (1028,)
-    assert info_in["labels"].shape == (1028,)
-    assert info_in["logits"].shape == (1028, 2)
-    assert scores_out.shape == (972,)
-    assert info_out["labels"].shape == (972,)
-    assert info_out["logits"].shape == (972, 2)
+    input_shape = (3, 32, 32)
+    num_labels = 10
+    samples = 100
+
+    data_in = generate_data_torch(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )
+    data_in = OODDataset(data_in, backend="torch").prepare(batch_size=samples // 2)
+
+    data_out = generate_data_torch(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )
+    data_out = OODDataset(data_out, backend="torch").prepare(batch_size=samples // 2)
+
+    model = Net(num_classes=num_labels)
+
+    nmd.fit(model, data_in, feature_layers_id=["conv2", "fc2"], ood_dataset=data_out)
+    score, _ = nmd.score(data_in)
+    assert score.shape == (100,)
+
+    nmd.fit(model, data_in, feature_layers_id=["fc2"])
+    score, _ = nmd.score(data_in)
+    assert score.shape == (100,)

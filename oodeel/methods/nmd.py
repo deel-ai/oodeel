@@ -143,12 +143,12 @@ class NeuralMeanDiscrepancy(OODBaseDetector):
         fm_s = feature_map.shape
         if len(fm_s) == 2:
             return self.op.unsqueeze(self.op.mean(feature_map, dim=1), dim=1)
-        elif len(fm_s) == 3:
+        elif len(fm_s) == 4:
             if self.backend == "tensorflow":
                 return self.op.mean(feature_map, dim=(1, 2))
-            elif self.backend == "pytorch":
+            elif self.backend == "torch":
                 return self.op.mean(feature_map, dim=(2, 3))
-        elif len(fm_s) >= 4:
+        elif len(fm_s) > 4:
             raise NotImplementedError(
                 "Feature map with more than 3 dimensions not implemented"
             )

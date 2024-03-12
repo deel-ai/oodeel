@@ -20,20 +20,37 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .tf_methods_utils import eval_detector_on_blobs
-from .tf_methods_utils import load_blob_mlp
-from .tf_methods_utils import load_blobs_data
-from .tools_tf import almost_equal
-from .tools_tf import generate_data
-from .tools_tf import generate_data_tf
-from .tools_tf import generate_model
-from .tools_tf import generate_regression_model
+import pytest
 
-__all__ = [
-    "eval_detector_on_blobs",
-    "almost_equal",
-    "generate_data",
-    "generate_data_tf",
-    "generate_model",
-    "generate_regression_model",
-]
+from oodeel.methods import NeuralMeanDiscrepancy
+from tests.tests_tensorflow import generate_data_tf
+from tests.tests_tensorflow import generate_model
+
+
+def test_nmd_shape():
+    """
+    Test Neural Mean Discrepancy execution
+    """
+    nmd = NeuralMeanDiscrepancy()
+
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data_in = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    ).batch(samples // 2)
+
+    data_out = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    ).batch(samples // 2)
+
+    model = generate_model(input_shape=input_shape, output_shape=num_labels)
+
+    nmd.fit(model, data_in, feature_layers_id=[-5, -2], ood_dataset=data_out)
+    score, _ = nmd.score(data_in)
+    assert score.shape == (100,)
+
+    nmd.fit(model, data_in, feature_layers_id=[-2])
+    score, _ = nmd.score(data_in)
+    assert score.shape == (100,)
