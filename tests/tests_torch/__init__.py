@@ -27,6 +27,8 @@ from .tools_torch import named_sequential_model
 from .tools_torch import Net
 from .tools_torch import sequential_model
 from .torch_methods_utils import eval_detector_on_blobs
+from .torch_methods_utils import load_blob_mlp
+from .torch_methods_utils import load_blobs_data
 
 __all__ = [
     "ComplexNet",

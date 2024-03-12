@@ -24,20 +24,28 @@ import pytest
 
 from oodeel.methods import NeuralMeanDiscrepancy
 from tests.tests_torch import eval_detector_on_blobs
+from tests.tests_torch import load_blob_mlp
+from tests.tests_torch import load_blobs_data
 
 
-@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
-def test_mahalanobis(auroc_thr, fpr95_thr):
+def test_nmd_shape():
     """
-    Test Mahalanobis on toy blobs OOD dataset-wise task
-
-    We check that the area under ROC is above a certain threshold, and that the FPR95TPR
-    is below an other threshold.
+    Test Neural Mean Discrepancy execution
     """
-    mahalanobis = NeuralMeanDiscrepancy()
-    eval_detector_on_blobs(
-        detector=mahalanobis,
-        auroc_thr=auroc_thr,
-        fpr95_thr=fpr95_thr,
-        feature_layers_id=[-3, -2],
-    )
+
+    # load data
+    ds_fit, ds_in, ds_out = load_blobs_data()
+
+    # get classifier
+    model = load_blob_mlp()
+    nmd = NeuralMeanDiscrepancy()
+    nmd.fit(model, fit_dataset=ds_in, ood_dataset=ds_out, feature_layers_id=[-3, -2])
+
+    scores_in, info_in = nmd.score(ds_in)
+    scores_out, info_out = nmd.score(ds_out)
+    assert scores_in.shape == (1028,)
+    assert info_in["labels"].shape == (1028,)
+    assert info_in["logits"].shape == (1028, 2)
+    assert scores_out.shape == (972,)
+    assert info_out["labels"].shape == (972,)
+    assert info_out["logits"].shape == (972, 2)

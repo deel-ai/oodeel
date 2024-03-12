@@ -21,7 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 
 from ..types import DatasetType
 from ..types import List
@@ -31,47 +32,21 @@ from .base import OODBaseDetector
 
 
 class NeuralMeanDiscrepancy(OODBaseDetector):
-    r"""
-    "Detecting Out-of-Distribution Examples with Gram Matrices"
-    [link](https://proceedings.mlr.press/v119/sastry20a.html)
+    """
+    "Neural Mean Discrepancy for Efficient Out-of-Distribution Detection"
+    [link](https://arxiv.org/abs/2104.11408)
 
-    **Important Disclaimer**: Taking the statistics of min/max deviation,
-    as in the paper raises some problems.
 
-    The method often yields a score of zero for some tasks.
-    This is expected since the min/max among the samples of a random
-    variable becomes more and more extreme with the sample
-    size. As a result, computing the min/max over the training set is likely to produce
-    min/max values that are so extreme that none of the in distribution correlations of
-    the validation set goes beyond these threshold. The worst is that a significant
-    part of ood data does not exceed the thresholds either. This can be aleviated by
-    computing the min/max over a limited number of sample. However, it is
-    counter-intuitive and, in our opinion, not desirable: adding
-    some more information should only improve a method.
+    This method uses a metric called Neural Mean Discrepancy (NMD) that compares
+    neural means of input examples and training data in the intermediate layers
+    to identify OOD. The different values computed at each intermediate layer are
+    then aggregated with coefficients that are tuned by solving a binary classification
+    problem with:
+        - Positive samples: the NMD values of the training data
+        - Negative samples: the NMD values of proxy OOD data
+                            (outlier exposure, or patch permutations)
 
-    Hence, we decided to replace the min/max by the q / 1-q quantile, with q a new
-    parameter of the method. Specifically, instead of the deviation as defined in
-    eq. 3 of the paper, we use the definition
-    $$
-    \delta(t_q, t_{1-q}, value) =
-    \begin{cases}
-        0 & \text{if} \; t_q \leq value \leq t_{1-q},  \;\;
-        \frac{t_q - value}{|t_q|} & \text{if } value < t_q,  \;\;
-        \frac{value - t_{1-q}}{|t_q|} & \text{if } value > t_{1-q}
-    \end{cases}
-    $$
-    With this new deviation, the more point we add, the more accurate the quantile
-    becomes. In addition, the method can be made more or less discriminative by
-    toggling the value of q.
-
-    Finally, we found that this approach improved the performance of the baseline in
-    our experiments.
-
-    Args:
-        orders (List[int]): power orders to consider for the correlation matrix
-        quantile (float): quantile to consider for the correlations to build the
-            deviation threshold.
-
+    The binary classifier used is a Logistic Regression for simplicity.
     """
 
     def __init__(
@@ -84,37 +59,57 @@ class NeuralMeanDiscrepancy(OODBaseDetector):
     def _fit_to_dataset(
         self,
         fit_dataset: Union[TensorType, DatasetType],
+        ood_dataset: Union[TensorType, DatasetType] = None,
     ) -> None:
         """
-        Compute the quantiles of channelwise correlations for each layer, power of
-        gram matrices, and class. Then, compute the normalization constants for the
-        deviation. To stay faithful to the spirit of the original method, we still name
-        the quantiles min/max
+        Compute the neural mean discrepancy of the input dataset in the activation space
+        of selected intermediate layers. Then, apply patch permutation to build
+        proxy OOD samples and fit a binary classifier to tune the coefficients
+        used to aggregate neural mean discrepancies from different layers.
 
         Args:
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID) to
                 construct the index with.
-            val_split (float): The percentage of fit data to use as validation data for
-                normalization. Default to 0.2.
+            ood_dataset (Union[TensorType, DatasetType]): OOD dataset to tune the
+                aggregation coefficients.
         """
         self.postproc_fns = [
             self._stat for i in range(len(self.feature_extractor.feature_layers_id))
         ]
 
-        fit_stats, info = self.feature_extractor.predict(
+        fit_stats, _ = self.feature_extractor.predict(
             fit_dataset, postproc_fns=self.postproc_fns
         )
+
         self.means = self.op.unsqueeze(
             self.op.cat([self.op.mean(fs, dim=0) for fs in fit_stats]), dim=0
         )
 
-        # TODO self.coeffs
+        if ood_dataset is None:
+            self.agg = None
+            return
+
+        ood_stats, _ = self.feature_extractor.predict(
+            ood_dataset, postproc_fns=self.postproc_fns
+        )
+
+        id_data = self.op.cat(fit_stats, dim=1)
+        ood_data = self.op.cat(ood_stats, dim=1)
+        reg_data = self.op.cat([id_data, ood_data], dim=0)
+        y = np.concatenate(
+            [
+                np.zeros(id_data.shape[0]),
+                np.ones(ood_data.shape[0]),
+            ]
+        )
+        self.agg = LogisticRegression()
+        # self.agg = MLPClassifier(hidden_layer_sizes=(32,32,32), max_iter=60)
+        self.agg.fit(self.op.convert_to_numpy(reg_data), y)
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs" based on
-        the aggregation of deviations from quantiles of in-distribution channel-wise
-        correlations evaluate for each layer, power of gram matrices, and class.
+        the aggregation of neural mean discrepancies from different layers.
 
         Args:
             inputs: input samples to score
@@ -127,9 +122,13 @@ class NeuralMeanDiscrepancy(OODBaseDetector):
             inputs, postproc_fns=self.postproc_fns
         )
 
-        # We stack the min_maxs for each class depending on the prediction for each
-        # samples
         features = self.op.cat(tensor_stats, dim=1) - self.means
+        features = self.op.convert_to_numpy(features)
+        if self.agg is None:
+            scores = np.mean(features, 1)
+        else:
+            scores = self.agg.predict_proba(features)[:, 1]
+        return scores
 
     def _stat(self, feature_map: TensorType) -> TensorType:
         """Compute the correlation map (stat) for a given feature map. The values
