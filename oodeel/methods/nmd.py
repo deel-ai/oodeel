@@ -42,11 +42,11 @@ class NeuralMeanDiscrepancy(OODBaseDetector):
     to identify OOD. The different values computed at each intermediate layer are
     then aggregated with coefficients that are tuned by solving a binary classification
     problem with:
-        - Positive samples: the NMD values of the training data
-        - Negative samples: the NMD values of proxy OOD data
-                            (outlier exposure, or patch permutations)
+    * Positive samples: the NMD values of the training data
+    * Negative samples: the NMD values of proxy OOD data
+                        (outlier exposure, or patch permutations)
 
-    The binary classifier used is a Logistic Regression for simplicity.
+    The binary classifier used is MLP, as it is the solution that performs best in the original paper.
     """
 
     def __init__(
@@ -96,14 +96,15 @@ class NeuralMeanDiscrepancy(OODBaseDetector):
         id_data = self.op.cat(fit_stats, dim=1)
         ood_data = self.op.cat(ood_stats, dim=1)
         reg_data = self.op.cat([id_data, ood_data], dim=0)
+        # Here 0 is ID and 1 is OOD to make the score higher for OOD
         y = np.concatenate(
             [
                 np.zeros(id_data.shape[0]),
                 np.ones(ood_data.shape[0]),
             ]
         )
-        self.agg = LogisticRegression()
-        # self.agg = MLPClassifier(hidden_layer_sizes=(32,32,32), max_iter=60)
+        # self.agg = LogisticRegression()
+        self.agg = MLPClassifier(hidden_layer_sizes=(32, 32, 32), max_iter=60)
         self.agg.fit(self.op.convert_to_numpy(reg_data), y)
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:

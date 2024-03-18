@@ -53,7 +53,7 @@ class TorchRandomPatchPermutation:
             torch.Tensor: Transformed tensor.
         """
         h, w = self.patch_size
-        H, W, _ = tensor.shape
+        _, H, W = tensor.shape
 
         # set generator if seed is not None
         g = None
