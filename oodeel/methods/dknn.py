@@ -42,7 +42,7 @@ class DKNN(OODBaseDetector):
 
     def __init__(
         self,
-        nearest: int = 1,
+        nearest: int = 50,
     ):
         super().__init__()
 
