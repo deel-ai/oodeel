@@ -265,7 +265,7 @@ class OODDataset(object):
         with_ood_labels: bool = False,
         with_labels: bool = True,
         shuffle: bool = False,
-        shuffle_buffer_size: Optional[int] = None,
+        **kwargs_prepare,
     ) -> DatasetType:
         """Prepare self.data for scoring or training
 
@@ -282,9 +282,9 @@ class OODDataset(object):
                 Defaults to True.
             shuffle (bool, optional): To shuffle the returned dataset or not.
                 Defaults to False.
-            shuffle_buffer_size (int, optional): (TF only) Size of the shuffle buffer.
-                If None, taken as the number of samples in the dataset.
-                Defaults to None.
+            kwargs_prepare (dict): Additional parameters to be passed to the
+                data_handler.prepare_for_training method.
+
 
         Returns:
             DatasetType: prepared dataset
@@ -323,7 +323,7 @@ class OODDataset(object):
             preprocess_fn=preprocess_fn,
             augment_fn=augment_fn,
             output_keys=keys,
-            shuffle_buffer_size=shuffle_buffer_size,
+            **kwargs_prepare,
         )
 
         return dataset

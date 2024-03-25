@@ -569,6 +569,7 @@ class TorchDataHandler(DataHandler):
         output_keys: Optional[list] = None,
         dict_based_fns: bool = False,
         shuffle_buffer_size: Optional[int] = None,
+        num_workers: int = 8,
     ) -> DataLoader:
         """Prepare a DataLoader for training
 
@@ -587,6 +588,7 @@ class TorchDataHandler(DataHandler):
             shuffle_buffer_size (int, optional): Size of the shuffle buffer. Not used
                 in torch because we only rely on Map-Style datasets. Still as argument
                 for API consistency. Defaults to None.
+            num_workers (int, optional): Number of workers to use for the dataloader.
 
         Returns:
             DataLoader: dataloader
@@ -621,6 +623,7 @@ class TorchDataHandler(DataHandler):
             batch_size=batch_size,
             shuffle=shuffle,
             collate_fn=collate_fn,
+            num_workers=num_workers,
         )
         return loader
 

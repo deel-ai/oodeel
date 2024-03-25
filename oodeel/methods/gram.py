@@ -76,7 +76,7 @@ class Gram(OODBaseDetector):
 
     def __init__(
         self,
-        orders: List[int] = [i for i in range(1, 11)],
+        orders: List[int] = [i for i in range(1, 6)],
         quantile: float = 0.01,
     ):
         super().__init__()
@@ -90,6 +90,7 @@ class Gram(OODBaseDetector):
         self,
         fit_dataset: Union[TensorType, DatasetType],
         val_split: float = 0.2,
+        verbose: bool = False,
     ) -> None:
         """
         Compute the quantiles of channelwise correlations for each layer, power of
@@ -102,13 +103,19 @@ class Gram(OODBaseDetector):
                 construct the index with.
             val_split (float): The percentage of fit data to use as validation data for
                 normalization. Default to 0.2.
+            verbose (bool): Whether to print information during the fitting process.
+                Default to False.
         """
         self.postproc_fns = [
             self._stat for i in range(len(self.feature_extractor.feature_layers_id))
         ]
 
+        # fit_stats shape: [n_features, n_samples, n_orders, n_channels]
         fit_stats, info = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns, return_labels=True
+            fit_dataset,
+            postproc_fns=self.postproc_fns,
+            return_labels=True,
+            verbose=verbose,
         )
         labels = info["labels"]
         self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
@@ -256,21 +263,25 @@ class Gram(OODBaseDetector):
                         (fm_s[0], fm_s[-1], -1),
                     )
                 else:
+                    # batch, channel, spatial
                     feature_map_p = self.op.reshape(
                         feature_map_p, (fm_s[0], fm_s[1], -1)
                     )
+                # batch, channel, channel
                 feature_map_p = self.op.matmul(
                     feature_map_p, self.op.permute(feature_map_p, (0, 2, 1))
                 )
+            # normalize the Gram matrix
             feature_map_p = self.op.sign(feature_map_p) * (
                 self.op.abs(feature_map_p) ** (1 / p)
             )
             # get the lower triangular part of the matrix
             feature_map_p = self.op.tril(feature_map_p)
-            # directly sum row-wise (to limit computational burden)
+            # directly sum row-wise (to limit computational burden) -> batch, channel
             feature_map_p = self.op.sum(feature_map_p, dim=2)
             # stat.append(self.op.t(feature_map_p))
             stat.append(feature_map_p)
+        # batch, n_orders, channel
         stat = self.op.stack(stat, 1)
         return stat
 

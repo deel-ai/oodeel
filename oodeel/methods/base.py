@@ -20,11 +20,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import inspect
 from abc import ABC
 from abc import abstractmethod
 from typing import get_args
 
 import numpy as np
+from tqdm import tqdm
 
 from ..extractor.feature_extractor import FeatureExtractor
 from ..types import Callable
@@ -104,6 +106,7 @@ class OODBaseDetector(ABC):
         fit_dataset: Optional[Union[ItemType, DatasetType]] = None,
         feature_layers_id: List[Union[int, str]] = [],
         input_layer_id: Optional[Union[int, str]] = None,
+        verbose: bool = False,
         **kwargs,
     ) -> None:
         """Prepare the detector for scoring:
@@ -122,6 +125,7 @@ class OODBaseDetector(ABC):
                 layer of the feature extractor.
                 If int, the rank of the layer in the layer list
                 If str, the name of the layer. Defaults to None.
+            verbose (bool): if True, display a progress bar. Defaults to False.
         """
         (
             self.backend,
@@ -144,7 +148,7 @@ class OODBaseDetector(ABC):
                     " provided to compute react activation threshold"
                 )
             else:
-                self.compute_react_threshold(model, fit_dataset)
+                self.compute_react_threshold(model, fit_dataset, verbose=verbose)
 
         if (feature_layers_id == []) and (self.requires_internal_features):
             raise ValueError(
@@ -160,6 +164,8 @@ class OODBaseDetector(ABC):
         )
 
         if fit_dataset is not None:
+            if "verbose" in inspect.signature(self._fit_to_dataset).parameters.keys():
+                kwargs.update({"verbose": verbose})
             self._fit_to_dataset(fit_dataset, **kwargs)
 
     def _load_feature_extractor(
@@ -207,12 +213,14 @@ class OODBaseDetector(ABC):
     def score(
         self,
         dataset: Union[ItemType, DatasetType],
+        verbose: bool = False,
     ) -> np.ndarray:
         """
         Computes an OOD score for input samples "inputs".
 
         Args:
             dataset (Union[ItemType, DatasetType]): dataset or tensors to score
+            verbose (bool): if True, display a progress bar. Defaults to False.
 
         Returns:
             tuple: scores or list of scores (depending on the input) and a dictionary
@@ -236,7 +244,7 @@ class OODBaseDetector(ABC):
             scores = np.array([])
             logits = None
 
-            for item in dataset:
+            for item in tqdm(dataset, desc="Scoring", disable=not verbose):
                 tensor = self.data_handler.get_input_from_dataset_item(item)
                 score_batch = self._score_tensor(tensor)
                 logits_batch = self.op.convert_to_numpy(
@@ -267,9 +275,13 @@ class OODBaseDetector(ABC):
         info = dict(labels=labels, logits=logits)
         return scores, info
 
-    def compute_react_threshold(self, model: Callable, fit_dataset: DatasetType):
+    def compute_react_threshold(
+        self, model: Callable, fit_dataset: DatasetType, verbose: bool = False
+    ):
         penult_feat_extractor = self._load_feature_extractor(model, [-2])
-        unclipped_features, _ = penult_feat_extractor.predict(fit_dataset)
+        unclipped_features, _ = penult_feat_extractor.predict(
+            fit_dataset, verbose=verbose
+        )
         self.react_threshold = self.op.quantile(
             unclipped_features[0], self.react_quantile
         )

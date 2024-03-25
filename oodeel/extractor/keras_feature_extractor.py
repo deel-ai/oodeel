@@ -24,6 +24,7 @@ from typing import get_args
 from typing import Optional
 
 import tensorflow as tf
+from tqdm import tqdm
 
 from ..datasets.tf_data_handler import TFDataHandler
 from ..types import Callable
@@ -190,6 +191,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         self,
         dataset: Union[ItemType, tf.data.Dataset],
         postproc_fns: Optional[List[Callable]] = None,
+        verbose: bool = False,
         **kwargs,
     ) -> Tuple[List[tf.Tensor], dict]:
         """Get the projection of the dataset in the feature space of self.model
@@ -198,6 +200,7 @@ class KerasFeatureExtractor(FeatureExtractor):
             dataset (Union[ItemType, tf.data.Dataset]): input dataset
             postproc_fns (Optional[Callable]): postprocessing function to apply to each
                 feature immediately after forward. Default to None.
+            verbose (bool): if True, display a progress bar. Defaults to False.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
@@ -218,7 +221,7 @@ class KerasFeatureExtractor(FeatureExtractor):
             features = [None for i in range(len(self.feature_layers_id))]
             logits = None
             contains_labels = TFDataHandler.get_item_length(dataset) > 1
-            for elem in dataset:
+            for elem in tqdm(dataset, desc="Predicting", disable=not verbose):
                 tensor = TFDataHandler.get_input_from_dataset_item(elem)
                 features_batch, logits_batch = self.predict_tensor(tensor, postproc_fns)
 

@@ -27,6 +27,7 @@ from typing import Optional
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from ..datasets.torch_data_handler import TorchDataHandler
 from ..types import Callable
@@ -226,6 +227,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         dataset: Union[DataLoader, ItemType],
         postproc_fns: Optional[List[Callable]] = None,
         detach: bool = True,
+        verbose: bool = False,
         **kwargs,
     ) -> Tuple[List[torch.Tensor], dict]:
         """Get the projection of the dataset in the feature space of self.model
@@ -236,6 +238,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 each feature immediately after forward. Default to None.
             detach (bool): if True, return features detached from the computational
                 graph. Defaults to True.
+            verbose (bool): if True, display a progress bar. Defaults to False.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
@@ -257,7 +260,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             logits = None
             batch = next(iter(dataset))
             contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
-            for elem in dataset:
+            for elem in tqdm(dataset, desc="Predicting", disable=not verbose):
                 tensor = TorchDataHandler.get_input_from_dataset_item(elem)
                 features_batch, logits_batch = self.predict_tensor(
                     tensor, postproc_fns, detach=detach
