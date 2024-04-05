@@ -68,13 +68,14 @@ class RMDS(OODBaseDetector):
             _features_cls = self.op.flatten(features[0][indexes])
             mus[cls] = self.op.mean(_features_cls, dim=0)
             _zero_f_cls = _features_cls - mus[cls]
-            covs[cls] = (
+            cov_cls = (
                 self.op.matmul(self.op.t(_zero_f_cls), _zero_f_cls)
                 / _zero_f_cls.shape[0]
             )
-
-        # mean cov and its inverse
-        mean_cov = self.op.mean(self.op.stack(list(covs.values())), dim=0)
+            if mean_cov is None:
+                mean_cov = (len(_features_cls) / len(features)) * cov_cls
+            else:
+                mean_cov += (len(_features_cls) / len(features)) * cov_cls
 
         # comput background mu and cov
         _features_bg = self.op.flatten(features[0])
@@ -82,6 +83,7 @@ class RMDS(OODBaseDetector):
         _zero_f_bg = _features_bg - mu_bg
         cov_bg = (self.op.matmul(self.op.t(_zero_f_bg), _zero_f_bg) / _zero_f_bg.shape[0])
 
+        # means and pseudo-inverse of the mean covariance matrices
         self._mus = mus
         self._pinv_cov = self.op.pinv(mean_cov)
         self._mu_bg = mu_bg
