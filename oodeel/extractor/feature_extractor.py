@@ -114,6 +114,7 @@ class FeatureExtractor(ABC):
         self,
         dataset: Union[ItemType, DatasetType],
         postproc_fns: Optional[List[Callable]] = None,
+        verbose: bool = False,
         **kwargs,
     ) -> Tuple[List[TensorType], dict]:
         """Get the projection of the dataset in the feature space of self.model
@@ -122,6 +123,7 @@ class FeatureExtractor(ABC):
             dataset (Union[ItemType, DatasetType]): input dataset
             postproc_fns (Optional[Callable]): postprocessing function to apply to each
                 feature immediately after forward. Default to None.
+            verbose (bool): if True, display a progress bar. Defaults to False.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:

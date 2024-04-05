@@ -55,7 +55,7 @@ class Mahalanobis(OODBaseDetector):
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
         """
         # extract features and labels
-        features, infos = self.feature_extractor.predict(fit_dataset)
+        features, infos = self.feature_extractor.predict(fit_dataset, detach=True)
         labels = infos["labels"]
 
         # unique sorted classes
@@ -63,22 +63,24 @@ class Mahalanobis(OODBaseDetector):
 
         # compute mus and covs
         mus = dict()
-        covs = dict()
+        mean_cov = None
         for cls in self._classes:
             indexes = self.op.equal(labels, cls)
             _features_cls = self.op.flatten(features[0][indexes])
             mus[cls] = self.op.mean(_features_cls, dim=0)
             _zero_f_cls = _features_cls - mus[cls]
-            covs[cls] = (
+            cov_cls = (
                 self.op.matmul(self.op.t(_zero_f_cls), _zero_f_cls)
                 / _zero_f_cls.shape[0]
             )
+            if mean_cov is None:
+                mean_cov = (len(_features_cls) / len(features)) * cov_cls
+            else:
+                mean_cov += (len(_features_cls) / len(features)) * cov_cls
 
-        # mean cov and its inverse
-        mean_cov = self.op.mean(self.op.stack(list(covs.values())), dim=0)
-
-        self._mus = mus
+        # pseudo-inverse of the mean covariance matrix
         self._pinv_cov = self.op.pinv(mean_cov)
+        self._mus = mus
 
     def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """

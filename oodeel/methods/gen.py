@@ -20,49 +20,45 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import faiss
 import numpy as np
 
 from ..types import DatasetType
 from ..types import TensorType
 from ..types import Tuple
-from ..types import Union
 from .base import OODBaseDetector
 
 
-class DKNN(OODBaseDetector):
+class GEN(OODBaseDetector):
     """
-    "Out-of-Distribution Detection with Deep Nearest Neighbors"
-    https://arxiv.org/abs/2204.06507
+    Generalized Entropy method for OOD detection.
+    "GEN: Pushing the Limits of Softmax-Based Out-of-Distribution Detection"
+    https://openaccess.thecvf.com/content/CVPR2023/html/Liu_GEN_Pushing_the_Limits_of_Softmax-Based_Out-of-Distribution_Detection_CVPR_2023_paper.html,
 
     Args:
-        nearest: number of nearest neighbors to consider.
-            Defaults to 1.
+        gamma (float): parameter for the generalized entropy. Must be between 0 and 1.
+            Defaults to 0.1.
+        k (int): number of softmax values to keep for the entropy computation. Only the
+            top-k softmax probabilities will be used. Defaults to 100.
+        use_react (bool): if true, apply ReAct method by clipping penultimate
+            activations under a threshold value.
+        react_quantile (Optional[float]): q value in the range [0, 1] used to compute
+            the react clipping threshold defined as the q-th quantile penultimate layer
+            activations. Defaults to 0.8.
     """
 
     def __init__(
         self,
-        nearest: int = 50,
+        gamma: float = 0.1,
+        k: int = 100,
+        use_react: bool = False,
+        react_quantile: float = 0.8,
     ):
-        super().__init__()
-
-        self.index = None
-        self.nearest = nearest
-
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
-        """
-        Constructs the index from ID data "fit_dataset", which will be used for
-        nearest neighbor search.
-
-        Args:
-            fit_dataset: input dataset (ID) to construct the index with.
-        """
-        fit_projected, _ = self.feature_extractor.predict(fit_dataset)
-        fit_projected = self.op.convert_to_numpy(fit_projected[0])
-        fit_projected = fit_projected.reshape(fit_projected.shape[0], -1)
-        norm_fit_projected = self._l2_normalization(fit_projected)
-        self.index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
-        self.index.add(norm_fit_projected)
+        super().__init__(
+            use_react=use_react,
+            react_quantile=react_quantile,
+        )
+        self.gamma = gamma
+        self.k = k
 
     def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
@@ -76,23 +72,21 @@ class DKNN(OODBaseDetector):
             Tuple[np.ndarray]: scores, logits
         """
 
-        input_projected, _ = self.feature_extractor.predict_tensor(inputs)
-        input_projected = self.op.convert_to_numpy(input_projected[0])
-        input_projected = input_projected.reshape(input_projected.shape[0], -1)
-        norm_input_projected = self._l2_normalization(input_projected)
-        scores, _ = self.index.search(norm_input_projected, self.nearest)
-        return scores[:, -1]
+        _, logits = self.feature_extractor.predict_tensor(inputs)
+        probs = self.op.softmax(logits)
+        probs = self.op.convert_to_numpy(probs)
+        probs = np.sort(probs)[:, -self.k :]  # Keep the k largest probabilities
+        scores = np.sum(probs**self.gamma * (1 - probs) ** (self.gamma), axis=-1)
+        return scores
 
-    def _l2_normalization(self, feat: np.ndarray) -> np.ndarray:
-        """L2 normalization of a tensor along the last dimension.
+    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
+        """
+        Fits the OOD detector to fit_dataset.
 
         Args:
-            feat (np.ndarray): the tensor to normalize
-
-        Returns:
-            np.ndarray: the normalized tensor
+            fit_dataset: dataset to fit the OOD detector on
         """
-        return feat / (np.linalg.norm(feat, ord=2, axis=-1, keepdims=True) + 1e-10)
+        pass
 
     @property
     def requires_to_fit_dataset(self) -> bool:
@@ -102,7 +96,7 @@ class DKNN(OODBaseDetector):
         Returns:
             bool: True if `fit_dataset` is required else False.
         """
-        return True
+        return False
 
     @property
     def requires_internal_features(self) -> bool:
@@ -113,4 +107,4 @@ class DKNN(OODBaseDetector):
             bool: True if the detector perform computations on an intermediate layer
             else False.
         """
-        return True
+        return False
