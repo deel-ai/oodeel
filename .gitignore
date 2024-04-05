@@ -29,5 +29,6 @@ docs/notebooks/saved_models/*
 # mkdocs documentation
 /site
 .env
+.venv
 
 .DS_Store
