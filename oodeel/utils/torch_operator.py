@@ -255,6 +255,15 @@ class TorchOperator(Operator):
         return torch.unsqueeze(tensor, dim)
 
     @staticmethod
+    def squeeze(tensor: TensorType, dim: int = None) -> torch.Tensor:
+        "squeeze along dim"
+
+        if dim is None:
+            return torch.squeeze(tensor)
+
+        return torch.squeeze(tensor, dim)
+
+    @staticmethod
     def abs(tensor: TensorType) -> torch.Tensor:
         "compute absolute value"
         return torch.abs(tensor)
@@ -267,3 +276,13 @@ class TorchOperator(Operator):
     ) -> torch.Tensor:
         "Applies where function , to condition"
         return torch.where(condition, input, other)
+
+    @staticmethod
+    def avg_pool_2d(tensor: TensorType) -> torch.Tensor:
+        """Perform avg pool in 2d as in torch.nn.functional.adaptive_avg_pool2d"""
+        return torch.mean(tensor, dim=(-2, -1))
+
+    @staticmethod
+    def log(tensor: TensorType) -> torch.Tensor:
+        """Perform log"""
+        return torch.log(tensor)

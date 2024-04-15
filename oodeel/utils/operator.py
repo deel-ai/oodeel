@@ -222,6 +222,11 @@ class Operator(ABC):
         raise NotImplementedError()
 
     @staticmethod
+    def squeeze(tensor: TensorType, dim: int = None) -> TensorType:
+        "squeeze along dim"
+        raise NotImplementedError()
+
+    @staticmethod
     def abs(tensor: TensorType) -> TensorType:
         "compute absolute value"
         raise NotImplementedError()
@@ -233,4 +238,16 @@ class Operator(ABC):
         other: Union[TensorType, float],
     ) -> TensorType:
         "Applies where function to condition"
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def avg_pool_2d(tensor: TensorType) -> TensorType:
+        """Perform avg pool in 2d as in torch.nn.functional.adaptive_avg_pool2d"""
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def log(tensor: TensorType) -> TensorType:
+        """Perform log"""
         raise NotImplementedError()
