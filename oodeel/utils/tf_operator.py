@@ -232,6 +232,11 @@ class TFOperator(Operator):
         return tf.expand_dims(tensor, dim)
 
     @staticmethod
+    def squeeze(tensor: TensorType, dim: int = None) -> tf.Tensor:
+        "expand_dim along dim"
+        return tf.squeeze(tensor, dim)
+
+    @staticmethod
     def abs(tensor: TensorType) -> tf.Tensor:
         "compute absolute value"
         return tf.abs(tensor)
@@ -248,3 +253,13 @@ class TFOperator(Operator):
     @staticmethod
     def percentile(x, q):
         return tfp.stats.percentile(x, q)
+
+    @staticmethod
+    def avg_pool_2d(tensor: TensorType) -> tf.Tensor:
+        """Perform avg pool in 2d as in torch.nn.functional.adaptive_avg_pool2d"""
+        return tf.reduce_mean(tensor, axis=(-3, -2))
+
+    @staticmethod
+    def log(tensor: TensorType) -> tf.Tensor:
+        """Perform log"""
+        return tf.math.log(tensor)
