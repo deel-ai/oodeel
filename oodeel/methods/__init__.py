@@ -28,6 +28,7 @@ from .gram import Gram
 from .mahalanobis import Mahalanobis
 from .mls import MLS
 from .odin import ODIN
+from .she import SHE
 from .vim import VIM
 
 __all__ = [
