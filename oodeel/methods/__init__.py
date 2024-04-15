@@ -29,6 +29,7 @@ from .mahalanobis import Mahalanobis
 from .mls import MLS
 from .odin import ODIN
 from .rmds import RMDS
+from .she import SHE
 from .vim import VIM
 
 __all__ = [
