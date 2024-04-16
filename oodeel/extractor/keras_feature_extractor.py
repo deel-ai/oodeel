@@ -55,6 +55,9 @@ class KerasFeatureExtractor(FeatureExtractor):
             Defaults to None.
         react_threshold: if not None, penultimate layer activations are clipped under
             this threshold value (useful for ReAct). Defaults to None.
+        use_scale: if True, the features are scaled
+            following the method of Xu et al., ICLR 2024.
+            Default to False
     """
 
     def __init__(
@@ -63,6 +66,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         feature_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
+        use_scale: Optional[bool] = False,
     ):
         if input_layer_id is None:
             input_layer_id = 0
@@ -71,6 +75,7 @@ class KerasFeatureExtractor(FeatureExtractor):
             feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
+            use_scale=use_scale,
         )
 
         self.backend = "tensorflow"

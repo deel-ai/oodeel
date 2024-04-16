@@ -52,12 +52,14 @@ class OODBaseDetector(ABC):
 
     def __init__(
         self,
-        use_react: bool = False,
-        react_quantile: float = 0.8,
-        postproc_fns: List[Callable] = None,
+        use_react: Optional[bool] = False,
+        use_scale: Optional[bool] = False,
+        react_quantile: Optional[float] = 0.8,
+        postproc_fns: Optional[List[Callable]] = None,
     ):
         self.feature_extractor: FeatureExtractor = None
         self.use_react = use_react
+        self.use_scale = use_scale
         self.react_quantile = react_quantile
         self.react_threshold = None
         self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
@@ -196,6 +198,7 @@ class OODBaseDetector(ABC):
             feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=self.react_threshold,
+            use_scale=self.use_scale,
         )
         return feature_extractor
 
