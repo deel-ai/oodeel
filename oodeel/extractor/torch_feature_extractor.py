@@ -155,6 +155,11 @@ class TorchFeatureExtractor(FeatureExtractor):
             pen_layer = self.find_layer(self.model, -2)
             pen_layer.register_forward_hook(self._get_clip_hook(self.react_threshold))
 
+        # === If SCALE method, scale activations from penultimate layer ===
+        if self.scale_percentile is not None:
+            pen_layer = self.find_layer(self.model, -2)
+            pen_layer.register_forward_hook(self._get_scale_hook(self.scale_percentile))
+
         # Register a hook to store feature values for each considered layer + last layer
         for layer_id in self._hook_layers_id:
             layer = self.find_layer(self.model, layer_id)
@@ -319,6 +324,29 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         def hook(_, __, output):
             output = torch.clip(output, max=threshold)
+            return output
+
+        return hook
+
+    def _get_scale_hook(self, percentile: float) -> Callable:
+        """
+        Hook that truncate activation features under a threshold value
+
+        Args:
+            threshold (float): threshold value
+
+        Returns:
+            Callable: hook function
+        """
+
+        def hook(_, __, output):
+            output_percentile = torch.quantile(output, percentile)
+            output = torch.mul(
+                output,
+                torch.exp(
+                    torch.sum(output) / torch.sum(output[output > output_percentile])
+                ),
+            )
             return output
 
         return hook
