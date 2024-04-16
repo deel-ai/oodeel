@@ -21,11 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import numpy as np
-from sklearn.linear_model import LogisticRegression
-from sklearn.neural_network import MLPClassifier
 
 from ..types import DatasetType
-from ..types import List
 from ..types import TensorType
 from ..types import Union
 from .base import OODBaseDetector
