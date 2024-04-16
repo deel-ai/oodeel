@@ -52,9 +52,9 @@ class FeatureExtractor(ABC):
             Defaults to None.
         react_threshold: if not None, penultimate layer activations are clipped under
             this threshold value (useful for ReAct). Defaults to None.
-        use_scale: if True, the features are scaled
+        scale_percentile: if not None, the features are scaled
             following the method of Xu et al., ICLR 2024.
-            Default to False
+            Default to None
     """
 
     def __init__(
@@ -63,7 +63,7 @@ class FeatureExtractor(ABC):
         feature_layers_id: List[Union[int, str]] = [-1],
         input_layer_id: Union[int, str] = [0],
         react_threshold: Optional[float] = None,
-        use_scale: Optional[bool] = False,
+        scale_percentile: Optional[float] = None,
     ):
         if not isinstance(feature_layers_id, list):
             feature_layers_id = [feature_layers_id]
@@ -71,7 +71,7 @@ class FeatureExtractor(ABC):
         self.feature_layers_id = feature_layers_id
         self.input_layer_id = input_layer_id
         self.react_threshold = react_threshold
-        self.use_scale = use_scale
+        self.scale_percentile = scale_percentile
         self.model = model
         self.extractor = self.prepare_extractor()
 
