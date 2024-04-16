@@ -66,6 +66,9 @@ class OODBaseDetector(ABC):
         self.react_threshold = None
         self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
 
+        if use_scale and use_react:
+            raise ValueError("Cannot use both ReAct and scale at the same time")
+
     @abstractmethod
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """Computes an OOD score for input samples "inputs".
