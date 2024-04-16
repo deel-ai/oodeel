@@ -24,6 +24,7 @@ from typing import get_args
 from typing import Optional
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 from tqdm import tqdm
 
 from ..datasets.tf_data_handler import TFDataHandler
@@ -147,6 +148,25 @@ class KerasFeatureExtractor(FeatureExtractor):
                 clip_value_min=tf.float32.min,
                 clip_value_max=self.react_threshold,
             )
+            # apply ultimate layer on clipped activations
+            output_tensors.append(last_layer(x))
+        if self.scale_percentile is not None:
+            penultimate_layer = self.find_layer(self.model, -2)
+            penult_extractor = tf.keras.models.Model(
+                new_input, penultimate_layer.output
+            )
+            last_layer = self.find_layer(self.model, -1)
+
+            # apply scaling on penultimate activations
+            penultimate = penult_extractor(new_input)
+            output_percentile = tfp.stats.percentile(penultimate, self.scale_percentile)
+            filtered_penultimate = tf.boolean_mask(
+                penultimate, penultimate > output_percentile
+            )
+            x = penultimate * tf.math.exp(
+                tf.reduce_sum(penultimate) / tf.reduce_sum(filtered_penultimate)
+            )
+
             # apply ultimate layer on clipped activations
             output_tensors.append(last_layer(x))
         else:
