@@ -23,6 +23,7 @@
 import numpy as np
 
 from oodeel.methods.base import OODBaseDetector
+from oodeel.methods.mahalanobis import Mahalanobis
 from ..types import DatasetType
 from ..types import TensorType
 from ..types import Tuple
@@ -62,7 +63,6 @@ class RMDS(OODBaseDetector):
 
         # compute mus and covs
         mus = dict()
-        covs = dict()
         for cls in self._classes:
             indexes = self.op.equal(labels, cls)
             _features_cls = self.op.flatten(features[0][indexes])
@@ -231,3 +231,93 @@ class RMDS(OODBaseDetector):
             else False.
         """
         return True
+
+
+class RMDS2(Mahalanobis):
+    """
+    "A Simple Fix to Mahalanobis Distance for Improving Near-OOD Detection"
+    https://arxiv.org/abs/2106.09022
+
+    Args:
+        eps (float): magnitude for gradient based input perturbation.
+            Defaults to 0.02.
+    """
+    def __init__(self):
+        super().__init__()
+
+    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
+        """
+        Constructs the mean and covariance matrix from ID data "fit_dataset", whose
+        pseudo-inverse will be used for mahalanobis distance computation.
+
+        Args:
+            fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
+        """
+        # means and pseudo-inverse of the mean convariance matrice from Mahalanobis method
+        super()._fit_to_dataset(fit_dataset)
+
+        # extract features
+        features, _ = self.feature_extractor.predict(fit_dataset)
+
+        # comput background mu and cov
+        _features_bg = self.op.flatten(features[0])
+        mu_bg = self.op.mean(_features_bg, dim=0)
+        _zero_f_bg = _features_bg - mu_bg
+        cov_bg = self.op.matmul(self.op.t(_zero_f_bg), _zero_f_bg) / _zero_f_bg.shape[0]
+
+        # background mu and pseudo-inverse of the mean covariance matrices
+        self._mu_bg = mu_bg
+        self._pinv_cov_bg = self.op.pinv(cov_bg)
+
+    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
+        """
+        Computes an OOD score for input samples "inputs" based on the mahalanobis
+        distance with respect to the closest class-conditional Gaussian distribution.
+
+        Args:
+            inputs (TensorType): input samples
+
+        Returns:
+            Tuple[np.ndarray]: scores, logits
+        """
+        # input preprocessing (perturbation)
+        if self.eps > 0:
+            inputs_p = self._input_perturbation(inputs)
+        else:
+            inputs_p = inputs
+
+        # mahalanobis score on perturbed inputs
+        features_p, _ = self.feature_extractor.predict_tensor(inputs_p)
+        features_p = self.op.flatten(features_p[0])
+        gaussian_score_p = self._mahalanobis_score(features_p)
+
+        # background score on perturbed inputs
+        gaussian_score_bg = self._background_score(features_p)
+
+        # take the highest score for each sample
+        gaussian_score_p = self.op.max(gaussian_score_p - gaussian_score_bg, dim=1)
+        return -self.op.convert_to_numpy(gaussian_score_p)
+  
+    def _background_score(self, out_features: TensorType) -> TensorType:
+        """
+        Mahalanobis distance-based confidence score. For each test sample, it computes
+        the log of the probability densities of some observations (assuming a
+        normal distribution) using the mahalanobis distance with respect to the 
+        background distribution.
+
+        Args:
+            out_features (TensorType): test samples features
+
+        Returns:
+            TensorType: confidence scores (with respect to the background distribution)
+        """
+        mu = self._mu_bg
+        zero_f = out_features - mu
+        # gaussian log prob density (mahalanobis)
+        log_probs_f = -0.5 * self.op.diag(
+            self.op.matmul(
+                self.op.matmul(zero_f, self._pinv_cov_bg), self.op.t(zero_f)
+            )
+        )
+        gaussian_score = self.op.reshape(log_probs_f, (-1, 1))
+        return gaussian_score
