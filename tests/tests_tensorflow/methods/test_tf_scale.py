@@ -26,7 +26,7 @@ from oodeel.methods import Energy
 from oodeel.methods import Entropy
 from oodeel.methods import MLS
 from oodeel.methods import ODIN
-from tests.tests_torch import eval_detector_on_blobs
+from tests.tests_tensorflow import eval_detector_on_blobs
 
 
 @pytest.mark.parametrize(
@@ -35,7 +35,7 @@ from tests.tests_torch import eval_detector_on_blobs
         ("odin", 0.95, 0.05),
         ("mls", 0.95, 0.05),
         ("msp", 0.95, 0.05),
-        ("energy", 0.95, 0.23),
+        ("energy", 0.95, 0.05),
         ("entropy", 0.95, 0.05),
     ],
 )
