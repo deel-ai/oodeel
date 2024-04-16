@@ -123,12 +123,12 @@ class SHE(OODBaseDetector):
 
         scores = self._get_she_output(features)
 
-        return -scores
+        return -self.op.convert_to_numpy(scores)
 
     def _get_she_output(self, features):
         scores = None
         for feature, mus_f in zip(features, self._mus):
-            she = self.op.matmul(self.op.squeeze(feature), mus_f) / features.shape[1]
+            she = self.op.matmul(self.op.squeeze(feature), mus_f) / feature.shape[1]
             she = self.op.max(she, dim=1)
             scores = she if scores is None else she + scores
         return scores
@@ -156,7 +156,9 @@ class SHE(OODBaseDetector):
                 TensorType: loss value
             """
             # extract features
-            out_features, _ = self.feature_extractor.predict(inputs, detach=False)
+            out_features, _ = self.feature_extractor.predict(
+                inputs, detach=False, postproc_fns=self.postproc_fns
+            )
             # get mahalanobis score for the class maximizing it
             she_score = self._get_she_output(out_features)
             log_probs_f = self.op.log(she_score)
