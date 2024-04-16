@@ -53,11 +53,15 @@ class MLS(OODBaseDetector):
         self,
         output_activation: str = "linear",
         use_react: bool = False,
+        use_scale: bool = False,
         react_quantile: float = 0.8,
+        scale_percentile: float = 0.85,
     ):
         super().__init__(
             use_react=use_react,
+            use_scale=use_scale,
             react_quantile=react_quantile,
+            scale_percentile=scale_percentile,
         )
         self.output_activation = output_activation
 

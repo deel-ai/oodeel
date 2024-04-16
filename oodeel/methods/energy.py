@@ -59,11 +59,15 @@ class Energy(OODBaseDetector):
     def __init__(
         self,
         use_react: bool = False,
+        use_scale: bool = False,
         react_quantile: float = 0.8,
+        scale_percentile: float = 0.85,
     ):
         super().__init__(
             use_react=use_react,
+            use_scale=use_scale,
             react_quantile=react_quantile,
+            scale_percentile=scale_percentile,
         )
 
     def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
