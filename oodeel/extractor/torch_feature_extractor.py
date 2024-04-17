@@ -24,6 +24,7 @@ from collections import OrderedDict
 from typing import get_args
 from typing import Optional
 
+import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -340,13 +341,12 @@ class TorchFeatureExtractor(FeatureExtractor):
         """
 
         def hook(_, __, output):
-            output_percentile = torch.quantile(output, percentile)
-            output = torch.mul(
-                output,
-                torch.exp(
-                    torch.sum(output) / torch.sum(output[output > output_percentile])
-                ),
-            )
+            output_percentile = torch.quantile(output, percentile, dim=1)
+            mask = output > output_percentile[:, None]
+            output_masked = output * mask
+            s = torch.exp(torch.sum(output, dim=1) / torch.sum(output_masked, dim=1))
+            s = torch.unsqueeze(s, 1)
+            output = output * s
             return output
 
         return hook
