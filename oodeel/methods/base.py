@@ -198,6 +198,8 @@ class OODBaseDetector(ABC):
         Returns:
             FeatureExtractor: a feature extractor instance
         """
+        if self.use_scale == False:
+            self.scale_percentile = None
         feature_extractor = self.FeatureExtractorClass(
             model,
             feature_layers_id=feature_layers_id,
