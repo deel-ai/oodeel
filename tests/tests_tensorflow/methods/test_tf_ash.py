@@ -23,7 +23,6 @@
 import pytest
 
 from oodeel.methods import Energy
-from oodeel.methods import Entropy
 from oodeel.methods import MLS
 from oodeel.methods import ODIN
 from tests.tests_tensorflow import eval_detector_on_blobs
