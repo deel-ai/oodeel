@@ -19,6 +19,9 @@ __pycache__
 oodeel_dev_env
 oodeel_env*
 *_env
+.venv
+._tf
+.venv_tf
 
 # Files generated:
 logs
