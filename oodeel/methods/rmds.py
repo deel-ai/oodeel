@@ -52,7 +52,7 @@ class RMDS(Mahalanobis):
         Args:
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
         """
-        # means and pseudo-inverse of the mean convariance matrice from Mahalanobis method
+        # means and pseudo-inverse of the mean convariance matrice from Mahalanobis
         super()._fit_to_dataset(fit_dataset)
 
         # extract features
