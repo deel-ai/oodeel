@@ -24,7 +24,6 @@ from collections import OrderedDict
 from typing import get_args
 from typing import Optional
 
-import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
