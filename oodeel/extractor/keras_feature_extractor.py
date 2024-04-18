@@ -68,6 +68,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
         scale_percentile: Optional[float] = None,
+        ash_percentile: Optional[float] = None,
     ):
         if input_layer_id is None:
             input_layer_id = 0
@@ -77,6 +78,7 @@ class KerasFeatureExtractor(FeatureExtractor):
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
             scale_percentile=scale_percentile,
+            ash_percentile=ash_percentile,
         )
 
         self.backend = "tensorflow"
