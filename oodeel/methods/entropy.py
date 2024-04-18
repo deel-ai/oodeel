@@ -53,6 +53,7 @@ class Entropy(OODBaseDetector):
         self,
         use_react: bool = False,
         use_scale: bool = False,
+        use_ash: bool = False,
         react_quantile: float = 0.8,
         scale_percentile: float = 0.85,
         ash_percentile: float = 0.90,
@@ -60,6 +61,7 @@ class Entropy(OODBaseDetector):
         super().__init__(
             use_react=use_react,
             use_scale=use_scale,
+            use_ash=use_ash,
             react_quantile=react_quantile,
             scale_percentile=scale_percentile,
             ash_percentile=ash_percentile,
