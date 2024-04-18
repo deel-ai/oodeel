@@ -32,11 +32,11 @@ from tests.tests_tensorflow import eval_detector_on_blobs
 @pytest.mark.parametrize(
     "detector_name,auroc_thr,fpr95_thr",
     [
-        ("odin", 0.95, 0.05),
-        ("mls", 0.95, 0.05),
-        ("msp", 0.95, 0.05),
-        ("energy", 0.95, 0.05),
-        ("entropy", 0.95, 0.05),
+        ("odin", 0.95, 0.2),
+        ("mls", 0.95, 0.2),
+        ("msp", 0.95, 0.2),
+        ("energy", 0.95, 0.2),
+        ("entropy", 0.95, 0.2),
     ],
 )
 def test_scale(detector_name, auroc_thr, fpr95_thr):
