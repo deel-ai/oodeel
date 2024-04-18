@@ -72,6 +72,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
         scale_percentile: Optional[float] = None,
+        ash_percentile: Optional[float] = None,
     ):
         model = model.eval()
         super().__init__(
@@ -80,6 +81,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
             scale_percentile=scale_percentile,
+            ash_percentile=ash_percentile,
         )
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in self._hook_layers_id}
