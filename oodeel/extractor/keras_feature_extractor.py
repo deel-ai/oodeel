@@ -153,7 +153,8 @@ class KerasFeatureExtractor(FeatureExtractor):
             # apply ultimate layer on clipped activations
             output_tensors.append(last_layer(x))
 
-        if self.scale_percentile is not None:
+        # === If SCALE method, scale activations from penultimate layer ===
+        elif self.scale_percentile is not None:
             penultimate_layer = self.find_layer(self.model, -2)
             penult_extractor = tf.keras.models.Model(
                 new_input, penultimate_layer.output
@@ -175,8 +176,36 @@ class KerasFeatureExtractor(FeatureExtractor):
                 / tf.reduce_sum(filtered_penultimate, axis=1)
             )
             x = penultimate * tf.expand_dims(s, 1)
-            # apply ultimate layer on clipped activations
+            # apply ultimate layer on scaled activations
             output_tensors.append(last_layer(x))
+
+        # === If ASH method, scale and prune activations from penultimate layer ===
+        elif self.ash_percentile is not None:
+            penultimate_layer = self.find_layer(self.model, -2)
+            penult_extractor = tf.keras.models.Model(
+                new_input, penultimate_layer.output
+            )
+            last_layer = self.find_layer(self.model, -1)
+
+            # apply scaling on penultimate activations
+            penultimate = penult_extractor(new_input)
+            output_percentile = tfp.stats.percentile(
+                penultimate, 100 * self.ash_percentile, axis=1
+            )
+
+            # apply pruning on penultimate activations
+            mask = penultimate > tf.reshape(output_percentile, (-1, 1))
+            filtered_penultimate = tf.where(
+                mask, penultimate, tf.zeros_like(penultimate)
+            )
+            s = tf.math.exp(
+                tf.reduce_sum(penultimate, axis=1)
+                / tf.reduce_sum(filtered_penultimate, axis=1)
+            )
+            x = filtered_penultimate * tf.expand_dims(s, 1)
+            # apply ultimate layer on scaled and pruned activations
+            output_tensors.append(last_layer(x))
+
         else:
             output_tensors.append(self.find_layer(self.model, -1).output)
 

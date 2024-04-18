@@ -163,6 +163,11 @@ class TorchFeatureExtractor(FeatureExtractor):
             pen_layer = self.find_layer(self.model, -2)
             pen_layer.register_forward_hook(self._get_scale_hook(self.scale_percentile))
 
+        # === If ASH method, scale and prune activations from penultimate layer ===
+        if self.ash_percentile is not None:
+            pen_layer = self.find_layer(self.model, -2)
+            pen_layer.register_forward_hook(self._get_ash_hook(self.ash_percentile))
+
         # Register a hook to store feature values for each considered layer + last layer
         for layer_id in self._hook_layers_id:
             layer = self.find_layer(self.model, layer_id)
@@ -349,6 +354,28 @@ class TorchFeatureExtractor(FeatureExtractor):
             s = torch.exp(torch.sum(output, dim=1) / torch.sum(output_masked, dim=1))
             s = torch.unsqueeze(s, 1)
             output = output * s
+            return output
+
+        return hook
+
+    def _get_ash_hook(self, percentile: float) -> Callable:
+        """
+        Hook that truncate activation features under a threshold value
+
+        Args:
+            threshold (float): threshold value
+
+        Returns:
+            Callable: hook function
+        """
+
+        def hook(_, __, output):
+            output_percentile = torch.quantile(output, percentile, dim=1)
+            mask = output > output_percentile[:, None]
+            output_masked = output * mask
+            s = torch.exp(torch.sum(output, dim=1) / torch.sum(output_masked, dim=1))
+            s = torch.unsqueeze(s, 1)
+            output = output_masked * s
             return output
 
         return hook
