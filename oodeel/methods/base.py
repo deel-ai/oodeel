@@ -72,6 +72,10 @@ class OODBaseDetector(ABC):
 
         if use_scale and use_react:
             raise ValueError("Cannot use both ReAct and scale at the same time")
+        if use_scale and use_ash:
+            raise ValueError("Cannot use both ASH and scale at the same time")
+        if use_ash and use_react:
+            raise ValueError("Cannot use both ReAct and ASH at the same time")
 
     @abstractmethod
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -202,6 +206,11 @@ class OODBaseDetector(ABC):
         Returns:
             FeatureExtractor: a feature extractor instance
         """
+        if not self.use_ash:
+            self.ash_percentile = None
+        if not self.use_scale:
+            self.scale_percentile = None
+
         feature_extractor = self.FeatureExtractorClass(
             model,
             feature_layers_id=feature_layers_id,
