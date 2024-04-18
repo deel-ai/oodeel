@@ -51,6 +51,7 @@ class ODIN(OODBaseDetector):
         use_scale: bool = False,
         react_quantile: float = 0.8,
         scale_percentile: float = 0.85,
+        ash_percentile: float = 0.90,
     ):
         self.temperature = temperature
         super().__init__(
@@ -58,6 +59,7 @@ class ODIN(OODBaseDetector):
             use_scale=use_scale,
             react_quantile=react_quantile,
             scale_percentile=scale_percentile,
+            ash_percentile=ash_percentile,
         )
         self.noise = noise
 

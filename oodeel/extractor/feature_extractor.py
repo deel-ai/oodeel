@@ -64,6 +64,7 @@ class FeatureExtractor(ABC):
         input_layer_id: Union[int, str] = [0],
         react_threshold: Optional[float] = None,
         scale_percentile: Optional[float] = None,
+        ash_percentile: Optional[float] = None,
     ):
         if not isinstance(feature_layers_id, list):
             feature_layers_id = [feature_layers_id]
@@ -72,6 +73,7 @@ class FeatureExtractor(ABC):
         self.input_layer_id = input_layer_id
         self.react_threshold = react_threshold
         self.scale_percentile = scale_percentile
+        self.ash_percentile = ash_percentile
         self.model = model
         self.extractor = self.prepare_extractor()
 
