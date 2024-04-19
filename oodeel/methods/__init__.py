@@ -37,6 +37,7 @@ __all__ = [
     "Energy",
     "Entropy",
     "GEN",
+    "SHE",
     "Gram",
     "Mahalanobis",
     "MLS",
