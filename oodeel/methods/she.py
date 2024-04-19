@@ -47,6 +47,10 @@ class SHE(OODBaseDetector):
     network, while we aggregate the results of multiple layers after normalizing by
     the dimension of each vector (the activation vector for dense layers, and the
     average pooling of the feature map for convolutional layers).
+
+    Args:
+        eps (float): magnitude for gradient based input perturbation.
+            Defaults to 0.0014.
     """
 
     def __init__(
@@ -86,15 +90,18 @@ class SHE(OODBaseDetector):
         )
 
         labels = infos["labels"]
+        preds = self.op.argmax(infos["logits"], dim=-1)
+        preds = self.op.convert_to_numpy(preds)
 
         # unique sorted classes
         self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
+        labels = self.op.convert_to_numpy(labels)
 
         self._mus = list()
         for feature in features:
             mus_f = list()
             for cls in self._classes:
-                indexes = self.op.equal(labels, cls)
+                indexes = np.equal(labels, cls) & np.equal(preds, cls)
                 _features_cls = feature[indexes]
                 mus_f.append(
                     self.op.unsqueeze(self.op.mean(_features_cls, dim=0), dim=0)
