@@ -113,8 +113,7 @@ class RMDS(Mahalanobis):
         Returns:
             TensorType: confidence scores (with respect to the background distribution)
         """
-        mu = self._mu_bg
-        zero_f = out_features - mu
+        zero_f = out_features - self._mu_bg
         # gaussian log prob density (mahalanobis)
         log_probs_f = -0.5 * self.op.diag(
             self.op.matmul(self.op.matmul(zero_f, self._pinv_cov_bg), self.op.t(zero_f))
