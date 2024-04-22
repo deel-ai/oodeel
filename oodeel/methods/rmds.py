@@ -43,8 +43,8 @@ class RMDS(Mahalanobis):
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """
-        Constructs the pear class means and the covariance matrice,
-        as well as the background mean and covariance matrice,
+        Constructs the per class means and the covariance matrix,
+        as well as the background mean and covariance matrix,
         from ID data "fit_dataset".
         The means and pseudo-inverses of the covariance matrices
         will be used for RMDS score computation.
