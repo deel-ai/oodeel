@@ -58,7 +58,7 @@ class RMDS(Mahalanobis):
         # extract features
         features, _ = self.feature_extractor.predict(fit_dataset)
 
-        # comput background mu and cov
+        # compute background mu and cov
         _features_bg = self.op.flatten(features[0])
         mu_bg = self.op.mean(_features_bg, dim=0)
         _zero_f_bg = _features_bg - mu_bg
