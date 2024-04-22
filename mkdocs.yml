@@ -17,6 +17,7 @@ nav:
       - React: notebooks/tensorflow/demo_react_tf.ipynb
       - Gram: notebooks/tensorflow/demo_gram_tf.ipynb
       - GEN: notebooks/tensorflow/demo_gen_tf.ipynb
+      - RMDS: notebooks/tensorflow/demo_rmds_tf.ipynb
     - OOD Baselines (Torch):
       - MLS/MSP: notebooks/torch/demo_mls_msp_torch.ipynb
       - ODIN: notebooks/torch/demo_odin_torch.ipynb
@@ -28,6 +29,7 @@ nav:
       - React: notebooks/torch/demo_react_torch.ipynb
       - Gram: notebooks/torch/demo_gram_torch.ipynb
       - GEN: notebooks/torch/demo_gen_torch.ipynb
+      - RMDS: notebooks/torch/demo_rmds_torch.ipynb
     - Advanced Topics:
       - Seamlessly handling torch and tf datasets with DataHandler: pages/datahandler_tuto.md
       - Seamlessly handling torch and tf Tensors with Operator: pages/operator_tuto.md
