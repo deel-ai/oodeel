@@ -66,7 +66,8 @@ def load_blobs_data(batch_size=128, num_samples=10000, train_ratio=0.8):
 def load_blob_mlp():
     model_path_blobs = tf.keras.utils.get_file(
         "blobs_mlp.h5",
-        origin="https://share.deel.ai/s/bc5jx9HQAGYya9m/download/blobs_mlp.h5",
+        origin="https://github.com/deel-ai/oodeel/blob/assets/test_models/"
+        + "blobs_mlp.h5?raw=True",
         cache_dir=model_path,
         cache_subdir="",
     )
