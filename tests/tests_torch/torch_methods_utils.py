@@ -71,7 +71,8 @@ def load_blob_mlp():
     # if model not in local, download it
     if not os.path.exists(model_path_blob):
         data = requests.get(
-            "https://share.deel.ai/s/xcyk3ET8fzfTp8S/download/blobs_mlp.pt"
+            "https://github.com/deel-ai/oodeel/blob/assets/test_models/"
+            + "blobs_mlp.pt?raw=True"
         )
         with open(model_path_blob, "wb") as file:
             file.write(data.content)
