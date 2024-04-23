@@ -20,16 +20,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from oodeel.methods import Gram
+from oodeel.methods import SHE
 from tests.tests_tensorflow import generate_data_tf
 from tests.tests_tensorflow import generate_model
 
 
-def test_gram_shape():
+def test_she_shape():
     """
-    Test Gram method on MNIST vs FashionMNIST OOD dataset-wise task
+    Test SHE on MNIST vs FashionMNIST OOD dataset-wise task
     """
-    gram = Gram(orders=range(1, 6))
+    she = SHE()
 
     input_shape = (32, 32, 3)
     num_labels = 10
@@ -41,13 +41,10 @@ def test_gram_shape():
 
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
-    gram.fit(model, data, feature_layers_id=[-5, -2])
-    score, _ = gram.score(data)
+    she.fit(model, data, feature_layers_id=[-5, -2])
+    score, _ = she.score(data)
     assert score.shape == (100,)
-    assert gram.min_maxs[0][0].shape == (5, 4, 2)
-    assert gram.min_maxs[0][1].shape == (5, 900, 2)
 
-    gram.fit(model, data, feature_layers_id=[-2])
-    score, _ = gram.score(data)
+    she.fit(model, data, feature_layers_id=[-2])
+    score, _ = she.score(data)
     assert score.shape == (100,)
-    assert gram.min_maxs[0][0].shape == (5, 900, 2)

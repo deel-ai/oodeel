@@ -28,6 +28,8 @@ from .gram import Gram
 from .mahalanobis import Mahalanobis
 from .mls import MLS
 from .odin import ODIN
+from .rmds import RMDS
+from .she import SHE
 from .vim import VIM
 
 __all__ = [
@@ -35,9 +37,11 @@ __all__ = [
     "Energy",
     "Entropy",
     "GEN",
+    "SHE",
     "Gram",
     "Mahalanobis",
     "MLS",
     "ODIN",
+    "RMDS",
     "VIM",
 ]

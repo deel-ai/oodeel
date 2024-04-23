@@ -28,10 +28,7 @@ from tests.tests_torch import Net
 
 def test_gram_shape():
     """
-    Test Mahalanobis on MNIST vs FashionMNIST OOD dataset-wise task
-
-    We check that the area under ROC is above a certain threshold, and that the FPR95TPR
-    is below an other threshold.
+    Test Gram method on MNIST vs FashionMNIST OOD dataset-wise task
     """
     gram = Gram(orders=range(1, 6))
 
