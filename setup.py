@@ -40,6 +40,7 @@ requirements = [
     "pandas",
     "seaborn",
     "plotly",
+    "tqdm",
 ]
 
 tensorflow_requirements = [
