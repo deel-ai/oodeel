@@ -52,15 +52,30 @@ class OODBaseDetector(ABC):
 
     def __init__(
         self,
-        use_react: bool = False,
-        react_quantile: float = 0.8,
-        postproc_fns: List[Callable] = None,
+        use_react: Optional[bool] = False,
+        use_scale: Optional[bool] = False,
+        use_ash: Optional[bool] = False,
+        react_quantile: Optional[float] = None,
+        scale_percentile: Optional[float] = None,
+        ash_percentile: Optional[float] = None,
+        postproc_fns: Optional[List[Callable]] = None,
     ):
         self.feature_extractor: FeatureExtractor = None
         self.use_react = use_react
+        self.use_scale = use_scale
+        self.use_ash = use_ash
         self.react_quantile = react_quantile
+        self.scale_percentile = scale_percentile
+        self.ash_percentile = ash_percentile
         self.react_threshold = None
         self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
+
+        if use_scale and use_react:
+            raise ValueError("Cannot use both ReAct and scale at the same time")
+        if use_scale and use_ash:
+            raise ValueError("Cannot use both ASH and scale at the same time")
+        if use_ash and use_react:
+            raise ValueError("Cannot use both ReAct and ASH at the same time")
 
     @abstractmethod
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -191,11 +206,18 @@ class OODBaseDetector(ABC):
         Returns:
             FeatureExtractor: a feature extractor instance
         """
+        if not self.use_ash:
+            self.ash_percentile = None
+        if not self.use_scale:
+            self.scale_percentile = None
+
         feature_extractor = self.FeatureExtractorClass(
             model,
             feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
             react_threshold=self.react_threshold,
+            scale_percentile=self.scale_percentile,
+            ash_percentile=self.ash_percentile,
         )
         return feature_extractor
 
