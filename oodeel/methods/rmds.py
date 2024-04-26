@@ -96,7 +96,7 @@ class RMDS(Mahalanobis):
 
         # take the highest score for each sample
         gaussian_score_corrected = self.op.max(
-            gaussian_score_bg - gaussian_score_p, dim=1
+            gaussian_score_p - gaussian_score_bg, dim=1
         )
         return -self.op.convert_to_numpy(gaussian_score_corrected)
 
