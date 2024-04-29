@@ -74,9 +74,9 @@ class Mahalanobis(OODBaseDetector):
                 / _zero_f_cls.shape[0]
             )
             if mean_cov is None:
-                mean_cov = (len(_features_cls) / len(features)) * cov_cls
+                mean_cov = (len(_features_cls) / len(features[0])) * cov_cls
             else:
-                mean_cov += (len(_features_cls) / len(features)) * cov_cls
+                mean_cov += (len(_features_cls) / len(features[0])) * cov_cls
 
         # pseudo-inverse of the mean covariance matrix
         self._pinv_cov = self.op.pinv(mean_cov)
