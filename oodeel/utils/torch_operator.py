@@ -126,11 +126,26 @@ class TorchOperator(Operator):
         return torch.Tensor(tensor.numpy())
 
     @staticmethod
-    def convert_to_numpy(tensor: TensorType) -> np.ndarray:
-        """Convert tensor into a np.ndarray"""
-        if tensor.device != "cpu":
-            tensor = tensor.to("cpu")
-        return tensor.detach().numpy()
+    def convert_to_numpy(nested_structure):
+        """Convert tensor into a np.ndarray. This function is recursive."""
+        if isinstance(nested_structure, torch.Tensor):
+            if nested_structure.device != "cpu":
+                nested_structure = nested_structure.to("cpu")
+            return nested_structure.detach().numpy()
+        elif isinstance(nested_structure, list):
+            return [TorchOperator.convert_to_numpy(item) for item in nested_structure]
+        elif isinstance(nested_structure, tuple):
+            return tuple(
+                TorchOperator.convert_to_numpy(item) for item in nested_structure
+            )
+        elif isinstance(nested_structure, dict):
+            return {
+                key: TorchOperator.convert_to_numpy(value)
+                for key, value in nested_structure.items()
+            }
+        else:
+            # If the item is neither a tensor nor a nested structure, return it as is
+            return nested_structure
 
     @staticmethod
     def gradient(func: Callable, inputs: torch.Tensor, *args, **kwargs) -> torch.Tensor:
