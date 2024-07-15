@@ -96,10 +96,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         """
 
         def hook(_, __, output):
-            if isinstance(output, torch.Tensor):
-                self._features[layer_id] = output
-            else:
-                raise NotImplementedError
+            self._features[layer_id] = output
 
         return hook
 
