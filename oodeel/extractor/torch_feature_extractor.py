@@ -40,6 +40,28 @@ from ..utils.torch_operator import sanitize_input
 from .feature_extractor import FeatureExtractor
 
 
+def detach_tensors(nested_structure):
+    """Detach tensors from the computational graph.
+
+    Args:
+        nested_structure: nested structure containing tensors.
+
+    Returns:
+        nested_structure: nested structure containing detached tensors.
+    """
+    if isinstance(nested_structure, torch.Tensor):
+        return nested_structure.detach()
+    elif isinstance(nested_structure, list):
+        return [detach_tensors(item) for item in nested_structure]
+    elif isinstance(nested_structure, tuple):
+        return tuple(detach_tensors(item) for item in nested_structure)
+    elif isinstance(nested_structure, dict):
+        return {key: detach_tensors(value) for key, value in nested_structure.items()}
+    else:
+        # If the item is neither a tensor nor a nested structure, return it as is
+        return nested_structure
+
+
 class TorchFeatureExtractor(FeatureExtractor):
     """
     Feature extractor based on "model" to construct a feature space
@@ -202,7 +224,8 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         if detach:
             features = [
-                self._features[layer_id].detach() for layer_id in self._hook_layers_id
+                detach_tensors(self._features[layer_id])
+                for layer_id in self._hook_layers_id
             ]
         else:
             features = [self._features[layer_id] for layer_id in self._hook_layers_id]
