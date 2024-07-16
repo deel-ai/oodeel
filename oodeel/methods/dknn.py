@@ -46,6 +46,7 @@ class DKNN(OODBaseDetector):
         self.index = None
         self.nearest = nearest
         self.use_gpu = use_gpu
+        self._postproc_fns = None
 
         if self.use_gpu:
             try:
@@ -64,7 +65,12 @@ class DKNN(OODBaseDetector):
         Args:
             fit_dataset: input dataset (ID) to construct the index with.
         """
-        fit_projected, _ = self.feature_extractor.predict(fit_dataset)
+        # Averaging spatial dimensions of features if needed
+        self._postproc_fns = [self.average_spatial_dims]
+
+        fit_projected, _ = self.feature_extractor.predict(
+            fit_dataset, postproc_fns=self._postproc_fns
+        )
         fit_projected = self.op.convert_to_numpy(fit_projected[0])
         fit_projected = fit_projected.reshape(fit_projected.shape[0], -1)
         norm_fit_projected = self._l2_normalization(fit_projected)
@@ -89,7 +95,9 @@ class DKNN(OODBaseDetector):
             Tuple[np.ndarray]: scores, logits
         """
 
-        input_projected, _ = self.feature_extractor.predict_tensor(inputs)
+        input_projected, _ = self.feature_extractor.predict_tensor(
+            inputs, postproc_fns=self._postproc_fns
+        )
         input_projected = self.op.convert_to_numpy(input_projected[0])
         input_projected = input_projected.reshape(input_projected.shape[0], -1)
         norm_input_projected = self._l2_normalization(input_projected)
@@ -127,3 +135,16 @@ class DKNN(OODBaseDetector):
             else False.
         """
         return True
+
+    def average_spatial_dims(self, features):
+        """Average spatial dimensions of features."""
+
+        if len(features.shape) == 2:
+            return features
+        elif len(features.shape) == 4:
+            if self.backend == "tensorflow":
+                return self.op.mean(features, dim=(1, 2))
+            elif self.backend == "torch":
+                return self.op.mean(features, dim=(2, 3))
+            else:
+                raise RuntimeError(f"Backend {self.backend} not supported")
