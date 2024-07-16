@@ -277,7 +277,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         else:
             features = [None for i in range(len(self.feature_layers_id))]
-            logits = None
+            logits = []
             batch = next(iter(dataset))
             contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
             for elem in tqdm(dataset, desc="Predicting", disable=not verbose):
@@ -290,11 +290,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                         f if features[i] is None else torch.cat([features[i], f], dim=0)
                     )
                 # concatenate logits
-                logits = (
-                    logits_batch
-                    if logits is None
-                    else torch.cat([logits, logits_batch], axis=0)
-                )
+                logits.append(logits_batch)
                 # concatenate labels of current batch with previous batches
                 if contains_labels:
                     lbl_batch = TorchDataHandler.get_label_from_dataset_item(elem)
@@ -303,6 +299,9 @@ class TorchFeatureExtractor(FeatureExtractor):
                         labels = lbl_batch
                     else:
                         labels = torch.cat([labels, lbl_batch], dim=0)
+
+            if isinstance(logits[0], torch.Tensor):
+                logits = torch.cat(logits, dim=0)
 
         # store extra information in a dict
         info = dict(labels=labels, logits=logits)
