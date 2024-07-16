@@ -45,6 +45,7 @@ class Mahalanobis(OODBaseDetector):
     ):
         super(Mahalanobis, self).__init__()
         self.eps = eps
+        self._postproc_fns = None
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """
@@ -54,8 +55,13 @@ class Mahalanobis(OODBaseDetector):
         Args:
             fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
         """
+        # Averaging spatial dimensions of features if needed
+        self._postproc_fns = [self.average_spatial_dims]
+
         # extract features and labels
-        features, infos = self.feature_extractor.predict(fit_dataset, detach=True)
+        features, infos = self.feature_extractor.predict(
+            fit_dataset, detach=True, postproc_fns=self._postproc_fns
+        )
         labels = infos["labels"]
 
         # unique sorted classes
@@ -100,7 +106,9 @@ class Mahalanobis(OODBaseDetector):
             inputs_p = inputs
 
         # mahalanobis score on perturbed inputs
-        features_p, _ = self.feature_extractor.predict_tensor(inputs_p)
+        features_p, _ = self.feature_extractor.predict_tensor(
+            inputs_p, postproc_fns=self._postproc_fns
+        )
         features_p = self.op.flatten(features_p[0])
         gaussian_score_p = self._mahalanobis_score(features_p)
 
@@ -133,7 +141,9 @@ class Mahalanobis(OODBaseDetector):
                 TensorType: loss value
             """
             # extract features
-            out_features, _ = self.feature_extractor.predict(inputs, detach=False)
+            out_features, _ = self.feature_extractor.predict(
+                inputs, detach=False, postproc_fns=self._postproc_fns
+            )
             out_features = self.op.flatten(out_features[0])
             # get mahalanobis score for the class maximizing it
             gaussian_score = self._mahalanobis_score(out_features)
@@ -197,3 +207,16 @@ class Mahalanobis(OODBaseDetector):
             else False.
         """
         return True
+
+    def average_spatial_dims(self, features):
+        """Average spatial dimensions of features."""
+
+        if len(features.shape) == 2:
+            return features
+        elif len(features.shape) == 4:
+            if self.backend == "tensorflow":
+                return self.op.mean(features, dim=(1, 2))
+            elif self.backend == "torch":
+                return self.op.mean(features, dim=(2, 3))
+            else:
+                raise RuntimeError(f"Backend {self.backend} not supported")
