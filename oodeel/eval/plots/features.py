@@ -167,7 +167,22 @@ def _plot_features(
 
     # === extract id features ===
     # features
-    in_features, _ = feature_extractor.predict(in_dataset)
+    def _average_spatial_dims(features):
+        """Average spatial dimensions of features if needed."""
+
+        if len(features.shape) == 2:
+            return features
+        elif len(features.shape) == 4:
+            if feature_extractor.backend == "tensorflow":
+                return op.mean(features, dim=(1, 2))
+            elif feature_extractor.backend == "torch":
+                return op.mean(features, dim=(2, 3))
+            else:
+                raise RuntimeError(f"Backend {feature_extractor.backend} not supported")
+
+    in_features, _ = feature_extractor.predict(
+        in_dataset, postproc_fns=[_average_spatial_dims]
+    )
     in_features = op.convert_to_numpy(op.flatten(in_features[0]))[:max_samples]
 
     # labels
@@ -180,7 +195,9 @@ def _plot_features(
     # === extract ood features ===
     if out_dataset is not None:
         # features
-        out_features, _ = feature_extractor.predict(out_dataset)
+        out_features, _ = feature_extractor.predict(
+            out_dataset, postproc_fns=[_average_spatial_dims]
+        )
         out_features = op.convert_to_numpy(op.flatten(out_features[0]))[:max_samples]
 
         # labels

@@ -115,7 +115,7 @@ class OODBaseDetector(ABC):
             using self._fit_to_dataset
 
         Args:
-            model: model to extract the features from
+            model: model to extract the features from, or feature extractor
             fit_dataset: dataset to fit the detector on
             feature_layers_id (List[int]): list of str or int that identify
                 features to output.
@@ -159,9 +159,12 @@ class OODBaseDetector(ABC):
                 + "with keras or model.named_modules() with pytorch"
             )
 
-        self.feature_extractor = self._load_feature_extractor(
-            model, feature_layers_id, input_layer_id
-        )
+        if not isinstance(model, FeatureExtractor):
+            self.feature_extractor = self._load_feature_extractor(
+                model, feature_layers_id, input_layer_id
+            )
+        else:
+            self.feature_extractor = model
 
         if fit_dataset is not None:
             if "verbose" in inspect.signature(self._fit_to_dataset).parameters.keys():

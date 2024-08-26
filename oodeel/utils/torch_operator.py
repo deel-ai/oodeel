@@ -53,10 +53,15 @@ class TorchOperator(Operator):
     """Class to handle torch operations with a unified API"""
 
     def __init__(self, model: Optional[torch.nn.Module] = None):
-        if model is not None:
+        try:
             self._device = next(model.parameters()).device
-        else:
-            self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        except:
+            try:  # in case where model is a feature extractor
+                self._device = next(model.model.parameters()).device
+            except:
+                self._device = torch.device(
+                    "cuda" if torch.cuda.is_available() else "cpu"
+                )
 
     @staticmethod
     def softmax(tensor: TensorType) -> torch.Tensor:

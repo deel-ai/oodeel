@@ -47,7 +47,8 @@ def import_backend_specific_stuff(model: Callable):
     """Get backend specific data handler, operator and feature extractor class.
 
     Args:
-        model (Callable): a model (Keras or PyTorch) used to identify the backend.
+        model (Callable): a model (Keras or PyTorch) or a feature extractor (containing
+        "Keras" or "Torch" in the class name) used to identify the backend.
 
     Returns:
         str: backend name
@@ -55,7 +56,7 @@ def import_backend_specific_stuff(model: Callable):
         Operator: torch or tf operator
         FeatureExtractor: torch or tf feature extractor class
     """
-    if is_from(model, "keras"):
+    if is_from(model, "keras") or "Keras" in model.__class__.__name__:
         from ..extractor.keras_feature_extractor import KerasFeatureExtractor
         from ..datasets.tf_data_handler import TFDataHandler
         from ..utils import TFOperator
@@ -65,7 +66,7 @@ def import_backend_specific_stuff(model: Callable):
         op = TFOperator()
         FeatureExtractorClass = KerasFeatureExtractor
 
-    elif is_from(model, "torch"):
+    elif is_from(model, "torch") or "Torch" in model.__class__.__name__:
         from ..extractor.torch_feature_extractor import TorchFeatureExtractor
         from ..datasets.torch_data_handler import TorchDataHandler
         from ..utils import TorchOperator
