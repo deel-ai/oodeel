@@ -339,7 +339,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     def _get_scale_hook(self, percentile: float) -> Callable:
         """
-        Hook that truncate activation features under a threshold value
+        Hook that scales activation features.
 
         Args:
             threshold (float): threshold value
@@ -361,7 +361,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     def _get_ash_hook(self, percentile: float) -> Callable:
         """
-        Hook that truncate activation features under a threshold value
+        Hook that scales and prunes activation features under a threshold value
 
         Args:
             threshold (float): threshold value
