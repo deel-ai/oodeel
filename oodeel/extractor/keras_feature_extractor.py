@@ -58,7 +58,9 @@ class KerasFeatureExtractor(FeatureExtractor):
             this threshold value (useful for ReAct). Defaults to None.
         scale_percentile: if not None, the features are scaled
             following the method of Xu et al., ICLR 2024.
-            Default to None
+            Defaults to None.
+        ash_percentile: if not None, the features are scaled following
+            the method of Djurisic et al., ICLR 2023.
     """
 
     def __init__(
