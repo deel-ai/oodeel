@@ -89,7 +89,7 @@ def bench_metrics(
     for metric in metrics:
         if isinstance(metric, str):
             if metric == "auroc":
-                auroc = -np.trapz(1.0 - fpr, tpr)
+                auroc = -np.trapezoid(1.0 - fpr, tpr)
                 metrics_dict["auroc"] = auroc
 
             elif metric == "detect_acc":
