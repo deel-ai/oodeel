@@ -89,7 +89,10 @@ def bench_metrics(
     for metric in metrics:
         if isinstance(metric, str):
             if metric == "auroc":
-                auroc = -np.trapezoid(1.0 - fpr, tpr)
+                if np.__version__ >= "2.0.0":
+                    auroc = -np.trapezoid(1.0 - fpr, tpr)
+                else:
+                    auroc = -np.trapz(1.0 - fpr, tpr)
                 metrics_dict["auroc"] = auroc
 
             elif metric == "detect_acc":
