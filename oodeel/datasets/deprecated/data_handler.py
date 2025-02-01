@@ -25,12 +25,12 @@ from abc import abstractmethod
 
 import numpy as np
 
-from ..types import Callable
-from ..types import DatasetType
-from ..types import ItemType
-from ..types import Optional
-from ..types import Tuple
-from ..types import Union
+from ...types import Callable
+from ...types import DatasetType
+from ...types import ItemType
+from ...types import Optional
+from ...types import Tuple
+from ...types import Union
 
 
 class DataHandler(ABC):

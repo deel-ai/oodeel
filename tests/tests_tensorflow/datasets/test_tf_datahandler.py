@@ -484,7 +484,7 @@ def test_prepare(shuffle, with_labels, expected_output):
     if shuffle:
         assert np.sum(tensor1[0] - tensor2[0]) != 0
     if with_labels:
-        assert tuple(tensor1[1].shape) == (batch_size, 10)
+        assert tuple(tensor1[1].shape) == (batch_size, num_labels)
     assert tensor1[0].shape == (batch_size, 32, 32, 3)
     assert tf.reduce_max(tensor1[0]) <= 1
     assert tf.reduce_min(tensor1[0]) >= 0
