@@ -30,6 +30,7 @@ from ..types import Callable
 from ..types import DatasetType
 from ..types import ItemType
 from ..types import Optional
+from ..types import TensorType
 from ..types import Tuple
 from ..types import Union
 
@@ -168,7 +169,7 @@ class DataHandler(ABC):
         shuffle: bool = False,
         **kwargs_prepare,
     ) -> DatasetType:
-        """Prepare self.data for scoring or training
+        """Prepare dataset for scoring or training
 
         Args:
             batch_size (int, optional): Batch_size of the returned dataset like object.
@@ -194,7 +195,7 @@ class DataHandler(ABC):
         dataset_to_prepare = dataset
 
         if input_key is None:
-            input_key = self.get_ds_feature_keys(self.data)[0]
+            input_key = self.get_ds_feature_keys(dataset_to_prepare)[0]
         else:
             input_key = input_key
 
