@@ -77,6 +77,11 @@ class TFDataHandler(DataHandler):
     tensorflow syntax.
     """
 
+    def __init__(self) -> None:
+        super().__init__()
+        self.backend = "tensorflow"
+        self.channel_order = "channels_last"
+
     @classmethod
     def load_dataset(
         cls,

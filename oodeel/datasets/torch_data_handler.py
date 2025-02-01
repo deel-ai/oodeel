@@ -258,6 +258,11 @@ class TorchDataHandler(DataHandler):
     torch syntax.
     """
 
+    def __init__(self) -> None:
+        super().__init__()
+        self.backend = "torch"
+        self.channel_order = "channels_first"
+
     @staticmethod
     def _default_target_transform(y: Any) -> torch.Tensor:
         """Format int or float item target as a torch tensor
