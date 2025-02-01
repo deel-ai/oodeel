@@ -434,52 +434,6 @@ class TorchDataHandler(DataHandler):
         return cls.load_custom_dataset(dataset)
 
     @staticmethod
-    def assign_feature_value(
-        dataset: DictDataset, feature_key: str, value: int
-    ) -> DictDataset:
-        """Assign a value to a feature for every sample in a DictDataset
-
-        Args:
-            dataset (DictDataset): DictDataset to assign the value to
-            feature_key (str): Feature to assign the value to
-            value (int): Value to assign
-
-        Returns:
-            DictDataset
-        """
-        assert isinstance(
-            dataset, DictDataset
-        ), "Dataset must be an instance of DictDataset"
-
-        def assign_value_to_feature(x):
-            x[feature_key] = torch.tensor(value)
-            return x
-
-        dataset = dataset.map(assign_value_to_feature)
-        return dataset
-
-    @staticmethod
-    @dict_only_ds
-    def get_feature_from_ds(dataset: DictDataset, feature_key: str) -> np.ndarray:
-        """Get a feature from a DictDataset
-
-        !!! note
-            This function can be a bit time consuming since it needs to iterate
-            over the whole dataset.
-
-        Args:
-            dataset (DictDataset): Dataset to get the feature from
-            feature_key (str): Feature value to get
-
-        Returns:
-            np.ndarray: Feature values for dataset
-        """
-
-        features = dataset.map(lambda x: x[feature_key])
-        features = np.stack([f.numpy() for f in features])
-        return features
-
-    @staticmethod
     @dict_only_ds
     def get_ds_feature_keys(dataset: DictDataset) -> list:
         """Get the feature keys of a DictDataset
@@ -491,23 +445,6 @@ class TorchDataHandler(DataHandler):
             list: List of feature keys
         """
         return dataset.output_keys
-
-    @staticmethod
-    def has_feature_key(dataset: DictDataset, key: str) -> bool:
-        """Check if a DictDataset has a feature denoted by key
-
-        Args:
-            dataset (DictDataset): Dataset to check
-            key (str): Key to check
-
-        Returns:
-            bool: If the dataset has a feature denoted by key
-        """
-        assert isinstance(
-            dataset, DictDataset
-        ), "Dataset must be an instance of DictDataset"
-
-        return key in dataset.output_keys
 
     @staticmethod
     def map_ds(
@@ -755,20 +692,3 @@ class TorchDataHandler(DataHandler):
         if len(label.shape) > 1:
             label = label.view([label.shape[0]])
         return label
-
-    @staticmethod
-    def get_feature(dataset: DictDataset, feature_key: Union[str, int]) -> DictDataset:
-        """Extract a feature from a dataset
-
-        Args:
-            dataset (tf.data.Dataset): Dataset to extract the feature from
-            feature_key (Union[str, int]): feature to extract
-
-        Returns:
-            tf.data.Dataset: dataset built with the extracted feature only
-        """
-
-        def _get_feature_item(item):
-            return item[feature_key]
-
-        return dataset.map(_get_feature_item)
