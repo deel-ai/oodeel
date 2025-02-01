@@ -115,7 +115,7 @@ class TFDataHandler(DataHandler):
         dataset_id: ItemType, keys: Optional[list] = None
     ) -> tf.data.Dataset:
         """Load a tf.data.Dataset from a np.ndarray, a tf.Tensor or a tuple/dict
-        of np.ndarrays/td.Tensors.
+        of np.ndarrays/tf.Tensors.
 
         Args:
             dataset_id (ItemType): numpy array(s) to load.
@@ -269,50 +269,6 @@ class TFDataHandler(DataHandler):
         return dataset
 
     @staticmethod
-    def assign_feature_value(
-        dataset: tf.data.Dataset, feature_key: str, value: int
-    ) -> tf.data.Dataset:
-        """Assign a value to a feature for every sample in a tf.data.Dataset
-
-        Args:
-            dataset (tf.data.Dataset): tf.data.Dataset to assign the value to
-            feature_key (str): Feature to assign the value to
-            value (int): Value to assign
-
-        Returns:
-            tf.data.Dataset
-        """
-        assert isinstance(dataset.element_spec, dict), "dataset elements must be dicts"
-
-        def assign_value_to_feature(x):
-            x[feature_key] = value
-            return x
-
-        dataset = dataset.map(assign_value_to_feature)
-        return dataset
-
-    @staticmethod
-    @dict_only_ds
-    def get_feature_from_ds(dataset: tf.data.Dataset, feature_key: str) -> np.ndarray:
-        """Get a feature from a tf.data.Dataset
-
-        !!! note
-            This function can be a bit time consuming since it needs to iterate
-            over the whole dataset.
-
-        Args:
-            dataset (tf.data.Dataset): tf.data.Dataset to get the feature from
-            feature_key (str): Feature value to get
-
-        Returns:
-            np.ndarray: Feature values for dataset
-        """
-        features = dataset.map(lambda x: x[feature_key])
-        features = list(features.as_numpy_iterator())
-        features = np.array(features)
-        return features
-
-    @staticmethod
     @dict_only_ds
     def get_ds_feature_keys(dataset: tf.data.Dataset) -> list:
         """Get the feature keys of a tf.data.Dataset
@@ -324,20 +280,6 @@ class TFDataHandler(DataHandler):
             list: List of feature keys
         """
         return list(dataset.element_spec.keys())
-
-    @staticmethod
-    def has_feature_key(dataset: tf.data.Dataset, key: str) -> bool:
-        """Check if a tf.data.Dataset has a feature denoted by key
-
-        Args:
-            dataset (tf.data.Dataset): tf.data.Dataset to check
-            key (str): Key to check
-
-        Returns:
-            bool: If the tf.data.Dataset has a feature denoted by key
-        """
-        assert isinstance(dataset.element_spec, dict), "dataset elements must be dicts"
-        return True if (key in dataset.element_spec.keys()) else False
 
     @staticmethod
     def map_ds(
@@ -655,22 +597,3 @@ class TFDataHandler(DataHandler):
         if len(label.shape) > 1:
             label = tf.reshape(label, [label.shape[0]])
         return label
-
-    @staticmethod
-    def get_feature(
-        dataset: tf.data.Dataset, feature_key: Union[str, int]
-    ) -> tf.data.Dataset:
-        """Extract a feature from a dataset
-
-        Args:
-            dataset (tf.data.Dataset): Dataset to extract the feature from
-            feature_key (Union[str, int]): feature to extract
-
-        Returns:
-            tf.data.Dataset: dataset built with the extracted feature only
-        """
-
-        def _get_feature_elem(elem):
-            return elem[feature_key]
-
-        return dataset.map(_get_feature_elem)
