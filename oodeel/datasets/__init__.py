@@ -21,4 +21,4 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from .data_handler import data_handler_loader
-from .deprecated.ooddataset import OODDataset
+from .deprecated.DEPRECATED_ooddataset import OODDataset
