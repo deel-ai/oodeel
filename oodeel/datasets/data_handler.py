@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import importlib
 from abc import ABC
 from abc import abstractmethod
 
@@ -31,6 +32,40 @@ from ..types import ItemType
 from ..types import Optional
 from ..types import Tuple
 from ..types import Union
+
+
+def get_backend():
+    """Detects whether TensorFlow or PyTorch is available and returns the preferred backend."""
+    available_backends = []
+    if importlib.util.find_spec("tensorflow"):
+        available_backends.append("tensorflow")
+    if importlib.util.find_spec("torch"):
+        available_backends.append("torch")
+
+    if len(available_backends) == 1:
+        return available_backends[0]
+    elif len(available_backends) == 0:
+        raise ImportError("Neither TensorFlow nor PyTorch is installed.")
+    else:
+        raise ImportError(
+            "Both TensorFlow and PyTorch are installed. Please specify the backend."
+        )
+
+
+def data_handler_loader(backend: str = None):
+
+    if backend is None:
+        backend = get_backend()
+
+    if backend == "tensorflow":
+        from .tf_data_handler import TFDataHandler
+
+        return TFDataHandler()
+
+    elif backend == "torch":
+        from .torch_data_handler import TorchDataHandler
+
+        return TorchDataHandler()
 
 
 class DataHandler(ABC):
