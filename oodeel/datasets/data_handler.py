@@ -75,13 +75,16 @@ class DataHandler(ABC):
     having to use library-specific syntax.
     """
 
-    @classmethod
-    @abstractmethod
+    def __init__(self):
+        self.backend = None
+        self.channel_order = None
+
     def load_dataset(
-        cls,
+        self,
         dataset_id: Union[ItemType, DatasetType, str],
         keys: Optional[list] = None,
         load_kwargs: dict = {},
+        input_key: Optional[str] = None,
     ) -> DatasetType:
         """Load dataset from different manners
 
@@ -94,36 +97,158 @@ class DataHandler(ABC):
         Returns:
             DatasetType: dataset
         """
-        raise NotImplementedError()
+
+        if self.backend == "tensorflow":
+            load_kwargs["as_supervised"] = False
+
+        # Load the dataset depending on the type of dataset_id
+        dataset = self.load_dataset(dataset_id, keys, load_kwargs)
+
+        # Get the key of the tensor to input to the model
+        if input_key is None:
+            self.input_key = self.get_ds_feature_keys(dataset)[0]
+        else:
+            self.input_key = input_key
+
+        return dataset
+
+    def split_by_class(
+        self,
+        dataset: DatasetType,
+        in_labels: Optional[Union[np.ndarray, list]] = None,
+        out_labels: Optional[Union[np.ndarray, list]] = None,
+    ) -> Optional[Tuple[DatasetType]]:
+        """Filter the dataset by assigning ood labels depending on labels
+        value (typically, class id).
+
+        Args:
+            in_labels (Optional[Union[np.ndarray, list]], optional): set of labels
+                to be considered as in-distribution. Defaults to None.
+            out_labels (Optional[Union[np.ndarray, list]], optional): set of labels
+                to be considered as out-of-distribution. Defaults to None.
+
+        Returns:
+            Optional[Tuple[OODDataset]]: Tuple of in-distribution and
+                out-of-distribution OODDatasets
+        """
+        # Make sure the dataset has labels
+        assert (in_labels is not None) or (
+            out_labels is not None
+        ), "specify labels to filter with"
+        assert self.get_item_length(dataset) >= 2, "the dataset has no labels"
+
+        # Filter the dataset depending on in_labels and out_labels given
+        if (out_labels is not None) and (in_labels is not None):
+            in_data = self.filter_by_feature_value(dataset, "label", in_labels)
+            out_data = self.filter_by_feature_value(dataset, "label", out_labels)
+
+        if out_labels is None:
+            in_data = self.filter_by_feature_value(dataset, "label", in_labels)
+            out_data = self.filter_by_feature_value(
+                dataset, "label", in_labels, excluded=True
+            )
+
+        elif in_labels is None:
+            in_data = self.filter_by_feature_value(
+                dataset, "label", out_labels, excluded=True
+            )
+            out_data = self.filter_by_feature_value(dataset, "label", out_labels)
+
+        # Return the filtered OODDatasets
+        return in_data, out_data
+
+    def prepare(
+        self,
+        dataset: DatasetType,
+        batch_size: int = 128,
+        preprocess_fn: Optional[Callable] = None,
+        augment_fn: Optional[Callable] = None,
+        input_key: str = None,
+        with_labels: bool = True,
+        shuffle: bool = False,
+        **kwargs_prepare,
+    ) -> DatasetType:
+        """Prepare self.data for scoring or training
+
+        Args:
+            batch_size (int, optional): Batch_size of the returned dataset like object.
+                Defaults to 128.
+            preprocess_fn (Callable, optional): Preprocessing function to apply to
+                the dataset. Defaults to None.
+            augment_fn (Callable, optional): Augment function to be used (when the
+                returned dataset is to be used for training). Defaults to None.
+            with_ood_labels (bool, optional): To return the dataset with ood_labels
+                or not. Defaults to True.
+            with_labels (bool, optional): To return the dataset with labels or not.
+                Defaults to True.
+            shuffle (bool, optional): To shuffle the returned dataset or not.
+                Defaults to False.
+            kwargs_prepare (dict): Additional parameters to be passed to the
+                data_handler.prepare_for_training method.
+
+
+        Returns:
+            DatasetType: prepared dataset
+        """
+
+        dataset_to_prepare = dataset
+
+        if input_key is None:
+            input_key = self.get_ds_feature_keys(self.data)[0]
+        else:
+            input_key = input_key
+
+        # # Select the keys to be returned
+
+        if with_labels:
+            keys = [input_key, "label"]
+        else:
+            keys = [input_key]
+
+        # Prepare the dataset for training or scoring
+        dataset = self.prepare_for_training(
+            dataset=dataset_to_prepare,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            preprocess_fn=preprocess_fn,
+            augment_fn=augment_fn,
+            output_keys=keys,
+            **kwargs_prepare,
+        )
+
+        return dataset
 
     @staticmethod
     @abstractmethod
-    def assign_feature_value(
-        dataset: DatasetType, feature_key: str, value: int
+    def load_dataset_from_arrays(
+        dataset_id: ItemType, keys: Optional[list] = None
     ) -> DatasetType:
-        """Assign a value to a feature for every sample in a Dataset
+        """Load a tf.data.Dataset from a np.ndarray, a tf.Tensor or a tuple/dict
+        of np.ndarrays/DatasetType.
 
         Args:
-            dataset (DatasetType): Dataset to assign the value to
-            feature_key (str): Feature to assign the value to
-            value (int): Value to assign
+            dataset_id (ItemType): numpy array(s) to load.
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
 
         Returns:
-            DatasetType: updated dataset
+            DatasetType
         """
         raise NotImplementedError()
 
     @staticmethod
     @abstractmethod
-    def get_feature_from_ds(dataset: DatasetType, feature_key: str) -> np.ndarray:
-        """Get a feature from a Dataset
+    def load_custom_dataset(
+        dataset_id: DatasetType, keys: Optional[list] = None
+    ) -> DatasetType:
+        """Load a custom dataset by ensuring it is properly formatted.
 
         Args:
-            dataset (DatasetType): Dataset to get the feature from
-            feature_key (str): Feature value to get
+            dataset_id: dataset
+            keys: feature keys
 
         Returns:
-            np.ndarray: Feature values for dataset
+            A properly formatted dataset.
         """
         raise NotImplementedError()
 
@@ -137,20 +262,6 @@ class DataHandler(ABC):
 
         Returns:
             list: List of feature keys
-        """
-        raise NotImplementedError()
-
-    @staticmethod
-    @abstractmethod
-    def has_feature_key(dataset: DatasetType, key: str) -> bool:
-        """Check if a Dataset has a feature denoted by key
-
-        Args:
-            dataset (DatasetType): Dataset to check
-            key (str): Key to check
-
-        Returns:
-            bool: If the dataset has a feature denoted by key
         """
         raise NotImplementedError()
 
@@ -267,5 +378,46 @@ class DataHandler(ABC):
 
         Returns:
             int: Dataset length
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def get_feature_shape(dataset: DatasetType, feature_key: Union[str, int]) -> tuple:
+        """Get the shape of a feature of dataset identified by feature_key
+
+        Args:
+            dataset (Dataset): a Dataset
+            feature_key (Union[str, int]): The identifier of the feature
+
+        Returns:
+            tuple: the shape of feature_id
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def get_input_from_dataset_item(elem: ItemType) -> TensorType:
+        """Get the tensor that is to be feed as input to a model from a dataset element.
+
+        Args:
+            elem (ItemType): dataset element to extract input from
+
+        Returns:
+            TensorType: Input tensor
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def get_label_from_dataset_item(item: ItemType):
+        """Retrieve label tensor from item as a tuple/list. Label must be at index 1
+        in the item tuple. If one-hot encoded, labels are converted to single value.
+
+        Args:
+            elem (ItemType): dataset element to extract label from
+
+        Returns:
+            Any: Label tensor
         """
         raise NotImplementedError()
