@@ -61,6 +61,10 @@ class OODDataset(object):
         load_from_tensorflow_datasets: bool = False,
         input_key: Optional[str] = None,
     ):
+
+        print(
+            "Warning: OODDataset is deprecated. Please use the data_handler_loader instead."
+        )
         self.backend = backend
         self.load_from_tensorflow_datasets = load_from_tensorflow_datasets
 
