@@ -78,19 +78,19 @@ class OODDataset(object):
         # Set the channel order depending on the backend
         if self.backend == "torch":
             if load_from_tensorflow_datasets:
-                from .tf_data_handler import TFDataHandler
+                from .DEPRECATED_tf_data_handler import TFDataHandler
                 import tensorflow as tf
 
                 tf.config.set_visible_devices([], "GPU")
                 self._data_handler = TFDataHandler()
                 load_kwargs["as_supervised"] = False
             else:
-                from .torch_data_handler import TorchDataHandler
+                from .DEPRECATED_torch_data_handler import TorchDataHandler
 
                 self._data_handler = TorchDataHandler()
             self.channel_order = "channels_first"
         else:
-            from .tf_data_handler import TFDataHandler
+            from .DEPRECATED_tf_data_handler import TFDataHandler
 
             self._data_handler = TFDataHandler()
             self.channel_order = "channels_last"

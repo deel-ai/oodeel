@@ -32,7 +32,7 @@ from ...types import Optional
 from ...types import TensorType
 from ...types import Tuple
 from ...types import Union
-from .data_handler import DataHandler
+from .DEPRECATED_data_handler import DataHandler
 
 
 def dict_only_ds(ds_handling_method: Callable) -> Callable:
