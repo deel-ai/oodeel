@@ -22,12 +22,79 @@
 # SOFTWARE.
 import tempfile
 
+import numpy as np
 import pytest
 import tensorflow as tf
 
+from oodeel.datasets.data_handler import data_handler_loader
 from oodeel.datasets.tf_data_handler import TFDataHandler
 from tests.tests_tensorflow import generate_data
 from tests.tests_tensorflow import generate_data_tf
+
+
+def assign_feature_value(
+    dataset: tf.data.Dataset, feature_key: str, value: int
+) -> tf.data.Dataset:
+    """Assign a value to a feature for every sample in a tf.data.Dataset
+
+    Args:
+        dataset (tf.data.Dataset): tf.data.Dataset to assign the value to
+        feature_key (str): Feature to assign the value to
+        value (int): Value to assign
+
+    Returns:
+        tf.data.Dataset
+    """
+    assert isinstance(dataset.element_spec, dict), "dataset elements must be dicts"
+
+    def assign_value_to_feature(x):
+        x[feature_key] = value
+        return x
+
+    dataset = dataset.map(assign_value_to_feature)
+    return dataset
+
+
+def get_dataset_length(dataset: tf.data.Dataset) -> int:
+    """Get the length of a dataset. Try to access it with len(), and if not
+    available, with a reduce op.
+
+    Args:
+        dataset (tf.data.Dataset): Dataset to process
+
+    Returns:
+        int: dataset length
+    """
+    try:
+        return len(dataset)
+    except TypeError:
+        cardinality = dataset.reduce(0, lambda x, _: x + 1)
+        return int(cardinality)
+
+
+def get_feature_from_ds(dataset: tf.data.Dataset, feature_key: str) -> np.ndarray:
+    """Get a feature from a tf.data.Dataset
+
+    !!! note
+        This function can be a bit time consuming since it needs to iterate
+        over the whole dataset.
+
+    Args:
+        dataset (tf.data.Dataset): tf.data.Dataset to get the feature from
+        feature_key (str): Feature value to get
+
+    Returns:
+        np.ndarray: Feature values for dataset
+    """
+    features = dataset.map(lambda x: x[feature_key])
+    features = list(features.as_numpy_iterator())
+    features = np.array(features)
+    return features
+
+
+def test_instanciate_tf_datahandler():
+    handler = data_handler_loader(backend="tensorflow")
+    assert isinstance(handler, TFDataHandler)
 
 
 def test_get_item_length():
@@ -204,9 +271,9 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     a_labels = list(range(num_labels // 2))
     b_labels = list(range(num_labels // 2, num_labels))
     dataset_a = handler.filter_by_feature_value(dataset, "label", a_labels)
-    num_samples_a = handler.get_dataset_length(dataset_a)
+    num_samples_a = get_dataset_length(dataset_a)
     dataset_b = handler.filter_by_feature_value(dataset, "label", b_labels)
-    num_samples_b = handler.get_dataset_length(dataset_b)
+    num_samples_b = get_dataset_length(dataset_b)
     assert num_samples == (num_samples_a + num_samples_b)
 
     # assign feature, map, get feature
@@ -218,25 +285,19 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
         item["new_feature"] = item["new_feature"] * 3 + 2
         return item
 
-    dataset_a = handler.assign_feature_value(dataset_a, "new_feature", 0)
+    dataset_a = assign_feature_value(dataset_a, "new_feature", 0)
     dataset_a = dataset_a.map(map_fn_a)
-    features_a = tf.convert_to_tensor(
-        handler.get_feature_from_ds(dataset_a, "new_feature")
-    )
+    features_a = tf.convert_to_tensor(get_feature_from_ds(dataset_a, "new_feature"))
     assert tf.reduce_all(features_a == tf.convert_to_tensor([-3] * num_samples_a))
 
-    dataset_b = handler.assign_feature_value(dataset_b, "new_feature", 1)
+    dataset_b = assign_feature_value(dataset_b, "new_feature", 1)
     dataset_b = dataset_b.map(map_fn_b)
-    features_b = tf.convert_to_tensor(
-        handler.get_feature_from_ds(dataset_b, "new_feature")
-    )
+    features_b = tf.convert_to_tensor(get_feature_from_ds(dataset_b, "new_feature"))
     assert tf.reduce_all(features_b == tf.convert_to_tensor([5] * num_samples_b))
 
     # concatenate two sub datasets
     dataset_c = handler.merge(dataset_a, dataset_b)
-    features_c = tf.convert_to_tensor(
-        handler.get_feature_from_ds(dataset_c, "new_feature")
-    )
+    features_c = tf.convert_to_tensor(get_feature_from_ds(dataset_c, "new_feature"))
     assert tf.reduce_all(features_c == tf.concat([features_a, features_b], axis=0))
 
     # prepare dataloader
@@ -247,3 +308,183 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
         tf.TensorShape([64, num_labels]) if one_hot else tf.TensorShape([64])
     )
     assert batch[2].shape == tf.TensorShape([64])
+
+
+def test_instanciate_from_tfds():
+    handler = TFDataHandler()
+    dataset = handler.load_dataset(dataset_id="mnist", load_kwargs={"split": "test"})
+
+    assert len(dataset) == 10000
+    assert len(dataset.element_spec) == 2
+
+
+@pytest.mark.parametrize(
+    "as_supervised, expected_output",
+    [
+        (
+            False,
+            [
+                100,
+                2,
+            ],
+        ),
+        (True, [100, 2]),
+    ],
+    ids=[
+        "Instanciate from tf data without supervision",
+        "Instanciate from np data with supervision",
+    ],
+)
+def test_instanciate_ood_dataset(as_supervised, expected_output):
+    """Test the instanciation of OODDataset."""
+
+    dataset_id = generate_data_tf(
+        x_shape=(32, 32, 3), num_labels=10, samples=100, as_supervised=as_supervised
+    )
+
+    handler = TFDataHandler()
+    dataset = handler.load_dataset(dataset_id=dataset_id)
+
+    item_len = len(dataset.element_spec)
+
+    assert len(dataset) == expected_output[0]
+    assert item_len == expected_output[1]
+
+
+@pytest.mark.parametrize(
+    "in_labels, out_labels, one_hot, expected_output",
+    [
+        ([1, 2], None, False, [100, 67, 33, 2, 1]),
+        (None, [1, 2], True, [100, 33, 67, 1, 2]),
+        ([1], [2], False, [100, 33, 34, 1, 1]),
+    ],
+    ids=[
+        "[tf] Assign OOD labels by class with ID labels",
+        "[tf] Assign OOD labels by class with OOD labels",
+        "[tf] Assign OOD labels by class with ID and OOD labels",
+    ],
+)
+def test_split_by_class(in_labels, out_labels, one_hot, expected_output):
+    """Test the split_by_class method."""
+
+    # generate data
+    x_shape = (32, 32, 3)
+    images, labels = generate_data(
+        x_shape=x_shape,
+        num_labels=3,
+        samples=100,
+        one_hot=one_hot,
+    )
+
+    if not one_hot:
+        for i in range(100):
+            if i < 33:
+                labels[i] = 0
+            if i >= 33 and i < 66:
+                labels[i] = 1
+            if i >= 66:
+                labels[i] = 2
+    else:
+        for i in range(100):
+            if i < 33:
+                labels[i] = np.array([1, 0, 0])
+            if i >= 33 and i < 66:
+                labels[i] = np.array([0, 1, 0])
+            if i >= 66:
+                labels[i] = np.array([0, 0, 1])
+
+    handler = TFDataHandler()
+    dataset = handler.load_dataset(dataset_id=(images, labels))
+
+    in_dataset, out_dataset = handler.split_by_class(
+        dataset=dataset,
+        in_labels=in_labels,
+        out_labels=out_labels,
+    )
+
+    len_ds = get_dataset_length(dataset)
+    len_inds = get_dataset_length(in_dataset)
+    len_outds = get_dataset_length(out_dataset)
+
+    classes = get_feature_from_ds(dataset, "label")
+    classes = np.unique(classes, axis=0)
+
+    classes_in = get_feature_from_ds(in_dataset, "label")
+    classes_in = np.unique(classes_in, axis=0)
+
+    classes_out = get_feature_from_ds(out_dataset, "label")
+    classes_out = np.unique(classes_out, axis=0)
+
+    assert len_ds == expected_output[0]
+    assert len_inds == expected_output[1]
+    assert len_outds == expected_output[2]
+    assert len(classes_in) == expected_output[3]
+    assert len(classes_out) == expected_output[4]
+
+
+@pytest.mark.parametrize(
+    "shuffle, with_labels, expected_output",
+    [
+        (False, True, [2, (16, 10)]),
+        (False, False, [1, (16,)]),
+        (True, True, [2, (16, 10)]),
+        (True, False, [1, (16,)]),
+    ],
+    ids=[
+        "[tf] Prepare OODDataset for scoring with labels and ood labels",
+        "[tf] Prepare OODDataset for scoring with only ood labels",
+        "[tf] Prepare OODDataset for training (with shuffle and augment_fn) with labels"
+        " and ood labels",
+        "[tf] Prepare OODDataset for training (with shuffle and augment_fn) "
+        "with only labels",
+    ],
+)
+def test_prepare(shuffle, with_labels, expected_output):
+    """Test the prepare method."""
+
+    num_labels = 10
+    batch_size = 16
+    samples = 100
+
+    x_shape = (32, 32, 3)
+
+    handler = TFDataHandler()
+    dataset = handler.load_dataset(
+        dataset_id=generate_data_tf(
+            x_shape=x_shape,
+            num_labels=num_labels,
+            samples=samples,
+            one_hot=True,
+        )
+    )
+
+    def preprocess_fn(*inputs):
+        x = inputs[0] / 255
+        return tuple([x] + list(inputs[1:]))
+
+    def augment_fn_(*inputs):
+        x = tf.image.random_flip_left_right(inputs[0])
+        return tuple([x] + list(inputs[1:]))
+
+    augment_fn = augment_fn_ if shuffle else None
+
+    ds = handler.prepare(
+        dataset,
+        batch_size=batch_size,
+        preprocess_fn=preprocess_fn,
+        with_labels=with_labels,
+        shuffle=shuffle,
+        augment_fn=augment_fn,
+    )
+
+    tensor1 = next(iter(ds.take(1)))
+    tensor2 = next(iter(ds.take(1)))
+
+    assert len(tensor1) == expected_output[0]
+    if shuffle:
+        assert np.sum(tensor1[0] - tensor2[0]) != 0
+    if with_labels:
+        assert tuple(tensor1[1].shape) == (batch_size, 10)
+    assert tensor1[0].shape == (batch_size, 32, 32, 3)
+    assert tf.reduce_max(tensor1[0]) <= 1
+    assert tf.reduce_min(tensor1[0]) >= 0
