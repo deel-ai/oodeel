@@ -36,7 +36,8 @@ from ..types import Union
 
 
 def get_backend():
-    """Detects whether TensorFlow or PyTorch is available and returns the preferred backend."""
+    """Detects whether TensorFlow or PyTorch is available and returns
+    the preferred backend."""
     available_backends = []
     if importlib.util.find_spec("tensorflow"):
         available_backends.append("tensorflow")
