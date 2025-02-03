@@ -83,6 +83,15 @@ plugins:
       ignore: ["ignored_notebooks/*"]
       ignore_h1_titles: True
       include_source: True
+  - mike:
+      # These fields are all optional; the defaults are as below...
+      alias_type: symlink
+      redirect_template: null
+      deploy_prefix: ''
+      canonical_version: null
+      version_selector: true
+      css_dir: css
+      javascript_dir: js
 
 markdown_extensions:
   - footnotes
@@ -113,3 +122,7 @@ extra_javascript:
 
 repo_name: "deel-ai/oodeel"
 repo_url: "https://github.com/deel-ai/oodeel"
+
+extra:
+  version:
+    provider: mike
