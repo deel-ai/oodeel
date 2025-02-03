@@ -70,6 +70,7 @@ dev_requirements = [
     "mkdocs-material",
     "mkdocstrings",
     "mknotebooks",
+    "mike",
     "bump2version",
     "docsig",
     "no_implicit_optional",
