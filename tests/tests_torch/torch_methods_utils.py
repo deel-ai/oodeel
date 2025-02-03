@@ -27,7 +27,7 @@ import torch
 from sklearn.datasets import make_blobs
 from sklearn.model_selection import train_test_split
 
-from oodeel.datasets import OODDataset
+from oodeel.datasets import data_handler_loader
 from oodeel.eval.metrics import bench_metrics
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -52,8 +52,9 @@ def load_blobs_data(batch_size=128, num_samples=10000, train_ratio=0.8):
     )
 
     # === id / ood split ===
-    blobs_train = OODDataset((X_train, y_train), backend="torch")
-    blobs_test = OODDataset((X_test, y_test), backend="torch")
+    handler = data_handler_loader("torch")
+    blobs_train = handler.load_dataset((X_train, y_train))
+    blobs_test = handler.load_dataset((X_test, y_test))
     oods_fit, _ = blobs_train.split_by_class(in_labels, out_labels)
     oods_in, oods_out = blobs_test.split_by_class(in_labels, out_labels)
 

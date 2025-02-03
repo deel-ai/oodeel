@@ -193,10 +193,8 @@ class DataHandler(ABC):
             DatasetType: prepared dataset
         """
 
-        dataset_to_prepare = dataset
-
         if input_key is None:
-            input_key = self.get_ds_feature_keys(dataset_to_prepare)[0]
+            input_key = self.get_ds_feature_keys(dataset)[0]
         else:
             input_key = input_key
 
@@ -209,7 +207,7 @@ class DataHandler(ABC):
 
         # Prepare the dataset for training or scoring
         dataset = self.prepare_for_training(
-            dataset=dataset_to_prepare,
+            dataset=dataset,
             batch_size=batch_size,
             shuffle=shuffle,
             preprocess_fn=preprocess_fn,
