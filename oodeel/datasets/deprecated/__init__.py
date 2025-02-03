@@ -22,9 +22,7 @@
 # SOFTWARE.
 import warnings
 
-from .DEPRECATED_data_handler import DataHandler
 from .DEPRECATED_ooddataset import OODDataset
-from .DEPRECATED_torch_data_handler import TorchDataHandler
 
 warnings.warn(
     "The 'OODDataset' object is deprecated and will be removed in a future release.",
