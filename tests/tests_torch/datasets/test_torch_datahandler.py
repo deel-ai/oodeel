@@ -27,7 +27,7 @@ import pytest
 import torch
 import torchvision
 
-from oodeel.datasets import data_handler_loader
+from oodeel.datasets import load_data_handler
 from oodeel.datasets.torch_data_handler import Dataset
 from oodeel.datasets.torch_data_handler import dict_only_ds
 from oodeel.datasets.torch_data_handler import DictDataset
@@ -108,7 +108,7 @@ def test_get_item_length():
 
 
 def test_instanciate_tf_datahandler():
-    handler = data_handler_loader(backend="torch")
+    handler = load_data_handler(backend="torch")
     assert isinstance(handler, TorchDataHandler)
 
 

@@ -26,7 +26,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from oodeel.datasets.data_handler import data_handler_loader
+from oodeel.datasets.data_handler import load_data_handler
 from oodeel.datasets.tf_data_handler import TFDataHandler
 from tests.tests_tensorflow import generate_data
 from tests.tests_tensorflow import generate_data_tf
@@ -93,7 +93,7 @@ def get_feature_from_ds(dataset: tf.data.Dataset, feature_key: str) -> np.ndarra
 
 
 def test_instanciate_tf_datahandler():
-    handler = data_handler_loader(backend="tensorflow")
+    handler = load_data_handler(backend="tensorflow")
     assert isinstance(handler, TFDataHandler)
 
 

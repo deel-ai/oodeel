@@ -20,5 +20,5 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .data_handler import data_handler_loader
+from .data_handler import load_data_handler
 from .deprecated.DEPRECATED_ooddataset import OODDataset

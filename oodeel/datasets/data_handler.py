@@ -54,7 +54,7 @@ def get_backend():
         )
 
 
-def data_handler_loader(backend: str = None):
+def load_data_handler(backend: str = None):
 
     if backend is None:
         backend = get_backend()
