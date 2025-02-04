@@ -101,6 +101,8 @@ class TFDataHandler(DataHandler):
         Returns:
             tf.data.Dataset: A dict based tf.data.Dataset
         """
+        load_kwargs["as_supervised"] = False
+
         if isinstance(dataset_id, get_args(ItemType)):
             dataset = cls.load_dataset_from_arrays(dataset_id, keys)
         elif isinstance(dataset_id, tf.data.Dataset):

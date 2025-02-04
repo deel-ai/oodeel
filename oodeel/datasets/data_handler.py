@@ -81,39 +81,6 @@ class DataHandler(ABC):
         self.backend = None
         self.channel_order = None
 
-    def load_dataset(
-        self,
-        dataset_id: Union[ItemType, DatasetType, str],
-        keys: Optional[list] = None,
-        load_kwargs: dict = {},
-        input_key: Optional[str] = None,
-    ) -> DatasetType:
-        """Load dataset from different manners
-
-        Args:
-            dataset_id (Union[ItemType, DatasetType, str]): dataset identification
-            keys (list, optional): Features keys. If None, assigned as "input_i"
-                for i-th feature. Defaults to None.
-            load_kwargs (dict, optional): Additional loading kwargs. Defaults to {}.
-
-        Returns:
-            DatasetType: dataset
-        """
-
-        if self.backend == "tensorflow":
-            load_kwargs["as_supervised"] = False
-
-        # Load the dataset depending on the type of dataset_id
-        dataset = self.load_dataset(dataset_id, keys, load_kwargs)
-
-        # Get the key of the tensor to input to the model
-        if input_key is None:
-            self.input_key = self.get_ds_feature_keys(dataset)[0]
-        else:
-            self.input_key = input_key
-
-        return dataset
-
     def split_by_class(
         self,
         dataset: DatasetType,
@@ -165,8 +132,7 @@ class DataHandler(ABC):
         batch_size: int = 128,
         preprocess_fn: Optional[Callable] = None,
         augment_fn: Optional[Callable] = None,
-        input_key: str = None,
-        with_labels: bool = True,
+        output_keys: Optional[list] = None,
         shuffle: bool = False,
         **kwargs_prepare,
     ) -> DatasetType:
@@ -179,10 +145,8 @@ class DataHandler(ABC):
                 the dataset. Defaults to None.
             augment_fn (Callable, optional): Augment function to be used (when the
                 returned dataset is to be used for training). Defaults to None.
-            with_ood_labels (bool, optional): To return the dataset with ood_labels
-                or not. Defaults to True.
-            with_labels (bool, optional): To return the dataset with labels or not.
-                Defaults to True.
+            output_keys (list, optional): List of keys corresponding to the features
+                that will be returned. Keep all features if None. Defaults to None.
             shuffle (bool, optional): To shuffle the returned dataset or not.
                 Defaults to False.
             kwargs_prepare (dict): Additional parameters to be passed to the
@@ -193,18 +157,6 @@ class DataHandler(ABC):
             DatasetType: prepared dataset
         """
 
-        if input_key is None:
-            input_key = self.get_ds_feature_keys(dataset)[0]
-        else:
-            input_key = input_key
-
-        # # Select the keys to be returned
-
-        if with_labels:
-            keys = [input_key, "label"]
-        else:
-            keys = [input_key]
-
         # Prepare the dataset for training or scoring
         dataset = self.prepare_for_training(
             dataset=dataset,
@@ -212,7 +164,7 @@ class DataHandler(ABC):
             shuffle=shuffle,
             preprocess_fn=preprocess_fn,
             augment_fn=augment_fn,
-            output_keys=keys,
+            output_keys=output_keys,
             **kwargs_prepare,
         )
 
@@ -299,30 +251,6 @@ class DataHandler(ABC):
 
         Returns:
             DatasetType: Filtered dataset
-        """
-        raise NotImplementedError()
-
-    @staticmethod
-    @abstractmethod
-    def merge(
-        id_dataset: DatasetType,
-        ood_dataset: DatasetType,
-        resize: Optional[bool] = False,
-        shape: Optional[Tuple[int]] = None,
-    ) -> DatasetType:
-        """Merge two datasets
-
-        Args:
-            id_dataset (Dataset): dataset of in-distribution data
-            ood_dataset (DictDataset): dataset of out-of-distribution data
-            resize (Optional[bool], optional): toggles if input tensors of the
-                datasets have to be resized to have the same shape. Defaults to True.
-            shape (Optional[Tuple[int]], optional): shape to use for resizing input
-                tensors. If None, the tensors are resized with the shape of the
-                id_dataset input tensors. Defaults to None.
-
-        Returns:
-            DatasetType: merged dataset
         """
         raise NotImplementedError()
 
