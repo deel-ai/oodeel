@@ -423,23 +423,17 @@ def test_split_by_class(in_labels, out_labels, one_hot, expected_output):
 
 
 @pytest.mark.parametrize(
-    "shuffle, with_labels, expected_output",
+    "shuffles, expected_output",
     [
-        (False, True, [2, (16, 10)]),
-        (False, False, [1, (16,)]),
-        (True, True, [2, (16, 10)]),
-        (True, False, [1, (16,)]),
+        (False, [2, (16, 10)]),
+        (True, [2, (16, 10)]),
     ],
     ids=[
-        "[tf] Prepare OODDataset for scoring with labels and ood labels",
-        "[tf] Prepare OODDataset for scoring with only ood labels",
-        "[tf] Prepare OODDataset for training (with shuffle and augment_fn) with labels"
-        " and ood labels",
-        "[tf] Prepare OODDataset for training (with shuffle and augment_fn) "
-        "with only labels",
+        "[torch] Prepare OODDataset for scoring",
+        "[torch] Prepare OODDataset for scoring (with shuffle and augment_fn)",
     ],
 )
-def test_prepare(shuffle, with_labels, expected_output):
+def test_prepare(shuffle, expected_output):
     """Test the prepare method."""
 
     num_labels = 10
@@ -472,7 +466,6 @@ def test_prepare(shuffle, with_labels, expected_output):
         dataset,
         batch_size=batch_size,
         preprocess_fn=preprocess_fn,
-        with_labels=with_labels,
         shuffle=shuffle,
         augment_fn=augment_fn,
     )
@@ -483,8 +476,6 @@ def test_prepare(shuffle, with_labels, expected_output):
     assert len(tensor1) == expected_output[0]
     if shuffle:
         assert np.sum(tensor1[0] - tensor2[0]) != 0
-    if with_labels:
-        assert tuple(tensor1[1].shape) == (batch_size, num_labels)
     assert tensor1[0].shape == (batch_size, 32, 32, 3)
     assert tf.reduce_max(tensor1[0]) <= 1
     assert tf.reduce_min(tensor1[0]) >= 0
