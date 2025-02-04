@@ -81,8 +81,8 @@ def get_toy_keras_convnet(num_classes: int) -> tf.keras.Model:
 def train_tf_model(
     train_data: tf.data.Dataset,
     model: Union[tf.keras.Model, str],
-    input_shape: tuple,
-    num_classes: int,
+    input_shape: tuple = None,
+    num_classes: int = None,
     batch_size: int = 128,
     epochs: int = 50,
     loss: str = "sparse_categorical_crossentropy",
