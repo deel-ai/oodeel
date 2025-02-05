@@ -357,6 +357,7 @@ class TFDataHandler(DataHandler):
         columns: Optional[list] = None,
         shuffle: bool = False,
         dict_based_fns: bool = True,
+        return_tuple: bool = True,
         shuffle_buffer_size: Optional[int] = None,
         prefetch_buffer_size: Optional[int] = None,
         drop_remainder: Optional[bool] = False,
@@ -376,6 +377,8 @@ class TFDataHandler(DataHandler):
                 Defaults to False.
             dict_based_fns (bool): Whether to use preprocess and DA functions as dict
                 based (if True) or as tuple based (if False). Defaults to True.
+            return_tuple (bool, optional): Whether to return each dataset item
+                as a tuple. Defaults to True.
             shuffle_buffer_size (int, optional): Size of the shuffle buffer. If None,
                 taken as the number of samples in the dataset. Defaults to None.
             prefetch_buffer_size (Optional[int], optional): Buffer size for prefetch.
@@ -398,7 +401,7 @@ class TFDataHandler(DataHandler):
         if augment_fn is not None:
             dataset = cls.map_ds(dataset, augment_fn)
 
-        if dict_based_fns:
+        if dict_based_fns and return_tuple:
             dataset = cls.dict_to_tuple(dataset, columns)
 
         dataset = dataset.cache()
