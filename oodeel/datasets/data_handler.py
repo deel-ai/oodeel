@@ -137,6 +137,7 @@ class DataHandler(ABC):
         columns: Optional[list] = None,
         shuffle: bool = False,
         dict_based_fns: bool = True,
+        return_tuple: bool = True,
         **kwargs_prepare,
     ) -> DatasetType:
         """Prepare dataset for scoring or training
@@ -153,6 +154,8 @@ class DataHandler(ABC):
                 Defaults to False.
             dict_based_fns (bool): Whether to use preprocess and DA functions as dict
                 based (if True) or as tuple based (if False). Defaults to True.
+            return_tuple (bool, optional): Whether to return each dataset item
+                as a tuple. Defaults to True.
             kwargs_prepare (dict): Additional parameters to be passed to the
                 data_handler for backend specific preparation.
 

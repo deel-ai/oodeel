@@ -510,6 +510,7 @@ class TorchDataHandler(DataHandler):
         columns: Optional[list] = None,
         shuffle: bool = False,
         dict_based_fns: bool = True,
+        return_tuple: bool = True,
         num_workers: int = 8,
     ) -> DataLoader:
         """Prepare a DataLoader for training
@@ -527,6 +528,8 @@ class TorchDataHandler(DataHandler):
                 Defaults to False.
             dict_based_fns (bool): Whether to use preprocess and DA functions as dict
                 based (if True) or as tuple based (if False). Defaults to True.
+            return_tuple (bool, optional): Whether to return each dataset item
+                as a tuple. Defaults to True.
             num_workers (int, optional): Number of workers to use for the dataloader.
 
         Returns:
@@ -540,10 +543,14 @@ class TorchDataHandler(DataHandler):
                 preprocess_func = preprocess_fn or (lambda x: x)
                 augment_func = augment_fn or (lambda x: x)
                 batch = [augment_func(preprocess_func(d)) for d in batch]
-                # to tuple of batchs
-                return tuple(
-                    default_collate([d[key] for d in batch]) for key in columns
-                )
+                # to dict of batchs
+                if return_tuple:
+                    return tuple(
+                        default_collate([d[key] for d in batch]) for key in columns
+                    )
+                return {
+                    key: default_collate([d[key] for d in batch]) for key in columns
+                }
             else:
                 # preprocess + DA: List[dict] -> List[tuple]
                 preprocess_func = preprocess_fn or (lambda *x: x)
