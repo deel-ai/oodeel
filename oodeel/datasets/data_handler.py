@@ -126,49 +126,41 @@ class DataHandler(ABC):
         # Return the filtered OODDatasets
         return in_data, out_data
 
+    @classmethod
+    @abstractmethod
     def prepare(
-        self,
+        cls,
         dataset: DatasetType,
-        batch_size: int = 128,
+        batch_size: int,
         preprocess_fn: Optional[Callable] = None,
         augment_fn: Optional[Callable] = None,
-        output_keys: Optional[list] = None,
+        columns: Optional[list] = None,
         shuffle: bool = False,
+        dict_based_fns: bool = True,
         **kwargs_prepare,
     ) -> DatasetType:
         """Prepare dataset for scoring or training
 
         Args:
-            batch_size (int, optional): Batch_size of the returned dataset like object.
-                Defaults to 128.
+            batch_size (int): Batch size
             preprocess_fn (Callable, optional): Preprocessing function to apply to
                 the dataset. Defaults to None.
             augment_fn (Callable, optional): Augment function to be used (when the
                 returned dataset is to be used for training). Defaults to None.
-            output_keys (list, optional): List of keys corresponding to the features
+            columns (list, optional): List of keys corresponding to the features
                 that will be returned. Keep all features if None. Defaults to None.
             shuffle (bool, optional): To shuffle the returned dataset or not.
                 Defaults to False.
+            dict_based_fns (bool): Whether to use preprocess and DA functions as dict
+                based (if True) or as tuple based (if False). Defaults to True.
             kwargs_prepare (dict): Additional parameters to be passed to the
-                data_handler.prepare_for_training method.
+                data_handler for backend specific preparation.
 
 
         Returns:
             DatasetType: prepared dataset
         """
-
-        # Prepare the dataset for training or scoring
-        dataset = self.prepare_for_training(
-            dataset=dataset,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            preprocess_fn=preprocess_fn,
-            augment_fn=augment_fn,
-            output_keys=output_keys,
-            **kwargs_prepare,
-        )
-
-        return dataset
+        raise NotImplementedError()
 
     @staticmethod
     @abstractmethod
@@ -251,35 +243,6 @@ class DataHandler(ABC):
 
         Returns:
             DatasetType: Filtered dataset
-        """
-        raise NotImplementedError()
-
-    @classmethod
-    @abstractmethod
-    def prepare_for_training(
-        cls,
-        dataset: DatasetType,
-        batch_size: int,
-        shuffle: bool = False,
-        preprocess_fn: Optional[Callable] = None,
-        augment_fn: Optional[Callable] = None,
-        output_keys: list = ["input", "label"],
-    ) -> DatasetType:
-        """Prepare a dataset for training
-
-        Args:
-            dataset (DictDataset): Dataset to prepare
-            batch_size (int): Batch size
-            shuffle (bool): Wether to shuffle the dataloader or not
-            preprocess_fn (Callable, optional): Preprocessing function to apply to
-                the dataset. Defaults to None.
-            augment_fn (Callable, optional): Augment function to be used (when the
-                returned dataset is to be used for training). Defaults to None.
-            output_keys (list): List of keys corresponding to the features that will be
-                returned. Keep all features if None. Defaults to None.
-
-        Returns:
-            DatasetType: prepared dataset / dataloader
         """
         raise NotImplementedError()
 

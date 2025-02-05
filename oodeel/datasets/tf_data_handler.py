@@ -348,15 +348,15 @@ class TFDataHandler(DataHandler):
         return dataset_to_filter
 
     @classmethod
-    def prepare_for_training(
+    def prepare(
         cls,
         dataset: tf.data.Dataset,
         batch_size: int,
-        shuffle: bool = False,
         preprocess_fn: Optional[Callable] = None,
         augment_fn: Optional[Callable] = None,
-        output_keys: Optional[list] = None,
-        dict_based_fns: bool = False,
+        columns: Optional[list] = None,
+        shuffle: bool = False,
+        dict_based_fns: bool = True,
         shuffle_buffer_size: Optional[int] = None,
         prefetch_buffer_size: Optional[int] = None,
         drop_remainder: Optional[bool] = False,
@@ -366,16 +366,16 @@ class TFDataHandler(DataHandler):
         Args:
             dataset (tf.data.Dataset): tf.data.Dataset to prepare
             batch_size (int): Batch size
+            preprocess_fn (Callable, optional): Preprocessing function to apply to
+                the dataset. Defaults to None.
+            augment_fn (Callable, optional): Augment function to be used (when the
+                returned dataset is to be used for training). Defaults to None.
+            columns (list, optional): List of keys corresponding to the features
+                that will be returned. Keep all features if None. Defaults to None.
             shuffle (bool, optional): To shuffle the returned dataset or not.
                 Defaults to False.
-            preprocess_fn (Callable, optional): Preprocessing function to apply to\
-                the dataset. Defaults to None.
-            augment_fn (Callable, optional): Augment function to be used (when the\
-                returned dataset is to be used for training). Defaults to None.
-            output_keys (list, optional): List of keys corresponding to the features
-                that will be returned. Keep all features if None. Defaults to None.
-            dict_based_fns (bool, optional): If the augment and preprocess functions are
-                dict based or not. Defaults to False.
+            dict_based_fns (bool): Whether to use preprocess and DA functions as dict
+                based (if True) or as tuple based (if False). Defaults to True.
             shuffle_buffer_size (int, optional): Size of the shuffle buffer. If None,
                 taken as the number of samples in the dataset. Defaults to None.
             prefetch_buffer_size (Optional[int], optional): Buffer size for prefetch.
@@ -388,9 +388,9 @@ class TFDataHandler(DataHandler):
             tf.data.Dataset: Prepared dataset
         """
         # dict based to tuple based
-        output_keys = output_keys or cls.get_ds_feature_keys(dataset)
+        columns = columns or cls.get_ds_feature_keys(dataset)
         if not dict_based_fns:
-            dataset = cls.dict_to_tuple(dataset, output_keys)
+            dataset = cls.dict_to_tuple(dataset, columns)
 
         # preprocess + DA
         if preprocess_fn is not None:
@@ -399,7 +399,7 @@ class TFDataHandler(DataHandler):
             dataset = cls.map_ds(dataset, augment_fn)
 
         if dict_based_fns:
-            dataset = cls.dict_to_tuple(dataset, output_keys)
+            dataset = cls.dict_to_tuple(dataset, columns)
 
         dataset = dataset.cache()
 

@@ -501,16 +501,15 @@ class TorchDataHandler(DataHandler):
         return filtered_dataset
 
     @classmethod
-    def prepare_for_training(
+    def prepare(
         cls,
         dataset: DictDataset,
         batch_size: int,
-        shuffle: bool = False,
         preprocess_fn: Optional[Callable] = None,
         augment_fn: Optional[Callable] = None,
-        output_keys: Optional[list] = None,
-        dict_based_fns: bool = False,
-        shuffle_buffer_size: Optional[int] = None,
+        columns: Optional[list] = None,
+        shuffle: bool = False,
+        dict_based_fns: bool = True,
         num_workers: int = 8,
     ) -> DataLoader:
         """Prepare a DataLoader for training
@@ -518,24 +517,22 @@ class TorchDataHandler(DataHandler):
         Args:
             dataset (DictDataset): Dataset to prepare
             batch_size (int): Batch size
-            shuffle (bool): Wether to shuffle the dataloader or not
             preprocess_fn (Callable, optional): Preprocessing function to apply to
                 the dataset. Defaults to None.
             augment_fn (Callable, optional): Augment function to be used (when the
                 returned dataset is to be used for training). Defaults to None.
-            output_keys (list): List of keys corresponding to the features that will be
-                returned. Keep all features if None. Defaults to None.
+            columns (list, optional): List of keys corresponding to the features
+                that will be returned. Keep all features if None. Defaults to None.
+            shuffle (bool, optional): To shuffle the returned dataset or not.
+                Defaults to False.
             dict_based_fns (bool): Whether to use preprocess and DA functions as dict
-                based (if True) or as tuple based (if False). Defaults to False.
-            shuffle_buffer_size (int, optional): Size of the shuffle buffer. Not used
-                in torch because we only rely on Map-Style datasets. Still as argument
-                for API consistency. Defaults to None.
+                based (if True) or as tuple based (if False). Defaults to True.
             num_workers (int, optional): Number of workers to use for the dataloader.
 
         Returns:
             DataLoader: dataloader
         """
-        output_keys = output_keys or cls.get_ds_feature_keys(dataset)
+        columns = columns or cls.get_ds_feature_keys(dataset)
 
         def collate_fn(batch: List[dict]):
             if dict_based_fns:
@@ -545,16 +542,14 @@ class TorchDataHandler(DataHandler):
                 batch = [augment_func(preprocess_func(d)) for d in batch]
                 # to tuple of batchs
                 return tuple(
-                    default_collate([d[key] for d in batch]) for key in output_keys
+                    default_collate([d[key] for d in batch]) for key in columns
                 )
             else:
                 # preprocess + DA: List[dict] -> List[tuple]
                 preprocess_func = preprocess_fn or (lambda *x: x)
                 augment_func = augment_fn or (lambda *x: x)
                 batch = [
-                    augment_func(
-                        *preprocess_func(*tuple(d[key] for key in output_keys))
-                    )
+                    augment_func(*preprocess_func(*tuple(d[key] for key in columns)))
                     for d in batch
                 ]
                 # to tuple of batchs
