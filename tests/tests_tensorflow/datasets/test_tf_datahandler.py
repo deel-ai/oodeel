@@ -301,7 +301,7 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     assert tf.reduce_all(features_c == tf.concat([features_a, features_b], axis=0))
 
     # prepare dataloader
-    loader = handler.prepare(dataset_c, 64, True)
+    loader = handler.prepare(dataset_c, 64, shuffle=True)
     batch = next(iter(loader))
     assert batch[0].shape == tf.TensorShape([64, *x_shape])
     assert batch[1].shape == (
