@@ -301,7 +301,7 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     assert tf.reduce_all(features_c == tf.concat([features_a, features_b], axis=0))
 
     # prepare dataloader
-    loader = handler.prepare_for_training(dataset_c, 64, True)
+    loader = handler.prepare(dataset_c, 64, shuffle=True)
     batch = next(iter(loader))
     assert batch[0].shape == tf.TensorShape([64, *x_shape])
     assert batch[1].shape == (
@@ -423,14 +423,14 @@ def test_split_by_class(in_labels, out_labels, one_hot, expected_output):
 
 
 @pytest.mark.parametrize(
-    "shuffles, expected_output",
+    "shuffle, expected_output",
     [
         (False, [2, (16, 10)]),
         (True, [2, (16, 10)]),
     ],
     ids=[
-        "[torch] Prepare OODDataset for scoring",
-        "[torch] Prepare OODDataset for scoring (with shuffle and augment_fn)",
+        "[tf] Prepare dataset for scoring",
+        "[tf] Prepare dataset for scoring (with shuffle and augment_fn)",
     ],
 )
 def test_prepare(shuffle, expected_output):
@@ -452,13 +452,13 @@ def test_prepare(shuffle, expected_output):
         )
     )
 
-    def preprocess_fn(*inputs):
-        x = inputs[0] / 255
-        return tuple([x] + list(inputs[1:]))
+    def preprocess_fn(inputs):
+        inputs["input"] /= 255
+        return inputs
 
-    def augment_fn_(*inputs):
-        x = tf.image.random_flip_left_right(inputs[0])
-        return tuple([x] + list(inputs[1:]))
+    def augment_fn_(inputs):
+        inputs["input"] = tf.image.random_flip_left_right(inputs["input"])
+        return inputs
 
     augment_fn = augment_fn_ if shuffle else None
 

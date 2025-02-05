@@ -296,7 +296,7 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     assert torch.all(features_c == torch.cat([features_a, features_b]))
 
     # prepare dataloader
-    loader = handler.prepare_for_training(dataset_c, 64, True)
+    loader = handler.prepare(dataset_c, 64, shuffle=True)
     batch = next(iter(loader))
     assert batch[0].shape == torch.Size([64, *x_shape])
     assert batch[1].shape == (
@@ -406,13 +406,13 @@ def test_prepare(shuffle, expected_output):
         )
     )
 
-    def preprocess_fn(*inputs):
-        x = inputs[0] / 255
-        return tuple([x] + list(inputs[1:]))
+    def preprocess_fn(inputs):
+        inputs["input"] /= 255
+        return inputs
 
-    def augment_fn_(*inputs):
-        x = torchvision.transforms.RandomHorizontalFlip()(inputs[0])
-        return tuple([x] + list(inputs[1:]))
+    def augment_fn_(inputs):
+        inputs["input"] = torchvision.transforms.RandomHorizontalFlip()(inputs["input"])
+        return inputs
 
     augment_fn = augment_fn_ if shuffle else None
 
