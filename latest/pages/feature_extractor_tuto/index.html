@@ -86,10 +86,6 @@
       
     </div>
     
-      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
-        
-      </div>
-    
     
       
 
@@ -2676,9 +2672,16 @@ print(x_latent.shape)</div>
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>(100, 900)
-</pre>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">AttributeError</span>                            Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[4], line 5</span>
+<span class="ansi-green-intense-fg ansi-bold">      3</span> x <span style="color: rgb(98,98,98)">=</span> tf<span style="color: rgb(98,98,98)">.</span>ones((<span style="color: rgb(98,98,98)">100</span>, <span style="color: rgb(98,98,98)">32</span>, <span style="color: rgb(98,98,98)">32</span>, <span style="color: rgb(98,98,98)">3</span>))
+<span class="ansi-green-intense-fg ansi-bold">      4</span> x_latent, _ <span style="color: rgb(98,98,98)">=</span> extractor(x)
+<span class="ansi-green-fg">----&gt; 5</span> <span style="color: rgb(0,135,0)">print</span>(<span class="ansi-yellow-bg">x_latent</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">shape</span>)
+
+<span class="ansi-red-fg">AttributeError</span>: &#39;list&#39; object has no attribute &#39;shape&#39;</pre>
 </div>
 </div>
 
@@ -2753,9 +2756,16 @@ print(x_latent.shape)</div>
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>(100, 900)
-</pre>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">AttributeError</span>                            Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[5], line 5</span>
+<span class="ansi-green-intense-fg ansi-bold">      3</span> x <span style="color: rgb(98,98,98)">=</span> tf<span style="color: rgb(98,98,98)">.</span>ones((<span style="color: rgb(98,98,98)">100</span>, <span style="color: rgb(98,98,98)">32</span>, <span style="color: rgb(98,98,98)">32</span>, <span style="color: rgb(98,98,98)">3</span>))
+<span class="ansi-green-intense-fg ansi-bold">      4</span> x_latent, _ <span style="color: rgb(98,98,98)">=</span> extractor(x)
+<span class="ansi-green-fg">----&gt; 5</span> <span style="color: rgb(0,135,0)">print</span>(<span class="ansi-yellow-bg">x_latent</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">shape</span>)
+
+<span class="ansi-red-fg">AttributeError</span>: &#39;list&#39; object has no attribute &#39;shape&#39;</pre>
 </div>
 </div>
 
@@ -2833,10 +2843,20 @@ print(y.shape)</div>
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>(100, 900)
-(100, 10)
-</pre>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">AttributeError</span>                            Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[6], line 6</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> extractor_2 <span style="color: rgb(98,98,98)">=</span> KerasFeatureExtractor(
+<span class="ansi-green-intense-fg ansi-bold">      2</span>     model, input_layer_id<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">dense</span><span style="color: rgb(175,0,0)">&#34;</span>, feature_layers_id<span style="color: rgb(98,98,98)">=</span>[<span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">activation</span><span style="color: rgb(175,0,0)">&#34;</span>]
+<span class="ansi-green-intense-fg ansi-bold">      3</span> )
+<span class="ansi-green-intense-fg ansi-bold">      5</span> x_latent, _ <span style="color: rgb(98,98,98)">=</span> extractor(x)
+<span class="ansi-green-fg">----&gt; 6</span> <span style="color: rgb(0,135,0)">print</span>(<span class="ansi-yellow-bg">x_latent</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">shape</span>)
+<span class="ansi-green-intense-fg ansi-bold">      7</span> y, _ <span style="color: rgb(98,98,98)">=</span> extractor_2(x_latent)
+<span class="ansi-green-intense-fg ansi-bold">      8</span> <span style="color: rgb(0,135,0)">print</span>(y<span style="color: rgb(98,98,98)">.</span>shape)
+
+<span class="ansi-red-fg">AttributeError</span>: &#39;list&#39; object has no attribute &#39;shape&#39;</pre>
 </div>
 </div>
 
@@ -2872,7 +2892,7 @@ instead of <code>list</code>)</li>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -2916,9 +2936,88 @@ print(x_latent[0].shape, x_latent[1].shape)</div>
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>(100, 900) (100, 10)
-</pre>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">ValueError</span>                                Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[7], line 1</span>
+<span class="ansi-green-fg">----&gt; 1</span> extractor <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">KerasFeatureExtractor</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">model</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">feature_layers_id</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">-</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">3</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">-</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">1</span><span class="ansi-yellow-bg">]</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">      3</span> x <span style="color: rgb(98,98,98)">=</span> tf<span style="color: rgb(98,98,98)">.</span>ones((<span style="color: rgb(98,98,98)">100</span>, <span style="color: rgb(98,98,98)">32</span>, <span style="color: rgb(98,98,98)">32</span>, <span style="color: rgb(98,98,98)">3</span>))
+<span class="ansi-green-intense-fg ansi-bold">      4</span> x_latent, _ <span style="color: rgb(98,98,98)">=</span> extractor(x)
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel/extractor/keras_feature_extractor.py:77</span>, in <span class="ansi-cyan-fg">KerasFeatureExtractor.__init__</span><span class="ansi-blue-fg">(self, model, feature_layers_id, input_layer_id, react_threshold, scale_percentile, ash_percentile)</span>
+<span class="ansi-green-intense-fg ansi-bold">     75</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> input_layer_id <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
+<span class="ansi-green-intense-fg ansi-bold">     76</span>     input_layer_id <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(98,98,98)">0</span>
+<span class="ansi-green-fg">---&gt; 77</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">super</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg" style="color: rgb(0,0,255)">__init__</span><span class="ansi-yellow-bg">(</span>
+<span class="ansi-green-intense-fg ansi-bold">     78</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">model</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">model</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     79</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">feature_layers_id</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">feature_layers_id</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     80</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">input_layer_id</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">input_layer_id</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     81</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">react_threshold</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">react_threshold</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     82</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">scale_percentile</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">scale_percentile</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     83</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">ash_percentile</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">ash_percentile</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     84</span> <span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     86</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>backend <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">tensorflow</span><span style="color: rgb(175,0,0)">&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">     87</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>model<span style="color: rgb(98,98,98)">.</span>layers[<span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">1</span>]<span style="color: rgb(98,98,98)">.</span>activation <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(0,135,0)">getattr</span>(tf<span style="color: rgb(98,98,98)">.</span>keras<span style="color: rgb(98,98,98)">.</span>activations, <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">linear</span><span style="color: rgb(175,0,0)">&#34;</span>)
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel/extractor/feature_extractor.py:80</span>, in <span class="ansi-cyan-fg">FeatureExtractor.__init__</span><span class="ansi-blue-fg">(self, model, feature_layers_id, input_layer_id, react_threshold, scale_percentile, ash_percentile)</span>
+<span class="ansi-green-intense-fg ansi-bold">     78</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>ash_percentile <span style="color: rgb(98,98,98)">=</span> ash_percentile
+<span class="ansi-green-intense-fg ansi-bold">     79</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>model <span style="color: rgb(98,98,98)">=</span> model
+<span class="ansi-green-fg">---&gt; 80</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>extractor <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">prepare_extractor</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">)</span>
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel/extractor/keras_feature_extractor.py:197</span>, in <span class="ansi-cyan-fg">KerasFeatureExtractor.prepare_extractor</span><span class="ansi-blue-fg">(self)</span>
+<span class="ansi-green-intense-fg ansi-bold">    194</span> <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
+<span class="ansi-green-intense-fg ansi-bold">    195</span>     output_tensors<span style="color: rgb(98,98,98)">.</span>append(<span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>find_layer(<span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>model, <span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">1</span>)<span style="color: rgb(98,98,98)">.</span>output)
+<span class="ansi-green-fg">--&gt; 197</span> extractor <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">tf</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">keras</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">models</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">Model</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">new_input</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">output_tensors</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    198</span> <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> extractor
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel_dev_env/lib/python3.9/site-packages/tensorflow/python/trackable/base.py:205</span>, in <span class="ansi-cyan-fg">no_automatic_dependency_tracking.&lt;locals&gt;._method_wrapper</span><span class="ansi-blue-fg">(self, *args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">    203</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_self_setattr_tracking <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">False</span>  <span style="color: rgb(95,135,135)"># pylint: disable=protected-access</span>
+<span class="ansi-green-intense-fg ansi-bold">    204</span> <span class="ansi-bold" style="color: rgb(0,135,0)">try</span>:
+<span class="ansi-green-fg">--&gt; 205</span>   result <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">method</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    206</span> <span class="ansi-bold" style="color: rgb(0,135,0)">finally</span>:
+<span class="ansi-green-intense-fg ansi-bold">    207</span>   <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_self_setattr_tracking <span style="color: rgb(98,98,98)">=</span> previous_value  <span style="color: rgb(95,135,135)"># pylint: disable=protected-access</span>
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel_dev_env/lib/python3.9/site-packages/keras/engine/functional.py:166</span>, in <span class="ansi-cyan-fg">Functional.__init__</span><span class="ansi-blue-fg">(self, inputs, outputs, name, trainable, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">    157</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span style="color: rgb(0,135,0)">all</span>(
+<span class="ansi-green-intense-fg ansi-bold">    158</span>         [
+<span class="ansi-green-intense-fg ansi-bold">    159</span>             functional_utils<span style="color: rgb(98,98,98)">.</span>is_input_keras_tensor(t)
+<span class="ansi-green-intense-fg ansi-bold">    160</span>             <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> t <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> tf<span style="color: rgb(98,98,98)">.</span>nest<span style="color: rgb(98,98,98)">.</span>flatten(inputs)
+<span class="ansi-green-intense-fg ansi-bold">    161</span>         ]
+<span class="ansi-green-intense-fg ansi-bold">    162</span>     ):
+<span class="ansi-green-intense-fg ansi-bold">    163</span>         inputs, outputs <span style="color: rgb(98,98,98)">=</span> functional_utils<span style="color: rgb(98,98,98)">.</span>clone_graph_nodes(
+<span class="ansi-green-intense-fg ansi-bold">    164</span>             inputs, outputs
+<span class="ansi-green-intense-fg ansi-bold">    165</span>         )
+<span class="ansi-green-fg">--&gt; 166</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">_init_graph_network</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">inputs</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">outputs</span><span class="ansi-yellow-bg">)</span>
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel_dev_env/lib/python3.9/site-packages/tensorflow/python/trackable/base.py:205</span>, in <span class="ansi-cyan-fg">no_automatic_dependency_tracking.&lt;locals&gt;._method_wrapper</span><span class="ansi-blue-fg">(self, *args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">    203</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_self_setattr_tracking <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">False</span>  <span style="color: rgb(95,135,135)"># pylint: disable=protected-access</span>
+<span class="ansi-green-intense-fg ansi-bold">    204</span> <span class="ansi-bold" style="color: rgb(0,135,0)">try</span>:
+<span class="ansi-green-fg">--&gt; 205</span>   result <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">method</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    206</span> <span class="ansi-bold" style="color: rgb(0,135,0)">finally</span>:
+<span class="ansi-green-intense-fg ansi-bold">    207</span>   <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_self_setattr_tracking <span style="color: rgb(98,98,98)">=</span> previous_value  <span style="color: rgb(95,135,135)"># pylint: disable=protected-access</span>
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel_dev_env/lib/python3.9/site-packages/keras/engine/functional.py:265</span>, in <span class="ansi-cyan-fg">Functional._init_graph_network</span><span class="ansi-blue-fg">(self, inputs, outputs)</span>
+<span class="ansi-green-intense-fg ansi-bold">    262</span>     <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_input_coordinates<span style="color: rgb(98,98,98)">.</span>append((layer, node_index, tensor_index))
+<span class="ansi-green-intense-fg ansi-bold">    264</span> <span style="color: rgb(95,135,135)"># Keep track of the network&#39;s nodes and layers.</span>
+<span class="ansi-green-fg">--&gt; 265</span> nodes, nodes_by_depth, layers, _ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">_map_graph_network</span><span class="ansi-yellow-bg">(</span>
+<span class="ansi-green-intense-fg ansi-bold">    266</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">inputs</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">outputs</span>
+<span class="ansi-green-intense-fg ansi-bold">    267</span> <span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    268</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_network_nodes <span style="color: rgb(98,98,98)">=</span> nodes
+<span class="ansi-green-intense-fg ansi-bold">    269</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_nodes_by_depth <span style="color: rgb(98,98,98)">=</span> nodes_by_depth
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel_dev_env/lib/python3.9/site-packages/keras/engine/functional.py:1129</span>, in <span class="ansi-cyan-fg">_map_graph_network</span><span class="ansi-blue-fg">(inputs, outputs)</span>
+<span class="ansi-green-intense-fg ansi-bold">   1127</span> <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> x <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> tf<span style="color: rgb(98,98,98)">.</span>nest<span style="color: rgb(98,98,98)">.</span>flatten(node<span style="color: rgb(98,98,98)">.</span>keras_inputs):
+<span class="ansi-green-intense-fg ansi-bold">   1128</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">id</span>(x) <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> computable_tensors:
+<span class="ansi-green-fg">-&gt; 1129</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> <span class="ansi-bold" style="color: rgb(215,95,95)">ValueError</span>(
+<span class="ansi-green-intense-fg ansi-bold">   1130</span>             <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Graph disconnected: cannot obtain value for </span><span style="color: rgb(175,0,0)">&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">   1131</span>             <span style="color: rgb(175,0,0)">f</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">tensor </span><span class="ansi-bold" style="color: rgb(175,95,135)">{</span>x<span class="ansi-bold" style="color: rgb(175,95,135)">}</span><span style="color: rgb(175,0,0)"> at layer </span><span style="color: rgb(175,0,0)">&#34;</span><span class="ansi-bold" style="color: rgb(175,95,135)">{</span>layer<span style="color: rgb(98,98,98)">.</span>name<span class="ansi-bold" style="color: rgb(175,95,135)">}</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">. </span><span style="color: rgb(175,0,0)">&#39;</span>
+<span class="ansi-green-intense-fg ansi-bold">   1132</span>             <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">The following previous layers were accessed </span><span style="color: rgb(175,0,0)">&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">   1133</span>             <span style="color: rgb(175,0,0)">f</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">without issue: </span><span class="ansi-bold" style="color: rgb(175,95,135)">{</span>layers_with_complete_input<span class="ansi-bold" style="color: rgb(175,95,135)">}</span><span style="color: rgb(175,0,0)">&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">   1134</span>         )
+<span class="ansi-green-intense-fg ansi-bold">   1135</span> <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> x <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> tf<span style="color: rgb(98,98,98)">.</span>nest<span style="color: rgb(98,98,98)">.</span>flatten(node<span style="color: rgb(98,98,98)">.</span>outputs):
+<span class="ansi-green-intense-fg ansi-bold">   1136</span>     computable_tensors<span style="color: rgb(98,98,98)">.</span>add(<span style="color: rgb(0,135,0)">id</span>(x))
+
+<span class="ansi-red-fg">ValueError</span>: Graph disconnected: cannot obtain value for tensor KerasTensor(type_spec=TensorSpec(shape=(None, 900), dtype=tf.float32, name=None), name=&#39;flatten/Reshape:0&#39;, description=&#34;created by layer &#39;input_4&#39;&#34;) at layer &#34;dense&#34;. The following previous layers were accessed without issue: []</pre>
 </div>
 </div>
 
@@ -2962,7 +3061,7 @@ your only option is to rely on the identification by layer name, as referred in
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[2]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -3014,7 +3113,7 @@ from oodeel.extractor import TorchFeatureExtractor</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[9]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -3098,7 +3197,7 @@ model = Net()</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[4]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -3178,7 +3277,7 @@ model = Net()</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[11]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -3246,14 +3345,18 @@ print("multi output:\n", x_latent[0].shape, x_latent[1].shape)</div>
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>numbered output:
- torch.Size([100, 120])
-named output:
- torch.Size([100, 120])
-multi output:
- torch.Size([100, 120]) torch.Size([100, 10])
-</pre>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">AttributeError</span>                            Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[11], line 5</span>
+<span class="ansi-green-intense-fg ansi-bold">      3</span> x <span style="color: rgb(98,98,98)">=</span> torch<span style="color: rgb(98,98,98)">.</span>ones((<span style="color: rgb(98,98,98)">100</span>, <span style="color: rgb(98,98,98)">3</span>, <span style="color: rgb(98,98,98)">32</span>, <span style="color: rgb(98,98,98)">32</span>))
+<span class="ansi-green-intense-fg ansi-bold">      4</span> x_latent, _ <span style="color: rgb(98,98,98)">=</span> extractor(x)
+<span class="ansi-green-fg">----&gt; 5</span> <span style="color: rgb(0,135,0)">print</span>(<span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">numbered output:</span><span class="ansi-bold" style="color: rgb(175,95,0)">\n</span><span style="color: rgb(175,0,0)">&#34;</span>, <span class="ansi-yellow-bg">x_latent</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">shape</span>)
+<span class="ansi-green-intense-fg ansi-bold">      7</span> extractor <span style="color: rgb(98,98,98)">=</span> TorchFeatureExtractor(model, feature_layers_id<span style="color: rgb(98,98,98)">=</span>[<span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">fc1</span><span style="color: rgb(175,0,0)">&#34;</span>])
+<span class="ansi-green-intense-fg ansi-bold">      9</span> x <span style="color: rgb(98,98,98)">=</span> torch<span style="color: rgb(98,98,98)">.</span>ones((<span style="color: rgb(98,98,98)">100</span>, <span style="color: rgb(98,98,98)">3</span>, <span style="color: rgb(98,98,98)">32</span>, <span style="color: rgb(98,98,98)">32</span>))
+
+<span class="ansi-red-fg">AttributeError</span>: &#39;list&#39; object has no attribute &#39;shape&#39;</pre>
 </div>
 </div>
 
@@ -3279,13 +3382,13 @@ multi output:
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div  class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div  class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[12]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -3326,6 +3429,70 @@ print(y.shape)</div>
 </div>
 </div>
 
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NotImplementedError</span>                       Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[12], line 2</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> extractor <span style="color: rgb(98,98,98)">=</span> TorchFeatureExtractor(model, feature_layers_id<span style="color: rgb(98,98,98)">=</span>[<span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">fc1</span><span style="color: rgb(175,0,0)">&#34;</span>])
+<span class="ansi-green-fg">----&gt; 2</span> extractor_2 <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">TorchFeatureExtractor</span><span class="ansi-yellow-bg">(</span>
+<span class="ansi-green-intense-fg ansi-bold">      3</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">model</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">input_layer_id</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">fc2</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">feature_layers_id</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">fc3</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg">]</span>
+<span class="ansi-green-intense-fg ansi-bold">      4</span> <span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">      6</span> x_latent, _ <span style="color: rgb(98,98,98)">=</span> extractor(x)
+<span class="ansi-green-intense-fg ansi-bold">      7</span> <span style="color: rgb(0,135,0)">print</span>(x_latent<span style="color: rgb(98,98,98)">.</span>shape)
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel/extractor/torch_feature_extractor.py:79</span>, in <span class="ansi-cyan-fg">TorchFeatureExtractor.__init__</span><span class="ansi-blue-fg">(self, model, feature_layers_id, input_layer_id, react_threshold, scale_percentile, ash_percentile)</span>
+<span class="ansi-green-intense-fg ansi-bold">     69</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">__init__</span>(
+<span class="ansi-green-intense-fg ansi-bold">     70</span>     <span style="color: rgb(0,135,0)">self</span>,
+<span class="ansi-green-intense-fg ansi-bold">     71</span>     model: nn<span style="color: rgb(98,98,98)">.</span>Module,
+<span class="ansi-green-fg">   (...)</span>
+<span class="ansi-green-intense-fg ansi-bold">     76</span>     ash_percentile: Optional[<span style="color: rgb(0,135,0)">float</span>] <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+<span class="ansi-green-intense-fg ansi-bold">     77</span> ):
+<span class="ansi-green-intense-fg ansi-bold">     78</span>     model <span style="color: rgb(98,98,98)">=</span> model<span style="color: rgb(98,98,98)">.</span>eval()
+<span class="ansi-green-fg">---&gt; 79</span>     <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">super</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg" style="color: rgb(0,0,255)">__init__</span><span class="ansi-yellow-bg">(</span>
+<span class="ansi-green-intense-fg ansi-bold">     80</span> <span class="ansi-yellow-bg">        </span><span class="ansi-yellow-bg">model</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">model</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     81</span> <span class="ansi-yellow-bg">        </span><span class="ansi-yellow-bg">feature_layers_id</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">feature_layers_id</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     82</span> <span class="ansi-yellow-bg">        </span><span class="ansi-yellow-bg">input_layer_id</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">input_layer_id</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     83</span> <span class="ansi-yellow-bg">        </span><span class="ansi-yellow-bg">react_threshold</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">react_threshold</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     84</span> <span class="ansi-yellow-bg">        </span><span class="ansi-yellow-bg">scale_percentile</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">scale_percentile</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     85</span> <span class="ansi-yellow-bg">        </span><span class="ansi-yellow-bg">ash_percentile</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">ash_percentile</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     86</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     87</span>     <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_device <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(0,135,0)">next</span>(model<span style="color: rgb(98,98,98)">.</span>parameters())<span style="color: rgb(98,98,98)">.</span>device
+<span class="ansi-green-intense-fg ansi-bold">     88</span>     <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_features <span style="color: rgb(98,98,98)">=</span> {layer: torch<span style="color: rgb(98,98,98)">.</span>empty(<span style="color: rgb(98,98,98)">0</span>) <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> layer <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>_hook_layers_id}
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel/extractor/feature_extractor.py:80</span>, in <span class="ansi-cyan-fg">FeatureExtractor.__init__</span><span class="ansi-blue-fg">(self, model, feature_layers_id, input_layer_id, react_threshold, scale_percentile, ash_percentile)</span>
+<span class="ansi-green-intense-fg ansi-bold">     78</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>ash_percentile <span style="color: rgb(98,98,98)">=</span> ash_percentile
+<span class="ansi-green-intense-fg ansi-bold">     79</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>model <span style="color: rgb(98,98,98)">=</span> model
+<span class="ansi-green-fg">---&gt; 80</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>extractor <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">prepare_extractor</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">)</span>
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel/extractor/torch_feature_extractor.py:199</span>, in <span class="ansi-cyan-fg">TorchFeatureExtractor.prepare_extractor</span><span class="ansi-blue-fg">(self)</span>
+<span class="ansi-green-intense-fg ansi-bold">    195</span>         <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>model <span style="color: rgb(98,98,98)">=</span> nn<span style="color: rgb(98,98,98)">.</span>Sequential(
+<span class="ansi-green-intense-fg ansi-bold">    196</span>             <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(0,135,0)">list</span>(<span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>model<span style="color: rgb(98,98,98)">.</span>modules())[(input_module_idx <span style="color: rgb(98,98,98)">+</span> <span style="color: rgb(98,98,98)">1</span>) :]
+<span class="ansi-green-intense-fg ansi-bold">    197</span>         )
+<span class="ansi-green-intense-fg ansi-bold">    198</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
+<span class="ansi-green-fg">--&gt; 199</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> <span class="ansi-bold" style="color: rgb(215,95,95)">NotImplementedError</span>
+<span class="ansi-green-intense-fg ansi-bold">    200</span> <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
+<span class="ansi-green-intense-fg ansi-bold">    201</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> <span class="ansi-bold" style="color: rgb(215,95,95)">NotImplementedError</span>
+
+<span class="ansi-red-fg">NotImplementedError</span>: </pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
 </div>
 </div>
 <div  class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
@@ -3345,7 +3512,7 @@ print(y.shape)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[13]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -3451,10 +3618,21 @@ print(y.shape)</div>
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>torch.Size([100, 120])
-torch.Size([100, 10])
-</pre>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">AttributeError</span>                            Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[13], line 28</span>
+<span class="ansi-green-intense-fg ansi-bold">     26</span> x <span style="color: rgb(98,98,98)">=</span> torch<span style="color: rgb(98,98,98)">.</span>ones((<span style="color: rgb(98,98,98)">100</span>, <span style="color: rgb(98,98,98)">3</span>, <span style="color: rgb(98,98,98)">32</span>, <span style="color: rgb(98,98,98)">32</span>))
+<span class="ansi-green-intense-fg ansi-bold">     27</span> x_latent, _ <span style="color: rgb(98,98,98)">=</span> extractor(x)
+<span class="ansi-green-fg">---&gt; 28</span> <span style="color: rgb(0,135,0)">print</span>(<span class="ansi-yellow-bg">x_latent</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">shape</span>)
+<span class="ansi-green-intense-fg ansi-bold">     30</span> <span style="color: rgb(95,135,135)"># Be careful, once extractor_2 is instanciated, extractor no longer works</span>
+<span class="ansi-green-intense-fg ansi-bold">     31</span> <span style="color: rgb(95,135,135)"># because hooks are cleaned</span>
+<span class="ansi-green-intense-fg ansi-bold">     32</span> extractor_2 <span style="color: rgb(98,98,98)">=</span> TorchFeatureExtractor(
+<span class="ansi-green-intense-fg ansi-bold">     33</span>     model, input_layer_id<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">fc2</span><span style="color: rgb(175,0,0)">&#34;</span>, feature_layers_id<span style="color: rgb(98,98,98)">=</span>[<span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">fc3</span><span style="color: rgb(175,0,0)">&#34;</span>]
+<span class="ansi-green-intense-fg ansi-bold">     34</span> )
+
+<span class="ansi-red-fg">AttributeError</span>: &#39;list&#39; object has no attribute &#39;shape&#39;</pre>
 </div>
 </div>
 
@@ -3489,13 +3667,13 @@ down to correctly identifying what to put under the <code>feature_layers_id</cod
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div  class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div  class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[14]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
@@ -3532,6 +3710,47 @@ dknn.fit(
     </div>
 
 </div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">ValueError</span>                                Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[14], line 4</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> <span class="ansi-bold" style="color: rgb(0,0,255)">oodeel</span><span class="ansi-bold" style="color: rgb(0,0,255)">.</span><span class="ansi-bold" style="color: rgb(0,0,255)">methods</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> DKNN
+<span class="ansi-green-intense-fg ansi-bold">      3</span> dknn <span style="color: rgb(98,98,98)">=</span> DKNN()
+<span class="ansi-green-fg">----&gt; 4</span> <span class="ansi-yellow-bg">dknn</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">fit</span><span class="ansi-yellow-bg">(</span>
+<span class="ansi-green-intense-fg ansi-bold">      5</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">model</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span>
+<span class="ansi-green-intense-fg ansi-bold">      6</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">feature_layers_id</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">fc1</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg">]</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span>
+<span class="ansi-green-intense-fg ansi-bold">      7</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg" style="color: rgb(95,135,135)">#some_fit_dataset)</span>
+<span class="ansi-green-intense-fg ansi-bold">      8</span> <span class="ansi-yellow-bg">)</span>
+
+File <span class="ansi-green-fg">~/workspace/oodeel/oodeel/methods/base.py:154</span>, in <span class="ansi-cyan-fg">OODBaseDetector.fit</span><span class="ansi-blue-fg">(self, model, fit_dataset, feature_layers_id, input_layer_id, verbose, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">    152</span> <span style="color: rgb(95,135,135)"># if required by the method, check that fit_dataset is not None</span>
+<span class="ansi-green-intense-fg ansi-bold">    153</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>requires_to_fit_dataset <span class="ansi-bold" style="color: rgb(175,0,255)">and</span> fit_dataset <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
+<span class="ansi-green-fg">--&gt; 154</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> <span class="ansi-bold" style="color: rgb(215,95,95)">ValueError</span>(
+<span class="ansi-green-intense-fg ansi-bold">    155</span>         <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">`fit_dataset` argument must be provided for this OOD detector</span><span style="color: rgb(175,0,0)">&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">    156</span>     )
+<span class="ansi-green-intense-fg ansi-bold">    158</span> <span style="color: rgb(95,135,135)"># react: compute threshold (activation percentiles)</span>
+<span class="ansi-green-intense-fg ansi-bold">    159</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>use_react:
+
+<span class="ansi-red-fg">ValueError</span>: `fit_dataset` argument must be provided for this OOD detector</pre>
+</div>
+</div>
+
+</div>
+
 </div>
 
 </div>
@@ -3607,7 +3826,7 @@ prone.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.fac441b0.min.js"></script>
