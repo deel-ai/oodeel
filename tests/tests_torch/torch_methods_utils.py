@@ -23,7 +23,6 @@
 import os
 
 import numpy as np
-import requests
 import torch
 from sklearn.datasets import make_blobs
 from sklearn.model_selection import train_test_split
@@ -66,19 +65,13 @@ def load_blobs_data(batch_size=128, num_samples=10000, train_ratio=0.8):
 
 
 def load_blob_mlp():
-    model_path_blob = os.path.join(model_path, "blobs_mlp.pt")
-
-    # if model not in local, download it
-    if not os.path.exists(model_path_blob):
-        data = requests.get(
-            "https://github.com/deel-ai/oodeel/blob/assets/test_models/"
-            + "blobs_mlp.pt?raw=True"
-        )
-        with open(model_path_blob, "wb") as file:
-            file.write(data.content)
 
     # load model
-    model = torch.load(model_path_blob, map_location=device)
+    model = torch.hub.load_state_dict_from_url(
+        "https://github.com/deel-ai/oodeel/blob/assets/"
+        + "test_models/blobs_mlp.pt?raw=True",
+        map_location=device,
+    )
     model.eval()
     return model
 
