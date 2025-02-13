@@ -44,12 +44,12 @@ requirements = [
 ]
 
 tensorflow_requirements = [
-    "tensorflow",
+    "tensorflow==2.11.0",
     "tensorflow_datasets",
-    "tensorflow_probability",
+    "tensorflow_probability==0.19.0",
 ]
 
-torch_requirements = ["timm", "torch", "torchvision"]
+torch_requirements = ["timm", "torch==1.13.1", "torchvision==0.14.1"]
 
 dev_requirements = [
     "mypy",
@@ -74,6 +74,7 @@ dev_requirements = [
     "bump2version",
     "docsig",
     "no_implicit_optional",
+    "numpy==1.26.4",
 ]
 
 
