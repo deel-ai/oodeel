@@ -153,21 +153,26 @@ class TorchFeatureExtractor(FeatureExtractor):
         """Prepare the feature extractor by adding hooks to self.model"""
         # remove forward hooks attached to the model
         self._clean_forward_hooks()
+        self._clean_forward_pre_hooks()
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
-            pen_layer = self.find_layer(self.model, -2)
-            pen_layer.register_forward_hook(self._get_clip_hook(self.react_threshold))
+            pen_layer = self.find_layer(self.model, -1)
+            pen_layer.register_forward_pre_hook(
+                self._get_clip_hook(self.react_threshold)
+            )
 
         # === If SCALE method, scale activations from penultimate layer ===
         if self.scale_percentile is not None:
-            pen_layer = self.find_layer(self.model, -2)
-            pen_layer.register_forward_hook(self._get_scale_hook(self.scale_percentile))
+            pen_layer = self.find_layer(self.model, -1)
+            pen_layer.register_forward_pre_hook(
+                self._get_scale_hook(self.scale_percentile)
+            )
 
         # === If ASH method, scale and prune activations from penultimate layer ===
         if self.ash_percentile is not None:
-            pen_layer = self.find_layer(self.model, -2)
-            pen_layer.register_forward_hook(self._get_ash_hook(self.ash_percentile))
+            pen_layer = self.find_layer(self.model, -1)
+            pen_layer.register_forward_pre_hook(self._get_ash_hook(self.ash_percentile))
 
         # Register a hook to store feature values for each considered layer + last layer
         for layer_id in self._hook_layers_id:
@@ -331,9 +336,10 @@ class TorchFeatureExtractor(FeatureExtractor):
             Callable: hook function
         """
 
-        def hook(_, __, output):
-            output = torch.clip(output, max=threshold)
-            return output
+        def hook(_, input):
+            input = input[0]
+            input = torch.clip(input, max=threshold)
+            return input
 
         return hook
 
@@ -348,14 +354,15 @@ class TorchFeatureExtractor(FeatureExtractor):
             Callable: hook function
         """
 
-        def hook(_, __, output):
-            output_percentile = torch.quantile(output, percentile, dim=1)
-            mask = output > output_percentile[:, None]
-            output_masked = output * mask
-            s = torch.exp(torch.sum(output, dim=1) / torch.sum(output_masked, dim=1))
+        def hook(_, input):
+            input = input[0]
+            output_percentile = torch.quantile(input, percentile, dim=1)
+            mask = input > output_percentile[:, None]
+            output_masked = input * mask
+            s = torch.exp(torch.sum(input, dim=1) / torch.sum(output_masked, dim=1))
             s = torch.unsqueeze(s, 1)
-            output = output * s
-            return output
+            input = input * s
+            return input
 
         return hook
 
@@ -370,14 +377,15 @@ class TorchFeatureExtractor(FeatureExtractor):
             Callable: hook function
         """
 
-        def hook(_, __, output):
-            output_percentile = torch.quantile(output, percentile, dim=1)
-            mask = output > output_percentile[:, None]
-            output_masked = output * mask
-            s = torch.exp(torch.sum(output, dim=1) / torch.sum(output_masked, dim=1))
+        def hook(_, input):
+            input = input[0]
+            output_percentile = torch.quantile(input, percentile, dim=1)
+            mask = input > output_percentile[:, None]
+            output_masked = input * mask
+            s = torch.exp(torch.sum(input, dim=1) / torch.sum(output_masked, dim=1))
             s = torch.unsqueeze(s, 1)
-            output = output_masked * s
-            return output
+            input = output_masked * s
+            return input
 
         return hook
 
@@ -393,6 +401,22 @@ class TorchFeatureExtractor(FeatureExtractor):
                 if child is not None:
                     if hasattr(child, "_forward_hooks"):
                         child._forward_hooks = OrderedDict()
+                    __clean_hooks(child)
+
+        return __clean_hooks(self.model)
+
+    def _clean_forward_pre_hooks(self) -> None:
+        """
+        Remove all the forward pre hook attached to the model's layers. This function should
+        be called at the __init__, and prevent from accumulating the hooks when
+        defining a new TorchFeatureExtractor for the same model.
+        """
+
+        def __clean_hooks(m: nn.Module):
+            for _, child in m._modules.items():
+                if child is not None:
+                    if hasattr(child, "_forward_pre_hooks"):
+                        child._forward_pre_hooks = OrderedDict()
                     __clean_hooks(child)
 
         return __clean_hooks(self.model)
