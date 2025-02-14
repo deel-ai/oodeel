@@ -407,8 +407,8 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     def _clean_forward_pre_hooks(self) -> None:
         """
-        Remove all the forward pre hook attached to the model's layers. This function should
-        be called at the __init__, and prevent from accumulating the hooks when
+        Remove all the forward pre hook attached to the model's layers. This function
+        should be called at the __init__, and prevent from accumulating the hooks when
         defining a new TorchFeatureExtractor for the same model.
         """
 

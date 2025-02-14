@@ -61,6 +61,7 @@ dev_requirements = [
     "pre-commit",
     "tox",
     "black",
+    "ruff",
     "ipython",
     "ipykernel",
     "pytest",

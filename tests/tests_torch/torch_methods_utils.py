@@ -65,7 +65,6 @@ def load_blobs_data(batch_size=128, num_samples=10000, train_ratio=0.8):
 
 
 def load_blob_mlp():
-
     # load model
     model = torch.hub.load_state_dict_from_url(
         "https://github.com/deel-ai/oodeel/blob/assets/"
@@ -137,7 +136,8 @@ def eval_detector_on_blobs(
             assert (
                 torch.max(penult_feat_extractor._features) <= detector.react_threshold
             ), (
-                f"Maximum value of penultimate features ({torch.max(penult_feat_extractor._features)})"
+                "Maximum value of penultimate features"
+                + f" ({torch.max(penult_feat_extractor._features)})"
                 + " should be less than or equal to the react threshold value"
                 + f" ({detector.react_threshold})"
             )

@@ -40,7 +40,8 @@ from ..utils import import_backend_specific_stuff
 
 
 class OODBaseDetector(ABC):
-    """OODBaseDetector is an abstract base class for Out-of-Distribution (OOD) detection.
+    """OODBaseDetector is an abstract base class for Out-of-Distribution (OOD)
+    detection.
 
     Attributes:
         feature_extractor (FeatureExtractor): The feature extractor instance.
@@ -56,15 +57,20 @@ class OODBaseDetector(ABC):
     Methods:
         __init__: Initializes the OODBaseDetector with specified parameters.
         _score_tensor: Abstract method to compute OOD score for input samples.
-        _sanitize_posproc_fns: Sanitizes post-processing functions used at each layer output.
-        fit: Prepares the detector for scoring by constructing the feature extractor and calibrating on ID data.
-        _load_feature_extractor: Loads the feature extractor based on the model and specified layers.
+        _sanitize_posproc_fns: Sanitizes post-processing functions used at each layer
+        output.
+        fit: Prepares the detector for scoring by constructing the feature extractor
+        and calibrating on ID data.
+        _load_feature_extractor: Loads the feature extractor based on the model and
+        specified layers.
         _fit_to_dataset: Abstract method to fit the OOD detector to a dataset.
         score: Computes an OOD score for input samples.
         compute_react_threshold: Computes the ReAct threshold using the fit dataset.
         __call__: Convenience wrapper for the score method.
-        requires_to_fit_dataset: Property indicating if the detector needs a fit dataset.
-        requires_internal_features: Property indicating if the detector acts on internal model features.
+        requires_to_fit_dataset: Property indicating if the detector needs a fit
+        dataset.
+        requires_internal_features: Property indicating if the detector acts on
+        internal model features.
     """
 
     def __init__(
@@ -317,7 +323,6 @@ class OODBaseDetector(ABC):
     def compute_react_threshold(
         self, model: Callable, fit_dataset: DatasetType, verbose: bool = False
     ):
-
         penult_feat_extractor = self._load_feature_extractor(model, [-2])
         unclipped_features, _ = penult_feat_extractor.predict(
             fit_dataset, verbose=verbose
