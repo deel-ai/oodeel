@@ -119,14 +119,25 @@ def eval_detector_on_blobs(
 
     # react specific test
     # /!\ do it at the end of the test because it may affect the detector's behaviour
+
     if check_react_clipping:
         assert detector.react_threshold is not None
+
         penult_feat_extractor = detector._load_feature_extractor(
-            model=model, feature_layers_id=[-2, -1]
+            model=model, feature_layers_id=[-1]
         )
-        penult_features = penult_feat_extractor.predict(ds_fit)[0][0]
-        assert torch.max(penult_features) <= detector.react_threshold, (
-            f"Maximum value of penultimate features ({torch.max(penult_features)})"
-            + " should be less than or equal to the react threshold value"
-            + f" ({detector.react_threshold})"
-        )
+        penult_feat_extractor._clean_forward_hooks()
+
+        def hook(_, input):
+            penult_feat_extractor._features = input[0]
+
+        penult_feat_extractor.model[-1].register_forward_pre_hook(hook)
+        for x, y in ds_fit:
+            _ = penult_feat_extractor.predict_tensor(x)
+            assert (
+                torch.max(penult_feat_extractor._features) <= detector.react_threshold
+            ), (
+                f"Maximum value of penultimate features ({torch.max(penult_feat_extractor._features)})"
+                + " should be less than or equal to the react threshold value"
+                + f" ({detector.react_threshold})"
+            )

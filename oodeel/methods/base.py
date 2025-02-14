@@ -40,14 +40,31 @@ from ..utils import import_backend_specific_stuff
 
 
 class OODBaseDetector(ABC):
-    """Base Class for methods that assign a score to unseen samples.
+    """OODBaseDetector is an abstract base class for Out-of-Distribution (OOD) detection.
 
-    Args:
-        use_react (bool): if true, apply ReAct method by clipping penultimate
-            activations under a threshold value.
-        react_quantile (Optional[float]): q value in the range [0, 1] used to compute
-            the react clipping threshold defined as the q-th quantile penultimate layer
-            activations. Defaults to 0.8.
+    Attributes:
+        feature_extractor (FeatureExtractor): The feature extractor instance.
+        use_react (bool): Flag to indicate if ReAct method is used.
+        use_scale (bool): Flag to indicate if scaling method is used.
+        use_ash (bool): Flag to indicate if ASH method is used.
+        react_quantile (float): Quantile value for ReAct threshold.
+        scale_percentile (float): Percentile value for scaling.
+        ash_percentile (float): Percentile value for ASH.
+        react_threshold (float): Threshold value for ReAct.
+        postproc_fns (List[Callable]): List of post-processing functions.
+
+    Methods:
+        __init__: Initializes the OODBaseDetector with specified parameters.
+        _score_tensor: Abstract method to compute OOD score for input samples.
+        _sanitize_posproc_fns: Sanitizes post-processing functions used at each layer output.
+        fit: Prepares the detector for scoring by constructing the feature extractor and calibrating on ID data.
+        _load_feature_extractor: Loads the feature extractor based on the model and specified layers.
+        _fit_to_dataset: Abstract method to fit the OOD detector to a dataset.
+        score: Computes an OOD score for input samples.
+        compute_react_threshold: Computes the ReAct threshold using the fit dataset.
+        __call__: Convenience wrapper for the score method.
+        requires_to_fit_dataset: Property indicating if the detector needs a fit dataset.
+        requires_internal_features: Property indicating if the detector acts on internal model features.
     """
 
     def __init__(
@@ -300,6 +317,7 @@ class OODBaseDetector(ABC):
     def compute_react_threshold(
         self, model: Callable, fit_dataset: DatasetType, verbose: bool = False
     ):
+
         penult_feat_extractor = self._load_feature_extractor(model, [-2])
         unclipped_features, _ = penult_feat_extractor.predict(
             fit_dataset, verbose=verbose
