@@ -107,20 +107,16 @@ class DataHandler(ABC):
 
         # Filter the dataset depending on in_labels and out_labels given
         if (out_labels is not None) and (in_labels is not None):
-            in_data = self.filter_by_feature_value(dataset, "label", in_labels)
-            out_data = self.filter_by_feature_value(dataset, "label", out_labels)
+            in_data = self.filter_by_value(dataset, "label", in_labels)
+            out_data = self.filter_by_value(dataset, "label", out_labels)
 
         if out_labels is None:
-            in_data = self.filter_by_feature_value(dataset, "label", in_labels)
-            out_data = self.filter_by_feature_value(
-                dataset, "label", in_labels, excluded=True
-            )
+            in_data = self.filter_by_value(dataset, "label", in_labels)
+            out_data = self.filter_by_value(dataset, "label", in_labels, excluded=True)
 
         elif in_labels is None:
-            in_data = self.filter_by_feature_value(
-                dataset, "label", out_labels, excluded=True
-            )
-            out_data = self.filter_by_feature_value(dataset, "label", out_labels)
+            in_data = self.filter_by_value(dataset, "label", out_labels, excluded=True)
+            out_data = self.filter_by_value(dataset, "label", out_labels)
 
         # Return the filtered OODDatasets
         return in_data, out_data
@@ -147,8 +143,8 @@ class DataHandler(ABC):
                 the dataset. Defaults to None.
             augment_fn (Callable, optional): Augment function to be used (when the
                 returned dataset is to be used for training). Defaults to None.
-            columns (list, optional): List of keys corresponding to the features
-                that will be returned. Keep all features if None. Defaults to None.
+            columns (list, optional): List of columns
+                that will be returned. Keep all columns if None. Defaults to None.
             shuffle (bool, optional): To shuffle the returned dataset or not.
                 Defaults to False.
             dict_based_fns (bool): Whether to use preprocess and DA functions as dict
@@ -167,14 +163,14 @@ class DataHandler(ABC):
     @staticmethod
     @abstractmethod
     def load_dataset_from_arrays(
-        dataset_id: ItemType, keys: Optional[list] = None
+        dataset_id: ItemType, columns: Optional[list] = None
     ) -> DatasetType:
         """Load a DatasetType from a np.ndarray / Tensor
 
         Args:
             dataset_id (ItemType): numpy array(s) to load.
-            keys (list, optional): Features keys. If None, assigned as "input_i"
-                for i-th feature. Defaults to None.
+            columns (list, optional): Column names to assign. If None,
+                assigned as "input_i" for i-th column. Defaults to None.
 
         Returns:
             DatasetType
@@ -184,29 +180,18 @@ class DataHandler(ABC):
     @staticmethod
     @abstractmethod
     def load_custom_dataset(
-        dataset_id: DatasetType, keys: Optional[list] = None
+        dataset_id: DatasetType, columns: Optional[list] = None
     ) -> DatasetType:
         """Load a custom dataset by ensuring it is properly formatted.
 
         Args:
             dataset_id (DatasetType): dataset
-            keys: feature keys
+            columns (list, optional): Column names to use for elements if dataset_id is
+                tuple based. If None, assigned as "input_i"
+                for i-th column. Defaults to None.
 
         Returns:
             A properly formatted dataset.
-        """
-        raise NotImplementedError()
-
-    @staticmethod
-    @abstractmethod
-    def get_ds_feature_keys(dataset: DatasetType) -> list:
-        """Get the feature keys of a Dataset
-
-        Args:
-            dataset (Dataset): Dataset to get the feature keys from
-
-        Returns:
-            list: List of feature keys
         """
         raise NotImplementedError()
 
@@ -226,21 +211,21 @@ class DataHandler(ABC):
 
     @staticmethod
     @abstractmethod
-    def filter_by_feature_value(
+    def filter_by_value(
         dataset: DatasetType,
-        feature_key: str,
+        column_name: str,
         values: list,
         excluded: bool = False,
     ) -> DatasetType:
-        """Filter the dataset by checking the value of a feature is in `values`
+        """Filter the dataset by checking the value of a column is in `values`
 
         Args:
             dataset (Dataset): Dataset to filter
-            feature_key (str): Feature name to check the value
-            values (list): Feature_key values to keep (if excluded is False)
+            column_name (str): Column to filter the dataset with
+            values (list): Column values to keep (if excluded is False)
                 or to exclude
             excluded (bool, optional): To keep (False) or exclude (True) the samples
-                with Feature_key value included in Values. Defaults to False.
+                with column value included in Values. Defaults to False.
 
         Returns:
             DatasetType: Filtered dataset
@@ -275,15 +260,19 @@ class DataHandler(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_feature_shape(dataset: DatasetType, feature_key: Union[str, int]) -> tuple:
-        """Get the shape of a feature of dataset identified by feature_key
+    def get_column_elements_shape(
+        dataset: DatasetType, column_name: Union[str, int]
+    ) -> tuple:
+        """Get the shape of the elements of a column of dataset identified by
+        column_name
 
         Args:
             dataset (Dataset): a Dataset
-            feature_key (Union[str, int]): The identifier of the feature
+            column_name (Union[str, int]): The column name to get
+                the element shape from.
 
         Returns:
-            tuple: the shape of feature_id
+            tuple: the shape of an element from column_name
         """
         raise NotImplementedError()
 
