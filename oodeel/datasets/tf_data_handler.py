@@ -92,7 +92,9 @@ class TFDataHandler(DataHandler):
         tf.data.Dataset.
 
         Args:
-            dataset_id (Any): dataset identification
+            dataset_id (Union[tf.data.Dataset, ItemType, str]): dataset identification.
+            Can be the name of a dataset from tensorflow_datasets, a tf.data.Dataset,
+            or a tuple/dict of np.ndarrays/tf.Tensors.
             keys (list, optional): Features keys. If None, assigned as "input_i"
                 for i-th feature. Defaults to None.
             load_kwargs (dict, optional): Additional args for loading from
