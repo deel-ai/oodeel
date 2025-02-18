@@ -112,7 +112,7 @@ def test_instanciate_tf_datahandler():
     assert isinstance(handler, TorchDataHandler)
 
 
-def test_get_feature_shape():
+def test_get_column_elements_shape():
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
@@ -121,7 +121,7 @@ def test_get_feature_shape():
         x_shape=input_shape, num_labels=num_labels, samples=samples
     )  # .batch(samples)
 
-    shape = TorchDataHandler.get_feature_shape(data, 0)
+    shape = TorchDataHandler.get_column_elements_shape(data, 0)
     assert shape == input_shape
 
 
@@ -182,7 +182,7 @@ def test_instanciate_from_torchvision(dataset_name, train, erase_after_test=True
         dummy_shapes = [v.shape for v in dummy_item.values()]
 
         # check keys
-        assert dataset.output_keys == dummy_keys == ["input", "label"]
+        assert dataset.columns == dummy_keys == ["input", "label"]
 
         # check output shape
         assert (
@@ -224,10 +224,10 @@ def test_load_arrays_and_custom(x_shape, num_labels, num_samples, one_hot):
 
     # === load datasets ===
     for dataset_id in [tuple_np, dict_np, tuple_torch, dict_torch, tensor_ds_torch]:
-        ds = handler.load_dataset(dataset_id, keys=["key_a", "key_b"])
+        ds = handler.load_dataset(dataset_id, columns=["key_a", "key_b"])
 
         # check registered keys, shapes
-        output_keys = ds.output_keys
+        output_keys = ds.columns
         output_shapes = ds.output_shapes
         assert output_keys == ["key_a", "key_b"]
         assert output_shapes == [
@@ -255,7 +255,7 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     dataset_id = generate_data(
         x_shape=x_shape, num_labels=num_labels, samples=num_samples, one_hot=one_hot
     )
-    dataset = handler.load_dataset(dataset_id, keys=["input", "label"])
+    dataset = handler.load_dataset(dataset_id, columns=["input", "label"])
     assert len(dataset) == num_samples
     assert dataset.output_shapes[0] == torch.Size(x_shape)
     assert dataset.output_shapes[1] == (
@@ -265,9 +265,9 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     # filter by label
     a_labels = list(range(num_labels // 2))
     b_labels = list(range(num_labels // 2, num_labels))
-    dataset_a = handler.filter_by_feature_value(dataset, "label", a_labels)
+    dataset_a = handler.filter_by_value(dataset, "label", a_labels)
     num_samples_a = len(dataset_a)
-    dataset_b = handler.filter_by_feature_value(dataset, "label", b_labels)
+    dataset_b = handler.filter_by_value(dataset, "label", b_labels)
     num_samples_b = len(dataset_b)
     assert num_samples == (num_samples_a + num_samples_b)
 

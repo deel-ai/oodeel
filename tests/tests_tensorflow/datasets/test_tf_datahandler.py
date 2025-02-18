@@ -110,7 +110,7 @@ def test_get_item_length():
     assert length == 2
 
 
-def test_get_feature_shape():
+def test_get_column_elements_shape():
     input_shape = (32, 32, 3)
     num_labels = 10
     samples = 100
@@ -119,7 +119,7 @@ def test_get_feature_shape():
         x_shape=input_shape, num_labels=num_labels, samples=samples
     )  # .batch(samples)
 
-    shape = TFDataHandler.get_feature_shape(data, 0)
+    shape = TFDataHandler.get_column_elements_shape(data, 0)
     assert shape == input_shape
 
 
@@ -228,7 +228,7 @@ def test_load_arrays_and_custom(x_shape, num_labels, num_samples, one_hot):
 
     # === load datasets ===
     for dataset_id in [tuple_np, dict_np, tuple_tf, dict_tf, tensor_ds_tf]:
-        ds = handler.load_dataset(dataset_id, keys=["key_a", "key_b"])
+        ds = handler.load_dataset(dataset_id, columns=["key_a", "key_b"])
 
         # check registered keys, shapes
         output_keys = list(ds.element_spec.keys())
@@ -260,7 +260,7 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     dataset_id = generate_data(
         x_shape=x_shape, num_labels=num_labels, samples=num_samples, one_hot=one_hot
     )
-    dataset = handler.load_dataset(dataset_id, keys=["input", "label"])
+    dataset = handler.load_dataset(dataset_id, columns=["input", "label"])
     assert len(dataset) == num_samples
     assert dataset.element_spec["input"].shape == tf.TensorShape(x_shape)
     assert dataset.element_spec["label"].shape == (
@@ -270,9 +270,9 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     # filter by label
     a_labels = list(range(num_labels // 2))
     b_labels = list(range(num_labels // 2, num_labels))
-    dataset_a = handler.filter_by_feature_value(dataset, "label", a_labels)
+    dataset_a = handler.filter_by_value(dataset, "label", a_labels)
     num_samples_a = get_dataset_length(dataset_a)
-    dataset_b = handler.filter_by_feature_value(dataset, "label", b_labels)
+    dataset_b = handler.filter_by_value(dataset, "label", b_labels)
     num_samples_b = get_dataset_length(dataset_b)
     assert num_samples == (num_samples_a + num_samples_b)
 
