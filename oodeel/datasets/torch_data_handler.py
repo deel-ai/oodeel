@@ -288,7 +288,9 @@ class TorchDataHandler(DataHandler):
         """Load dataset from different manners
 
         Args:
-            dataset_id (Union[Dataset, ItemType, str]): dataset identification
+            dataset_id (Union[Dataset, ItemType, str]): dataset identification.
+            Can be the name of a dataset from torchvision, a torch Dataset,
+            or a tuple/dict of np.ndarrays/torch tensors.
             keys (list, optional): Features keys. If None, assigned as "input_i"
                 for i-th feature. Defaults to None.
             load_kwargs (dict, optional): Additional loading kwargs. Defaults to {}.

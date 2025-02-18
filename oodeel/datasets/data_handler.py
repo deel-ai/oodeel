@@ -55,7 +55,6 @@ def get_backend():
 
 
 def load_data_handler(backend: str = None):
-
     if backend is None:
         backend = get_backend()
 
@@ -170,8 +169,7 @@ class DataHandler(ABC):
     def load_dataset_from_arrays(
         dataset_id: ItemType, keys: Optional[list] = None
     ) -> DatasetType:
-        """Load a tf.data.Dataset from a np.ndarray, a tf.Tensor or a tuple/dict
-        of np.ndarrays/DatasetType.
+        """Load a DatasetType from a np.ndarray / Tensor
 
         Args:
             dataset_id (ItemType): numpy array(s) to load.
@@ -191,7 +189,7 @@ class DataHandler(ABC):
         """Load a custom dataset by ensuring it is properly formatted.
 
         Args:
-            dataset_id: dataset
+            dataset_id (DatasetType): dataset
             keys: feature keys
 
         Returns:
