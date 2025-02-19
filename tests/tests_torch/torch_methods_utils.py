@@ -125,7 +125,7 @@ def eval_detector_on_blobs(
         penult_feat_extractor = detector._load_feature_extractor(
             model=model, feature_layers_id=[-1]
         )
-        penult_feat_extractor._clean_ood_hooks()
+        penult_feat_extractor._clean_ood_handles()
 
         def hook(_, input):
             penult_feat_extractor._features = input[0]
