@@ -76,6 +76,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         ash_percentile: Optional[float] = None,
     ):
         model = model.eval()
+        self._ood_hooks = []
         super().__init__(
             model=model,
             feature_layers_id=feature_layers_id,
@@ -152,32 +153,41 @@ class TorchFeatureExtractor(FeatureExtractor):
     def prepare_extractor(self) -> None:
         """Prepare the feature extractor by adding hooks to self.model"""
         # remove forward hooks attached to the model
-        self._clean_forward_hooks()
-        self._clean_forward_pre_hooks()
+        self._clean_ood_hooks()
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
             pen_layer = self.find_layer(self.model, -1)
-            pen_layer.register_forward_pre_hook(
-                self._get_clip_hook(self.react_threshold)
+            self._ood_hooks.append(
+                pen_layer.register_forward_pre_hook(
+                    self._get_clip_hook(self.react_threshold)
+                )
             )
 
         # === If SCALE method, scale activations from penultimate layer ===
         if self.scale_percentile is not None:
             pen_layer = self.find_layer(self.model, -1)
-            pen_layer.register_forward_pre_hook(
-                self._get_scale_hook(self.scale_percentile)
+            self._ood_hooks.append(
+                pen_layer.register_forward_pre_hook(
+                    self._get_scale_hook(self.scale_percentile)
+                )
             )
 
         # === If ASH method, scale and prune activations from penultimate layer ===
         if self.ash_percentile is not None:
             pen_layer = self.find_layer(self.model, -1)
-            pen_layer.register_forward_pre_hook(self._get_ash_hook(self.ash_percentile))
+            self._ood_hooks.append(
+                pen_layer.register_forward_pre_hook(
+                    self._get_ash_hook(self.ash_percentile)
+                )
+            )
 
         # Register a hook to store feature values for each considered layer + last layer
         for layer_id in self._hook_layers_id:
             layer = self.find_layer(self.model, layer_id)
-            layer.register_forward_hook(self._get_features_hook(layer_id))
+            self._ood_hooks.append(
+                layer.register_forward_hook(self._get_features_hook(layer_id))
+            )
 
         # Crop model if input layer is provided
         if not (self.input_layer_id) is None:
@@ -389,34 +399,12 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         return hook
 
-    def _clean_forward_hooks(self) -> None:
+    def _clean_ood_hooks(self) -> None:
         """
         Remove all the forward hook attached to the model's layers. This function should
         be called at the __init__, and prevent from accumulating the hooks when
         defining a new TorchFeatureExtractor for the same model.
         """
 
-        def __clean_hooks(m: nn.Module):
-            for _, child in m._modules.items():
-                if child is not None:
-                    if hasattr(child, "_forward_hooks"):
-                        child._forward_hooks = OrderedDict()
-                    __clean_hooks(child)
-
-        return __clean_hooks(self.model)
-
-    def _clean_forward_pre_hooks(self) -> None:
-        """
-        Remove all the forward pre hook attached to the model's layers. This function
-        should be called at the __init__, and prevent from accumulating the hooks when
-        defining a new TorchFeatureExtractor for the same model.
-        """
-
-        def __clean_hooks(m: nn.Module):
-            for _, child in m._modules.items():
-                if child is not None:
-                    if hasattr(child, "_forward_pre_hooks"):
-                        child._forward_pre_hooks = OrderedDict()
-                    __clean_hooks(child)
-
-        return __clean_hooks(self.model)
+        for hook in self._ood_hooks:
+            hook.remove()
