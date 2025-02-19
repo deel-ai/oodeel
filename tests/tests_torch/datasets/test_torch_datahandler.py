@@ -36,14 +36,14 @@ from tests.tests_torch import generate_data
 from tests.tests_torch import generate_data_torch
 
 
-def assign_feature_value(
-    dataset: DictDataset, feature_key: str, value: int
+def assign_value_to_column(
+    dataset: DictDataset, column_name: str, value: int
 ) -> DictDataset:
-    """Assign a value to a feature for every sample in a DictDataset
+    """Assign a value to a column for every sample in a DictDataset
 
     Args:
         dataset (DictDataset): DictDataset to assign the value to
-        feature_key (str): Feature to assign the value to
+        column_name (str): Column to assign the value to
         value (int): Value to assign
 
     Returns:
@@ -53,11 +53,11 @@ def assign_feature_value(
         dataset, DictDataset
     ), "Dataset must be an instance of DictDataset"
 
-    def assign_value_to_feature(x):
-        x[feature_key] = torch.tensor(value)
+    def assign_value(x):
+        x[column_name] = torch.tensor(value)
         return x
 
-    dataset = dataset.map(assign_value_to_feature)
+    dataset = dataset.map(assign_value)
     return dataset
 
 
@@ -74,24 +74,24 @@ def get_dataset_length(dataset: Dataset) -> int:
 
 
 @dict_only_ds
-def get_feature_from_ds(dataset: DictDataset, feature_key: str) -> np.ndarray:
-    """Get a feature from a DictDataset
+def get_column_from_ds(dataset: DictDataset, column_name: str) -> np.ndarray:
+    """Get a column from a DictDataset
 
     !!! note
         This function can be a bit time consuming since it needs to iterate
         over the whole dataset.
 
     Args:
-        dataset (DictDataset): Dataset to get the feature from
-        feature_key (str): Feature value to get
+        dataset (DictDataset): Dataset to get the column from
+        column_name (str): Column value to get
 
     Returns:
-        np.ndarray: Feature values for dataset
+        np.ndarray: Column values for dataset
     """
 
-    features = dataset.map(lambda x: x[feature_key])
-    features = np.stack([f.numpy() for f in features])
-    return features
+    columns = dataset.map(lambda x: x[column_name])
+    columns = np.stack([f.numpy() for f in columns])
+    return columns
 
 
 def test_get_item_length():
@@ -178,11 +178,11 @@ def test_instanciate_from_torchvision(dataset_name, train, erase_after_test=True
 
         # dummy item
         dummy_item = dataset[0]
-        dummy_keys = list(dummy_item.keys())
+        dummy_columns = list(dummy_item.keys())
         dummy_shapes = [v.shape for v in dummy_item.values()]
 
-        # check keys
-        assert dataset.columns == dummy_keys == ["input", "label"]
+        # check columns
+        assert dataset.columns == dummy_columns == ["input", "label"]
 
         # check output shape
         assert (
@@ -226,17 +226,17 @@ def test_load_arrays_and_custom(x_shape, num_labels, num_samples, one_hot):
     for dataset_id in [tuple_np, dict_np, tuple_torch, dict_torch, tensor_ds_torch]:
         ds = handler.load_dataset(dataset_id, columns=["key_a", "key_b"])
 
-        # check registered keys, shapes
-        output_keys = ds.columns
+        # check registered columns, shapes
+        output_columns = ds.columns
         output_shapes = ds.output_shapes
-        assert output_keys == ["key_a", "key_b"]
+        assert output_columns == ["key_a", "key_b"]
         assert output_shapes == [
             torch.Size(x_shape),
             torch.Size([num_labels] if one_hot else []),
         ]
-        # check item keys, shapes
+        # check item columns, shapes
         dummy_item = ds[0]
-        assert list(dummy_item.keys()) == output_keys
+        assert list(dummy_item.keys()) == output_columns
         assert list(map(lambda x: x.shape, dummy_item.values())) == output_shapes
 
 
@@ -271,29 +271,29 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     num_samples_b = len(dataset_b)
     assert num_samples == (num_samples_a + num_samples_b)
 
-    # assign feature, map, get feature
+    # assign column, map, get column
     def map_fn_a(item):
-        item["new_feature"] -= 3
+        item["new_column"] -= 3
         return item
 
     def map_fn_b(item):
-        item["new_feature"] = item["new_feature"] * 3 + 2
+        item["new_column"] = item["new_column"] * 3 + 2
         return item
 
-    dataset_a = assign_feature_value(dataset_a, "new_feature", 0)
+    dataset_a = assign_value_to_column(dataset_a, "new_column", 0)
     dataset_a = dataset_a.map(map_fn_a)
-    features_a = torch.Tensor(get_feature_from_ds(dataset_a, "new_feature"))
-    assert torch.all(features_a == torch.Tensor([-3] * num_samples_a))
+    columns_a = torch.Tensor(get_column_from_ds(dataset_a, "new_column"))
+    assert torch.all(columns_a == torch.Tensor([-3] * num_samples_a))
 
-    dataset_b = assign_feature_value(dataset_b, "new_feature", 1)
+    dataset_b = assign_value_to_column(dataset_b, "new_column", 1)
     dataset_b = dataset_b.map(map_fn_b)
-    features_b = torch.Tensor(get_feature_from_ds(dataset_b, "new_feature"))
-    assert torch.all(features_b == torch.Tensor([5] * num_samples_b))
+    columns_b = torch.Tensor(get_column_from_ds(dataset_b, "new_column"))
+    assert torch.all(columns_b == torch.Tensor([5] * num_samples_b))
 
     # concatenate two sub datasets
     dataset_c = handler.merge(dataset_a, dataset_b)
-    features_c = torch.Tensor(get_feature_from_ds(dataset_c, "new_feature"))
-    assert torch.all(features_c == torch.cat([features_a, features_b]))
+    columns_c = torch.Tensor(get_column_from_ds(dataset_c, "new_column"))
+    assert torch.all(columns_c == torch.cat([columns_a, columns_b]))
 
     # prepare dataloader
     loader = handler.prepare(dataset_c, 64, shuffle=True)
@@ -360,13 +360,13 @@ def test_split_by_class(in_labels, out_labels, one_hot, expected_output):
     len_inds = len(in_dataset)
     len_outds = len(out_dataset)
 
-    classes = get_feature_from_ds(dataset, "label")
+    classes = get_column_from_ds(dataset, "label")
     classes = np.unique(classes, axis=0)
 
-    classes_in = get_feature_from_ds(in_dataset, "label")
+    classes_in = get_column_from_ds(in_dataset, "label")
     classes_in = np.unique(classes_in, axis=0)
 
-    classes_out = get_feature_from_ds(out_dataset, "label")
+    classes_out = get_column_from_ds(out_dataset, "label")
     classes_out = np.unique(classes_out, axis=0)
 
     assert len_ds == expected_output[0]
