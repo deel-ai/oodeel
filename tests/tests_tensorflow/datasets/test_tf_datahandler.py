@@ -32,14 +32,14 @@ from tests.tests_tensorflow import generate_data
 from tests.tests_tensorflow import generate_data_tf
 
 
-def assign_feature_value(
-    dataset: tf.data.Dataset, feature_key: str, value: int
+def assign_value_to_column(
+    dataset: tf.data.Dataset, column_name: str, value: int
 ) -> tf.data.Dataset:
-    """Assign a value to a feature for every sample in a tf.data.Dataset
+    """Assign a value to a column for every sample in a tf.data.Dataset
 
     Args:
         dataset (tf.data.Dataset): tf.data.Dataset to assign the value to
-        feature_key (str): Feature to assign the value to
+        column_name (str): Column to assign the value to
         value (int): Value to assign
 
     Returns:
@@ -47,11 +47,11 @@ def assign_feature_value(
     """
     assert isinstance(dataset.element_spec, dict), "dataset elements must be dicts"
 
-    def assign_value_to_feature(x):
-        x[feature_key] = value
+    def assign_value_to_column(x):
+        x[column_name] = value
         return x
 
-    dataset = dataset.map(assign_value_to_feature)
+    dataset = dataset.map(assign_value_to_column)
     return dataset
 
 
@@ -72,24 +72,24 @@ def get_dataset_length(dataset: tf.data.Dataset) -> int:
         return int(cardinality)
 
 
-def get_feature_from_ds(dataset: tf.data.Dataset, feature_key: str) -> np.ndarray:
-    """Get a feature from a tf.data.Dataset
+def get_column_from_ds(dataset: tf.data.Dataset, column_name: str) -> np.ndarray:
+    """Get a column from a tf.data.Dataset
 
     !!! note
         This function can be a bit time consuming since it needs to iterate
         over the whole dataset.
 
     Args:
-        dataset (tf.data.Dataset): tf.data.Dataset to get the feature from
-        feature_key (str): Feature value to get
+        dataset (tf.data.Dataset): tf.data.Dataset to get the column from
+        column_name (str): Column value to get
 
     Returns:
-        np.ndarray: Feature values for dataset
+        np.ndarray: Column values for dataset
     """
-    features = dataset.map(lambda x: x[feature_key])
-    features = list(features.as_numpy_iterator())
-    features = np.array(features)
-    return features
+    columns = dataset.map(lambda x: x[column_name])
+    columns = list(columns.as_numpy_iterator())
+    columns = np.array(columns)
+    return columns
 
 
 def test_instanciate_tf_datahandler():
@@ -179,11 +179,11 @@ def test_load_tensorflow_datasets(dataset_name, train):
         # dummy item
         for item in dataset.take(1):
             dummy_item = item
-        dummy_keys = list(dummy_item.keys())
+        dummy_columns = list(dummy_item.keys())
         dummy_shapes = [v.shape for v in dummy_item.values()]
 
-        # check keys
-        assert list(dataset.element_spec.keys()) == dummy_keys == ["image", "label"]
+        # check columns
+        assert list(dataset.element_spec.keys()) == dummy_columns == ["image", "label"]
 
         # check output shape
         assert (
@@ -230,18 +230,18 @@ def test_load_arrays_and_custom(x_shape, num_labels, num_samples, one_hot):
     for dataset_id in [tuple_np, dict_np, tuple_tf, dict_tf, tensor_ds_tf]:
         ds = handler.load_dataset(dataset_id, columns=["key_a", "key_b"])
 
-        # check registered keys, shapes
-        output_keys = list(ds.element_spec.keys())
+        # check registered columns, shapes
+        output_columns = list(ds.element_spec.keys())
         output_shapes = [ds.element_spec[key].shape for key in ds.element_spec.keys()]
-        assert output_keys == ["key_a", "key_b"]
+        assert output_columns == ["key_a", "key_b"]
         assert output_shapes == [
             tf.TensorShape(x_shape),
             tf.TensorShape([num_labels] if one_hot else []),
         ]
-        # check item keys, shapes
+        # check item columns, shapes
         for item in ds.take(1):
             dummy_item = item
-        assert list(dummy_item.keys()) == output_keys
+        assert list(dummy_item.keys()) == output_columns
         assert list(map(lambda x: x.shape, dummy_item.values())) == output_shapes
 
 
@@ -276,29 +276,29 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     num_samples_b = get_dataset_length(dataset_b)
     assert num_samples == (num_samples_a + num_samples_b)
 
-    # assign feature, map, get feature
+    # assign column, map, get column
     def map_fn_a(item):
-        item["new_feature"] -= 3
+        item["new_column"] -= 3
         return item
 
     def map_fn_b(item):
-        item["new_feature"] = item["new_feature"] * 3 + 2
+        item["new_column"] = item["new_column"] * 3 + 2
         return item
 
-    dataset_a = assign_feature_value(dataset_a, "new_feature", 0)
+    dataset_a = assign_value_to_column(dataset_a, "new_column", 0)
     dataset_a = dataset_a.map(map_fn_a)
-    features_a = tf.convert_to_tensor(get_feature_from_ds(dataset_a, "new_feature"))
-    assert tf.reduce_all(features_a == tf.convert_to_tensor([-3] * num_samples_a))
+    columns_a = tf.convert_to_tensor(get_column_from_ds(dataset_a, "new_column"))
+    assert tf.reduce_all(columns_a == tf.convert_to_tensor([-3] * num_samples_a))
 
-    dataset_b = assign_feature_value(dataset_b, "new_feature", 1)
+    dataset_b = assign_value_to_column(dataset_b, "new_column", 1)
     dataset_b = dataset_b.map(map_fn_b)
-    features_b = tf.convert_to_tensor(get_feature_from_ds(dataset_b, "new_feature"))
-    assert tf.reduce_all(features_b == tf.convert_to_tensor([5] * num_samples_b))
+    columns_b = tf.convert_to_tensor(get_column_from_ds(dataset_b, "new_column"))
+    assert tf.reduce_all(columns_b == tf.convert_to_tensor([5] * num_samples_b))
 
     # concatenate two sub datasets
     dataset_c = handler.merge(dataset_a, dataset_b)
-    features_c = tf.convert_to_tensor(get_feature_from_ds(dataset_c, "new_feature"))
-    assert tf.reduce_all(features_c == tf.concat([features_a, features_b], axis=0))
+    columns_c = tf.convert_to_tensor(get_column_from_ds(dataset_c, "new_column"))
+    assert tf.reduce_all(columns_c == tf.concat([columns_a, columns_b], axis=0))
 
     # prepare dataloader
     loader = handler.prepare(dataset_c, 64, shuffle=True)
@@ -406,13 +406,13 @@ def test_split_by_class(in_labels, out_labels, one_hot, expected_output):
     len_inds = get_dataset_length(in_dataset)
     len_outds = get_dataset_length(out_dataset)
 
-    classes = get_feature_from_ds(dataset, "label")
+    classes = get_column_from_ds(dataset, "label")
     classes = np.unique(classes, axis=0)
 
-    classes_in = get_feature_from_ds(in_dataset, "label")
+    classes_in = get_column_from_ds(in_dataset, "label")
     classes_in = np.unique(classes_in, axis=0)
 
-    classes_out = get_feature_from_ds(out_dataset, "label")
+    classes_out = get_column_from_ds(out_dataset, "label")
     classes_out = np.unique(classes_out, axis=0)
 
     assert len_ds == expected_output[0]
