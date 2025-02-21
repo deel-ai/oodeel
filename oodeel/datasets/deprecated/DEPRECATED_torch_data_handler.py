@@ -34,22 +34,21 @@ from torch.utils.data import Subset
 from torch.utils.data import TensorDataset
 from torch.utils.data.dataloader import default_collate
 
-from ..types import Any
-from ..types import Callable
-from ..types import ItemType
-from ..types import List
-from ..types import Optional
-from ..types import TensorType
-from ..types import Tuple
-from ..types import Union
-from .data_handler import DataHandler
+from ...types import Any
+from ...types import Callable
+from ...types import ItemType
+from ...types import List
+from ...types import Optional
+from ...types import TensorType
+from ...types import Tuple
+from ...types import Union
+from .DEPRECATED_data_handler import DataHandler
 
 
 def dict_only_ds(ds_handling_method: Callable) -> Callable:
-    """Decorator to ensure that the dataset is a dict dataset and that the column_name
-    given as argument matches one of the column names.
-    matches one of the column names. The signature of decorated functions
-    must be function(dataset, *args, **kwargs) with column_name either in kwargs or
+    """Decorator to ensure that the dataset is a dict dataset and that the input key
+    matches one of the feature keys. The signature of decorated functions
+    must be function(dataset, *args, **kwargs) with feature_key either in kwargs or
     args[0] when relevant.
 
 
@@ -65,19 +64,19 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
             dataset, DictDataset
         ), "Dataset must be an instance of DictDataset"
 
-        if "column_name" in kwargs:
-            column_name = kwargs["column_name"]
+        if "feature_key" in kwargs:
+            feature_key = kwargs["feature_key"]
         elif len(args) > 0:
-            column_name = args[0]
+            feature_key = args[0]
 
-        # If column_name is provided, check that it is in the dataset column names
-        if (len(args) > 0) or ("column_name" in kwargs):
-            if isinstance(column_name, str):
-                column_name = [column_name]
-            for name in column_name:
+        # If feature_key is provided, check that it is in the dataset feature keys
+        if (len(args) > 0) or ("feature_key" in kwargs):
+            if isinstance(feature_key, str):
+                feature_key = [feature_key]
+            for key in feature_key:
                 assert (
-                    name in dataset.columns
-                ), f"The input dataset has no column named {name}"
+                    key in dataset.output_keys
+                ), f"The input dataset has no feature names {key}"
         return ds_handling_method(dataset, *args, **kwargs)
 
     return wrapper
@@ -109,23 +108,23 @@ class DictDataset(Dataset):
 
     Args:
         dataset (Dataset): Dataset to wrap.
-        columns (columns[str]): Column names describing the output tensors.
+        output_keys (output_keys[str]): Keys describing the output tensors.
     """
 
     def __init__(
-        self, dataset: Dataset, columns: List[str] = ["input", "label"]
+        self, dataset: Dataset, output_keys: List[str] = ["input", "label"]
     ) -> None:
         self._dataset = dataset
-        self._raw_columns = columns
+        self._raw_output_keys = output_keys
         self.map_fns = []
         self._check_init_args()
 
     @property
-    def columns(self) -> list:
-        """Get the list of columns in a dict-based item from the dataset.
+    def output_keys(self) -> list:
+        """Get the list of keys in a dict-based item from the dataset.
 
         Returns:
-            list: column names of the dataset.
+            list: feature keys of the dataset.
         """
         dummy_item = self[0]
         return list(dummy_item.keys())
@@ -138,10 +137,10 @@ class DictDataset(Dataset):
             list: tensor shapes of an dataset item.
         """
         dummy_item = self[0]
-        return [dummy_item[key].shape for key in self.columns]
+        return [dummy_item[key].shape for key in self.output_keys]
 
     def _check_init_args(self) -> None:
-        """Check validity of dataset and column names provided at init"""
+        """Check validity of dataset and output keys provided at init"""
         dummy_item = self._dataset[0]
         assert isinstance(
             dummy_item, (tuple, dict, list, torch.Tensor)
@@ -149,8 +148,8 @@ class DictDataset(Dataset):
         if isinstance(dummy_item, torch.Tensor):
             dummy_item = [dummy_item]
         assert len(dummy_item) == len(
-            self._raw_columns
-        ), "Length mismatch between dataset item and provided column names"
+            self._raw_output_keys
+        ), "Length mismatch between dataset item and provided keys"
 
     def __getitem__(self, index: int) -> dict:
         """Return a dictionary of tensors corresponding to a specfic index.
@@ -172,7 +171,9 @@ class DictDataset(Dataset):
             tensors = item
 
         # build output dictionary
-        output_dict = {key: tensor for (key, tensor) in zip(self._raw_columns, tensors)}
+        output_dict = {
+            key: tensor for (key, tensor) in zip(self._raw_output_keys, tensors)
+        }
 
         # apply map functions
         for map_fn in self.map_fns:
@@ -227,16 +228,18 @@ class DictDataset(Dataset):
             other_dataset, DictDataset
         ), "Second dataset should be an instance of DictDataset"
         assert (
-            self.columns == other_dataset.columns
-        ), "Incompatible dataset elements (different column names)"
+            self.output_keys == other_dataset.output_keys
+        ), "Incompatible dataset elements (different dict keys)"
         if inplace:
             dataset_copy = copy.deepcopy(self)
-            self._raw_columns = self.columns
+            self._raw_output_keys = self.output_keys
             self.map_fns = []
             self._dataset = ConcatDataset([dataset_copy, other_dataset])
             dataset = self
         else:
-            dataset = DictDataset(ConcatDataset([self, other_dataset]), self.columns)
+            dataset = DictDataset(
+                ConcatDataset([self, other_dataset]), self.output_keys
+            )
         return dataset
 
     def __len__(self) -> int:
@@ -254,11 +257,6 @@ class TorchDataHandler(DataHandler):
     for working with torch datasets and manage them without having to use
     torch syntax.
     """
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.backend = "torch"
-        self.channel_order = "channels_first"
 
     @staticmethod
     def _default_target_transform(y: Any) -> torch.Tensor:
@@ -279,16 +277,14 @@ class TorchDataHandler(DataHandler):
     def load_dataset(
         cls,
         dataset_id: Union[Dataset, ItemType, str],
-        columns: Optional[list] = None,
+        keys: Optional[list] = None,
         load_kwargs: dict = {},
     ) -> DictDataset:
         """Load dataset from different manners
 
         Args:
-            dataset_id (Union[Dataset, ItemType, str]): dataset identification.
-            Can be the name of a dataset from torchvision, a torch Dataset,
-            or a tuple/dict of np.ndarrays/torch tensors.
-            columns (list, optional): Column names. If None, assigned as "input_i"
+            dataset_id (Union[Dataset, ItemType, str]): dataset identification
+            keys (list, optional): Features keys. If None, assigned as "input_i"
                 for i-th feature. Defaults to None.
             load_kwargs (dict, optional): Additional loading kwargs. Defaults to {}.
 
@@ -299,23 +295,23 @@ class TorchDataHandler(DataHandler):
             assert "root" in load_kwargs.keys()
             dataset = cls.load_from_torchvision(dataset_id, **load_kwargs)
         elif isinstance(dataset_id, Dataset):
-            dataset = cls.load_custom_dataset(dataset_id, columns)
+            dataset = cls.load_custom_dataset(dataset_id, keys)
         elif isinstance(dataset_id, get_args(ItemType)):
-            dataset = cls.load_dataset_from_arrays(dataset_id, columns)
+            dataset = cls.load_dataset_from_arrays(dataset_id, keys)
         return dataset
 
     @staticmethod
     def load_dataset_from_arrays(
         dataset_id: ItemType,
-        columns: Optional[list] = None,
+        keys: Optional[list] = None,
     ) -> DictDataset:
         """Load a torch.utils.data.Dataset from an array or a tuple/dict of arrays.
 
         Args:
             dataset_id (ItemType):
                 numpy / torch array(s) to load.
-            columns (list, optional): Column names to assign. If None,
-                assigned as "input_i" for i-th feature. Defaults to None.
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
 
         Returns:
             DictDataset: dataset
@@ -323,45 +319,47 @@ class TorchDataHandler(DataHandler):
         # If dataset_id is an array
         if isinstance(dataset_id, get_args(TensorType)):
             tensors = tuple(to_torch(dataset_id))
-            columns = columns or ["input"]
+            output_keys = keys or ["input"]
 
         # If dataset_id is a tuple of arrays
         elif isinstance(dataset_id, tuple):
             len_elem = len(dataset_id)
-            if columns is None:
+            output_keys = keys
+            if output_keys is None:
                 if len_elem == 2:
-                    columns = ["input", "label"]
+                    output_keys = ["input", "label"]
                 else:
-                    columns = [f"input_{i}" for i in range(len_elem - 1)] + ["label"]
+                    output_keys = [f"input_{i}" for i in range(len_elem - 1)] + [
+                        "label"
+                    ]
                     print(
                         "Loading torch.utils.data.Dataset with elems as dicts, "
                         'assigning "input_i" key to the i-th tuple dimension and'
                         ' "label" key to the last tuple dimension.'
                     )
-            assert len(columns) == len(dataset_id)
+            assert len(output_keys) == len(dataset_id)
             tensors = tuple(to_torch(array) for array in dataset_id)
 
         # If dataset_id is a dictionary of arrays
         elif isinstance(dataset_id, dict):
-            columns = columns or list(dataset_id.keys())
-            assert len(columns) == len(dataset_id)
+            output_keys = keys or list(dataset_id.keys())
+            assert len(output_keys) == len(dataset_id)
             tensors = tuple(to_torch(array) for array in dataset_id.values())
 
-        # create torch dictionary dataset from tensors tuple and columns
-        dataset = DictDataset(TensorDataset(*tensors), columns)
+        # create torch dictionary dataset from tensors tuple and keys
+        dataset = DictDataset(TensorDataset(*tensors), output_keys)
         return dataset
 
     @staticmethod
     def load_custom_dataset(
-        dataset_id: Dataset, columns: Optional[list] = None
+        dataset_id: Dataset, keys: Optional[list] = None
     ) -> DictDataset:
         """Load a custom Dataset by ensuring it has the correct format (dict-based)
 
         Args:
             dataset_id (Dataset): Dataset
-            columns (list, optional): Column names to use for elements if dataset_id is
-                tuple based. If None, assigned as "input_i"
-                for i-th column. Defaults to None.
+            keys (list, optional): Keys to use for features if dataset_id is
+                tuple based. Defaults to None.
 
         Returns:
             DictDataset
@@ -372,17 +370,20 @@ class TorchDataHandler(DataHandler):
             assert isinstance(
                 dummy_item, (Tuple, torch.Tensor)
             ), "Custom dataset should be either dictionary based or tuple based"
-            if columns is None:
+            output_keys = keys
+            if output_keys is None:
                 len_elem = len(dummy_item)
                 if len_elem == 2:
-                    columns = ["input", "label"]
+                    output_keys = ["input", "label"]
                 else:
-                    columns = [f"input_{i}" for i in range(len_elem - 1)] + ["label"]
+                    output_keys = [f"input_{i}" for i in range(len_elem - 1)] + [
+                        "label"
+                    ]
                     print(
                         "Feature name not found, assigning 'input_i' "
                         "key to the i-th tensor and 'label' key to the last"
                     )
-            dataset_id = DictDataset(dataset_id, columns)
+            dataset_id = DictDataset(dataset_id, output_keys)
 
         dataset = dataset_id
         return dataset
@@ -428,17 +429,80 @@ class TorchDataHandler(DataHandler):
         return cls.load_custom_dataset(dataset)
 
     @staticmethod
-    @dict_only_ds
-    def get_ds_column_names(dataset: DictDataset) -> list:
-        """Get the column names of a DictDataset
+    def assign_feature_value(
+        dataset: DictDataset, feature_key: str, value: int
+    ) -> DictDataset:
+        """Assign a value to a feature for every sample in a DictDataset
 
         Args:
-            dataset (DictDataset): Dataset to get the column names from
+            dataset (DictDataset): DictDataset to assign the value to
+            feature_key (str): Feature to assign the value to
+            value (int): Value to assign
 
         Returns:
-            list: List of column names
+            DictDataset
         """
-        return dataset.columns
+        assert isinstance(
+            dataset, DictDataset
+        ), "Dataset must be an instance of DictDataset"
+
+        def assign_value_to_feature(x):
+            x[feature_key] = torch.tensor(value)
+            return x
+
+        dataset = dataset.map(assign_value_to_feature)
+        return dataset
+
+    @staticmethod
+    @dict_only_ds
+    def get_feature_from_ds(dataset: DictDataset, feature_key: str) -> np.ndarray:
+        """Get a feature from a DictDataset
+
+        !!! note
+            This function can be a bit time consuming since it needs to iterate
+            over the whole dataset.
+
+        Args:
+            dataset (DictDataset): Dataset to get the feature from
+            feature_key (str): Feature value to get
+
+        Returns:
+            np.ndarray: Feature values for dataset
+        """
+
+        features = dataset.map(lambda x: x[feature_key])
+        features = np.stack([f.numpy() for f in features])
+        return features
+
+    @staticmethod
+    @dict_only_ds
+    def get_ds_feature_keys(dataset: DictDataset) -> list:
+        """Get the feature keys of a DictDataset
+
+        Args:
+            dataset (DictDataset): Dataset to get the feature keys from
+
+        Returns:
+            list: List of feature keys
+        """
+        return dataset.output_keys
+
+    @staticmethod
+    def has_feature_key(dataset: DictDataset, key: str) -> bool:
+        """Check if a DictDataset has a feature denoted by key
+
+        Args:
+            dataset (DictDataset): Dataset to check
+            key (str): Key to check
+
+        Returns:
+            bool: If the dataset has a feature denoted by key
+        """
+        assert isinstance(
+            dataset, DictDataset
+        ), "Dataset must be an instance of DictDataset"
+
+        return key in dataset.output_keys
 
     @staticmethod
     def map_ds(
@@ -458,13 +522,13 @@ class TorchDataHandler(DataHandler):
 
     @staticmethod
     @dict_only_ds
-    def filter_by_value(
+    def filter_by_feature_value(
         dataset: DictDataset,
-        column_name: str,
+        feature_key: str,
         values: list,
         excluded: bool = False,
     ) -> DictDataset:
-        """Filter the dataset by checking if the value of a column is in `values`
+        """Filter the dataset by checking the value of a feature is in `values`
 
         !!! note
             This function can be a bit of time consuming since it needs to iterate
@@ -472,39 +536,39 @@ class TorchDataHandler(DataHandler):
 
         Args:
             dataset (DictDataset): Dataset to filter
-            column_name (str): Column to filter the dataset with
-            values (list): Column values to keep
+            feature_key (str): Feature name to check the value
+            values (list): Feature_key values to keep
             excluded (bool, optional): To keep (False) or exclude (True) the samples
-                with column values included in Values. Defaults to False.
+                with Feature_key value included in Values. Defaults to False.
 
         Returns:
             DictDataset: Filtered dataset
         """
 
-        if len(dataset[0][column_name].shape) > 0:
-            value_dim = dataset[0][column_name].shape[-1]
+        if len(dataset[0][feature_key].shape) > 0:
+            value_dim = dataset[0][feature_key].shape[-1]
             values = [
                 F.one_hot(torch.tensor(value).long(), value_dim) for value in values
             ]
 
         def filter_fn(x):
-            keep = any([torch.all(x[column_name] == v) for v in values])
+            keep = any([torch.all(x[feature_key] == v) for v in values])
             return keep if not excluded else not keep
 
         filtered_dataset = dataset.filter(filter_fn)
         return filtered_dataset
 
     @classmethod
-    def prepare(
+    def prepare_for_training(
         cls,
         dataset: DictDataset,
         batch_size: int,
+        shuffle: bool = False,
         preprocess_fn: Optional[Callable] = None,
         augment_fn: Optional[Callable] = None,
-        columns: Optional[list] = None,
-        shuffle: bool = False,
-        dict_based_fns: bool = True,
-        return_tuple: bool = True,
+        output_keys: Optional[list] = None,
+        dict_based_fns: bool = False,
+        shuffle_buffer_size: Optional[int] = None,
         num_workers: int = 8,
     ) -> DataLoader:
         """Prepare a DataLoader for training
@@ -512,24 +576,24 @@ class TorchDataHandler(DataHandler):
         Args:
             dataset (DictDataset): Dataset to prepare
             batch_size (int): Batch size
+            shuffle (bool): Wether to shuffle the dataloader or not
             preprocess_fn (Callable, optional): Preprocessing function to apply to
                 the dataset. Defaults to None.
             augment_fn (Callable, optional): Augment function to be used (when the
                 returned dataset is to be used for training). Defaults to None.
-            columns (list, optional): List of column names corresponding to the columns
-                that will be returned. Keep all features if None. Defaults to None.
-            shuffle (bool, optional): To shuffle the returned dataset or not.
-                Defaults to False.
+            output_keys (list): List of keys corresponding to the features that will be
+                returned. Keep all features if None. Defaults to None.
             dict_based_fns (bool): Whether to use preprocess and DA functions as dict
-                based (if True) or as tuple based (if False). Defaults to True.
-            return_tuple (bool, optional): Whether to return each dataset item
-                as a tuple. Defaults to True.
+                based (if True) or as tuple based (if False). Defaults to False.
+            shuffle_buffer_size (int, optional): Size of the shuffle buffer. Not used
+                in torch because we only rely on Map-Style datasets. Still as argument
+                for API consistency. Defaults to None.
             num_workers (int, optional): Number of workers to use for the dataloader.
 
         Returns:
             DataLoader: dataloader
         """
-        columns = columns or cls.get_ds_column_names(dataset)
+        output_keys = output_keys or cls.get_ds_feature_keys(dataset)
 
         def collate_fn(batch: List[dict]):
             if dict_based_fns:
@@ -537,20 +601,18 @@ class TorchDataHandler(DataHandler):
                 preprocess_func = preprocess_fn or (lambda x: x)
                 augment_func = augment_fn or (lambda x: x)
                 batch = [augment_func(preprocess_func(d)) for d in batch]
-                # to dict of batchs
-                if return_tuple:
-                    return tuple(
-                        default_collate([d[key] for d in batch]) for key in columns
-                    )
-                return {
-                    key: default_collate([d[key] for d in batch]) for key in columns
-                }
+                # to tuple of batchs
+                return tuple(
+                    default_collate([d[key] for d in batch]) for key in output_keys
+                )
             else:
                 # preprocess + DA: List[dict] -> List[tuple]
                 preprocess_func = preprocess_fn or (lambda *x: x)
                 augment_func = augment_fn or (lambda *x: x)
                 batch = [
-                    augment_func(*preprocess_func(*tuple(d[key] for key in columns)))
+                    augment_func(
+                        *preprocess_func(*tuple(d[key] for key in output_keys))
+                    )
                     for d in batch
                 ]
                 # to tuple of batchs
@@ -638,21 +700,17 @@ class TorchDataHandler(DataHandler):
         return len(dataset)
 
     @staticmethod
-    def get_column_elements_shape(
-        dataset: Dataset, column_name: Union[str, int]
-    ) -> tuple:
-        """Get the shape of the elements of a column of dataset identified by
-        column_name
+    def get_feature_shape(dataset: Dataset, feature_key: Union[str, int]) -> tuple:
+        """Get the shape of a feature of dataset identified by feature_key
 
         Args:
             dataset (Dataset): a Dataset
-            column_name (Union[str, int]): The column name to get
-                the element shape from.
+            feature_key (Union[str, int]): The identifier of the feature
 
         Returns:
-            tuple: the shape of an element from column_name
+            tuple: the shape of feature_id
         """
-        return tuple(dataset[0][column_name].shape)
+        return tuple(dataset[0][feature_key].shape)
 
     @staticmethod
     def get_input_from_dataset_item(elem: ItemType) -> Any:
@@ -692,3 +750,20 @@ class TorchDataHandler(DataHandler):
         if len(label.shape) > 1:
             label = label.view([label.shape[0]])
         return label
+
+    @staticmethod
+    def get_feature(dataset: DictDataset, feature_key: Union[str, int]) -> DictDataset:
+        """Extract a feature from a dataset
+
+        Args:
+            dataset (tf.data.Dataset): Dataset to extract the feature from
+            feature_key (Union[str, int]): feature to extract
+
+        Returns:
+            tf.data.Dataset: dataset built with the extracted feature only
+        """
+
+        def _get_feature_item(item):
+            return item[feature_key]
+
+        return dataset.map(_get_feature_item)

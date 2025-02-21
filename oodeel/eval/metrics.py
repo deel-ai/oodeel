@@ -54,9 +54,11 @@ def bench_metrics(
             out_value if different from their default values.
             Defaults to None.
         in_value (Optional[int], optional): ood label value for in-distribution data.
+            Automatically assigned 0 if it is not the case.
             Defaults to 0.
         out_value (Optional[int], optional): ood label value for out-of-distribution
-            data. Defaults to 1.
+            data. Automatically assigned 1 if it is not the case.
+            Defaults to 1.
         metrics (Optional[List[str]], optional): list of metrics to compute. Can pass
             any metric name from sklearn.metric or among "detect_acc" and
             "<aaa><XX><bbb>" where <aaa> and <bbb> are in ["fpr", "tpr", "fnr", "tnr"]

@@ -22,23 +22,23 @@
 # SOFTWARE.
 from typing import get_args
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from ..types import Callable
-from ..types import ItemType
-from ..types import Optional
-from ..types import TensorType
-from ..types import Tuple
-from ..types import Union
-from .data_handler import DataHandler
+from ...types import Callable
+from ...types import ItemType
+from ...types import Optional
+from ...types import TensorType
+from ...types import Tuple
+from ...types import Union
+from .DEPRECATED_data_handler import DataHandler
 
 
 def dict_only_ds(ds_handling_method: Callable) -> Callable:
-    """Decorator to ensure that the dataset is a dict dataset and that the column_name
-    given as argument matches one of the column names.
-    matches one of the column names. The signature of decorated functions
-    must be function(dataset, *args, **kwargs) with column_name either in kwargs or
+    """Decorator to ensure that the dataset is a dict dataset and that the input key
+    matches one of the feature keys. The signature of decorated functions
+    must be function(dataset, *args, **kwargs) with feature_key either in kwargs or
     args[0] when relevant.
 
 
@@ -52,19 +52,19 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
     def wrapper(dataset: tf.data.Dataset, *args, **kwargs):
         assert isinstance(dataset.element_spec, dict), "dataset elements must be dicts"
 
-        if "column_name" in kwargs.keys():
-            column_name = kwargs["column_name"]
+        if "feature_key" in kwargs.keys():
+            feature_key = kwargs["feature_key"]
         elif len(args) > 0:
-            column_name = args[0]
+            feature_key = args[0]
 
-        # If column_name is provided, check that it is in the dataset column names
-        if (len(args) > 0) or ("column_name" in kwargs):
-            if isinstance(column_name, str):
-                column_name = [column_name]
-            for name in column_name:
+        # If feature_key is provided, check that it is in the dataset feature keys
+        if (len(args) > 0) or ("feature_key" in kwargs):
+            if isinstance(feature_key, str):
+                feature_key = [feature_key]
+            for key in feature_key:
                 assert (
-                    name in dataset.element_spec.keys()
-                ), f"The input dataset has no column named {name}"
+                    key in dataset.element_spec.keys()
+                ), f"The input dataset has no feature names {key}"
         return ds_handling_method(dataset, *args, **kwargs)
 
     return wrapper
@@ -77,54 +77,45 @@ class TFDataHandler(DataHandler):
     tensorflow syntax.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.backend = "tensorflow"
-        self.channel_order = "channels_last"
-
     @classmethod
     def load_dataset(
         cls,
         dataset_id: Union[tf.data.Dataset, ItemType, str],
-        columns: Optional[list] = None,
+        keys: Optional[list] = None,
         load_kwargs: dict = {},
     ) -> tf.data.Dataset:
         """Load dataset from different manners, ensuring to return a dict based
         tf.data.Dataset.
 
         Args:
-            dataset_id (Union[tf.data.Dataset, ItemType, str]): dataset identification.
-            Can be the name of a dataset from tensorflow_datasets, a tf.data.Dataset,
-            or a tuple/dict of np.ndarrays/tf.Tensors.
-            columns (list, optional): Column names. If None, assigned as "input_i"
-                for i-th column. Defaults to None.
+            dataset_id (Any): dataset identification
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
             load_kwargs (dict, optional): Additional args for loading from
                 tensorflow_datasets. Defaults to {}.
 
         Returns:
             tf.data.Dataset: A dict based tf.data.Dataset
         """
-        load_kwargs["as_supervised"] = False
-
         if isinstance(dataset_id, get_args(ItemType)):
-            dataset = cls.load_dataset_from_arrays(dataset_id, columns)
+            dataset = cls.load_dataset_from_arrays(dataset_id, keys)
         elif isinstance(dataset_id, tf.data.Dataset):
-            dataset = cls.load_custom_dataset(dataset_id, columns)
+            dataset = cls.load_custom_dataset(dataset_id, keys)
         elif isinstance(dataset_id, str):
             dataset = cls.load_from_tensorflow_datasets(dataset_id, load_kwargs)
         return dataset
 
     @staticmethod
     def load_dataset_from_arrays(
-        dataset_id: ItemType, columns: Optional[list] = None
+        dataset_id: ItemType, keys: Optional[list] = None
     ) -> tf.data.Dataset:
         """Load a tf.data.Dataset from a np.ndarray, a tf.Tensor or a tuple/dict
-        of np.ndarrays/tf.Tensors.
+        of np.ndarrays/td.Tensors.
 
         Args:
             dataset_id (ItemType): numpy array(s) to load.
-            columns (list, optional): Column names to assign. If None,
-                assigned as "input_i" for i-th column. Defaults to None.
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
 
         Returns:
             tf.data.Dataset
@@ -136,7 +127,7 @@ class TFDataHandler(DataHandler):
         # If dataset_id is a tuple, convert it to a dict
         elif isinstance(dataset_id, tuple):
             len_elem = len(dataset_id)
-            if columns is None:
+            if keys is None:
                 if len_elem == 2:
                     dataset_dict = {"input": dataset_id[0], "label": dataset_id[1]}
                 else:
@@ -151,19 +142,19 @@ class TFDataHandler(DataHandler):
                 )
             else:
                 assert (
-                    len(columns) == len_elem
-                ), "Number of column names mismatch with the number of columns"
-                dataset_dict = {columns[i]: dataset_id[i] for i in range(len_elem)}
+                    len(keys) == len_elem
+                ), "Number of keys mismatch with the number of features"
+                dataset_dict = {keys[i]: dataset_id[i] for i in range(len_elem)}
 
         elif isinstance(dataset_id, dict):
-            if columns is not None:
+            if keys is not None:
                 len_elem = len(dataset_id)
                 assert (
-                    len(columns) == len_elem
-                ), "Number of column names mismatch with the number of columns"
-                original_columns = list(dataset_id.keys())
+                    len(keys) == len_elem
+                ), "Number of keys mismatch with the number of features"
+                original_keys = list(dataset_id.keys())
                 dataset_dict = {
-                    columns[i]: dataset_id[original_columns[i]] for i in range(len_elem)
+                    keys[i]: dataset_id[original_keys[i]] for i in range(len_elem)
                 }
 
         dataset = tf.data.Dataset.from_tensor_slices(dataset_dict)
@@ -171,15 +162,14 @@ class TFDataHandler(DataHandler):
 
     @classmethod
     def load_custom_dataset(
-        cls, dataset_id: tf.data.Dataset, columns: Optional[list] = None
+        cls, dataset_id: tf.data.Dataset, keys: Optional[list] = None
     ) -> tf.data.Dataset:
         """Load a custom Dataset by ensuring it has the correct format (dict-based)
 
         Args:
             dataset_id (tf.data.Dataset): tf.data.Dataset
-            columns (list, optional): Column names to use for elements if dataset_id is
-                tuple based. If None, assigned as "input_i"
-                for i-th column. Defaults to None.
+            keys (list, optional): Features keys. If None, assigned as "input_i"
+                for i-th feature. Defaults to None.
 
         Returns:
             tf.data.Dataset
@@ -187,22 +177,22 @@ class TFDataHandler(DataHandler):
         # If dataset_id is a tuple based tf.data.dataset, convert it to a dict
         if not isinstance(dataset_id.element_spec, dict):
             len_elem = len(dataset_id.element_spec)
-            if columns is None:
+            if keys is None:
                 print(
-                    "Column name not found, assigning 'input_i' "
+                    "Feature name not found, assigning 'input_i' "
                     "key to the i-th tensor and 'label' key to the last"
                 )
                 if len_elem == 2:
-                    columns = ["input", "label"]
+                    keys = ["input", "label"]
                 else:
-                    columns = [f"input_{i}" for i in range(len_elem)]
-                    columns[-1] = "label"
+                    keys = [f"input_{i}" for i in range(len_elem)]
+                    keys[-1] = "label"
             else:
                 assert (
-                    len(columns) == len_elem
-                ), "Number of column names mismatch with the number of columns"
+                    len(keys) == len_elem
+                ), "Number of keys mismatch with the number of features"
 
-            dataset_id = cls.tuple_to_dict(dataset_id, columns)
+            dataset_id = cls.tuple_to_dict(dataset_id, keys)
 
         dataset = dataset_id
         return dataset
@@ -231,30 +221,30 @@ class TFDataHandler(DataHandler):
     @staticmethod
     @dict_only_ds
     def dict_to_tuple(
-        dataset: tf.data.Dataset, columns: Optional[list] = None
+        dataset: tf.data.Dataset, keys: Optional[list] = None
     ) -> tf.data.Dataset:
         """Turn a dict based tf.data.Dataset to a tuple based tf.data.Dataset
 
         Args:
             dataset (tf.data.Dataset): Dict based tf.data.Dataset
-            columns (list, optional): Columns to use for the tuples based
-                tf.data.Dataset. If None, takes all the columns. Defaults to None.
+            keys (list, optional): Features to use for the tuples based
+                tf.data.Dataset. If None, takes all the features. Defaults to None.
 
         Returns:
             tf.data.Dataset
         """
-        if columns is None:
-            columns = list(dataset.element_spec.keys())
-        dataset = dataset.map(lambda x: tuple(x[k] for k in columns))
+        if keys is None:
+            keys = list(dataset.element_spec.keys())
+        dataset = dataset.map(lambda x: tuple(x[k] for k in keys))
         return dataset
 
     @staticmethod
-    def tuple_to_dict(dataset: tf.data.Dataset, columns: list) -> tf.data.Dataset:
+    def tuple_to_dict(dataset: tf.data.Dataset, keys: list) -> tf.data.Dataset:
         """Turn a tuple based tf.data.Dataset to a dict based tf.data.Dataset
 
         Args:
             dataset (tf.data.Dataset): Tuple based tf.data.Dataset
-            columns (list): Column names to use for the dict based tf.data.Dataset
+            keys (list): Keys to use for the dict based tf.data.Dataset
 
         Returns:
             tf.data.Dataset
@@ -264,27 +254,85 @@ class TFDataHandler(DataHandler):
         ), "dataset elements must be tuples"
         len_elem = len(dataset.element_spec)
         assert len_elem == len(
-            columns
-        ), "The number of columns must be equal to the number of tuple elements"
+            keys
+        ), "The number of keys must be equal to the number of tuple elements"
 
         def tuple_to_dict(*inputs):
-            return {columns[i]: inputs[i] for i in range(len_elem)}
+            return {keys[i]: inputs[i] for i in range(len_elem)}
 
         dataset = dataset.map(tuple_to_dict)
         return dataset
 
     @staticmethod
-    @dict_only_ds
-    def get_ds_column_names(dataset: tf.data.Dataset) -> list:
-        """Get the column names of a tf.data.Dataset
+    def assign_feature_value(
+        dataset: tf.data.Dataset, feature_key: str, value: int
+    ) -> tf.data.Dataset:
+        """Assign a value to a feature for every sample in a tf.data.Dataset
 
         Args:
-            dataset (tf.data.Dataset): tf.data.Dataset to get the column names from
+            dataset (tf.data.Dataset): tf.data.Dataset to assign the value to
+            feature_key (str): Feature to assign the value to
+            value (int): Value to assign
 
         Returns:
-            list: List of column names
+            tf.data.Dataset
+        """
+        assert isinstance(dataset.element_spec, dict), "dataset elements must be dicts"
+
+        def assign_value_to_feature(x):
+            x[feature_key] = value
+            return x
+
+        dataset = dataset.map(assign_value_to_feature)
+        return dataset
+
+    @staticmethod
+    @dict_only_ds
+    def get_feature_from_ds(dataset: tf.data.Dataset, feature_key: str) -> np.ndarray:
+        """Get a feature from a tf.data.Dataset
+
+        !!! note
+            This function can be a bit time consuming since it needs to iterate
+            over the whole dataset.
+
+        Args:
+            dataset (tf.data.Dataset): tf.data.Dataset to get the feature from
+            feature_key (str): Feature value to get
+
+        Returns:
+            np.ndarray: Feature values for dataset
+        """
+        features = dataset.map(lambda x: x[feature_key])
+        features = list(features.as_numpy_iterator())
+        features = np.array(features)
+        return features
+
+    @staticmethod
+    @dict_only_ds
+    def get_ds_feature_keys(dataset: tf.data.Dataset) -> list:
+        """Get the feature keys of a tf.data.Dataset
+
+        Args:
+            dataset (tf.data.Dataset): tf.data.Dataset to get the feature keys from
+
+        Returns:
+            list: List of feature keys
         """
         return list(dataset.element_spec.keys())
+
+    @staticmethod
+    def has_feature_key(dataset: tf.data.Dataset, key: str) -> bool:
+        """Check if a tf.data.Dataset has a feature denoted by key
+
+        Args:
+            dataset (tf.data.Dataset): tf.data.Dataset to check
+            key (str): Key to check
+
+        Returns:
+            bool: If the tf.data.Dataset has a feature denoted by key
+        """
+        assert isinstance(dataset.element_spec, dict), "dataset elements must be dicts"
+        return True if (key in dataset.element_spec.keys()) else False
 
     @staticmethod
     def map_ds(
@@ -310,35 +358,35 @@ class TFDataHandler(DataHandler):
 
     @staticmethod
     @dict_only_ds
-    def filter_by_value(
+    def filter_by_feature_value(
         dataset: tf.data.Dataset,
-        column_name: str,
+        feature_key: str,
         values: list,
         excluded: bool = False,
     ) -> tf.data.Dataset:
-        """Filter a tf.data.Dataset by checking if the value of a column is in 'values'
+        """Filter a tf.data.Dataset by checking the value of a feature is in 'values'
 
         Args:
             dataset (tf.data.Dataset): tf.data.Dataset to filter
-            column_name (str): Column to filter the dataset with
-            values (list): Column values to keep (if excluded is False)
+            feature_key (str): Feature name to check the value
+            values (list): Feature_key values to keep (if excluded is False)
                 or to exclude
             excluded (bool, optional): To keep (False) or exclude (True) the samples
-                with Column values included in Values. Defaults to False.
+                with Feature_key value included in Values. Defaults to False.
 
         Returns:
             tf.data.Dataset: Filtered dataset
         """
         # If the labels are one-hot encoded, prepare a function to get the label as int
-        if len(dataset.element_spec[column_name].shape) > 0:
+        if len(dataset.element_spec[feature_key].shape) > 0:
 
             def get_label_int(elem):
-                return int(tf.argmax(elem[column_name]))
+                return int(tf.argmax(elem[feature_key]))
 
         else:
 
             def get_label_int(elem):
-                return elem[column_name]
+                return elem[feature_key]
 
         def filter_fn(elem):
             value = get_label_int(elem)
@@ -352,16 +400,15 @@ class TFDataHandler(DataHandler):
         return dataset_to_filter
 
     @classmethod
-    def prepare(
+    def prepare_for_training(
         cls,
         dataset: tf.data.Dataset,
         batch_size: int,
+        shuffle: bool = False,
         preprocess_fn: Optional[Callable] = None,
         augment_fn: Optional[Callable] = None,
-        columns: Optional[list] = None,
-        shuffle: bool = False,
-        dict_based_fns: bool = True,
-        return_tuple: bool = True,
+        output_keys: Optional[list] = None,
+        dict_based_fns: bool = False,
         shuffle_buffer_size: Optional[int] = None,
         prefetch_buffer_size: Optional[int] = None,
         drop_remainder: Optional[bool] = False,
@@ -371,18 +418,16 @@ class TFDataHandler(DataHandler):
         Args:
             dataset (tf.data.Dataset): tf.data.Dataset to prepare
             batch_size (int): Batch size
-            preprocess_fn (Callable, optional): Preprocessing function to apply to
-                the dataset. Defaults to None.
-            augment_fn (Callable, optional): Augment function to be used (when the
-                returned dataset is to be used for training). Defaults to None.
-            columns (list, optional): List of column names corresponding to the columns
-                that will be returned. Keep all columns if None. Defaults to None.
             shuffle (bool, optional): To shuffle the returned dataset or not.
                 Defaults to False.
-            dict_based_fns (bool): Whether to use preprocess and DA functions as dict
-                based (if True) or as tuple based (if False). Defaults to True.
-            return_tuple (bool, optional): Whether to return each dataset item
-                as a tuple. Defaults to True.
+            preprocess_fn (Callable, optional): Preprocessing function to apply to\
+                the dataset. Defaults to None.
+            augment_fn (Callable, optional): Augment function to be used (when the\
+                returned dataset is to be used for training). Defaults to None.
+            output_keys (list, optional): List of keys corresponding to the features
+                that will be returned. Keep all features if None. Defaults to None.
+            dict_based_fns (bool, optional): If the augment and preprocess functions are
+                dict based or not. Defaults to False.
             shuffle_buffer_size (int, optional): Size of the shuffle buffer. If None,
                 taken as the number of samples in the dataset. Defaults to None.
             prefetch_buffer_size (Optional[int], optional): Buffer size for prefetch.
@@ -395,9 +440,9 @@ class TFDataHandler(DataHandler):
             tf.data.Dataset: Prepared dataset
         """
         # dict based to tuple based
-        columns = columns or cls.get_ds_column_names(dataset)
+        output_keys = output_keys or cls.get_ds_feature_keys(dataset)
         if not dict_based_fns:
-            dataset = cls.dict_to_tuple(dataset, columns)
+            dataset = cls.dict_to_tuple(dataset, output_keys)
 
         # preprocess + DA
         if preprocess_fn is not None:
@@ -405,8 +450,8 @@ class TFDataHandler(DataHandler):
         if augment_fn is not None:
             dataset = cls.map_ds(dataset, augment_fn)
 
-        if dict_based_fns and return_tuple:
-            dataset = cls.dict_to_tuple(dataset, columns)
+        if dict_based_fns:
+            dataset = cls.dict_to_tuple(dataset, output_keys)
 
         dataset = dataset.cache()
 
@@ -553,21 +598,19 @@ class TFDataHandler(DataHandler):
             return int(cardinality)
 
     @staticmethod
-    def get_column_elements_shape(
-        dataset: tf.data.Dataset, column_name: Union[str, int]
+    def get_feature_shape(
+        dataset: tf.data.Dataset, feature_key: Union[str, int]
     ) -> tuple:
-        """Get the shape of the elements of a column of dataset identified by
-        column_name
+        """Get the shape of a feature of dataset identified by feature_key
 
         Args:
             dataset (tf.data.Dataset): a tf.data.dataset
-            column_name (Union[str, int]): The column name to get
-                the element shape from.
+            feature_key (Union[str, int]): The identifier of the feature
 
         Returns:
-            tuple: the shape of an element from column_name
+            tuple: the shape of feature_id
         """
-        return tuple(dataset.element_spec[column_name].shape)
+        return tuple(dataset.element_spec[feature_key].shape)
 
     @staticmethod
     def get_input_from_dataset_item(elem: ItemType) -> TensorType:
@@ -607,3 +650,22 @@ class TFDataHandler(DataHandler):
         if len(label.shape) > 1:
             label = tf.reshape(label, [label.shape[0]])
         return label
+
+    @staticmethod
+    def get_feature(
+        dataset: tf.data.Dataset, feature_key: Union[str, int]
+    ) -> tf.data.Dataset:
+        """Extract a feature from a dataset
+
+        Args:
+            dataset (tf.data.Dataset): Dataset to extract the feature from
+            feature_key (Union[str, int]): feature to extract
+
+        Returns:
+            tf.data.Dataset: dataset built with the extracted feature only
+        """
+
+        def _get_feature_elem(elem):
+            return elem[feature_key]
+
+        return dataset.map(_get_feature_elem)
