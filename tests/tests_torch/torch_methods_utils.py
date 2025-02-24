@@ -125,16 +125,17 @@ def eval_detector_on_blobs(
         penult_feat_extractor = detector._load_feature_extractor(
             model=model, feature_layers_id=[-1]
         )
-        penult_feat_extractor._prepare_ood_handles()
+        # penult_feat_extractor._prepare_ood_handles()
 
         def hook(_, input):
-            penult_feat_extractor._features = input[0]
+            penult_feat_extractor._features["test"] = input[0]
 
         penult_feat_extractor.model[-1].register_forward_pre_hook(hook)
         for x, y in ds_fit:
             _ = penult_feat_extractor.predict_tensor(x)
             assert (
-                torch.max(penult_feat_extractor._features) <= detector.react_threshold
+                torch.max(penult_feat_extractor._features["test"])
+                <= detector.react_threshold
             ), (
                 "Maximum value of penultimate features"
                 + f" ({torch.max(penult_feat_extractor._features)})"
