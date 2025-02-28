@@ -75,7 +75,6 @@ class TorchFeatureExtractor(FeatureExtractor):
         ash_percentile: Optional[float] = None,
     ):
         model = model.eval()
-        self._ood_handles = []
         super().__init__(
             model=model,
             feature_layers_id=feature_layers_id,
