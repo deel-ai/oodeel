@@ -43,7 +43,7 @@ nav:
   - API Reference:
     - OOD methods: api/methods.md
     - Metrics: api/metrics.md
-    - OOD dataset: api/ooddataset.md
+    - OOD dataset (deprecated): api/ooddataset.md
     - DataHandlers:
       - TFDataHandler: api/tf_datahandler.md
       - TorchDataHandler: api/torch_datahandler.md
