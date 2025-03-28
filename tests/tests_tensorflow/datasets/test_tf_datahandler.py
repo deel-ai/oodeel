@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import os
 import tempfile
 
 import numpy as np
@@ -93,7 +94,10 @@ def get_column_from_ds(dataset: tf.data.Dataset, column_name: str) -> np.ndarray
 
 
 def test_instanciate_tf_datahandler():
-    handler = load_data_handler(backend="tensorflow")
+    if os.environ["DL_LIB"] == "tensorflow":
+        handler = load_data_handler()
+    else:
+        handler = load_data_handler(backend="tensorflow")
     assert isinstance(handler, TFDataHandler)
 
 
