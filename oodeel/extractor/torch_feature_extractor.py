@@ -411,3 +411,27 @@ class TorchFeatureExtractor(FeatureExtractor):
             for handle in self.model._ood_handles:
                 handle.remove()
             self.model._ood_handles = []
+
+    def _default_postproc_fn(self, feat: TensorType) -> TensorType:
+        """Default postprocessing function to apply to each feature immediately
+        after forward.
+
+        Args:
+            feat (TensorType): input tensor
+
+        Returns:
+            TensorType: postprocessed tensor
+        """
+        if len(feat.shape) == 4:
+            feat = nn.AdaptiveAvgPool2d(1)(feat)
+            feat = feat.view(feat.size(0), -1)
+        elif len(feat.shape) == 3:
+            feat = nn.AdaptiveAvgPool1d(1)(feat)
+            feat = feat.view(feat.size(0), -1)
+        elif len(feat.shape) == 2:
+            feat = feat
+        else:
+            raise NotImplementedError(
+                "Postprocessing function not implemented for this feature shape"
+            )
+        return feat

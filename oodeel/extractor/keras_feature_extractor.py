@@ -307,3 +307,46 @@ class KerasFeatureExtractor(FeatureExtractor):
             List[tf.Tensor]: weights and biases matrixes
         """
         return self.find_layer(self.model, layer_id).get_weights()
+
+    def default_postproc_fn(self, feat: tf.Tensor) -> tf.Tensor:
+        """
+        Default postprocessing function to apply to each feature immediately after
+        forward pass.
+
+        This function applies global average pooling if the input tensor has rank 4
+        (e.g., [batch, height, width, channels]) or rank 3
+        (e.g., [batch, sequence_length, features]). If the tensor is already 2D, it is
+        returned as is.
+
+        Args:
+            feat (tf.Tensor): Input tensor.
+
+        Returns:
+            tf.Tensor: Postprocessed tensor where spatial (or temporal) dimensions have
+                been averaged out.
+
+        Raises:
+            NotImplementedError: If the input tensor has a rank other than 2, 3, or 4.
+        """
+        tensor_rank = len(feat.shape)
+
+        if tensor_rank == 4:
+            # Assumes input is in channels_last format: [batch, height, width, channels]
+            # Applies global average pooling over height and width.
+            pooled = tf.keras.layers.GlobalAveragePooling2D()(feat)
+            # The resulting tensor has shape [batch, channels]
+            return pooled
+        elif tensor_rank == 3:
+            # Assumes input is in channels_last format: [batch, seq_length, features]
+            # Applies global average pooling over the sequence_length dimension.
+            pooled = tf.keras.layers.GlobalAveragePooling1D()(feat)
+            # The resulting tensor has shape [batch, features]
+            return pooled
+        elif tensor_rank == 2:
+            # If the tensor is already 2D, no further processing is needed.
+            return feat
+        else:
+            raise NotImplementedError(
+                "Postprocessing function not implemented for tensors with"
+                + " rank {}.".format(tensor_rank)
+            )
