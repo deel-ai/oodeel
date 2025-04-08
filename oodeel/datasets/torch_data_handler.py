@@ -623,7 +623,7 @@ class TorchDataHandler(DataHandler):
         Returns:
             int: Item length
         """
-        return len(dataset[0])
+        return len(next(iter(dataset)))
 
     @staticmethod
     def get_dataset_length(dataset: Dataset) -> int:
