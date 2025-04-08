@@ -58,6 +58,11 @@ def load_data_handler(backend: str = None):
     if backend is None:
         backend = get_backend()
 
+    if backend == "keras3":
+        from .keras3_data_handler import Keras3DataHandler
+
+        return Keras3DataHandler()
+
     if backend == "tensorflow":
         from .tf_data_handler import TFDataHandler
 
