@@ -56,14 +56,31 @@ def import_backend_specific_stuff(model: Callable):
         FeatureExtractor: torch or tf feature extractor class
     """
     if is_from(model, "keras"):
-        from ..extractor.keras_feature_extractor import KerasFeatureExtractor
-        from ..datasets.tf_data_handler import TFDataHandler
-        from ..utils import TFOperator
+        # TODO for Keras 2, import tf.keras instead of keras. We should add a try/except
+        try:
+            import keras
+        except ImportError:
+            import tensorflow.keras as keras
 
-        backend = "tensorflow"
-        data_handler = TFDataHandler()
-        op = TFOperator()
-        FeatureExtractorClass = KerasFeatureExtractor
+        if keras.__version__ >= "3.0.0":
+            from ..extractor.keras3_feature_extractor import Keras3FeatureExtractor
+            from ..datasets.keras3_data_handler import Keras3DataHandler
+            from ..utils import Keras3Operator
+
+            backend = "keras3"
+            data_handler = Keras3DataHandler()
+            op = Keras3Operator()
+            FeatureExtractorClass = Keras3FeatureExtractor
+
+        else:  # keras < 3.0.0
+            from ..extractor.keras_feature_extractor import KerasFeatureExtractor
+            from ..datasets.tf_data_handler import TFDataHandler
+            from ..utils import TFOperator
+
+            backend = "tensorflow"
+            data_handler = TFDataHandler()
+            op = TFOperator()
+            FeatureExtractorClass = KerasFeatureExtractor
 
     elif is_from(model, "torch"):
         from ..extractor.torch_feature_extractor import TorchFeatureExtractor
