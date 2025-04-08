@@ -24,6 +24,13 @@ from .general_utils import import_backend_specific_stuff
 from .general_utils import is_from
 
 try:
+    import keras
+    if keras.__version__ >= "3.0.0":
+        from .keras3_operator import Keras3Operator
+except ImportError:
+    pass
+
+try:
     import tensorflow as tf
     from .tf_operator import TFOperator
     from .tf_training_tools import train_tf_model
