@@ -26,7 +26,6 @@ import numpy as np
 from ..aggregator import BaseAggregator
 from ..aggregator import VarianceNormalizedAggregator
 from ..types import DatasetType
-from ..types import List
 from ..types import Optional
 from ..types import TensorType
 from ..types import Tuple
