@@ -308,7 +308,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         """
         return self.find_layer(self.model, layer_id).get_weights()
 
-    def default_postproc_fn(self, feat: tf.Tensor) -> tf.Tensor:
+    def _default_postproc_fn(self, feat: tf.Tensor) -> tf.Tensor:
         """
         Default postprocessing function to apply to each feature immediately after
         forward pass.
