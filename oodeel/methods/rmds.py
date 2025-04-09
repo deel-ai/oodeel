@@ -20,103 +20,185 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import Dict
+from typing import Optional
+from typing import Tuple
+from typing import Union
+
 import numpy as np
 
+from ..aggregator import BaseAggregator
+from ..aggregator import VarianceNormalizedAggregator
 from ..types import DatasetType
 from ..types import TensorType
-from ..types import Tuple
 from oodeel.methods.mahalanobis import Mahalanobis
 
 
 class RMDS(Mahalanobis):
     """
     "A Simple Fix to Mahalanobis Distance for Improving Near-OOD Detection"
-    https://arxiv.org/abs/2106.09022
+    Updated to work with multiple feature layers.
+
+    This detector computes class-conditional Mahalanobis scores from several
+    feature layers and, additionally, computes background Mahalanobis scores per layer.
+    The final per-layer score is obtained by subtracting the background score from the
+    class-conditional score. With multiple layers, the per-layer scores are aggregated
+    by a provided aggregator (or by a default VarianceNormalizedAggregator if None is
+    given).
 
     Args:
-        eps (float): magnitude for gradient based input perturbation.
-            Defaults to 0.02.
+        eps (float): Magnitude for gradient based input perturbation. Defaults to 0.002.
+        aggregator (Optional[BaseAggregator]): Aggregator to combine scores from
+            multiple feature layers. For a single layer this can be left as None.
     """
 
-    def __init__(self, eps: float = 0.002):
-        super().__init__(eps=eps)
+    def __init__(
+        self, eps: float = 0.002, aggregator: Optional[BaseAggregator] = None
+    ) -> None:
+        super().__init__(eps=eps, aggregator=aggregator)
 
-    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
+    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
         """
-        Constructs the per class means and the covariance matrix,
-        as well as the background mean and covariance matrix,
-        from ID data "fit_dataset".
-        The means and pseudo-inverses of the covariance matrices
-        will be used for RMDS score computation.
+        Fit the RMDS detector using in-distribution data by computing
+        both class-conditional statistics (per layer) and background statistics for each
+        layer.
+
+        For each feature layer, this method computes:
+          - Class means and a weighted average covariance matrix (with its
+            pseudo-inverse),
+            stored in self._layer_stats.
+          - The background mean and covariance matrix (with its pseudo-inverse),
+            stored in self._layer_background_stats.
+
+        If multiple layers are available and an aggregator is used, per-layer scores
+        on a subset of samples are computed for fitting the aggregator.
+        """
+        num_feature_layers = len(self.feature_extractor.feature_layers_id)
+        # Set default postprocessing functions if not provided.
+        if self.postproc_fns is None:
+            self.postproc_fns = [
+                self.feature_extractor._default_postproc_fn
+            ] * num_feature_layers
+
+        # Extract features and labels using the provided postprocessing functions.
+        features, infos = self.feature_extractor.predict(
+            fit_dataset, postproc_fns=self.postproc_fns, detach=True
+        )
+        labels = infos["labels"]
+
+        self._layer_stats = []
+        # Compute class-conditional statistics per layer.
+        for i in range(num_feature_layers):
+            mus, pinv_cov = self._compute_layer_stats(features[i], labels)
+            self._layer_stats.append((mus, pinv_cov))
+
+        # Compute per-layer background statistics.
+        self._layer_background_stats = []
+        for i in range(num_feature_layers):
+            layer_features = self.op.flatten(features[i])
+            mu_bg = self.op.mean(layer_features, dim=0)
+            zero_f_bg = layer_features - mu_bg
+            cov_bg = (
+                self.op.matmul(self.op.t(zero_f_bg), zero_f_bg) / zero_f_bg.shape[0]
+            )
+            pinv_cov_bg = self.op.pinv(cov_bg)
+            self._layer_background_stats.append((mu_bg, pinv_cov_bg))
+
+        # If there is more than one feature layer, ensure an aggregator is defined.
+        if self.aggregator is None and num_feature_layers > 1:
+            self.aggregator = VarianceNormalizedAggregator()
+
+        # If an aggregator is provided, compute fit scores on the first few thousand
+        # samples per layer (arbitrary limit to avoid excessive memory usage).
+        if self.aggregator is not None:
+            per_layer_scores = []
+            num_samples = min(5000, features[0].shape[0])
+            for i in range(num_feature_layers):
+                out_features = self.op.flatten(features[i][:num_samples])
+                mus, pinv_cov = self._layer_stats[i]
+                # Compute class-conditional scores.
+                gaussian_score = self._mahalanobis_score_layer(
+                    out_features, mus, pinv_cov
+                )
+                # Compute background scores for the layer.
+                bg_mu, pinv_cov_bg = self._layer_background_stats[i]
+                background_score = self._background_score_layer(
+                    out_features, bg_mu, pinv_cov_bg
+                )
+                # The corrected score per layer (higher values indicate a higher chance
+                # of OOD).
+                max_score = self.op.max(gaussian_score - background_score, dim=1)
+                per_layer_scores.append(-self.op.convert_to_numpy(max_score))
+            self.aggregator.fit(per_layer_scores)
+
+    def _background_score_layer(
+        self, out_features: TensorType, mu_bg, pinv_cov_bg
+    ) -> TensorType:
+        """
+        Compute the Mahalanobis-based background score for a single feature layer.
+
+        For each test sample, this method computes the log probability (up to a
+        constant) under the background Gaussian distribution estimated from the
+        in-distribution data.
 
         Args:
-            fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
+            out_features (TensorType): Feature tensor for test samples.
+            mu_bg: Background mean vector for the layer.
+            pinv_cov_bg (np.ndarray): Pseudo-inverse of the background covariance
+                matrix.
+
+        Returns:
+            TensorType: Background confidence scores (reshaped as [num_samples, 1]).
         """
-        # means and pseudo-inverse of the mean convariance matrix from Mahalanobis
-        super()._fit_to_dataset(fit_dataset)
-
-        # extract features
-        features, _ = self.feature_extractor.predict(fit_dataset)
-
-        # compute background mu and cov
-        _features_bg = self.op.flatten(features[0])
-        mu_bg = self.op.mean(_features_bg, dim=0)
-        _zero_f_bg = _features_bg - mu_bg
-        cov_bg = self.op.matmul(self.op.t(_zero_f_bg), _zero_f_bg) / _zero_f_bg.shape[0]
-
-        # background mu and pseudo-inverse of the mean covariance matrices
-        self._mu_bg = mu_bg
-        self._pinv_cov_bg = self.op.pinv(cov_bg)
+        zero_f = out_features - mu_bg
+        log_probs_f = -0.5 * self.op.diag(
+            self.op.matmul(self.op.matmul(zero_f, pinv_cov_bg), self.op.t(zero_f))
+        )
+        return self.op.reshape(log_probs_f, (-1, 1))
 
     def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
-        Computes an OOD score for input samples "inputs" based on the RMDS
-        distance with respect to the closest class-conditional Gaussian distribution,
-        and the background distribution.
+        Compute OOD scores for input samples based on the RMDS distance.
+
+        The process is as follows:
+          1. Optionally apply gradient-based input perturbation.
+          2. For each feature layer, extract features and compute:
+             - The class-conditional Mahalanobis scores.
+             - The background Mahalanobis scores.
+          3. For each layer, subtract the background score from the class-conditional
+             score, and select the maximum score among classes.
+          4. When using multiple layers, aggregate the corrected per-layer scores via
+             the provided aggregator.
 
         Args:
-            inputs (TensorType): input samples
+            inputs (TensorType): Input samples to be scored.
 
         Returns:
-            Tuple[np.ndarray]: scores, logits
+            Tuple[np.ndarray]: The final OOD scores (negative confidence values) for
+                each sample.
         """
-        # input preprocessing (perturbation)
         if self.eps > 0:
             inputs_p = self._input_perturbation(inputs)
         else:
             inputs_p = inputs
 
-        # mahalanobis score on perturbed inputs
-        features_p, _ = self.feature_extractor.predict_tensor(inputs_p)
-        features_p = self.op.flatten(features_p[0])
-        gaussian_score_p = self._mahalanobis_score(features_p)
-
-        # background score on perturbed inputs
-        gaussian_score_bg = self._background_score(features_p)
-
-        # take the highest score for each sample
-        gaussian_score_corrected = self.op.max(
-            gaussian_score_p - gaussian_score_bg, dim=1
+        features, _ = self.feature_extractor.predict_tensor(
+            inputs_p, postproc_fns=self.postproc_fns
         )
-        return -self.op.convert_to_numpy(gaussian_score_corrected)
-
-    def _background_score(self, out_features: TensorType) -> TensorType:
-        """
-        Mahalanobis distance-based background score. For each test sample, it computes
-        the log of the probability densities of some observations (assuming a
-        normal distribution) using the mahalanobis distance with respect to the
-        background distribution.
-
-        Args:
-            out_features (TensorType): test samples features
-
-        Returns:
-            TensorType: confidence scores (with respect to the background distribution)
-        """
-        zero_f = out_features - self._mu_bg
-        # gaussian log prob density (mahalanobis)
-        log_probs_f = -0.5 * self.op.diag(
-            self.op.matmul(self.op.matmul(zero_f, self._pinv_cov_bg), self.op.t(zero_f))
-        )
-        gaussian_score = self.op.reshape(log_probs_f, (-1, 1))
-        return gaussian_score
+        scores = []
+        num_feature_layers = len(self._layer_stats)
+        for i in range(num_feature_layers):
+            out_features = self.op.flatten(features[i])
+            mus, pinv_cov = self._layer_stats[i]
+            gaussian_score = self._mahalanobis_score_layer(out_features, mus, pinv_cov)
+            bg_mu, pinv_cov_bg = self._layer_background_stats[i]
+            background_score = self._background_score_layer(
+                out_features, bg_mu, pinv_cov_bg
+            )
+            max_score = self.op.max(gaussian_score - background_score, dim=1)
+            scores.append(-self.op.convert_to_numpy(max_score))
+        if num_feature_layers > 1:
+            aggregated_scores = self.aggregator.aggregate(scores)  # type: ignore
+        else:
+            aggregated_scores = scores[0]
+        return aggregated_scores
