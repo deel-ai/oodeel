@@ -77,14 +77,26 @@ Now that *oodeel* is installed, here are some basic examples of what you can do 
 Load in-distribution and out-of-distribution datasets.
 
 ```python
-from oodeel.datasets import OODDataset
+from oodeel.datasets import load_data_handler
 
-ds_in = OODDataset(
-  'mnist', load_kwargs={"split":"test"},
-  backend="tensorflow").prepare(batch_size) # use backend="torch" if you prefer torch.DataLoader
-ds_out = OODDataset(
-  'fashion_mnist', load_kwargs={"split":"test"},
-  backend="tensorflow").prepare(batch_size)
+data_handler = load_data_handler("torch") # use backend="tensorflow" if using tensorflow
+
+# Load in-distribution dataset: CIFAR-10
+ds_in = data_handler.load_dataset(
+    "CIFAR10", load_kwargs={"root": data_path, "train": False, "download": True}
+)
+# Load out-of-distribution dataset: SVHN
+ds_out = data_handler.load_dataset(
+    "SVHN", load_kwargs={"root": data_path, "split": "test", "download": True}
+)
+
+# Prepare datasets for forward (requires appropriate preprocess_fn e.g. input normalization)
+ds_in = data_handler.prepare(
+    ds_in, batch_size, preprocess_fn, columns=["input", "label"]
+)
+ds_out = data_handler.prepare(
+    ds_out, batch_size, preprocess_fn, columns=["input", "label"]
+)
 ```
 
 ### For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution
@@ -92,12 +104,25 @@ ds_out = OODDataset(
 Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (a common practice of anomaly detection and open set recognition).
 
 ```python
-from oodeel.datasets import OODDataset
+from oodeel.datasets import load_data_handler
+
+data_handler = load_data_handler("torch") # use backend="tensorflow" if using tensorflow
+
+# Load dataset to split: CIFAR-10
+ds_in = data_handler.load_dataset(
+    "CIFAR10", load_kwargs={"root": data_path, "train": False, "download": True}
+)
 
 in_labels = [0, 1, 2, 3, 4]
-oods_in, oods_out = oods_test.split_by_class(in_labels=in_labels)
-ds_in = oods_in.prepare(batch_size=batch_size)
-ds_out = oods_out.prepare(batch_size=batch_size)
+ds_in, ds_out = data_handler.split_by_class(ds_test, in_labels)
+
+# Prepare datasets for forward (requires appropriate preprocess_fn e.g. input normalization)
+ds_in = data_handler.prepare(
+    ds_in, batch_size, preprocess_fn, columns=["input", "label"]
+)
+ds_out = data_handler.prepare(
+    ds_out, batch_size, preprocess_fn, columns=["input", "label"]
+)
 ```
 ### Run an OOD method
 
@@ -107,8 +132,9 @@ Load an OOD method and use it on an already-trained model
 from oodeel.methods import MLS
 
 mls = MLS()
-mls.fit(model)
-# info contains model predictions and labels if avail
+mls.fit(model) # Requires a pretrained model
+
+# info_X contains model predictions and labels if available
 scores_in, info_in = mls.score(ds_in)
 scores_out, info_out = mls.score(ds_out)
 ```
