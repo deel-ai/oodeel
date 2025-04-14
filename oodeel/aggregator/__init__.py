@@ -22,4 +22,5 @@
 # SOFTWARE.
 from .base import BaseAggregator
 from .fisher import FisherAggregator
-from .variance import VarianceNormalizedAggregator
+from .mean import MeanNormalizedAggregator
+from .std import StdNormalizedAggregator

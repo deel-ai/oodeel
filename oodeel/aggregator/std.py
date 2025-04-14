@@ -27,7 +27,7 @@ import numpy as np
 from .base import BaseAggregator
 
 
-class VarianceNormalizedAggregator(BaseAggregator):
+class StdNormalizedAggregator(BaseAggregator):
     """
     Aggregator that normalizes per-layer scores by their standard deviation before
     aggregating them.

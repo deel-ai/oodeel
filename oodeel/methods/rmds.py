@@ -27,7 +27,7 @@ from typing import Union
 import numpy as np
 
 from ..aggregator import BaseAggregator
-from ..aggregator import VarianceNormalizedAggregator
+from ..aggregator import StdNormalizedAggregator
 from ..types import DatasetType
 from ..types import TensorType
 from oodeel.methods.mahalanobis import Mahalanobis
@@ -42,7 +42,7 @@ class RMDS(Mahalanobis):
     feature layers and, additionally, computes background Mahalanobis scores per layer.
     The final per-layer score is obtained by subtracting the background score from the
     class-conditional score. With multiple layers, the per-layer scores are aggregated
-    by a provided aggregator (or by a default VarianceNormalizedAggregator if None is
+    by a provided aggregator (or by a default StdNormalizedAggregator if None is
     given).
 
     Args:
@@ -105,7 +105,7 @@ class RMDS(Mahalanobis):
 
         # If there is more than one feature layer, ensure an aggregator is defined.
         if self.aggregator is None and num_feature_layers > 1:
-            self.aggregator = VarianceNormalizedAggregator()
+            self.aggregator = StdNormalizedAggregator()
 
         # If an aggregator is provided, compute fit scores on the first few thousand
         # samples per layer (arbitrary limit to avoid excessive memory usage).

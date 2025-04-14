@@ -28,7 +28,7 @@ from typing import Union
 import numpy as np
 
 from ..aggregator import BaseAggregator
-from ..aggregator import VarianceNormalizedAggregator
+from ..aggregator import StdNormalizedAggregator
 from ..types import DatasetType
 from ..types import TensorType
 from oodeel.methods.base import OODBaseDetector
@@ -206,7 +206,7 @@ class Mahalanobis(OODBaseDetector):
 
         # If there is more than one feature layer, ensure an aggregator is defined.
         if self.aggregator is None and num_feature_layers > 1:
-            self.aggregator = VarianceNormalizedAggregator()
+            self.aggregator = StdNormalizedAggregator()
 
         # If an aggregator is provided, compute aggregator fit scores on the first 1000
         # samples per layer.

@@ -24,7 +24,7 @@ import faiss
 import numpy as np
 
 from ..aggregator import BaseAggregator
-from ..aggregator import VarianceNormalizedAggregator
+from ..aggregator import StdNormalizedAggregator
 from ..types import DatasetType
 from ..types import Optional
 from ..types import TensorType
@@ -44,7 +44,7 @@ class DKNN(OODBaseDetector):
         use_gpu (bool): Whether to enable GPU acceleration for FAISS. Defaults to False.
         aggregator (Optional[BaseAggregator]): Aggregator to combine scores from
             multiple feature layers. If not provided and multiple layers are used, a
-            VarianceNormalizedAggregator will be employed.
+            StdNormalizedAggregator will be employed.
         **kwargs: Additional keyword arguments for the base class.
     """
 
@@ -182,7 +182,7 @@ class DKNN(OODBaseDetector):
 
         # If there is more than one feature layer, ensure an aggregator is defined.
         if self.aggregator is None and num_feature_layers > 1:
-            self.aggregator = VarianceNormalizedAggregator()
+            self.aggregator = StdNormalizedAggregator()
 
         for i in range(num_feature_layers):
             index, layer_scores = self._fit_layer(fit_projected[i])
