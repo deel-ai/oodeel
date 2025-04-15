@@ -109,7 +109,7 @@ from oodeel.datasets import load_data_handler
 data_handler = load_data_handler("torch") # use backend="tensorflow" if using tensorflow
 
 # Load dataset to split: CIFAR-10
-ds_in = data_handler.load_dataset(
+ds_test = data_handler.load_dataset(
     "CIFAR10", load_kwargs={"root": data_path, "train": False, "download": True}
 )
 
