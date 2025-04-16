@@ -160,9 +160,10 @@ class OODBaseDetector(ABC):
                 features to output.
                 If int, the rank of the layer in the layer list
                 If str, the name of the layer. Defaults to [-1]
-            head_layer_id (Union[int, str]): identifier of the head layer.
+            head_layer_id (int, str): identifier of the head layer.
                 If int, the rank of the layer in the layer list
-                If str, the name of the layer. Defaults to -1.
+                If str, the name of the layer.
+                Defaults to -1
             input_layer_id (List[int]): = list of str or int that identify the input
                 layer of the feature extractor.
                 If int, the rank of the layer in the layer list
@@ -228,7 +229,10 @@ class OODBaseDetector(ABC):
                 features to output.
                 If int, the rank of the layer in the layer list
                 If str, the name of the layer. Defaults to [-1]
-            head_layer_id (Union[int, str]): identifier of the head layer.
+            head_layer_id (int): identifier of the head layer.
+                -1 when the last layer is the head
+                -2 when the last layer is a softmax activation layer
+                ...
                 If int, the rank of the layer in the layer list
                 If str, the name of the layer. Defaults to -1
             input_layer_id (List[int]): = list of str or int that identify the input
@@ -336,9 +340,18 @@ class OODBaseDetector(ABC):
         model: Callable,
         fit_dataset: DatasetType,
         verbose: bool = False,
-        head_layer_id: Union[int, str] = -1,
+        head_layer_id: int = -1,
     ):
-        penult_feat_extractor = self._load_feature_extractor(model, [head_layer_id - 1])
+        if isinstance(head_layer_id, str):
+            react_layer_id = self.FeatureExtractorClass.get_layer_index_by_name(
+                model, head_layer_id
+            )
+        else:
+            react_layer_id = head_layer_id
+
+        penult_feat_extractor = self._load_feature_extractor(
+            model, feature_layers_id=[react_layer_id - 1]
+        )
         unclipped_features, _ = penult_feat_extractor.predict(
             fit_dataset, verbose=verbose
         )

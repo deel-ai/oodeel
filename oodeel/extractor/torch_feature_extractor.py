@@ -51,9 +51,11 @@ class TorchFeatureExtractor(FeatureExtractor):
         feature_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [].
-        head_layer_id (Union[int, str]): identifier of the head layer.
+        head_layer_id (int, str): identifier of the head layer.
             If int, the rank of the layer in the layer list
-            If str, the name of the layer. Defaults to -1.
+            If str, the name of the layer.
+            Defaults to -1
+
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
             when working on the feature space without finetuning the bottom of
             the model).
@@ -152,6 +154,23 @@ class TorchFeatureExtractor(FeatureExtractor):
             return layer, layer_id
         else:
             return layer
+
+    @staticmethod
+    def get_layer_index_by_name(model: nn.Module, layer_id: str) -> int:
+        """
+        Get the index of a layer by its name.
+
+        Args:
+            model (nn.Module): model whose layer index will be returned
+            layer_id (str): name of the layer
+
+        Returns:
+            int: index of the layer with the given name
+        """
+        layer_names = list(dict(model.named_modules()).keys())
+        if layer_id not in layer_names:
+            raise ValueError(f"Layer with name '{layer_id}' not found in the model.")
+        return layer_names.index(layer_id)
 
     def prepare_extractor(self) -> None:
         """Prepare the feature extractor by adding hooks to self.model"""
