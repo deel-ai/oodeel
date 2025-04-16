@@ -46,9 +46,10 @@ class FeatureExtractor(ABC):
             If int, the rank of the layer in the layer list
             If str, the name of the layer.
             Defaults to [].
-        head_layer_id (Union[int, str]): identifier of the head layer.
+        head_layer_id (int, str): identifier of the head layer.
             If int, the rank of the layer in the layer list
-            If str, the name of the layer. Defaults to -1.
+            If str, the name of the layer.
+            Defaults to -1
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
             when working on the feature space without finetuning the bottom of the
             model).
@@ -65,7 +66,7 @@ class FeatureExtractor(ABC):
     def __init__(
         self,
         model: Callable,
-        feature_layers_id: List[Union[int, str]] = [-1],
+        feature_layers_id: List[Union[int, str]] = [],
         head_layer_id: Optional[Union[int, str]] = -1,
         input_layer_id: Optional[Union[int, str]] = [0],
         react_threshold: Optional[float] = None,
@@ -166,6 +167,20 @@ class FeatureExtractor(ABC):
         Returns:
             Union[Callable, Tuple[Callable, str]]: the corresponding layer and its id if
                 return_id is True.
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    def get_layer_index_by_name(model: Callable, layer_id: str) -> int:
+        """
+        Get the index of a layer by its name.
+
+        Args:
+            model (nn.Module): model whose layer index will be returned
+            layer_id (str): name of the layer
+
+        Returns:
+            int: index of the layer with the given name
         """
         raise NotImplementedError()
 

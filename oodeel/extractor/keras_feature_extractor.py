@@ -50,9 +50,10 @@ class KerasFeatureExtractor(FeatureExtractor):
         feature_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [].
-        head_layer_id (Union[int, str]): identifier of the head layer.
+        head_layer_id (int, str): identifier of the head layer.
             If int, the rank of the layer in the layer list
-            If str, the name of the layer. Defaults to -1.
+            If str, the name of the layer.
+            Defaults to -1
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
             when working on the feature space without finetuning the bottom of the
             model).
@@ -68,8 +69,8 @@ class KerasFeatureExtractor(FeatureExtractor):
 
     def __init__(
         self,
-        model: Callable,
-        feature_layers_id: List[Union[int, str]] = [-1],
+        model: tf.keras.Model,
+        feature_layers_id: List[Union[int, str]] = [],
         head_layer_id: Optional[Union[int, str]] = -1,
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
@@ -89,14 +90,12 @@ class KerasFeatureExtractor(FeatureExtractor):
         )
 
         self.backend = "tensorflow"
-        self.model.layers[self.head_layer_id].activation = getattr(
-            tf.keras.activations, "linear"
-        )
+        self.model.layers[-1].activation = getattr(tf.keras.activations, "linear")
         self._last_logits = None
 
     @staticmethod
     def find_layer(
-        model: Callable,
+        model: tf.keras.Model,
         layer_id: Union[str, int],
         index_offset: int = 0,
         return_id: bool = False,
@@ -104,7 +103,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         """Find a layer in a model either by his name or by his index.
 
         Args:
-            model (Callable): model whose identified layer will be returned
+            model (tf.keras.Model): model whose identified layer will be returned
             layer_id (Union[str, int]): layer identifier
             index_offset (int): index offset to find layers located before (negative
                 offset) or after (positive offset) the identified layer
@@ -131,6 +130,25 @@ class KerasFeatureExtractor(FeatureExtractor):
         else:
             return layer
 
+    @staticmethod
+    def get_layer_index_by_name(model: tf.keras.Model, layer_id: str) -> int:
+        """Get the index of a layer by its name.
+
+        Args:
+            model (tf.keras.Model): The model containing the layers.
+            layer_id (str): The name of the layer.
+
+        Returns:
+            int: The index of the layer.
+
+        Raises:
+            ValueError: If the layer with the given name is not found.
+        """
+        layers_names = [layer.name for layer in model.layers]
+        if layer_id not in layers_names:
+            raise ValueError(f"Layer with name '{layer_id}' not found in the model.")
+        return layers_names.index(layer_id)
+
     # @tf.function
     # TODO check with Thomas about @tf.function
     def prepare_extractor(self) -> tf.keras.models.Model:
@@ -147,7 +165,9 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
-            penultimate_layer = self.find_layer(self.model, self.head_layer_id - 1)
+            penultimate_layer = self.find_layer(
+                self.model, self.head_layer_id, index_offset=-1
+            )
             penult_extractor = tf.keras.models.Model(
                 new_input, penultimate_layer.output
             )
@@ -165,7 +185,9 @@ class KerasFeatureExtractor(FeatureExtractor):
         # === If SCALE method, scale activations from penultimate layer ===
         # === If ASH method, scale and prune activations from penultimate layer ===
         elif (self.scale_percentile is not None) or (self.ash_percentile is not None):
-            penultimate_layer = self.find_layer(self.model, self.head_layer_id - 1)
+            penultimate_layer = self.find_layer(
+                self.model, self.head_layer_id, index_offset=-1
+            )
             penult_extractor = tf.keras.models.Model(
                 new_input, penultimate_layer.output
             )
@@ -210,13 +232,13 @@ class KerasFeatureExtractor(FeatureExtractor):
     def predict_tensor(
         self,
         tensor: TensorType,
-        postproc_fns: Optional[List[Callable]] = None,
+        postproc_fns: Optional[List[tf.keras.Model]] = None,
     ) -> Tuple[List[tf.Tensor], tf.Tensor]:
         """Get the projection of tensor in the feature space of self.model
 
         Args:
             tensor (TensorType): input tensor (or dataset elem)
-            postproc_fns (Optional[List[Callable]]): postprocessing function to apply to
+            postproc_fns (Optional[List[tf.keras.Model]]): postprocessing function to apply to
                 each feature immediately after forward. Default to None.
 
         Returns:
@@ -246,7 +268,7 @@ class KerasFeatureExtractor(FeatureExtractor):
     def predict(
         self,
         dataset: Union[ItemType, tf.data.Dataset],
-        postproc_fns: Optional[List[Callable]] = None,
+        postproc_fns: Optional[List[tf.keras.Model]] = None,
         verbose: bool = False,
         **kwargs,
     ) -> Tuple[List[tf.Tensor], dict]:
@@ -254,7 +276,7 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         Args:
             dataset (Union[ItemType, tf.data.Dataset]): input dataset
-            postproc_fns (Optional[Callable]): postprocessing function to apply to each
+            postproc_fns (Optional[tf.keras.Model]): postprocessing function to apply to each
                 feature immediately after forward. Default to None.
             verbose (bool): if True, display a progress bar. Defaults to False.
             kwargs (dict): additional arguments not considered for prediction
