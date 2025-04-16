@@ -190,7 +190,9 @@ class OODBaseDetector(ABC):
                     " provided to compute react activation threshold"
                 )
             else:
-                self.compute_react_threshold(model, fit_dataset, verbose=verbose)
+                self.compute_react_threshold(
+                    model, fit_dataset, verbose=verbose, head_layer_id=head_layer_id
+                )
 
         if (feature_layers_id == []) and (self.requires_internal_features):
             raise ValueError(
@@ -330,9 +332,13 @@ class OODBaseDetector(ABC):
         return scores, info
 
     def compute_react_threshold(
-        self, model: Callable, fit_dataset: DatasetType, verbose: bool = False
+        self,
+        model: Callable,
+        fit_dataset: DatasetType,
+        verbose: bool = False,
+        head_layer_id: Union[int, str] = -1,
     ):
-        penult_feat_extractor = self._load_feature_extractor(model, [-2])
+        penult_feat_extractor = self._load_feature_extractor(model, [head_layer_id - 1])
         unclipped_features, _ = penult_feat_extractor.predict(
             fit_dataset, verbose=verbose
         )

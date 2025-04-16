@@ -147,11 +147,11 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
-            penultimate_layer = self.find_layer(self.model, -2)
+            penultimate_layer = self.find_layer(self.model, self.head_layer_id - 1)
             penult_extractor = tf.keras.models.Model(
                 new_input, penultimate_layer.output
             )
-            last_layer = self.find_layer(self.model, -1)
+            last_layer = self.find_layer(self.model, self.head_layer_id)
 
             # clip penultimate activations
             x = tf.clip_by_value(
@@ -165,11 +165,11 @@ class KerasFeatureExtractor(FeatureExtractor):
         # === If SCALE method, scale activations from penultimate layer ===
         # === If ASH method, scale and prune activations from penultimate layer ===
         elif (self.scale_percentile is not None) or (self.ash_percentile is not None):
-            penultimate_layer = self.find_layer(self.model, -2)
+            penultimate_layer = self.find_layer(self.model, self.head_layer_id - 1)
             penult_extractor = tf.keras.models.Model(
                 new_input, penultimate_layer.output
             )
-            last_layer = self.find_layer(self.model, -1)
+            last_layer = self.find_layer(self.model, self.head_layer_id)
 
             # apply scaling on penultimate activations
             penultimate = penult_extractor(new_input)

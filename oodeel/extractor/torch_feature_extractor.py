@@ -95,7 +95,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     @property
     def _hook_layers_id(self):
-        return self.feature_layers_id + [-1]
+        return self.feature_layers_id + [self.head_layer_id]
 
     def _get_features_hook(self, layer_id: Union[str, int]) -> Callable:
         """
@@ -161,7 +161,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
-            pen_layer = self.find_layer(self.model, -1)
+            pen_layer = self.find_layer(self.model, self.head_layer_id)
             self.model._ood_handles.append(
                 pen_layer.register_forward_pre_hook(
                     self._get_clip_hook(self.react_threshold)
@@ -170,7 +170,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # === If SCALE method, scale activations from penultimate layer ===
         if self.scale_percentile is not None:
-            pen_layer = self.find_layer(self.model, -1)
+            pen_layer = self.find_layer(self.model, self.head_layer_id)
             self.model._ood_handles.append(
                 pen_layer.register_forward_pre_hook(
                     self._get_scale_hook(self.scale_percentile)
@@ -179,7 +179,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # === If ASH method, scale and prune activations from penultimate layer ===
         if self.ash_percentile is not None:
-            pen_layer = self.find_layer(self.model, -1)
+            pen_layer = self.find_layer(self.model, self.head_layer_id)
             self.model._ood_handles.append(
                 pen_layer.register_forward_pre_hook(
                     self._get_ash_hook(self.ash_percentile)
