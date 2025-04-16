@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import numpy as np
+
 from oodeel.methods import Gram
 from tests.tests_tensorflow import generate_data_tf
 from tests.tests_tensorflow import generate_model
@@ -42,12 +44,14 @@ def test_gram_shape():
     model = generate_model(input_shape=input_shape, output_shape=num_labels)
 
     gram.fit(model, data, feature_layers_id=[-5, -2])
-    score, _ = gram.score(data)
+    score, info = gram.score(data)
+    preds = np.argmax(info["logits"], 1)
     assert score.shape == (100,)
-    assert gram.min_maxs[0][0].shape == (5, 4, 2)
-    assert gram.min_maxs[0][1].shape == (5, 900, 2)
+    assert gram.min_maxs[preds[0]][0].shape == (5, 4, 2)
+    assert gram.min_maxs[preds[0]][1].shape == (5, 900, 2)
 
     gram.fit(model, data, feature_layers_id=[-2])
-    score, _ = gram.score(data)
+    score, info = gram.score(data)
+    preds = np.argmax(info["logits"], 1)
     assert score.shape == (100,)
-    assert gram.min_maxs[0][0].shape == (5, 900, 2)
+    assert gram.min_maxs[preds[0]][0].shape == (5, 900, 2)

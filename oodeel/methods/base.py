@@ -81,7 +81,6 @@ class OODBaseDetector(ABC):
         react_quantile: Optional[float] = None,
         scale_percentile: Optional[float] = None,
         ash_percentile: Optional[float] = None,
-        postproc_fns: Optional[List[Callable]] = None,
     ):
         self.feature_extractor: FeatureExtractor = None
         self.use_react = use_react
@@ -91,7 +90,6 @@ class OODBaseDetector(ABC):
         self.scale_percentile = scale_percentile
         self.ash_percentile = ash_percentile
         self.react_threshold = None
-        self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
 
         if use_scale and use_react:
             raise ValueError("Cannot use both ReAct and scale at the same time")
@@ -128,7 +126,7 @@ class OODBaseDetector(ABC):
         """
         if postproc_fns is not None:
             assert len(postproc_fns) == len(
-                self.output_layers_id
+                self.feature_extractor.feature_layers_id
             ), "len of postproc_fns and output_layers_id must match"
 
             def identity(x):
@@ -143,6 +141,7 @@ class OODBaseDetector(ABC):
         model: Callable,
         fit_dataset: Optional[Union[ItemType, DatasetType]] = None,
         feature_layers_id: List[Union[int, str]] = [],
+        postproc_fns: Optional[List[Callable]] = None,
         input_layer_id: Optional[Union[int, str]] = None,
         verbose: bool = False,
         **kwargs,
@@ -159,6 +158,9 @@ class OODBaseDetector(ABC):
                 features to output.
                 If int, the rank of the layer in the layer list
                 If str, the name of the layer. Defaults to [-1]
+            postproc_fns (Optional[List[Callable]]): list of postproc functions,
+                one per output layer. Defaults to None.
+                If None, identity function is used.
             input_layer_id (List[int]): = list of str or int that identify the input
                 layer of the feature extractor.
                 If int, the rank of the layer in the layer list
@@ -200,6 +202,7 @@ class OODBaseDetector(ABC):
         self.feature_extractor = self._load_feature_extractor(
             model, feature_layers_id, input_layer_id
         )
+        self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
 
         if fit_dataset is not None:
             if "verbose" in inspect.signature(self._fit_to_dataset).parameters.keys():

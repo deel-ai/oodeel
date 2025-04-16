@@ -20,40 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import numpy as np
-
-from oodeel.datasets import OODDataset
-from oodeel.methods import Gram
-from tests.tests_torch import generate_data_torch
-from tests.tests_torch import Net
-
-
-def test_gram_shape():
-    """
-    Test Gram method on MNIST vs FashionMNIST OOD dataset-wise task
-    """
-    gram = Gram(orders=range(1, 6))
-
-    input_shape = (3, 32, 32)
-    num_labels = 10
-    samples = 100
-
-    data = generate_data_torch(
-        x_shape=input_shape, num_labels=num_labels, samples=samples
-    )
-    data = OODDataset(data, backend="torch").prepare(batch_size=samples // 2)
-
-    model = Net(num_classes=num_labels)
-
-    gram.fit(model, data, feature_layers_id=["conv2", "fc2"])
-    score, info = gram.score(data)
-    preds = np.argmax(info["logits"], 1)
-    assert score.shape == (100,)
-    assert gram.min_maxs[preds[0]][0].shape == (5, 16, 2)
-    assert gram.min_maxs[preds[0]][1].shape == (5, 84, 2)
-
-    gram.fit(model, data, feature_layers_id=["fc2"])
-    score, info = gram.score(data)
-    preds = np.argmax(info["logits"], 1)
-    assert score.shape == (100,)
-    assert gram.min_maxs[preds[0]][0].shape == (5, 84, 2)
+from .base import BaseAggregator
+from .fisher import FisherAggregator
+from .mean import MeanNormalizedAggregator
+from .std import StdNormalizedAggregator
