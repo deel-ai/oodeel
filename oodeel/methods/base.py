@@ -143,6 +143,7 @@ class OODBaseDetector(ABC):
         model: Callable,
         fit_dataset: Optional[Union[ItemType, DatasetType]] = None,
         feature_layers_id: List[Union[int, str]] = [],
+        head_layer_id: Optional[Union[int, str]] = -1,
         input_layer_id: Optional[Union[int, str]] = None,
         verbose: bool = False,
         **kwargs,
@@ -159,6 +160,9 @@ class OODBaseDetector(ABC):
                 features to output.
                 If int, the rank of the layer in the layer list
                 If str, the name of the layer. Defaults to [-1]
+            head_layer_id (Union[int, str]): identifier of the head layer.
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to -1.
             input_layer_id (List[int]): = list of str or int that identify the input
                 layer of the feature extractor.
                 If int, the rank of the layer in the layer list
@@ -198,7 +202,7 @@ class OODBaseDetector(ABC):
             )
 
         self.feature_extractor = self._load_feature_extractor(
-            model, feature_layers_id, input_layer_id
+            model, feature_layers_id, head_layer_id, input_layer_id
         )
 
         if fit_dataset is not None:
@@ -210,6 +214,7 @@ class OODBaseDetector(ABC):
         self,
         model: Callable,
         feature_layers_id: List[Union[int, str]] = None,
+        head_layer_id: Optional[Union[int, str]] = -1,
         input_layer_id: Optional[Union[int, str]] = None,
     ) -> Callable:
         """
@@ -221,6 +226,9 @@ class OODBaseDetector(ABC):
                 features to output.
                 If int, the rank of the layer in the layer list
                 If str, the name of the layer. Defaults to [-1]
+            head_layer_id (Union[int, str]): identifier of the head layer.
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to -1
             input_layer_id (List[int]): = list of str or int that identify the input
                 layer of the feature extractor.
                 If int, the rank of the layer in the layer list
@@ -238,6 +246,7 @@ class OODBaseDetector(ABC):
             model,
             feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
+            head_layer_id=head_layer_id,
             react_threshold=self.react_threshold,
             scale_percentile=self.scale_percentile,
             ash_percentile=self.ash_percentile,
