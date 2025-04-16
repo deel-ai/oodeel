@@ -43,13 +43,16 @@ class KerasFeatureExtractor(FeatureExtractor):
     Feature extractor based on "model" to construct a feature space
     on which OOD detection is performed. The features can be the output
     activation values of internal model layers, or the output of the model
-    (softmax/logits).
+    (logits).
 
     Args:
         model: model to extract the features from
         feature_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [].
+        head_layer_id (Union[int, str]): identifier of the head layer.
+            If int, the rank of the layer in the layer list
+            If str, the name of the layer. Defaults to -1.
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
             when working on the feature space without finetuning the bottom of the
             model).
@@ -67,6 +70,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         self,
         model: Callable,
         feature_layers_id: List[Union[int, str]] = [-1],
+        head_layer_id: Optional[Union[int, str]] = -1,
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
         scale_percentile: Optional[float] = None,
@@ -78,13 +82,16 @@ class KerasFeatureExtractor(FeatureExtractor):
             model=model,
             feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
+            head_layer_id=head_layer_id,
             react_threshold=react_threshold,
             scale_percentile=scale_percentile,
             ash_percentile=ash_percentile,
         )
 
         self.backend = "tensorflow"
-        self.model.layers[-1].activation = getattr(tf.keras.activations, "linear")
+        self.model.layers[self.head_layer_id].activation = getattr(
+            tf.keras.activations, "linear"
+        )
         self._last_logits = None
 
     @staticmethod
@@ -192,7 +199,9 @@ class KerasFeatureExtractor(FeatureExtractor):
             output_tensors.append(last_layer(x))
 
         else:
-            output_tensors.append(self.find_layer(self.model, -1).output)
+            output_tensors.append(
+                self.find_layer(self.model, self.head_layer_id).output
+            )
 
         extractor = tf.keras.models.Model(new_input, output_tensors)
         return extractor

@@ -44,13 +44,16 @@ class TorchFeatureExtractor(FeatureExtractor):
     Feature extractor based on "model" to construct a feature space
     on which OOD detection is performed. The features can be the output
     activation values of internal model layers,
-    or the output of the model (softmax/logits).
+    or the output of the model (logits).
 
     Args:
         model: model to extract the features from
         feature_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [].
+        head_layer_id (Union[int, str]): identifier of the head layer.
+            If int, the rank of the layer in the layer list
+            If str, the name of the layer. Defaults to -1.
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
             when working on the feature space without finetuning the bottom of
             the model).
@@ -69,6 +72,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         self,
         model: nn.Module,
         feature_layers_id: List[Union[int, str]] = [],
+        head_layer_id: Optional[Union[int, str]] = -1,
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
         scale_percentile: Optional[float] = None,
@@ -78,6 +82,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         super().__init__(
             model=model,
             feature_layers_id=feature_layers_id,
+            head_layer_id=head_layer_id,
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
             scale_percentile=scale_percentile,
