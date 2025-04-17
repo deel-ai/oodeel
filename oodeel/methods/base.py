@@ -216,7 +216,7 @@ class OODBaseDetector(ABC):
     def _load_feature_extractor(
         self,
         model: Callable,
-        feature_layers_id: List[Union[int, str]] = None,
+        feature_layers_id: List[Union[int, str]] = [],
         head_layer_id: Optional[Union[int, str]] = -1,
         input_layer_id: Optional[Union[int, str]] = None,
         return_penultimate: bool = False,
