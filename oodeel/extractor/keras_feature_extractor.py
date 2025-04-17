@@ -82,6 +82,13 @@ class KerasFeatureExtractor(FeatureExtractor):
     ):
         if input_layer_id is None:
             input_layer_id = 0
+
+        if return_penultimate:
+            if isinstance(head_layer_id, str):
+                head_layer_id = self.get_layer_index_by_name(model, head_layer_id)
+
+            feature_layers_id.append(head_layer_id - 1)
+
         super().__init__(
             model=model,
             feature_layers_id=feature_layers_id,
