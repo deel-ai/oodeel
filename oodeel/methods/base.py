@@ -219,6 +219,7 @@ class OODBaseDetector(ABC):
         feature_layers_id: List[Union[int, str]] = None,
         head_layer_id: Optional[Union[int, str]] = -1,
         input_layer_id: Optional[Union[int, str]] = None,
+        return_penultimate: bool = False,
     ) -> Callable:
         """
         Loads feature extractor
@@ -239,6 +240,8 @@ class OODBaseDetector(ABC):
                 layer of the feature extractor.
                 If int, the rank of the layer in the layer list
                 If str, the name of the layer. Defaults to None.
+            return_penultimate (bool): if True, the penultimate values are returned,
+                i.e. the input to the head_layer.
 
         Returns:
             FeatureExtractor: a feature extractor instance
@@ -256,6 +259,7 @@ class OODBaseDetector(ABC):
             react_threshold=self.react_threshold,
             scale_percentile=self.scale_percentile,
             ash_percentile=self.ash_percentile,
+            return_penultimate=return_penultimate,
         )
         return feature_extractor
 
@@ -350,10 +354,10 @@ class OODBaseDetector(ABC):
             react_layer_id = head_layer_id
 
         penult_feat_extractor = self._load_feature_extractor(
-            model, feature_layers_id=[react_layer_id - 1]
+            model, head_layer_id=head_layer_id, return_penultimate=True
         )
         unclipped_features, _ = penult_feat_extractor.predict(
-            fit_dataset, verbose=verbose
+            fit_dataset, verbose=verbose, postproc_fns=self.postproc_fns
         )
         self.react_threshold = self.op.quantile(
             unclipped_features[0], self.react_quantile

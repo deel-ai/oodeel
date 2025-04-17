@@ -65,6 +65,8 @@ class KerasFeatureExtractor(FeatureExtractor):
             Defaults to None.
         ash_percentile: if not None, the features are scaled following
             the method of Djurisic et al., ICLR 2023.
+        return_penultimate (bool): if True, the penultimate values are returned,
+            i.e. the input to the head_layer.
     """
 
     def __init__(
@@ -76,6 +78,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         react_threshold: Optional[float] = None,
         scale_percentile: Optional[float] = None,
         ash_percentile: Optional[float] = None,
+        return_penultimate: Optional[bool] = False,
     ):
         if input_layer_id is None:
             input_layer_id = 0
@@ -87,6 +90,7 @@ class KerasFeatureExtractor(FeatureExtractor):
             react_threshold=react_threshold,
             scale_percentile=scale_percentile,
             ash_percentile=ash_percentile,
+            return_penultimate=return_penultimate,
         )
 
         self.backend = "tensorflow"
