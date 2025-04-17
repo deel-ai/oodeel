@@ -67,6 +67,8 @@ class TorchFeatureExtractor(FeatureExtractor):
             Defaults to None.
         ash_percentile: if not None, the features are scaled following
             the method of Djurisic et al., ICLR 2023.
+        return_penultimate (bool): if True, the penultimate values are returned,
+            i.e. the input to the head_layer.
 
     """
 
@@ -79,6 +81,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         react_threshold: Optional[float] = None,
         scale_percentile: Optional[float] = None,
         ash_percentile: Optional[float] = None,
+        return_penultimate: Optional[bool] = False,
     ):
         model = model.eval()
         super().__init__(
@@ -89,6 +92,7 @@ class TorchFeatureExtractor(FeatureExtractor):
             react_threshold=react_threshold,
             scale_percentile=scale_percentile,
             ash_percentile=ash_percentile,
+            return_penultimate=return_penultimate,
         )
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in self._hook_layers_id}
