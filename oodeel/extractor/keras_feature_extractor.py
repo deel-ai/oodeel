@@ -28,7 +28,6 @@ import tensorflow_probability as tfp
 from tqdm import tqdm
 
 from ..datasets.tf_data_handler import TFDataHandler
-from ..types import Callable
 from ..types import ItemType
 from ..types import List
 from ..types import TensorType
@@ -249,8 +248,8 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         Args:
             tensor (TensorType): input tensor (or dataset elem)
-            postproc_fns (Optional[List[tf.keras.Model]]): postprocessing function to apply to
-                each feature immediately after forward. Default to None.
+            postproc_fns (Optional[List[tf.keras.Model]]): postprocessing function
+                to apply to each feature immediately after forward. Default to None.
 
         Returns:
             Tuple[List[tf.Tensor], tf.Tensor]: features, logits
@@ -287,8 +286,8 @@ class KerasFeatureExtractor(FeatureExtractor):
 
         Args:
             dataset (Union[ItemType, tf.data.Dataset]): input dataset
-            postproc_fns (Optional[tf.keras.Model]): postprocessing function to apply to each
-                feature immediately after forward. Default to None.
+            postproc_fns (Optional[tf.keras.Model]): postprocessing function to apply
+                to each feature immediately after forward. Default to None.
             verbose (bool): if True, display a progress bar. Defaults to False.
             kwargs (dict): additional arguments not considered for prediction
 

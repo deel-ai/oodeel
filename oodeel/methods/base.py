@@ -346,13 +346,6 @@ class OODBaseDetector(ABC):
         verbose: bool = False,
         head_layer_id: int = -1,
     ):
-        if isinstance(head_layer_id, str):
-            react_layer_id = self.FeatureExtractorClass.get_layer_index_by_name(
-                model, head_layer_id
-            )
-        else:
-            react_layer_id = head_layer_id
-
         penult_feat_extractor = self._load_feature_extractor(
             model, head_layer_id=head_layer_id, return_penultimate=True
         )
