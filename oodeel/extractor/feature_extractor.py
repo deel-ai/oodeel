@@ -175,6 +175,7 @@ class FeatureExtractor(ABC):
         raise NotImplementedError()
 
     @staticmethod
+    @abstractmethod
     def get_layer_index_by_name(model: Callable, layer_id: str) -> int:
         """
         Get the index of a layer by its name.
