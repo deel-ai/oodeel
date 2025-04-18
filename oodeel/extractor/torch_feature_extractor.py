@@ -101,6 +101,8 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     @property
     def _hook_layers_id(self):
+        if self.return_penultimate:
+            return self.feature_layers_id + ["penultimate", self.head_layer_id]
         return self.feature_layers_id + [self.head_layer_id]
 
     def _get_features_hook(self, layer_id: Union[str, int]) -> Callable:
@@ -118,6 +120,26 @@ class TorchFeatureExtractor(FeatureExtractor):
         def hook(_, __, output):
             if isinstance(output, torch.Tensor):
                 self._features[layer_id] = output
+            else:
+                raise NotImplementedError
+
+        return hook
+
+    def _get_penultimate_hook(self) -> Callable:
+        """
+        Hook that stores features corresponding to a specific layer
+        in a class dictionary.
+
+        Args:
+            layer_id (Union[str, int]): layer identifier
+
+        Returns:
+            Callable: hook function
+        """
+
+        def hook(_, input):
+            if isinstance(input[0], torch.Tensor):
+                self._features["penultimate"] = input[0]
             else:
                 raise NotImplementedError
 
@@ -211,6 +233,14 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # Register a hook to store feature values for each considered layer + last layer
         for layer_id in self._hook_layers_id:
+            if layer_id == "penultimate":
+                # Register penultimate hook
+                layer = self.find_layer(self.model, self.head_layer_id)
+                self.model._ood_handles.append(
+                    layer.register_forward_pre_hook(self._get_penultimate_hook())
+                )
+                continue
+
             layer = self.find_layer(self.model, layer_id)
             self.model._ood_handles.append(
                 layer.register_forward_hook(self._get_features_hook(layer_id))
@@ -318,7 +348,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 labels = TorchDataHandler.get_label_from_dataset_item(dataset)
 
         else:
-            features = [None for i in range(len(self.feature_layers_id))]
+            features = [None for i in range(len(self._hook_layers_id))]
             logits = None
             batch = next(iter(dataset))
             contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
