@@ -46,6 +46,10 @@ class FeatureExtractor(ABC):
             If int, the rank of the layer in the layer list
             If str, the name of the layer.
             Defaults to [].
+        head_layer_id (int, str): identifier of the head layer.
+            If int, the rank of the layer in the layer list
+            If str, the name of the layer.
+            Defaults to -1
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
             when working on the feature space without finetuning the bottom of the
             model).
@@ -57,25 +61,31 @@ class FeatureExtractor(ABC):
             Defaults to None.
         ash_percentile: if not None, the features are scaled following
             the method of Djurisic et al., ICLR 2023.
+        return_penultimate (bool): if True, the penultimate values are returned,
+                i.e. the input to the head_layer.
     """
 
     def __init__(
         self,
         model: Callable,
-        feature_layers_id: List[Union[int, str]] = [-1],
-        input_layer_id: Union[int, str] = [0],
+        feature_layers_id: List[Union[int, str]] = [],
+        head_layer_id: Optional[Union[int, str]] = -1,
+        input_layer_id: Optional[Union[int, str]] = [0],
         react_threshold: Optional[float] = None,
         scale_percentile: Optional[float] = None,
         ash_percentile: Optional[float] = None,
+        return_penultimate: Optional[bool] = False,
     ):
         if not isinstance(feature_layers_id, list):
             feature_layers_id = [feature_layers_id]
 
         self.feature_layers_id = feature_layers_id
+        self.head_layer_id = head_layer_id
         self.input_layer_id = input_layer_id
         self.react_threshold = react_threshold
         self.scale_percentile = scale_percentile
         self.ash_percentile = ash_percentile
+        self.return_penultimate = return_penultimate
         self.model = model
         self.extractor = self.prepare_extractor()
 
@@ -161,6 +171,21 @@ class FeatureExtractor(ABC):
         Returns:
             Union[Callable, Tuple[Callable, str]]: the corresponding layer and its id if
                 return_id is True.
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
+    def get_layer_index_by_name(model: Callable, layer_id: str) -> int:
+        """
+        Get the index of a layer by its name.
+
+        Args:
+            model (nn.Module): model whose layer index will be returned
+            layer_id (str): name of the layer
+
+        Returns:
+            int: index of the layer with the given name
         """
         raise NotImplementedError()
 
