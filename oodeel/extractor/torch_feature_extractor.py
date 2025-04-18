@@ -84,6 +84,10 @@ class TorchFeatureExtractor(FeatureExtractor):
         return_penultimate: Optional[bool] = False,
     ):
         model = model.eval()
+
+        if return_penultimate:
+            feature_layers_id.append("penultimate")
+
         super().__init__(
             model=model,
             feature_layers_id=feature_layers_id,
@@ -101,8 +105,6 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     @property
     def _hook_layers_id(self):
-        if self.return_penultimate:
-            return self.feature_layers_id + ["penultimate", self.head_layer_id]
         return self.feature_layers_id + [self.head_layer_id]
 
     def _get_features_hook(self, layer_id: Union[str, int]) -> Callable:
@@ -348,7 +350,7 @@ class TorchFeatureExtractor(FeatureExtractor):
                 labels = TorchDataHandler.get_label_from_dataset_item(dataset)
 
         else:
-            features = [None for i in range(len(self._hook_layers_id))]
+            features = [None for i in range(len(self.feature_layers_id))]
             logits = None
             batch = next(iter(dataset))
             contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
