@@ -64,7 +64,7 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
 
     def wrapper(dataset: Dataset, *args, **kwargs):
         assert isinstance(
-            dataset, DictDataset
+            dataset[0], dict
         ), "Dataset must be an instance of DictDataset"
 
         if "column_name" in kwargs:
@@ -379,32 +379,25 @@ class TorchDataHandler(DataHandler):
         Returns:
             DictDataset: dataset
         """
+        if "transform" in load_kwargs.keys():
+            transform = load_kwargs["transform"]
+            load_kwargs.pop("transform")
+        else:
+
+            def transform(x):
+                return x
+
         dataset = hf_load_dataset(dataset_id, **load_kwargs)
 
-        if "transform" not in load_kwargs.keys() and "image" in dataset.column_names:
+        def transform_full(examples):
+            examples = transform(examples)
+            examples["label"] = [
+                cls._default_target_transform(example) for example in examples["label"]
+            ]
+            return examples
 
-            def transform(examples):
-                examples["image"] = [
-                    torchvision.transforms.PILToTensor()(img)
-                    for img in examples["image"]
-                ]
-                examples["label"] = [
-                    cls._default_target_transform(example)
-                    for example in examples["label"]
-                ]
-                return examples
-
-        elif "transform" not in load_kwargs.keys():
-
-            def transform(examples):
-                examples["label"] = [
-                    cls._default_target_transform(example)
-                    for example in examples["label"]
-                ]
-                return examples
-
-        dataset = dataset.with_transform(transform)
-        return DictDataset(dataset, column_names=dataset.column_names)
+        dataset = dataset.with_transform(transform_full)
+        return dataset  # HF datasets are already dict-based
 
     @classmethod
     def load_from_torchvision(
@@ -435,13 +428,11 @@ class TorchDataHandler(DataHandler):
         ), "Dataset not available on torchvision datasets catalog"
 
         if "transform" not in load_kwargs.keys():
-            transform = torchvision.transforms.PILToTensor()
+            load_kwargs["transform"] = torchvision.transforms.PILToTensor()
         if "target_transform" not in load_kwargs.keys():
-            target_transform = cls._default_target_transform
+            load_kwargs["target_transform"] = cls._default_target_transform
 
         dataset = getattr(torchvision.datasets, dataset_id)(
-            transform=transform,
-            target_transform=target_transform,
             **load_kwargs,
         )
         return cls.load_custom_dataset(dataset)

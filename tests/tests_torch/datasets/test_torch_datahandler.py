@@ -218,9 +218,16 @@ def test_load_huggingface(dataset_name, split, erase_after_test=True):
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         # define dataset
+
+        def transform(examples):
+            examples["image"] = [
+                torchvision.transforms.PILToTensor()(img) for img in examples["image"]
+            ]
+            return examples
+
         dataset = handler.load_dataset(
             dataset_name,
-            load_kwargs=dict(cache_dir=tmpdirname, split=split),
+            load_kwargs=dict(cache_dir=tmpdirname, split=split, transform=transform),
             hub="huggingface",
         )
 
