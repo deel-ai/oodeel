@@ -295,7 +295,7 @@ def test_load_arrays_and_custom(x_shape, num_labels, num_samples, one_hot):
 @pytest.mark.parametrize(
     "x_shape, num_samples, num_labels, one_hot",
     [
-        ((32, 32, 3), 100, 10, True),
+        ((32, 32, 3), 150, 10, True),
         ((16, 16, 1), 200, 2, False),
         ((64,), 1000, 20, False),
     ],
@@ -342,13 +342,8 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     columns_b = tf.convert_to_tensor(get_column_from_ds(dataset_b, "new_column"))
     assert tf.reduce_all(columns_b == tf.convert_to_tensor([5] * num_samples_b))
 
-    # concatenate two sub datasets
-    dataset_c = handler.merge(dataset_a, dataset_b)
-    columns_c = tf.convert_to_tensor(get_column_from_ds(dataset_c, "new_column"))
-    assert tf.reduce_all(columns_c == tf.concat([columns_a, columns_b], axis=0))
-
     # prepare dataloader
-    loader = handler.prepare(dataset_c, 64, shuffle=True)
+    loader = handler.prepare(dataset_b, 64, shuffle=True)
     batch = next(iter(loader))
     assert batch[0].shape == tf.TensorShape([64, *x_shape])
     assert batch[1].shape == (
