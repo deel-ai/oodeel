@@ -197,6 +197,24 @@ class DataHandler(ABC):
 
     @staticmethod
     @abstractmethod
+    def load_from_huggingface(
+        dataset_id: str,
+        load_kwargs: dict = {},
+    ) -> DatasetType:
+        """Load a Dataset from the Hugging Face datasets catalog
+
+        Args:
+            dataset_id (str): Identifier of the dataset
+            load_kwargs (dict): Loading kwargs to add to the initialization
+            of the dataset.
+
+        Returns:
+            tf.data.Dataset: dataset
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
     def map_ds(dataset: DatasetType, map_fn: Callable) -> DatasetType:
         """Map a function to a Dataset
 
