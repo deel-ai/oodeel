@@ -41,6 +41,7 @@ requirements = [
     "seaborn",
     "plotly",
     "tqdm",
+    "datasets",
 ]
 
 tensorflow_requirements = [

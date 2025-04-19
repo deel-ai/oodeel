@@ -201,6 +201,49 @@ def test_load_tensorflow_datasets(dataset_name, train):
 
 
 @pytest.mark.parametrize(
+    "dataset_name, split",
+    [
+        ("mnist", "train"),
+        ("mnist", "test"),
+    ],
+)
+def test_load_huggingface(dataset_name, split):
+    ds_infos = {
+        "img_shape": (28, 28),
+        "num_samples": {"train": 60000, "test": 10000},
+    }
+
+    handler = TFDataHandler()
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # define dataset
+        dataset = handler.load_dataset(
+            dataset_name,
+            load_kwargs=dict(cache_dir=tmpdirname, split=split),
+            hub="huggingface",
+        )
+
+        # dummy item
+        for item in dataset.take(1):
+            dummy_item = item
+        dummy_columns = list(dummy_item.keys())
+        dummy_shapes = [v.shape for v in dummy_item.values()]
+
+        # check columns
+        assert list(dataset.element_spec.keys()) == dummy_columns == ["image", "label"]
+
+        # check output shape
+        assert (
+            [dataset.element_spec[key].shape for key in dataset.element_spec.keys()]
+            == dummy_shapes
+            == [tf.TensorShape(ds_infos["img_shape"]), tf.TensorShape([])]
+        )
+
+        # check len of dataset
+        assert len(dataset) == ds_infos["num_samples"][split]
+
+
+@pytest.mark.parametrize(
     "x_shape, num_samples, num_labels, one_hot",
     [
         ((32, 32, 3), 100, 10, True),
