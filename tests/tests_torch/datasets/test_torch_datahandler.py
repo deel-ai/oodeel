@@ -183,16 +183,18 @@ def test_load_torchvision(dataset_name, train, erase_after_test=True):
         # dummy item
         dummy_item = dataset[0]
         dummy_columns = list(dummy_item.keys())
-        dummy_shapes = [v.shape for v in dummy_item.values()]
+        dummy_shapes = {
+            k: v.shape for k, v in zip(dummy_item.keys(), dummy_item.values())
+        }
 
         # check columns
         assert dataset.column_names == dummy_columns == ["input", "label"]
 
         # check output shape
         assert (
-            dataset.output_shapes
+            handler.get_columns_shapes(dataset)
             == dummy_shapes
-            == [torch.Size(ds_infos["img_shape"]), torch.Size([])]
+            == {"input": torch.Size(ds_infos["img_shape"]), "label": torch.Size([])}
         )
 
         # check len of dataset
@@ -225,16 +227,18 @@ def test_load_huggingface(dataset_name, split, erase_after_test=True):
         # dummy item
         dummy_item = dataset[0]
         dummy_columns = list(dummy_item.keys())
-        dummy_shapes = [v.shape for v in dummy_item.values()]
+        dummy_shapes = {
+            k: v.shape for k, v in zip(dummy_item.keys(), dummy_item.values())
+        }
 
         # check columns
         assert dataset.column_names == dummy_columns == ["image", "label"]
 
         # check output shape
         assert (
-            dataset.output_shapes
+            handler.get_columns_shapes(dataset)
             == dummy_shapes
-            == [torch.Size(ds_infos["img_shape"]), torch.Size([])]
+            == {"image": torch.Size(ds_infos["img_shape"]), "label": torch.Size([])}
         )
 
         # check len of dataset
@@ -274,16 +278,18 @@ def test_load_arrays_and_custom(x_shape, num_labels, num_samples, one_hot):
 
         # check registered columns, shapes
         output_columns = ds.column_names
-        output_shapes = ds.output_shapes
+        output_shapes = handler.get_columns_shapes(ds)
         assert output_columns == ["key_a", "key_b"]
-        assert output_shapes == [
-            torch.Size(x_shape),
-            torch.Size([num_labels] if one_hot else []),
-        ]
+        assert output_shapes == {
+            "key_a": torch.Size(x_shape),
+            "key_b": torch.Size([num_labels] if one_hot else []),
+        }
         # check item columns, shapes
         dummy_item = ds[0]
         assert list(dummy_item.keys()) == output_columns
-        assert list(map(lambda x: x.shape, dummy_item.values())) == output_shapes
+        assert {
+            k: v.shape for k, v in zip(dummy_item.keys(), dummy_item.values())
+        } == output_shapes
 
 
 @pytest.mark.parametrize(
@@ -303,8 +309,8 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     )
     dataset = handler.load_dataset(dataset_id, columns=["input", "label"])
     assert len(dataset) == num_samples
-    assert dataset.output_shapes[0] == torch.Size(x_shape)
-    assert dataset.output_shapes[1] == (
+    assert handler.get_columns_shapes(dataset)["input"] == torch.Size(x_shape)
+    assert handler.get_columns_shapes(dataset)["label"] == (
         torch.Size([num_labels]) if one_hot else torch.Size([])
     )
 
