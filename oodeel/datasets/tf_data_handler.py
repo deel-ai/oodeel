@@ -78,6 +78,12 @@ class TFDataHandler(DataHandler):
     """
 
     def __init__(self) -> None:
+        """
+        Initializes the TFDataHandler instance.
+        Attributes:
+            backend (str): The backend framework used, set to "tensorflow".
+            channel_order (str): The channel order format, set to "channels_last".
+        """
         super().__init__()
         self.backend = "tensorflow"
         self.channel_order = "channels_last"
@@ -87,6 +93,7 @@ class TFDataHandler(DataHandler):
         cls,
         dataset_id: Union[tf.data.Dataset, ItemType, str],
         columns: Optional[list] = None,
+        hub: Optional[str] = "tensorflow-datasets",
         load_kwargs: dict = {},
     ) -> tf.data.Dataset:
         """Load dataset from different manners, ensuring to return a dict based
@@ -106,12 +113,20 @@ class TFDataHandler(DataHandler):
         """
         load_kwargs["as_supervised"] = False
 
+        assert hub in {
+            "tensorflow-datasets",
+            "hugginface",
+        }, "hub must be either 'tensorflow-datasets' or 'huggingface'"
+
         if isinstance(dataset_id, get_args(ItemType)):
             dataset = cls.load_dataset_from_arrays(dataset_id, columns)
         elif isinstance(dataset_id, tf.data.Dataset):
             dataset = cls.load_custom_dataset(dataset_id, columns)
         elif isinstance(dataset_id, str):
-            dataset = cls.load_from_tensorflow_datasets(dataset_id, load_kwargs)
+            if hub == "tensorflow-datasets":
+                dataset = cls.load_from_tensorflow_datasets(dataset_id, load_kwargs)
+            elif hub == "huggingface":
+                dataset = cls.load_from_huggingface_datasets(dataset_id, load_kwargs)
         return dataset
 
     @staticmethod
@@ -206,6 +221,21 @@ class TFDataHandler(DataHandler):
 
         dataset = dataset_id
         return dataset
+
+    def load_from_huggingface(
+        self,
+        load_kwargs: dict = {},
+    ) -> tf.data.Dataset:
+        """Load a Dataset from the Hugging Face datasets catalog
+
+        Args:
+            load_kwargs (dict): Loading kwargs to add to the initialization
+            of the dataset.
+
+        Returns:
+            tf.data.Dataset: dataset
+        """
+        raise NotImplementedError("This method is not yet implemented.")
 
     @staticmethod
     def load_from_tensorflow_datasets(

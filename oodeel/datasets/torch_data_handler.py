@@ -256,6 +256,13 @@ class TorchDataHandler(DataHandler):
     """
 
     def __init__(self) -> None:
+        """
+        Initializes the TorchDataHandler.
+        Attributes:
+            backend (str): The backend framework used, set to "torch".
+            channel_order (str): The channel order format, set to "channels_first".
+        """
+
         super().__init__()
         self.backend = "torch"
         self.channel_order = "channels_first"
@@ -275,11 +282,11 @@ class TorchDataHandler(DataHandler):
     DEFAULT_TRANSFORM = torchvision.transforms.PILToTensor()
     DEFAULT_TARGET_TRANSFORM = _default_target_transform.__func__
 
-    @classmethod
     def load_dataset(
         cls,
         dataset_id: Union[Dataset, ItemType, str],
         columns: Optional[list] = None,
+        hub: Optional[str] = "torchivision",
         load_kwargs: dict = {},
     ) -> DictDataset:
         """Load dataset from different manners
@@ -295,9 +302,18 @@ class TorchDataHandler(DataHandler):
         Returns:
             DictDataset: dataset
         """
+
+        assert hub in {
+            "torchvision",
+            "huggingface",
+        }, "hub must be either 'tensorflow-datasets' or 'huggingface'"
+
         if isinstance(dataset_id, str):
             assert "root" in load_kwargs.keys()
-            dataset = cls.load_from_torchvision(dataset_id, **load_kwargs)
+            if hub == "torchivision":
+                dataset = cls.load_from_torchvision(dataset_id, **load_kwargs)
+            elif hub == "huggingface":
+                dataset = cls.load_from_huggingface(dataset_id, **load_kwargs)
         elif isinstance(dataset_id, Dataset):
             dataset = cls.load_custom_dataset(dataset_id, columns)
         elif isinstance(dataset_id, get_args(ItemType)):
@@ -386,6 +402,21 @@ class TorchDataHandler(DataHandler):
 
         dataset = dataset_id
         return dataset
+
+    def load_from_huggingface(
+        self,
+        load_kwargs: dict = {},
+    ) -> DictDataset:
+        """Load a Dataset from the Hugging Face datasets catalog
+
+        Args:
+            load_kwargs (dict): Loading kwargs to add to the initialization
+            of the dataset.
+
+        Returns:
+            DictDataset: dataset
+        """
+        raise NotImplementedError("This method is not yet implemented.")
 
     @classmethod
     def load_from_torchvision(
