@@ -30,7 +30,6 @@ from ..types import Callable
 from ..types import ItemType
 from ..types import Optional
 from ..types import TensorType
-from ..types import Tuple
 from ..types import Union
 from .data_handler import DataHandler
 
