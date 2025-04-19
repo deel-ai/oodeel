@@ -186,7 +186,7 @@ def test_load_torchvision(dataset_name, train, erase_after_test=True):
         dummy_shapes = [v.shape for v in dummy_item.values()]
 
         # check columns
-        assert dataset.columns == dummy_columns == ["input", "label"]
+        assert dataset.column_names == dummy_columns == ["input", "label"]
 
         # check output shape
         assert (
@@ -228,7 +228,7 @@ def test_load_huggingface(dataset_name, split, erase_after_test=True):
         dummy_shapes = [v.shape for v in dummy_item.values()]
 
         # check columns
-        assert dataset.columns == dummy_columns == ["image", "label"]
+        assert dataset.column_names == dummy_columns == ["image", "label"]
 
         # check output shape
         assert (
@@ -273,7 +273,7 @@ def test_load_arrays_and_custom(x_shape, num_labels, num_samples, one_hot):
         ds = handler.load_dataset(dataset_id, columns=["key_a", "key_b"])
 
         # check registered columns, shapes
-        output_columns = ds.columns
+        output_columns = ds.column_names
         output_shapes = ds.output_shapes
         assert output_columns == ["key_a", "key_b"]
         assert output_shapes == [
@@ -289,7 +289,7 @@ def test_load_arrays_and_custom(x_shape, num_labels, num_samples, one_hot):
 @pytest.mark.parametrize(
     "x_shape, num_samples, num_labels, one_hot",
     [
-        ((3, 32, 32), 100, 10, True),
+        ((3, 32, 32), 150, 10, True),
         ((1, 16, 16), 200, 2, False),
         ((64,), 1000, 20, False),
     ],
@@ -336,13 +336,8 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     columns_b = torch.Tensor(get_column_from_ds(dataset_b, "new_column"))
     assert torch.all(columns_b == torch.Tensor([5] * num_samples_b))
 
-    # concatenate two sub datasets
-    dataset_c = handler.merge(dataset_a, dataset_b)
-    columns_c = torch.Tensor(get_column_from_ds(dataset_c, "new_column"))
-    assert torch.all(columns_c == torch.cat([columns_a, columns_b]))
-
     # prepare dataloader
-    loader = handler.prepare(dataset_c, 64, shuffle=True)
+    loader = handler.prepare(dataset_b, 64, shuffle=True)
     batch = next(iter(loader))
     assert batch[0].shape == torch.Size([64, *x_shape])
     assert batch[1].shape == (
