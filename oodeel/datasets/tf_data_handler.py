@@ -531,6 +531,34 @@ class TFDataHandler(DataHandler):
         return tuple(dataset.element_spec[column_name].shape)
 
     @staticmethod
+    def get_columns_shapes(dataset: tf.data.Dataset) -> dict:
+        """Get the shapes of the elements of all columns of a dataset
+
+        Args:
+            dataset (Dataset): a Dataset
+
+        Returns:
+            dict: dictionary of column names and their corresponding shape
+        """
+
+        if isinstance(dataset.element_spec, tuple):
+            shapes = [None for _ in range(len(dataset.element_spec))]
+            for i in range(len(dataset.element_spec)):
+                try:
+                    shapes[i] = tuple(dataset.element_spec[i].shape)
+                except AttributeError:
+                    pass
+            shapes = tuple(shapes)
+        elif isinstance(dataset.element_spec, dict):
+            shapes = {}
+            for key in dataset.element_spec.keys():
+                try:
+                    shapes[key] = tuple(dataset.element_spec[key].shape)
+                except AttributeError:
+                    pass
+        return shapes
+
+    @staticmethod
     def get_input_from_dataset_item(elem: ItemType) -> TensorType:
         """Get the tensor that is to be feed as input to a model from a dataset element.
 

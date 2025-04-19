@@ -132,16 +132,6 @@ class DictDataset(Dataset):
         dummy_item = self[0]
         return list(dummy_item.keys())
 
-    @property
-    def output_shapes(self) -> list:
-        """Get a list of the tensor shapes in an item from the dataset.
-
-        Returns:
-            list: tensor shapes of an dataset item.
-        """
-        dummy_item = self[0]
-        return [dummy_item[key].shape for key in self.column_names]
-
     def _check_init_args(self) -> None:
         """Check validity of dataset and column names provided at init"""
         dummy_item = self._dataset[0]
@@ -634,6 +624,24 @@ class TorchDataHandler(DataHandler):
             tuple: the shape of an element from column_name
         """
         return tuple(dataset[0][column_name].shape)
+
+    @staticmethod
+    def get_columns_shapes(dataset: Dataset) -> dict:
+        """Get the shapes of the elements of all columns of a dataset
+
+        Args:
+            dataset (Dataset): a Dataset
+
+        Returns:
+            dict: dictionary of column names and their corresponding shape
+        """
+        shapes = {}
+        for key in dataset.column_names:
+            try:
+                shapes[key] = tuple(dataset[0][key].shape)
+            except AttributeError:
+                pass
+        return shapes
 
     @staticmethod
     def get_input_from_dataset_item(elem: ItemType) -> Any:
