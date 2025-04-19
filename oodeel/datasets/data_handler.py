@@ -295,6 +295,18 @@ class DataHandler(ABC):
         raise NotImplementedError()
 
     @staticmethod
+    def get_columns_shapes(dataset: DatasetType) -> dict:
+        """Get the shapes of the elements of all columns of a dataset
+
+        Args:
+            dataset (Dataset): a Dataset
+
+        Returns:
+            dict: dictionary of column names and their corresponding shape
+        """
+        raise NotImplementedError()
+
+    @staticmethod
     @abstractmethod
     def get_input_from_dataset_item(elem: ItemType) -> TensorType:
         """Get the tensor that is to be feed as input to a model from a dataset element.

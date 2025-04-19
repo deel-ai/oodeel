@@ -127,6 +127,24 @@ def test_get_column_elements_shape():
     assert shape == input_shape
 
 
+def test_get_columns_shape():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )  # .batch(samples)
+
+    shapes = TFDataHandler.get_columns_shapes(data)
+    assert shapes[0] == input_shape
+
+    handler = TFDataHandler()
+    data = handler.tuple_to_dict(data, ["input", "label"])
+    shapes = TFDataHandler.get_columns_shapes(data)
+    assert shapes["input"] == input_shape
+
+
 def test_get_dataset_length():
     input_shape = (32, 32, 3)
     num_labels = 10
