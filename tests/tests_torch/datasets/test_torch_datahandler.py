@@ -162,7 +162,7 @@ def test_get_input_from_dataset_item():
         ("MNIST", False),
     ],
 )
-def test_instanciate_from_torchvision(dataset_name, train, erase_after_test=True):
+def test_load_torchvision(dataset_name, train, erase_after_test=True):
     DATASET_INFOS = {
         "MNIST": {
             "img_shape": (1, 28, 28),
@@ -183,16 +183,69 @@ def test_instanciate_from_torchvision(dataset_name, train, erase_after_test=True
         # dummy item
         dummy_item = dataset[0]
         dummy_columns = list(dummy_item.keys())
-        dummy_shapes = [v.shape for v in dummy_item.values()]
+        dummy_shapes = {
+            k: v.shape for k, v in zip(dummy_item.keys(), dummy_item.values())
+        }
 
         # check columns
-        assert dataset.columns == dummy_columns == ["input", "label"]
+        assert dataset.column_names == dummy_columns == ["input", "label"]
 
         # check output shape
         assert (
-            dataset.output_shapes
+            handler.get_columns_shapes(dataset)
             == dummy_shapes
-            == [torch.Size(ds_infos["img_shape"]), torch.Size([])]
+            == {"input": torch.Size(ds_infos["img_shape"]), "label": torch.Size([])}
+        )
+
+        # check len of dataset
+        assert len(dataset) == ds_infos["num_samples"][split]
+
+
+@pytest.mark.parametrize(
+    "dataset_name, split",
+    [
+        ("mnist", "train"),
+        ("mnist", "test"),
+    ],
+)
+def test_load_huggingface(dataset_name, split, erase_after_test=True):
+    ds_infos = {
+        "img_shape": (1, 28, 28),
+        "num_samples": {"train": 60000, "test": 10000},
+    }
+
+    handler = TorchDataHandler()
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # define dataset
+
+        def transform(examples):
+            examples["image"] = [
+                torchvision.transforms.PILToTensor()(img) for img in examples["image"]
+            ]
+            return examples
+
+        dataset = handler.load_dataset(
+            dataset_name,
+            load_kwargs=dict(cache_dir=tmpdirname, split=split, transform=transform),
+            hub="huggingface",
+        )
+
+        # dummy item
+        dummy_item = dataset[0]
+        dummy_columns = list(dummy_item.keys())
+        dummy_shapes = {
+            k: v.shape for k, v in zip(dummy_item.keys(), dummy_item.values())
+        }
+
+        # check columns
+        assert dataset.column_names == dummy_columns == ["image", "label"]
+
+        # check output shape
+        assert (
+            handler.get_columns_shapes(dataset)
+            == dummy_shapes
+            == {"image": torch.Size(ds_infos["img_shape"]), "label": torch.Size([])}
         )
 
         # check len of dataset
@@ -231,23 +284,25 @@ def test_load_arrays_and_custom(x_shape, num_labels, num_samples, one_hot):
         ds = handler.load_dataset(dataset_id, columns=["key_a", "key_b"])
 
         # check registered columns, shapes
-        output_columns = ds.columns
-        output_shapes = ds.output_shapes
+        output_columns = ds.column_names
+        output_shapes = handler.get_columns_shapes(ds)
         assert output_columns == ["key_a", "key_b"]
-        assert output_shapes == [
-            torch.Size(x_shape),
-            torch.Size([num_labels] if one_hot else []),
-        ]
+        assert output_shapes == {
+            "key_a": torch.Size(x_shape),
+            "key_b": torch.Size([num_labels] if one_hot else []),
+        }
         # check item columns, shapes
         dummy_item = ds[0]
         assert list(dummy_item.keys()) == output_columns
-        assert list(map(lambda x: x.shape, dummy_item.values())) == output_shapes
+        assert {
+            k: v.shape for k, v in zip(dummy_item.keys(), dummy_item.values())
+        } == output_shapes
 
 
 @pytest.mark.parametrize(
     "x_shape, num_samples, num_labels, one_hot",
     [
-        ((3, 32, 32), 100, 10, True),
+        ((3, 32, 32), 150, 10, True),
         ((1, 16, 16), 200, 2, False),
         ((64,), 1000, 20, False),
     ],
@@ -261,8 +316,8 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     )
     dataset = handler.load_dataset(dataset_id, columns=["input", "label"])
     assert len(dataset) == num_samples
-    assert dataset.output_shapes[0] == torch.Size(x_shape)
-    assert dataset.output_shapes[1] == (
+    assert handler.get_columns_shapes(dataset)["input"] == torch.Size(x_shape)
+    assert handler.get_columns_shapes(dataset)["label"] == (
         torch.Size([num_labels]) if one_hot else torch.Size([])
     )
 
@@ -294,13 +349,8 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     columns_b = torch.Tensor(get_column_from_ds(dataset_b, "new_column"))
     assert torch.all(columns_b == torch.Tensor([5] * num_samples_b))
 
-    # concatenate two sub datasets
-    dataset_c = handler.merge(dataset_a, dataset_b)
-    columns_c = torch.Tensor(get_column_from_ds(dataset_c, "new_column"))
-    assert torch.all(columns_c == torch.cat([columns_a, columns_b]))
-
     # prepare dataloader
-    loader = handler.prepare(dataset_c, 64, shuffle=True)
+    loader = handler.prepare(dataset_b, 64, shuffle=True)
     batch = next(iter(loader))
     assert batch[0].shape == torch.Size([64, *x_shape])
     assert batch[1].shape == (
