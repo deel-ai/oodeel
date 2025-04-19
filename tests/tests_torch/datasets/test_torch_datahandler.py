@@ -162,7 +162,7 @@ def test_get_input_from_dataset_item():
         ("MNIST", False),
     ],
 )
-def test_instanciate_from_torchvision(dataset_name, train, erase_after_test=True):
+def test_load_torchvision(dataset_name, train, erase_after_test=True):
     DATASET_INFOS = {
         "MNIST": {
             "img_shape": (1, 28, 28),
@@ -187,6 +187,48 @@ def test_instanciate_from_torchvision(dataset_name, train, erase_after_test=True
 
         # check columns
         assert dataset.columns == dummy_columns == ["input", "label"]
+
+        # check output shape
+        assert (
+            dataset.output_shapes
+            == dummy_shapes
+            == [torch.Size(ds_infos["img_shape"]), torch.Size([])]
+        )
+
+        # check len of dataset
+        assert len(dataset) == ds_infos["num_samples"][split]
+
+
+@pytest.mark.parametrize(
+    "dataset_name, split",
+    [
+        ("mnist", "train"),
+        ("mnist", "test"),
+    ],
+)
+def test_load_huggingface(dataset_name, split, erase_after_test=True):
+    ds_infos = {
+        "img_shape": (1, 28, 28),
+        "num_samples": {"train": 60000, "test": 10000},
+    }
+
+    handler = TorchDataHandler()
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # define dataset
+        dataset = handler.load_dataset(
+            dataset_name,
+            load_kwargs=dict(cache_dir=tmpdirname, split=split),
+            hub="huggingface",
+        )
+
+        # dummy item
+        dummy_item = dataset[0]
+        dummy_columns = list(dummy_item.keys())
+        dummy_shapes = [v.shape for v in dummy_item.values()]
+
+        # check columns
+        assert dataset.columns == dummy_columns == ["image", "label"]
 
         # check output shape
         assert (

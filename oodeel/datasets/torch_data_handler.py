@@ -27,6 +27,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision
+from datasets import load_dataset as hf_load_dataset
+from matplotlib import transforms
 from torch.utils.data import ConcatDataset
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
@@ -210,35 +212,6 @@ class DictDataset(Dataset):
         dataset._dataset = Subset(self._dataset, indices)
         return dataset
 
-    def concatenate(
-        self, other_dataset: Dataset, inplace: bool = False
-    ) -> "DictDataset":
-        """Concatenate with another dataset
-
-        Args:
-            other_dataset (DictDataset): Dataset to concatenate with
-            inplace (bool): if False, applies the filtering on a copied version of\
-                the dataset. Defaults to False.
-
-        Returns:
-            DictDataset: Concatenated dataset
-        """
-        assert isinstance(
-            other_dataset, DictDataset
-        ), "Second dataset should be an instance of DictDataset"
-        assert (
-            self.columns == other_dataset.columns
-        ), "Incompatible dataset elements (different column names)"
-        if inplace:
-            dataset_copy = copy.deepcopy(self)
-            self._raw_columns = self.columns
-            self.map_fns = []
-            self._dataset = ConcatDataset([dataset_copy, other_dataset])
-            dataset = self
-        else:
-            dataset = DictDataset(ConcatDataset([self, other_dataset]), self.columns)
-        return dataset
-
     def __len__(self) -> int:
         """Return the length of the dataset, i.e. the number of items.
 
@@ -279,14 +252,11 @@ class TorchDataHandler(DataHandler):
         """
         return torch.tensor(y) if isinstance(y, (float, int)) else y
 
-    DEFAULT_TRANSFORM = torchvision.transforms.PILToTensor()
-    DEFAULT_TARGET_TRANSFORM = _default_target_transform.__func__
-
     def load_dataset(
         cls,
         dataset_id: Union[Dataset, ItemType, str],
         columns: Optional[list] = None,
-        hub: Optional[str] = "torchivision",
+        hub: Optional[str] = "torchvision",
         load_kwargs: dict = {},
     ) -> DictDataset:
         """Load dataset from different manners
@@ -306,14 +276,14 @@ class TorchDataHandler(DataHandler):
         assert hub in {
             "torchvision",
             "huggingface",
-        }, "hub must be either 'tensorflow-datasets' or 'huggingface'"
+        }, "hub must be either 'torchvision' or 'huggingface'"
 
         if isinstance(dataset_id, str):
-            assert "root" in load_kwargs.keys()
-            if hub == "torchivision":
-                dataset = cls.load_from_torchvision(dataset_id, **load_kwargs)
+            if hub == "torchvision":
+                assert "root" in load_kwargs.keys()
+                dataset = cls.load_from_torchvision(dataset_id, load_kwargs)
             elif hub == "huggingface":
-                dataset = cls.load_from_huggingface(dataset_id, **load_kwargs)
+                dataset = cls.load_from_huggingface(dataset_id, load_kwargs)
         elif isinstance(dataset_id, Dataset):
             dataset = cls.load_custom_dataset(dataset_id, columns)
         elif isinstance(dataset_id, get_args(ItemType)):
@@ -403,30 +373,54 @@ class TorchDataHandler(DataHandler):
         dataset = dataset_id
         return dataset
 
+    @classmethod
     def load_from_huggingface(
-        self,
+        cls,
+        dataset_id: str,
         load_kwargs: dict = {},
     ) -> DictDataset:
         """Load a Dataset from the Hugging Face datasets catalog
 
         Args:
+            dataset_id (str): Identifier of the dataset
             load_kwargs (dict): Loading kwargs to add to the initialization
             of the dataset.
 
         Returns:
             DictDataset: dataset
         """
-        raise NotImplementedError("This method is not yet implemented.")
+        dataset = hf_load_dataset(dataset_id, **load_kwargs)
+
+        if "transform" not in load_kwargs.keys() and "image" in dataset.column_names:
+
+            def transform(examples):
+                examples["image"] = [
+                    torchvision.transforms.PILToTensor()(img)
+                    for img in examples["image"]
+                ]
+                examples["label"] = [
+                    cls._default_target_transform(example)
+                    for example in examples["label"]
+                ]
+                return examples
+
+        elif "transform" not in load_kwargs.keys():
+
+            def transform(examples):
+                examples["label"] = [
+                    cls._default_target_transform(example)
+                    for example in examples["label"]
+                ]
+                return examples
+
+        dataset = dataset.with_transform(transform)
+        return DictDataset(dataset, columns=dataset.column_names)
 
     @classmethod
     def load_from_torchvision(
         cls,
         dataset_id: str,
-        root: str,
-        transform: Callable = DEFAULT_TRANSFORM,
-        target_transform: Callable = DEFAULT_TARGET_TRANSFORM,
-        download: bool = False,
-        **load_kwargs,
+        load_kwargs: dict = {},
     ) -> DictDataset:
         """Load a Dataset from the torchvision datasets catalog
 
@@ -449,9 +443,13 @@ class TorchDataHandler(DataHandler):
         assert (
             dataset_id in torchvision.datasets.__all__
         ), "Dataset not available on torchvision datasets catalog"
+
+        if "transform" not in load_kwargs.keys():
+            transform = torchvision.transforms.PILToTensor()
+        if "target_transform" not in load_kwargs.keys():
+            target_transform = cls._default_target_transform
+
         dataset = getattr(torchvision.datasets, dataset_id)(
-            root=root,
-            download=download,
             transform=transform,
             target_transform=target_transform,
             **load_kwargs,
@@ -595,54 +593,6 @@ class TorchDataHandler(DataHandler):
             num_workers=num_workers,
         )
         return loader
-
-    @staticmethod
-    def merge(
-        id_dataset: DictDataset,
-        ood_dataset: DictDataset,
-        resize: Optional[bool] = False,
-        shape: Optional[Tuple[int]] = None,
-    ) -> DictDataset:
-        """Merge two instances of DictDataset
-
-        Args:
-            id_dataset (DictDataset): dataset of in-distribution data
-            ood_dataset (DictDataset): dataset of out-of-distribution data
-            resize (Optional[bool], optional): toggles if input tensors of the
-                datasets have to be resized to have the same shape. Defaults to True.
-            shape (Optional[Tuple[int]], optional): shape to use for resizing input
-                tensors. If None, the tensors are resized with the shape of the
-                id_dataset input tensors. Defaults to None.
-
-        Returns:
-            DictDataset: merged dataset
-        """
-        # If a desired shape is given, triggers the resize
-        if shape is not None:
-            resize = True
-
-        # If the shape of the two datasets are different, triggers the resize
-        if id_dataset.output_shapes[0] != ood_dataset.output_shapes[0]:
-            resize = True
-            if shape is None:
-                print(
-                    "Resizing the first item of elem (usually the image)",
-                    " with the shape of id_dataset",
-                )
-                shape = id_dataset.output_shapes[0][1:]
-
-        if resize:
-            resize_fn = torchvision.transforms.Resize(shape)
-
-            def reshape_fn(item_dict):
-                item_dict["input"] = resize_fn(item_dict["input"])
-                return item_dict
-
-            id_dataset = id_dataset.map(reshape_fn)
-            ood_dataset = ood_dataset.map(reshape_fn)
-
-        merged_dataset = id_dataset.concatenate(ood_dataset)
-        return merged_dataset
 
     @staticmethod
     def get_item_length(dataset: Dataset) -> int:
