@@ -78,7 +78,7 @@ def dict_only_ds(ds_handling_method: Callable) -> Callable:
                 column_name = [column_name]
             for name in column_name:
                 assert (
-                    name in dataset.columns
+                    name in dataset.column_names
                 ), f"The input dataset has no column named {name}"
         return ds_handling_method(dataset, *args, **kwargs)
 
@@ -115,15 +115,15 @@ class DictDataset(Dataset):
     """
 
     def __init__(
-        self, dataset: Dataset, columns: List[str] = ["input", "label"]
+        self, dataset: Dataset, column_names: List[str] = ["input", "label"]
     ) -> None:
         self._dataset = dataset
-        self._raw_columns = columns
+        self._raw_columns = column_names
         self.map_fns = []
         self._check_init_args()
 
     @property
-    def columns(self) -> list:
+    def column_names(self) -> list:
         """Get the list of columns in a dict-based item from the dataset.
 
         Returns:
@@ -140,7 +140,7 @@ class DictDataset(Dataset):
             list: tensor shapes of an dataset item.
         """
         dummy_item = self[0]
-        return [dummy_item[key].shape for key in self.columns]
+        return [dummy_item[key].shape for key in self.column_names]
 
     def _check_init_args(self) -> None:
         """Check validity of dataset and column names provided at init"""
@@ -414,7 +414,7 @@ class TorchDataHandler(DataHandler):
                 return examples
 
         dataset = dataset.with_transform(transform)
-        return DictDataset(dataset, columns=dataset.column_names)
+        return DictDataset(dataset, column_names=dataset.column_names)
 
     @classmethod
     def load_from_torchvision(
@@ -467,7 +467,7 @@ class TorchDataHandler(DataHandler):
         Returns:
             list: List of column names
         """
-        return dataset.columns
+        return dataset.column_names
 
     @staticmethod
     def map_ds(
