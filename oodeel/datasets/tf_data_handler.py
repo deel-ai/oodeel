@@ -24,6 +24,7 @@ from typing import get_args
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
+from datasets import load_dataset as hf_load_dataset
 
 from ..types import Callable
 from ..types import ItemType
@@ -111,11 +112,10 @@ class TFDataHandler(DataHandler):
         Returns:
             tf.data.Dataset: A dict based tf.data.Dataset
         """
-        load_kwargs["as_supervised"] = False
 
         assert hub in {
             "tensorflow-datasets",
-            "hugginface",
+            "huggingface",
         }, "hub must be either 'tensorflow-datasets' or 'huggingface'"
 
         if isinstance(dataset_id, get_args(ItemType)):
@@ -124,9 +124,10 @@ class TFDataHandler(DataHandler):
             dataset = cls.load_custom_dataset(dataset_id, columns)
         elif isinstance(dataset_id, str):
             if hub == "tensorflow-datasets":
+                load_kwargs["as_supervised"] = False
                 dataset = cls.load_from_tensorflow_datasets(dataset_id, load_kwargs)
             elif hub == "huggingface":
-                dataset = cls.load_from_huggingface_datasets(dataset_id, load_kwargs)
+                dataset = cls.load_from_huggingface(dataset_id, load_kwargs)
         return dataset
 
     @staticmethod
@@ -222,20 +223,24 @@ class TFDataHandler(DataHandler):
         dataset = dataset_id
         return dataset
 
+    @staticmethod
     def load_from_huggingface(
-        self,
+        dataset_id: str,
         load_kwargs: dict = {},
     ) -> tf.data.Dataset:
         """Load a Dataset from the Hugging Face datasets catalog
 
         Args:
+            dataset_id (str): Identifier of the dataset
             load_kwargs (dict): Loading kwargs to add to the initialization
             of the dataset.
 
         Returns:
             tf.data.Dataset: dataset
         """
-        raise NotImplementedError("This method is not yet implemented.")
+        dataset = hf_load_dataset(dataset_id, **load_kwargs)
+        dataset = dataset.to_tf_dataset()
+        return dataset
 
     @staticmethod
     def load_from_tensorflow_datasets(
