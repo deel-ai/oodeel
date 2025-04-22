@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
@@ -31,7 +32,7 @@ from ..aggregator import BaseAggregator
 from ..aggregator import StdNormalizedAggregator
 from ..types import DatasetType
 from ..types import TensorType
-from oodeel.methods.base import OODBaseDetector
+from .base import OODBaseDetector
 
 
 class Mahalanobis(OODBaseDetector):
@@ -49,20 +50,24 @@ class Mahalanobis(OODBaseDetector):
     Args:
         eps (float): Magnitude for gradient-based input perturbation. Defaults to 0.002.
         aggregator (Optional[BaseAggregator]): Aggregator to combine scores from
-            multiple feature layers. For single-layer use this can be left as None.
-            If multiple layers are used, an aggregator must be provided.
+            multiple feature layers. If `None` and more than one layer is
+            used, a `StdNormalizedAggregator` is instantiated automatically.
     """
 
-    def __init__(
-        self, eps: float = 0.002, aggregator: Optional[BaseAggregator] = None
-    ) -> None:
-        super(Mahalanobis, self).__init__()
-        self.eps: float = eps
-        self.aggregator: Optional[BaseAggregator] = aggregator
+    def __init__(self, eps: float = 0.002, aggregator: Optional[BaseAggregator] = None):
+        super().__init__()
+        self.eps = eps
+        self.aggregator = aggregator
+        self._layer_stats: List[Tuple[Dict, np.ndarray]] = []
+        self._classes: Optional[np.ndarray] = None
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
     def _compute_layer_stats(
         self, layer_features: TensorType, labels: TensorType
-    ) -> Tuple[Dict, np.ndarray]:
+    ) -> Tuple[Dict[int, TensorType], np.ndarray]:
         """
         Compute class-conditional statistics for a given feature layer.
 
@@ -84,32 +89,117 @@ class Mahalanobis(OODBaseDetector):
         labels_np = self.op.convert_to_numpy(labels)
         classes = np.sort(np.unique(labels_np))
 
-        features_np = self.op.flatten(layer_features)
-        n_total = features_np.shape[0]
+        feats = self.op.flatten(layer_features)
+        n_total = feats.shape[0]
 
-        mus = {}
-        mean_cov = None
+        mus: Dict[int, TensorType] = {}
+        mean_cov: Optional[np.ndarray] = None
 
         for cls in classes:
-            indexes = self.op.equal(labels, cls)
-            features_cls = self.op.flatten(layer_features[indexes])
-            mus[cls] = self.op.mean(features_cls, dim=0)
-            zero_f = features_cls - mus[cls]
-            cov_cls = self.op.matmul(self.op.t(zero_f), zero_f) / zero_f.shape[0]
-            weight = features_cls.shape[0] / n_total
-            if mean_cov is None:
-                mean_cov = weight * cov_cls
-            else:
-                mean_cov += weight * cov_cls
+            idx = self.op.equal(labels, cls)
+            feats_cls = self.op.flatten(layer_features[idx])
+            mu = self.op.mean(feats_cls, dim=0)
+            mus[cls] = mu
 
-        pinv_cov = self.op.pinv(mean_cov)
-        if not hasattr(self, "_classes"):
+            zero_f = feats_cls - mu
+            cov_cls = self.op.matmul(self.op.t(zero_f), zero_f) / zero_f.shape[0]
+            weight = feats_cls.shape[0] / n_total
+            mean_cov = (
+                cov_cls * weight if mean_cov is None else mean_cov + cov_cls * weight
+            )
+
+        pinv_cov = self.op.pinv(mean_cov)  # type: ignore[arg-type]
+        if self._classes is None:
             self._classes = classes
         return mus, pinv_cov
 
-    def _mahalanobis_score_layer(
-        self, out_features: TensorType, mus: Dict, pinv_cov: np.ndarray
+    def _gaussian_log_probs(
+        self, out_features: TensorType, mus: Dict[int, TensorType], pinv_cov: np.ndarray
     ) -> TensorType:
+        """Compute unnormalised Gaussian log-probabilities for all classes.
+
+        Args:
+            out_features (TensorType): Features of shape [B, D].
+            mus (Dict[int, TensorType]): Class mean vectors.
+            pinv_cov (np.ndarray): Pseudo-inverse covariance matrix.
+
+        Returns:
+            TensorType: Log-probabilities with shape [B, n_classes].
+        """
+        scores = []
+        for cls in self._classes:  # type: ignore[assignment]
+            mu = mus[cls]
+            zero_f = out_features - mu
+            log_prob = -0.5 * self.op.diag(
+                self.op.matmul(self.op.matmul(zero_f, pinv_cov), self.op.t(zero_f))
+            )
+            scores.append(self.op.reshape(log_prob, (-1, 1)))
+        return self.op.cat(scores, dim=1)
+
+    def _input_perturbation(self, inputs: TensorType) -> TensorType:
+        """Apply a small gradient-based perturbation (FGSM style) to the inputs to
+        enhance the separation between in- and out-distribution samples.
+
+        This method uses the first feature layer for computing the perturbation.
+        See the original paper (section 2.2) for more details:
+        https://arxiv.org/abs/1807.03888
+
+        Args:
+            inputs (TensorType): Input samples.
+
+        Returns:
+            TensorType: Perturbed input samples.
+        """
+
+        def _loss_fn(x: TensorType) -> TensorType:
+            feats, _ = self.feature_extractor.predict(
+                x, postproc_fns=self.postproc_fns, detach=False
+            )
+            out_f = self.op.flatten(feats[-1])
+            mus, pinv_cov = self._layer_stats[-1]
+            g_scores = self._gaussian_log_probs(out_f, mus, pinv_cov)
+            max_score = self.op.max(g_scores, dim=1)
+            return self.op.mean(-max_score)
+
+        grad = self.op.gradient(_loss_fn, inputs)
+        grad = self.op.sign(grad)
+        return inputs - self.eps * grad
+
+    # ------------------------------------------------------------------
+    # Fit / score helpers
+    # ------------------------------------------------------------------
+
+    def _fit_layer(
+        self, layer_features: TensorType, labels: TensorType, subset_size: int = 5000
+    ) -> Tuple[Tuple[Dict[int, TensorType], np.ndarray], Optional[np.ndarray]]:
+        """Fit statistics for a single layer and, if required, return scores.
+
+        Args:
+            layer_features (TensorType): In-distribution features for the layer.
+            labels (TensorType): Class labels.
+            subset_size (int, optional): Number of samples used to compute initial
+                scores for the aggregator. Defaults to 5000.
+
+        Returns:
+            Tuple[Tuple[Dict[int, TensorType], np.ndarray], Optional[np.ndarray]]:
+                * (mus, pinv_cov) statistics for the layer.
+                * Optional numpy array of OOD scores for the first subset_size
+                  samples (None if no aggregator).
+        """
+        mus, pinv_cov = self._compute_layer_stats(layer_features, labels)
+
+        scores: Optional[np.ndarray] = None
+        if self.aggregator is not None:
+            n_samples = min(subset_size, layer_features.shape[0])
+            feats_subset = self.op.flatten(layer_features[:n_samples])
+            g_scores = self._gaussian_log_probs(feats_subset, mus, pinv_cov)
+            max_scores = self.op.max(g_scores, dim=1)
+            scores = -self.op.convert_to_numpy(max_scores)
+        return (mus, pinv_cov), scores
+
+    def _score_layer(
+        self, out_features: TensorType, mus: Dict[int, TensorType], pinv_cov: np.ndarray
+    ) -> np.ndarray:
         """
         Compute Mahalanobis distance-based confidence scores for a single feature layer.
 
@@ -126,49 +216,13 @@ class Mahalanobis(OODBaseDetector):
             TensorType: Confidence scores for each sample for every class,
                         with shape [num_samples, num_classes].
         """
-        gaussian_scores = []
-        for cls in self._classes:
-            mu = mus[cls]
-            zero_f = out_features - mu
-            log_probs_f = -0.5 * self.op.diag(
-                self.op.matmul(self.op.matmul(zero_f, pinv_cov), self.op.t(zero_f))
-            )
-            gaussian_scores.append(self.op.reshape(log_probs_f, (-1, 1)))
-        gaussian_score = self.op.cat(gaussian_scores, dim=1)
-        return gaussian_score
+        g_scores = self._gaussian_log_probs(out_features, mus, pinv_cov)
+        max_score = self.op.max(g_scores, dim=1)
+        return -self.op.convert_to_numpy(max_score)
 
-    def _input_perturbation(self, inputs: TensorType) -> TensorType:
-        """
-        Apply a small gradient-based perturbation to the inputs to enhance the
-        separation between in- and out-distribution samples.
-
-        This method uses the first feature layer for computing the perturbation.
-        See the original paper (section 2.2) for more details:
-        https://arxiv.org/abs/1807.03888
-
-        Args:
-            inputs (TensorType): Input samples.
-
-        Returns:
-            TensorType: Perturbed input samples.
-        """
-
-        def __loss_fn(x: TensorType) -> TensorType:
-            out_features, _ = self.feature_extractor.predict(
-                x, postproc_fns=self.postproc_fns, detach=False
-            )
-            out_features_0 = self.op.flatten(out_features[-1])
-            mus, pinv_cov = self._layer_stats[-1]
-            gaussian_score = self._mahalanobis_score_layer(
-                out_features_0, mus, pinv_cov
-            )
-            max_score = self.op.max(gaussian_score, dim=1)
-            return self.op.mean(-max_score)
-
-        gradient = self.op.gradient(__loss_fn, inputs)
-        gradient = self.op.sign(gradient)
-        inputs_p = inputs - self.eps * gradient
-        return inputs_p
+    # ------------------------------------------------------------------
+    # Fit / score
+    # ------------------------------------------------------------------
 
     def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
         """
@@ -185,42 +239,29 @@ class Mahalanobis(OODBaseDetector):
             fit_dataset (Union[TensorType, DatasetType]): In-distribution data for
                 fitting the detector.
         """
-        num_feature_layers = len(self.feature_extractor.feature_layers_id)
-        # Set default postprocessing functions if not provided.
+        n_layers = len(self.feature_extractor.feature_layers_id)
+
         if self.postproc_fns is None:
-            self.postproc_fns = [
-                self.feature_extractor._default_postproc_fn
-            ] * num_feature_layers
+            self.postproc_fns = [self.feature_extractor._default_postproc_fn] * n_layers
 
         features, infos = self.feature_extractor.predict(
             fit_dataset, postproc_fns=self.postproc_fns, detach=True
         )
         labels = infos["labels"]
 
-        self._layer_stats = []
+        self._layer_stats.clear()
+        per_layer_scores = []
 
-        # Compute per-layer statistics
-        for i in range(num_feature_layers):
-            mus, pinv_cov = self._compute_layer_stats(features[i], labels)
-            self._layer_stats.append((mus, pinv_cov))
+        for i in range(n_layers):
+            stats, scores = self._fit_layer(features[i], labels)
+            self._layer_stats.append(stats)
+            if scores is not None:
+                per_layer_scores.append(scores)
 
-        # If there is more than one feature layer, ensure an aggregator is defined.
-        if self.aggregator is None and num_feature_layers > 1:
+        if self.aggregator is None and n_layers > 1:
             self.aggregator = StdNormalizedAggregator()
 
-        # If an aggregator is provided, compute aggregator fit scores on the first 1000
-        # samples per layer.
-        if self.aggregator is not None:
-            per_layer_scores = []
-            num_samples = min(5000, features[0].shape[0])
-            for i in range(num_feature_layers):
-                out_features = self.op.flatten(features[i][:num_samples])
-                mus, pinv_cov = self._layer_stats[i]
-                gaussian_score = self._mahalanobis_score_layer(
-                    out_features, mus, pinv_cov
-                )
-                max_score = self.op.max(gaussian_score, dim=1)
-                per_layer_scores.append(-self.op.convert_to_numpy(max_score))
+        if self.aggregator is not None and per_layer_scores:
             self.aggregator.fit(per_layer_scores)
 
     def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
@@ -247,30 +288,26 @@ class Mahalanobis(OODBaseDetector):
                 sample. The scores are returned as the negative of the computed
                 confidence.
         """
-        if self.eps > 0:
-            inputs_p = self._input_perturbation(inputs)
-        else:
-            inputs_p = inputs
+        x = self._input_perturbation(inputs) if self.eps > 0 else inputs
 
         features, _ = self.feature_extractor.predict_tensor(
-            inputs_p, postproc_fns=self.postproc_fns
+            x, postproc_fns=self.postproc_fns
         )
+        n_layers = len(self._layer_stats)
+
         scores = []
-        num_feature_layers = len(self._layer_stats)
-
-        for i in range(num_feature_layers):
-            out_features = self.op.flatten(features[i])
+        for i in range(n_layers):
+            out_f = self.op.flatten(features[i])
             mus, pinv_cov = self._layer_stats[i]
-            gaussian_score = self._mahalanobis_score_layer(out_features, mus, pinv_cov)
-            max_score = self.op.max(gaussian_score, dim=1)
-            scores.append(-self.op.convert_to_numpy(max_score))
+            scores.append(self._score_layer(out_f, mus, pinv_cov))
 
-        if num_feature_layers > 1:
-            aggregated_scores = self.aggregator.aggregate(scores)  # type: ignore
-        else:
-            aggregated_scores = scores[0]
+        if n_layers > 1:
+            return self.aggregator.aggregate(scores)  # type: ignore[arg-type]
+        return scores[0]
 
-        return aggregated_scores
+    # ------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------
 
     @property
     def requires_to_fit_dataset(self) -> bool:
