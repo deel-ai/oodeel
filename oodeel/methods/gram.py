@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
@@ -32,8 +33,7 @@ from ..types import DatasetType
 from ..types import TensorType
 from .base import OODBaseDetector
 
-
-EPSILON = 1e-6  # Constant for numerical stability
+EPSILON = 1e-6  # Numerical stability constant
 
 
 class Gram(OODBaseDetector):
@@ -68,22 +68,141 @@ class Gram(OODBaseDetector):
         aggregator: Optional[BaseAggregator] = None,
     ):
         super().__init__()
-        # Ensure orders is a list even if a single int is provided.
         if isinstance(orders, int):
             orders = [orders]
         self.orders: List[int] = orders
         self.quantile = quantile
         self.aggregator = aggregator
 
-        # postproc_fns is set during fitting to the Gram statistic function.
-        self.postproc_fns = None
+        self.postproc_fns = None  # Will be set during fit
+        # Mapping class -> list (per-layer) of thresholds [lower, upper]
+        self.min_maxs: Dict[int, List[TensorType]] = {}
+        # Normalisation constants when no aggregator is used
+        self.devnorm: Optional[np.ndarray] = None
 
-        # Dictionary mapping class -> list (per-layer) of quantile thresholds.
-        self.min_maxs = {}
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
-        # When no aggregator is provided, normalization constants for per-layer
-        # deviations.
-        self.devnorm = None
+    def _stat(self, feature_map: TensorType) -> TensorType:
+        """Compute Gram statistics for a single layer.
+
+        Args:
+            feature_map (TensorType): Feature map of shape `[B, ...]`.
+
+        Returns:
+            TensorType: Statistics of shape `[B, n_orders, C]`.
+        """
+        fm_shape = feature_map.shape
+        stats = []
+        for p in self.orders:
+            # Raise the feature map to the specified order.
+            fm_p = feature_map**p
+            if len(fm_shape) == 2:
+                # Dense layers: compute outer product.
+                fm_p = self.op.einsum("bi,bj->bij", fm_p, fm_p)
+            else:
+                # Convolutional feature maps: flatten spatial dimensions.
+                if self.backend == "tensorflow":
+                    fm_p = self.op.reshape(
+                        self.op.einsum("i...j->ij...", fm_p),
+                        (fm_shape[0], fm_shape[-1], -1),
+                    )
+                else:
+                    fm_p = self.op.reshape(fm_p, (fm_shape[0], fm_shape[1], -1))
+                fm_p = self.op.matmul(fm_p, self.op.permute(fm_p, (0, 2, 1)))
+            # Normalize and recover the original power.
+            fm_p = self.op.sign(fm_p) * (self.op.abs(fm_p) ** (1 / p))
+            # Use only the lower triangular part.
+            fm_p = self.op.tril(fm_p)
+            # Aggregate row-wise.
+            fm_p = self.op.sum(fm_p, dim=2)
+            stats.append(fm_p)
+        return self.op.stack(stats, dim=1)
+
+    def _deviation(self, stats: TensorType, thresholds: TensorType) -> TensorType:
+        """Compute deviation of `stats` outside `thresholds`.
+
+        Args:
+            stats (TensorType): Gram stats, shape `[B, *, C]`.
+            thresholds (TensorType): Lower & upper bounds, shape `[B, *, C, 2]`.
+
+        Returns:
+            TensorType: Deviation values, shape `[B]`.
+        """
+        below = self.op.where(stats < thresholds[..., 0], 1.0, 0.0)
+        above = self.op.where(stats > thresholds[..., 1], 1.0, 0.0)
+        dev_low = (
+            (thresholds[..., 0] - stats) / (self.op.abs(thresholds[..., 0]) + EPSILON)
+        ) * below
+        dev_high = (
+            (stats - thresholds[..., 1]) / (self.op.abs(thresholds[..., 1]) + EPSILON)
+        ) * above
+        return self.op.sum(dev_low + dev_high, dim=(1, 2))
+
+    # ------------------------------------------------------------------
+    # Per-layer helpers
+    # ------------------------------------------------------------------
+
+    def _fit_layer(
+        self,
+        layer_idx: int,
+        train_stats: TensorType,
+        val_stats: TensorType,
+        train_preds: TensorType,
+        val_preds: TensorType,
+    ) -> Optional[np.ndarray]:
+        """Fit thresholds for **one** layer and optionally return val scores.
+
+        Args:
+            layer_idx (int): Index of the processed layer.
+            train_stats / val_stats (TensorType): Gram stats for train/val subsets.
+            train_preds / val_preds (TensorType): Predicted labels.
+
+        Returns:
+            Optional[np.ndarray]: Validation deviations (if aggregator is used),
+            otherwise `None`.
+        """
+        for cls in self._classes:
+            idx = self.op.equal(train_preds, cls)
+            lower = self.op.quantile(train_stats[idx], self.quantile, dim=0)
+            upper = self.op.quantile(train_stats[idx], 1 - self.quantile, dim=0)
+            self.min_maxs[cls][layer_idx] = self.op.cat(
+                [self.op.unsqueeze(lower, -1), self.op.unsqueeze(upper, -1)], dim=-1
+            )
+
+        if self.aggregator is None:
+            return None
+
+        thr_batch = self.op.stack(
+            [self.min_maxs[int(lbl)][layer_idx] for lbl in val_preds]
+        )
+        dev = self._deviation(val_stats, thr_batch)
+        return self.op.convert_to_numpy(dev)
+
+    def _score_layer(
+        self, layer_idx: int, layer_stats: TensorType, preds: np.ndarray
+    ) -> np.ndarray:
+        """Score inputs for a **single** layer.
+
+        Args:
+            layer_idx (int): Layer index.
+            layer_stats (TensorType): Gram stats.
+            preds (np.ndarray): Predicted classes.
+
+        Returns:
+            np.ndarray: Deviation-based OOD scores.
+        """
+        thr_batch = self.op.stack([self.min_maxs[int(lbl)][layer_idx] for lbl in preds])
+        dev = self._deviation(layer_stats, thr_batch)
+        score = self.op.convert_to_numpy(dev)
+        if self.aggregator is None and self.devnorm is not None:
+            score = score / self.devnorm[layer_idx]
+        return score
+
+    # ------------------------------------------------------------------
+    # Fit / score
+    # ------------------------------------------------------------------
 
     def _fit_to_dataset(
         self,
@@ -105,83 +224,56 @@ class Gram(OODBaseDetector):
                 Defaults to 0.2.
             verbose (bool): Whether to print additional information.
         """
-        num_layers = len(self.feature_extractor.feature_layers_id)
-        # Set the postprocessing functions to compute Gram statistics for each layer.
-        self.postproc_fns = [self._stat for _ in range(num_layers)]
+        n_layers = len(self.feature_extractor.feature_layers_id)
+        self.postproc_fns = [self._stat] * n_layers
 
-        # Compute Gram statistics and obtain prediction info.
-        fit_stats, info = self.feature_extractor.predict(
+        stats_all, info = self.feature_extractor.predict(
             fit_dataset,
             postproc_fns=self.postproc_fns,
             return_labels=True,
             verbose=verbose,
         )
-        preds = self.op.argmax(info["logits"], dim=1)
-        self._classes = np.sort(np.unique(self.op.convert_to_numpy(preds))).tolist()
+        preds_all = self.op.argmax(info["logits"], dim=1)
+        self._classes = np.sort(np.unique(self.op.convert_to_numpy(preds_all))).tolist()
+        self.min_maxs = {cls: [None] * n_layers for cls in self._classes}
 
-        full_indices = np.arange(preds.shape[0])
+        idx_all = np.arange(preds_all.shape[0])
+        train_idx, val_idx = (
+            train_test_split(idx_all, test_size=val_split, random_state=42)
+            if val_split is not None
+            else (idx_all, idx_all)
+        )
+        train_mask = self.op.from_numpy(np.isin(idx_all, train_idx))
+        val_mask = self.op.from_numpy(np.isin(idx_all, val_idx))
 
-        # Split indices into training and validation sets.
-        if val_split is not None:
-            train_indices, val_indices = train_test_split(
-                full_indices, test_size=val_split, random_state=42
+        val_scores_for_agg = []
+        for i in range(n_layers):
+            val_scores = self._fit_layer(
+                i,
+                stats_all[i][train_mask],
+                stats_all[i][val_mask],
+                preds_all[train_mask],
+                preds_all[val_mask],
             )
-            # Create boolean masks for training and validation sets.
-            train_mask = self.op.from_numpy(np.isin(full_indices, train_indices))
-            val_mask = self.op.from_numpy(np.isin(full_indices, val_indices))
+            if val_scores is not None:
+                val_scores_for_agg.append(val_scores)
 
-            train_stats = [fs[train_mask] for fs in fit_stats]
-            val_stats = [fs[val_mask] for fs in fit_stats]
-            train_preds = preds[train_mask]
-            val_preds = preds[val_mask]
-        else:
-            train_preds = preds
-            train_stats = fit_stats
-            val_stats = fit_stats
-            val_preds = preds
-
-        # Compute quantile thresholds for each class and each layer.
-        self.min_maxs = {}
-        for cls in self._classes:
-            indices = self.op.equal(train_preds, cls)
-            cls_thresholds = []
-            for layer_stats in train_stats:
-                lower = self.op.quantile(layer_stats[indices], self.quantile, dim=0)
-                upper = self.op.quantile(layer_stats[indices], 1 - self.quantile, dim=0)
-                # Unsqueeze to maintain a consistent shape, then concatenate.
-                lower = self.op.unsqueeze(lower, -1)
-                upper = self.op.unsqueeze(upper, -1)
-                cls_thresholds.append(self.op.cat([lower, upper], dim=-1))
-            self.min_maxs[cls] = cls_thresholds
-
-        # Either fit the aggregator or compute normalization constants.
         if self.aggregator is not None:
-            per_layer_scores = []
-            for layer_idx in range(num_layers):
-                # Collect the thresholds corresponding to each sample's predicted class.
-                thresholds = self.op.stack(
-                    [self.min_maxs[pred.item()][layer_idx] for pred in val_preds]
-                )
-                deviation = self._deviation([val_stats[layer_idx]], [thresholds])[0]
-                # Use negative deviation so that higher scores indicate OOD.
-                per_layer_scores.append(self.op.convert_to_numpy(deviation))
-            self.aggregator.fit(per_layer_scores)
+            if val_scores_for_agg:
+                self.aggregator.fit(val_scores_for_agg)
         else:
-            # if no aggregator is provided, compute normalization constants as in
-            # the original paper.
-            devnorm_list = []
-            for cls in self._classes:
-                cls_devnorm = []
-                for layer_idx in range(num_layers):
-                    # Select validation statistics corresponding to the current class.
-                    val_stats_cls = [
-                        val_stats[layer_idx][self.op.equal(val_preds, cls)]
-                    ]
-                    thresholds = [self.min_maxs[cls][layer_idx]]
-                    dev = self._deviation(val_stats_cls, thresholds)[0]
-                    cls_devnorm.append(float(self.op.mean(dev)))
-                devnorm_list.append(cls_devnorm)
-            self.devnorm = np.mean(np.array(devnorm_list), axis=0)
+            devnorm = []
+            for i in range(n_layers):
+                per_cls = []
+                for cls in self._classes:
+                    cls_mask = self.op.equal(preds_all[val_mask], cls)
+                    if self.op.sum(cls_mask) == 0:
+                        continue
+                    stats_cls = stats_all[i][val_mask][cls_mask]
+                    thr = self.min_maxs[cls][i]
+                    per_cls.append(float(self.op.mean(self._deviation(stats_cls, thr))))
+                devnorm.append(np.mean(per_cls))
+            self.devnorm = np.asarray(devnorm)
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
@@ -196,109 +288,39 @@ class Gram(OODBaseDetector):
         Returns:
             np.ndarray: Final OOD scores.
         """
-        tensor_stats, logits = self.feature_extractor.predict_tensor(
+        layer_stats, logits = self.feature_extractor.predict_tensor(
             inputs, postproc_fns=self.postproc_fns
         )
         preds = self.op.convert_to_numpy(self.op.argmax(logits, dim=1))
 
-        per_layer_scores = []
-        num_layers = len(tensor_stats)
-        for i in range(num_layers):
-            # Gather stored thresholds based on the predicted class for each sample.
-            thresholds = self.op.stack([self.min_maxs[label][i] for label in preds])
-            deviation = self._deviation([tensor_stats[i]], [thresholds])[0]
-            score_layer = self.op.convert_to_numpy(deviation)
-            # Normalize score if no aggregator was provided.
-            if self.aggregator is None:
-                score_layer = score_layer / self.devnorm[i]
-            per_layer_scores.append(score_layer)
-        if num_layers > 1 and self.aggregator is not None:
-            aggregated_scores = self.aggregator.aggregate(per_layer_scores)
-        else:
-            aggregated_scores = np.mean(np.stack(per_layer_scores, axis=1), axis=1)
-        return aggregated_scores
+        per_layer = [
+            self._score_layer(i, layer_stats[i], preds) for i in range(len(layer_stats))
+        ]
 
-    def _deviation(
-        self, stats: List[TensorType], min_maxs: List[TensorType]
-    ) -> List[TensorType]:
-        """
-        Compute the normalized deviation for each layer with respect to the stored
-        quantile thresholds. For each sample and each feature, deviation is computed if
-        the statistic falls outside the [lower, upper] interval.
+        if len(per_layer) > 1 and self.aggregator is not None:
+            return self.aggregator.aggregate(per_layer)
+        return np.mean(np.stack(per_layer, axis=1), axis=1)
 
-        Args:
-            stats (List[TensorType]): List of Gram statistics (one per layer).
-            min_maxs (List[TensorType]): List of corresponding min/max thresholds (one
-                per layer).
-
-        Returns:
-            List[TensorType]: Per-sample deviation values for each layer.
-        """
-        deviations = []
-        for stat, min_max in zip(stats, min_maxs):
-            below_mask = self.op.where(stat < min_max[..., 0], 1.0, 0.0)
-            above_mask = self.op.where(stat > min_max[..., 1], 1.0, 0.0)
-            deviation_lower = (
-                (min_max[..., 0] - stat) / (self.op.abs(min_max[..., 0]) + EPSILON)
-            ) * below_mask
-            deviation_upper = (
-                (stat - min_max[..., 1]) / (self.op.abs(min_max[..., 1]) + EPSILON)
-            ) * above_mask
-            deviation = self.op.sum(deviation_lower + deviation_upper, dim=(1, 2))
-            deviations.append(deviation)
-        return deviations
-
-    def _stat(self, feature_map: TensorType) -> TensorType:
-        """
-        Compute Gram matrix–based statistics for a given feature map. For each power
-        order, the feature map is raised to that power, a Gram matrix is computed, and
-        statistics are derived from the lower triangular portion.
-
-        Args:
-            feature_map (TensorType): Input feature map.
-
-        Returns:
-            TensorType: Stacked Gram statistics with shape [batch, n_orders, channel].
-        """
-        fm_shape = feature_map.shape
-        stats = []
-        for p in self.orders:
-            # Raise the feature map to the specified order.
-            feature_map_p = feature_map**p
-            if len(fm_shape) == 2:
-                # Dense layers: compute outer product.
-                feature_map_p = self.op.einsum(
-                    "bi,bj->bij", feature_map_p, feature_map_p
-                )
-            elif len(fm_shape) >= 3:
-                # Convolutional feature maps: flatten spatial dimensions.
-                if self.backend == "tensorflow":
-                    feature_map_p = self.op.reshape(
-                        self.op.einsum("i...j->ij...", feature_map_p),
-                        (fm_shape[0], fm_shape[-1], -1),
-                    )
-                else:
-                    feature_map_p = self.op.reshape(
-                        feature_map_p, (fm_shape[0], fm_shape[1], -1)
-                    )
-                feature_map_p = self.op.matmul(
-                    feature_map_p, self.op.permute(feature_map_p, (0, 2, 1))
-                )
-            # Normalize and recover the original power.
-            feature_map_p = self.op.sign(feature_map_p) * (
-                self.op.abs(feature_map_p) ** (1 / p)
-            )
-            # Use only the lower triangular part.
-            feature_map_p = self.op.tril(feature_map_p)
-            # Aggregate row-wise.
-            feature_map_p = self.op.sum(feature_map_p, dim=2)
-            stats.append(feature_map_p)
-        return self.op.stack(stats, 1)
+    # ------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------
 
     @property
     def requires_to_fit_dataset(self) -> bool:
+        """
+        Indicates whether this OOD detector requires in-distribution data for fitting.
+
+        Returns:
+            bool: True, since fitting requires computing class-conditional statistics.
+        """
         return True
 
     @property
     def requires_internal_features(self) -> bool:
+        """
+        Indicates whether this OOD detector utilizes internal model features.
+
+        Returns:
+            bool: True, as it operates on intermediate feature representations.
+        """
         return True
