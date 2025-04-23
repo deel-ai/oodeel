@@ -22,17 +22,24 @@
 # SOFTWARE.
 import pytest
 
+from oodeel.aggregator import StdNormalizedAggregator
 from oodeel.methods import VIM
 from tests.tests_tensorflow import eval_detector_on_blobs
 
 
-@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
-def test_vim(auroc_thr, fpr95_thr):
+@pytest.mark.parametrize(
+    "auroc_thr,fpr95_thr,princ_dims,pca_origin,agg",
+    [(0.95, 0.05, 10, "pseudo", False), (0.9, 0.6, 0.9, "center", True)],
+)
+def test_vim(auroc_thr, fpr95_thr, princ_dims, pca_origin, agg):
     """
     Test VIM on toy blobs OOD dataset-wise task
 
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    vim = VIM()
+    aggregator = StdNormalizedAggregator() if agg else None
+    vim = VIM(princ_dims, pca_origin, aggregator)
     eval_detector_on_blobs(detector=vim, auroc_thr=auroc_thr, fpr95_thr=fpr95_thr)
+    # try vim plot_spectrum function
+    vim.plot_spectrum()
