@@ -22,19 +22,36 @@
 # SOFTWARE.
 import pytest
 
+from oodeel.aggregator import FisherAggregator
+from oodeel.aggregator import MeanNormalizedAggregator
+from oodeel.aggregator import StdNormalizedAggregator
 from oodeel.methods import DKNN
 from tests.tests_tensorflow import eval_detector_on_blobs
 
 
-@pytest.mark.parametrize("auroc_thr,fpr95_thr", [(0.95, 0.05)])
-def test_dknn(auroc_thr, fpr95_thr):
+@pytest.mark.parametrize(
+    "auroc_thr,fpr95_thr,agg",
+    [
+        (0.95, 0.05, "fisher"),
+        (0.95, 0.05, "mean"),
+        (0.95, 0.05, "std"),
+        (0.95, 0.05, "none"),
+    ],
+)
+def test_dknn(auroc_thr, fpr95_thr, agg):
     """
     Test DKNN on toy blobs OOD dataset-wise task
 
     We check that the area under ROC is above a certain threshold, and that the FPR95TPR
     is below an other threshold.
     """
-    dknn = DKNN()
+    aggregator = {
+        "fisher": FisherAggregator,
+        "mean": MeanNormalizedAggregator,
+        "std": StdNormalizedAggregator,
+        "none": lambda: None,
+    }[agg]()
+    dknn = DKNN(aggregator=aggregator)
     eval_detector_on_blobs(
         detector=dknn,
         auroc_thr=auroc_thr,
