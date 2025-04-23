@@ -224,6 +224,8 @@ class TFOperator(Operator):
     @staticmethod
     def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> tf.Tensor:
         "sum along dim"
+        if tensor.dtype == tf.bool:
+            tensor = tf.cast(tensor, tf.float32)
         return tf.reduce_sum(tensor, axis=dim)
 
     @staticmethod

@@ -207,7 +207,7 @@ class Gram(OODBaseDetector):
     def _fit_to_dataset(
         self,
         fit_dataset: Union[TensorType, DatasetType],
-        val_split: float = 0.2,
+        val_split: float = None,
         verbose: bool = False,
     ) -> None:
         """
@@ -221,7 +221,7 @@ class Gram(OODBaseDetector):
             val_split (float): Fraction of data to use as validation for aggregator
                 fitting (as in the original paper). If None, the entire fit dataset is
                 used for both quantile threshold computation and aggregator fitting.
-                Defaults to 0.2.
+                Defaults to None.
             verbose (bool): Whether to print additional information.
         """
         n_layers = len(self.feature_extractor.feature_layers_id)
@@ -268,7 +268,12 @@ class Gram(OODBaseDetector):
                 for cls in self._classes:
                     cls_mask = self.op.equal(preds_all[val_mask], cls)
                     if self.op.sum(cls_mask) == 0:
-                        continue
+                        raise ValueError(
+                            f"Class {cls} not found in validation set. Increasing the"
+                            " validation set size with `val_split` may help. Otherwise,"
+                            " consider setting `val_split=None` to use the entire"
+                            " dataset for both training and validation."
+                        )
                     stats_cls = stats_all[i][val_mask][cls_mask]
                     thr = self.min_maxs[cls][i]
                     per_cls.append(float(self.op.mean(self._deviation(stats_cls, thr))))
