@@ -20,8 +20,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import List
+from typing import Optional
+from typing import Tuple
+
 import numpy as np
 
+from ..aggregator import BaseAggregator
+from ..aggregator import StdNormalizedAggregator
 from ..types import DatasetType
 from ..types import TensorType
 from ..types import Union
@@ -39,7 +45,8 @@ class SHE(OODBaseDetector):
     as defined in the original paper.
     The method then returns the maximum value of the dot product between the internal
     layer representation of the input and the average patterns, which is a simplified
-    version of Hopfield energy as defined in the original paper.
+    version of Hopfield energy as defined in the original paper. The per-layer
+    confidence values can be combined through an aggregator to yield a single score
 
     Remarks:
     *   An input perturbation is applied in the same way as in Mahalanobis score
@@ -51,129 +58,188 @@ class SHE(OODBaseDetector):
     Args:
         eps (float): magnitude for gradient based input perturbation.
             Defaults to 0.0014.
+        aggregator: Optional object implementing the `BaseAggregator` interface. It is
+            used to combine the negative per-layer SHE scores returned by
+            `_score_layer`.  If *None* and more than one layer is employed, a
+            `StdNormalizedAggregator` is instantiated automatically.
     """
 
     def __init__(
-        self,
-        eps: float = 0.0014,
-    ):
+        self, eps: float = 0.0014, aggregator: Optional[BaseAggregator] = None
+    ) -> None:
         super().__init__()
         self.eps = eps
-        self.postproc_fns = None
+        self.aggregator = aggregator
+        self.postproc_fns = None  # Will be set in `_fit_to_dataset`.
 
-    def _postproc_feature_maps(self, feature_map):
-        if len(feature_map.shape) > 2:
-            feature_map = self.op.avg_pool_2d(feature_map)
-        return self.op.flatten(feature_map)
+        # Fitted attributes
+        self._classes: Optional[np.ndarray] = None
+        self._layer_mus: List[TensorType] = []  # Shape per layer: [D, n_classes]
 
-    def _fit_to_dataset(
-        self,
-        fit_dataset: Union[TensorType, DatasetType],
-    ) -> None:
-        """
-        Compute the means of the input dataset in the activation space of the selected
-        layers. The means are computed for each class in the dataset.
+    # ------------------------------------------------------------------
+    # Internal helper
+    # ------------------------------------------------------------------
+
+    def _input_perturbation(self, inputs: TensorType) -> TensorType:
+        """Apply FGSM-style perturbation to the input batch.
 
         Args:
-            fit_dataset (Union[TensorType, DatasetType]): input dataset (ID) to
-                construct the index with.
-            ood_dataset (Union[TensorType, DatasetType]): OOD dataset to tune the
-                aggregation coefficients.
-        """
-        self.postproc_fns = [
-            self._postproc_feature_maps
-            for i in range(len(self.feature_extractor.feature_layers_id))
-        ]
+            inputs: Original input batch.
 
+        Returns:
+            Perturbed inputs if `self.eps > 0`; otherwise the original inputs
+            are returned unchanged.
+        """
+        if self.eps == 0:
+            return inputs
+
+        def _loss_fn(x: TensorType):
+            feats, _ = self.feature_extractor.predict(
+                x, postproc_fns=self.postproc_fns, detach=False
+            )
+            # we target the last feature layer
+            she_conf = self._score_layer(feats[-1], self._layer_mus[-1])
+            # We maximize the confidence to push ID & OOD apart.
+            return self.op.mean(-self.op.log(she_conf))
+
+        grad = self.op.gradient(_loss_fn, inputs)
+        grad = self.op.sign(grad)
+        return inputs - self.eps * grad
+
+    # ------------------------------------------------------------------
+    # Per-layer helpers
+    # ------------------------------------------------------------------
+
+    def _fit_layer(
+        self,
+        layer_features: TensorType,
+        labels_np: np.ndarray,
+        preds_np: np.ndarray,
+        subset_size: int = 5000,
+    ) -> Tuple[TensorType, Optional[np.ndarray]]:
+        """Compute mean vectors for a single layer and initial SHE scores.
+
+        Args:
+            layer_features: Tensor of shape ``(N, D)`` containing the flattened
+                activations of in-distribution samples for one layer.
+            labels_np: Ground-truth class labels as a ``np.ndarray``.
+            preds_np: Model predictions for the in-distribution samples.  Means
+                are only computed from samples that are *both* predicted and
+                labelled as the target class (following the original paper).
+            subset_size: Number of samples on which to compute provisional OOD
+                scores for the aggregator fit.  Ignored if *self.aggregator* is
+                *None*.
+
+        Returns:
+            A tuple `(mus_layer, scores_layer)` where
+            `mus_layer` is a tensor of shape `[D, n_classes]` storing the
+            per-class mean vectors for the current layer and `scores_layer` is
+            either *None* or a NumPy array of length *subset_size* containing
+            the **negative** SHE scores on the first *subset_size* samples.
+        """
+        mus_per_cls = []
+        for cls in self._classes:  # type: ignore[iteration-over-optional]
+            idx = np.equal(labels_np, cls) & np.equal(preds_np, cls)
+            feats_cls = layer_features[idx]
+            mu = self.op.unsqueeze(self.op.mean(feats_cls, dim=0), dim=0)
+            mus_per_cls.append(mu)
+        mus_layer = self.op.permute(self.op.cat(mus_per_cls), (1, 0))  # [D, C]
+
+        scores_layer: Optional[np.ndarray] = None
+        if self.aggregator is not None:
+            n_samples = min(subset_size, layer_features.shape[0])
+            feats_subset = layer_features[:n_samples]
+            she_subset = self._score_layer(feats_subset, mus_layer)
+            scores_layer = -self.op.convert_to_numpy(she_subset)
+        return mus_layer, scores_layer
+
+    def _score_layer(self, features: TensorType, mus_layer: TensorType) -> TensorType:
+        """Compute *unnormalised* SHE confidence for a single layer.
+
+        Args:
+            features: Flattened activations of shape `(B, D)` for the input
+                batch.
+            mus_layer: Tensor `[D, n_classes]` returned by `_fit_layer`.
+
+        Returns:
+            Framework tensor of shape `(B,)` containing the **max** dot
+            product over classes - higher values indicate stronger in-
+            distribution evidence.
+        """
+        she = self.op.matmul(self.op.squeeze(features), mus_layer) / features.shape[1]
+        she = self.op.max(she, dim=1)
+        return she
+
+    # ------------------------------------------------------------------
+    # Fit / score
+    # ------------------------------------------------------------------
+
+    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
+        """Compute class means for every selected layer.
+
+        Args:
+            fit_dataset: In-distribution dataset used to estimate the class-
+                conditional activation means and, if applicable, to fit the
+                score aggregator.
+        """
+        # ------- Extract in-distribution features ----------------------------
+        self.postproc_fns = [self.feature_extractor._default_postproc_fn] * len(
+            self.feature_extractor.feature_layers_id
+        )
         features, infos = self.feature_extractor.predict(
             fit_dataset, postproc_fns=self.postproc_fns
         )
 
-        labels = infos["labels"]
-        preds = self.op.argmax(infos["logits"], dim=-1)
-        preds = self.op.convert_to_numpy(preds)
+        # Default aggregator if not supplied and several layers are present
+        if self.aggregator is None and len(features) > 1:
+            self.aggregator = StdNormalizedAggregator()
 
-        # unique sorted classes
-        self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
-        labels = self.op.convert_to_numpy(labels)
+        labels_np = self.op.convert_to_numpy(infos["labels"])
+        preds_np = self.op.convert_to_numpy(self.op.argmax(infos["logits"], dim=-1))
+        self._classes = np.sort(np.unique(labels_np))
 
-        self._mus = list()
-        for feature in features:
-            mus_f = list()
-            for cls in self._classes:
-                indexes = np.equal(labels, cls) & np.equal(preds, cls)
-                _features_cls = feature[indexes]
-                mus_f.append(
-                    self.op.unsqueeze(self.op.mean(_features_cls, dim=0), dim=0)
-                )
-            self._mus.append(self.op.permute(self.op.cat(mus_f), (1, 0)))
+        # ------- Per-layer statistics & aggregator pre-scores ---------------
+        self._layer_mus.clear()
+        per_layer_scores: list[np.ndarray] = []
 
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
-        """
-        Computes an OOD score for input samples "inputs" based on
-        the aggregation of neural mean discrepancies from different layers.
+        for lf in features:
+            mus_layer, scores_layer = self._fit_layer(lf, labels_np, preds_np)
+            self._layer_mus.append(mus_layer)
+            if scores_layer is not None:
+                per_layer_scores.append(scores_layer)
+
+        if self.aggregator is not None and per_layer_scores:
+            self.aggregator.fit(per_layer_scores)
+
+    def _score_tensor(self, inputs: TensorType):
+        """Return **negative** OOD scores for a batch of inputs.
+
+        The negative sign ensures that *higher* values correspond to *more* OOD-
+        like samples, which is consistent with other detectors in the library.
 
         Args:
-            inputs: input samples to score
+            inputs: Batch of input samples.
 
         Returns:
-            scores
+            NumPy array of shape `(B,)` containing aggregated OOD scores.
         """
-
-        inputs_p = self._input_perturbation(inputs)
-        features, logits = self.feature_extractor.predict_tensor(
-            inputs_p, postproc_fns=self.postproc_fns
+        x = self._input_perturbation(inputs)
+        features, _ = self.feature_extractor.predict_tensor(
+            x, postproc_fns=self.postproc_fns
         )
 
-        scores = self._get_she_output(features)
+        per_layer_scores = [
+            -self.op.convert_to_numpy(self._score_layer(f, m))
+            for f, m in zip(features, self._layer_mus)
+        ]
 
-        return -self.op.convert_to_numpy(scores)
+        if len(per_layer_scores) > 1:
+            return self.aggregator.aggregate(per_layer_scores)
+        return per_layer_scores[0]
 
-    def _get_she_output(self, features):
-        scores = None
-        for feature, mus_f in zip(features, self._mus):
-            she = self.op.matmul(self.op.squeeze(feature), mus_f) / feature.shape[1]
-            she = self.op.max(she, dim=1)
-            scores = she if scores is None else she + scores
-        return scores
-
-    def _input_perturbation(self, inputs: TensorType) -> TensorType:
-        """
-        Apply small perturbation on inputs to make the in- and out- distribution
-        samples more separable.
-
-        Args:
-            inputs (TensorType): input samples
-
-        Returns:
-            TensorType: Perturbed inputs
-        """
-
-        def __loss_fn(inputs: TensorType) -> TensorType:
-            """
-            Loss function for the input perturbation.
-
-            Args:
-                inputs (TensorType): input samples
-
-            Returns:
-                TensorType: loss value
-            """
-            # extract features
-            out_features, _ = self.feature_extractor.predict(
-                inputs, detach=False, postproc_fns=self.postproc_fns
-            )
-            # get mahalanobis score for the class maximizing it
-            she_score = self._get_she_output(out_features)
-            log_probs_f = self.op.log(she_score)
-            return self.op.mean(log_probs_f)
-
-        # compute gradient
-        gradient = self.op.gradient(__loss_fn, inputs)
-        gradient = self.op.sign(gradient)
-
-        inputs_p = inputs - self.eps * gradient
-        return inputs_p
+    # ------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------
 
     @property
     def requires_to_fit_dataset(self) -> bool:
