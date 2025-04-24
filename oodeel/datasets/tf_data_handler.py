@@ -24,12 +24,12 @@ from typing import get_args
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
+from datasets import load_dataset as hf_load_dataset
 
 from ..types import Callable
 from ..types import ItemType
 from ..types import Optional
 from ..types import TensorType
-from ..types import Tuple
 from ..types import Union
 from .data_handler import DataHandler
 
@@ -78,6 +78,12 @@ class TFDataHandler(DataHandler):
     """
 
     def __init__(self) -> None:
+        """
+        Initializes the TFDataHandler instance.
+        Attributes:
+            backend (str): The backend framework used, set to "tensorflow".
+            channel_order (str): The channel order format, set to "channels_last".
+        """
         super().__init__()
         self.backend = "tensorflow"
         self.channel_order = "channels_last"
@@ -87,6 +93,7 @@ class TFDataHandler(DataHandler):
         cls,
         dataset_id: Union[tf.data.Dataset, ItemType, str],
         columns: Optional[list] = None,
+        hub: Optional[str] = "tensorflow-datasets",
         load_kwargs: dict = {},
     ) -> tf.data.Dataset:
         """Load dataset from different manners, ensuring to return a dict based
@@ -104,14 +111,22 @@ class TFDataHandler(DataHandler):
         Returns:
             tf.data.Dataset: A dict based tf.data.Dataset
         """
-        load_kwargs["as_supervised"] = False
+
+        assert hub in {
+            "tensorflow-datasets",
+            "huggingface",
+        }, "hub must be either 'tensorflow-datasets' or 'huggingface'"
 
         if isinstance(dataset_id, get_args(ItemType)):
             dataset = cls.load_dataset_from_arrays(dataset_id, columns)
         elif isinstance(dataset_id, tf.data.Dataset):
             dataset = cls.load_custom_dataset(dataset_id, columns)
         elif isinstance(dataset_id, str):
-            dataset = cls.load_from_tensorflow_datasets(dataset_id, load_kwargs)
+            if hub == "tensorflow-datasets":
+                load_kwargs["as_supervised"] = False
+                dataset = cls.load_from_tensorflow_datasets(dataset_id, load_kwargs)
+            elif hub == "huggingface":
+                dataset = cls.load_from_huggingface(dataset_id, load_kwargs)
         return dataset
 
     @staticmethod
@@ -205,6 +220,25 @@ class TFDataHandler(DataHandler):
             dataset_id = cls.tuple_to_dict(dataset_id, columns)
 
         dataset = dataset_id
+        return dataset
+
+    @staticmethod
+    def load_from_huggingface(
+        dataset_id: str,
+        load_kwargs: dict = {},
+    ) -> tf.data.Dataset:
+        """Load a Dataset from the Hugging Face datasets catalog
+
+        Args:
+            dataset_id (str): Identifier of the dataset
+            load_kwargs (dict): Loading kwargs to add to the initialization
+            of the dataset.
+
+        Returns:
+            tf.data.Dataset: dataset
+        """
+        dataset = hf_load_dataset(dataset_id, **load_kwargs)
+        dataset = dataset.to_tf_dataset()
         return dataset
 
     @staticmethod
@@ -446,80 +480,6 @@ class TFDataHandler(DataHandler):
         dataset = dataset.map(channel_first)
         return dataset
 
-    @classmethod
-    def merge(
-        cls,
-        id_dataset: tf.data.Dataset,
-        ood_dataset: tf.data.Dataset,
-        resize: Optional[bool] = False,
-        shape: Optional[Tuple[int]] = None,
-        channel_order: Optional[str] = "channels_last",
-    ) -> tf.data.Dataset:
-        """Merge two tf.data.Datasets
-
-        Args:
-            id_dataset (tf.data.Dataset): dataset of in-distribution data
-            ood_dataset (tf.data.Dataset): dataset of out-of-distribution data
-            resize (Optional[bool], optional): toggles if input tensors of the
-                datasets have to be resized to have the same shape. Defaults to True.
-            shape (Optional[Tuple[int]], optional): shape to use for resizing input
-                tensors. If None, the tensors are resized with the shape of the
-                id_dataset input tensors. Defaults to None.
-            channel_order (Optional[str], optional): channel order of the input
-
-        Returns:
-            tf.data.Dataset: merged dataset
-        """
-        len_elem_id = cls.get_item_length(id_dataset)
-        len_elem_ood = cls.get_item_length(ood_dataset)
-        assert (
-            len_elem_id == len_elem_ood
-        ), "incompatible dataset elements (different elem dict length)"
-
-        # If a desired shape is given, triggers the resize
-        if shape is not None:
-            resize = True
-
-        id_elem_spec = id_dataset.element_spec
-        ood_elem_spec = ood_dataset.element_spec
-        assert isinstance(id_elem_spec, dict), "dataset elements must be dicts"
-        assert isinstance(ood_elem_spec, dict), "dataset elements must be dicts"
-
-        input_key_id = list(id_elem_spec.keys())[0]
-        input_key_ood = list(ood_elem_spec.keys())[0]
-        shape_id = id_dataset.element_spec[input_key_id].shape
-        shape_ood = ood_dataset.element_spec[input_key_ood].shape
-
-        # If the shape of the two datasets are different, triggers the resize
-        if shape_id != shape_ood:
-            resize = True
-
-            if shape is None:
-                print(
-                    "Resizing the first item of elem (usually the image)",
-                    " with the shape of id_dataset",
-                )
-                if channel_order == "channels_first":
-                    shape = shape_id[1:]
-                else:
-                    shape = shape_id[:2]
-
-        if resize:
-
-            def reshape_im_id(elem):
-                elem[input_key_id] = tf.image.resize(elem[input_key_id], shape)
-                return elem
-
-            def reshape_im_ood(elem):
-                elem[input_key_ood] = tf.image.resize(elem[input_key_ood], shape)
-                return elem
-
-            id_dataset = id_dataset.map(reshape_im_id)
-            ood_dataset = ood_dataset.map(reshape_im_ood)
-
-        merged_dataset = id_dataset.concatenate(ood_dataset)
-        return merged_dataset
-
     @staticmethod
     def get_item_length(dataset: tf.data.Dataset) -> int:
         """Get the length of a dataset element. If an element is a tensor, the length is
@@ -568,6 +528,34 @@ class TFDataHandler(DataHandler):
             tuple: the shape of an element from column_name
         """
         return tuple(dataset.element_spec[column_name].shape)
+
+    @staticmethod
+    def get_columns_shapes(dataset: tf.data.Dataset) -> dict:
+        """Get the shapes of the elements of all columns of a dataset
+
+        Args:
+            dataset (Dataset): a Dataset
+
+        Returns:
+            dict: dictionary of column names and their corresponding shape
+        """
+
+        if isinstance(dataset.element_spec, tuple):
+            shapes = [None for _ in range(len(dataset.element_spec))]
+            for i in range(len(dataset.element_spec)):
+                try:
+                    shapes[i] = tuple(dataset.element_spec[i].shape)
+                except AttributeError:
+                    pass
+            shapes = tuple(shapes)
+        elif isinstance(dataset.element_spec, dict):
+            shapes = {}
+            for key in dataset.element_spec.keys():
+                try:
+                    shapes[key] = tuple(dataset.element_spec[key].shape)
+                except AttributeError:
+                    pass
+        return shapes
 
     @staticmethod
     def get_input_from_dataset_item(elem: ItemType) -> TensorType:
