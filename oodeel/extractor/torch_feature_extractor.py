@@ -183,23 +183,6 @@ class TorchFeatureExtractor(FeatureExtractor):
         else:
             return layer
 
-    @staticmethod
-    def get_layer_index_by_name(model: nn.Module, layer_id: str) -> int:
-        """
-        Get the index of a layer by its name.
-
-        Args:
-            model (nn.Module): model whose layer index will be returned
-            layer_id (str): name of the layer
-
-        Returns:
-            int: index of the layer with the given name
-        """
-        layer_names = list(dict(model.named_modules()).keys())
-        if layer_id not in layer_names:
-            raise ValueError(f"Layer with name '{layer_id}' not found in the model.")
-        return layer_names.index(layer_id)
-
     def prepare_extractor(self) -> None:
         """Prepare the feature extractor by adding hooks to self.model"""
         # prepare self.model for ood hooks (add _ood_handles attribute or
