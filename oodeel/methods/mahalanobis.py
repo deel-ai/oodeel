@@ -166,7 +166,7 @@ class Mahalanobis(OODBaseDetector):
         return inputs - self.eps * grad
 
     # ------------------------------------------------------------------
-    # Fit / score helpers
+    # Per-layer helpers
     # ------------------------------------------------------------------
 
     def _fit_layer(

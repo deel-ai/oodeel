@@ -48,19 +48,63 @@ class RMDS(Mahalanobis):
     given).
 
     Args:
-        eps (float): Magnitude for gradient based input perturbation. Defaults to 0.002.
+        eps (float): Perturbation noise. Defaults to 0.0014.
+        temperature (float, optional): Temperature parameter. Defaults to 1000.
         aggregator (Optional[BaseAggregator]): Aggregator to combine scores from
             multiple feature layers. For a single layer this can be left as None.
     """
 
-    def __init__(self, eps: float = 0.002, aggregator: Optional[BaseAggregator] = None):
+    def __init__(
+        self,
+        eps: float = 0.0014,
+        temperature: float = 1000,
+        aggregator: Optional[BaseAggregator] = None,
+    ):
         super().__init__(eps=eps, aggregator=aggregator)
+        self.temperature = temperature
         # Will be filled by `_fit_to_dataset`.
         self._layer_background_stats: List[Tuple[TensorType, np.ndarray]] = []
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _input_perturbation(self, inputs: TensorType) -> TensorType:
+        """Apply a small perturbation over inputs to increase their softmax score, as
+        done in ODIN paper (section 3):
+        http://arxiv.org/abs/1706.02690
+
+        Args:
+            inputs (TensorType): input samples to score
+
+        Returns:
+            TensorType: Perturbed inputs
+        """
+        if self.eps == 0:
+            return inputs
+
+        if self.feature_extractor.backend == "torch":
+            inputs = inputs.to(self.feature_extractor._device)
+
+        preds = self.feature_extractor.model(inputs)
+        outputs = self.op.argmax(preds, dim=1)
+        gradients = self.op.gradient(self._temperature_loss, inputs, outputs)
+        inputs_p = inputs - self.eps * self.op.sign(gradients)
+        return inputs_p
+
+    def _temperature_loss(self, inputs: TensorType, labels: TensorType) -> TensorType:
+        """Compute the tempered cross-entropy loss.
+
+        Args:
+            inputs (TensorType): the inputs of the model.
+            labels (TensorType): the labels to fit on.
+
+        Returns:
+            TensorType: the cross-entropy loss.
+        """
+        preds = self.feature_extractor.model(inputs) / self.temperature
+        loss = self.op.CrossEntropyLoss(reduction="sum")(inputs=preds, targets=labels)
+        return loss
 
     def _background_stats(
         self, layer_features: TensorType
@@ -236,7 +280,7 @@ class RMDS(Mahalanobis):
         if self.aggregator is not None and per_layer_scores:
             self.aggregator.fit(per_layer_scores)
 
-    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
         Compute OOD scores for input samples based on the RMDS distance.
 

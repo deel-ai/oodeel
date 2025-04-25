@@ -49,15 +49,14 @@ class SHE(OODBaseDetector):
     confidence values can be combined through an aggregator to yield a single score
 
     Remarks:
-    *   An input perturbation is applied in the same way as in Mahalanobis score
+    *   An input perturbation is applied in the same way as in ODIN score
     *   The original paper only considers the penultimate layer of the neural
-    network, while we aggregate the results of multiple layers after normalizing by
-    the dimension of each vector (the activation vector for dense layers, and the
-    average pooling of the feature map for convolutional layers).
+    network, while we aggregate the results of multiple layers following different
+    normalization strategies (see `BaseAggregator` for more details).
 
     Args:
-        eps (float): magnitude for gradient based input perturbation.
-            Defaults to 0.0014.
+        eps (float): Perturbation noise. Defaults to 0.0014.
+        temperature (float, optional): Temperature parameter. Defaults to 1000.
         aggregator: Optional object implementing the `BaseAggregator` interface. It is
             used to combine the negative per-layer SHE scores returned by
             `_score_layer`.  If *None* and more than one layer is employed, a
@@ -65,10 +64,14 @@ class SHE(OODBaseDetector):
     """
 
     def __init__(
-        self, eps: float = 0.0014, aggregator: Optional[BaseAggregator] = None
+        self,
+        eps: float = 0.0014,
+        temperature: float = 1000,
+        aggregator: Optional[BaseAggregator] = None,
     ) -> None:
         super().__init__()
         self.eps = eps
+        self.temperature = temperature
         self.aggregator = aggregator
         self.postproc_fns = None  # Will be set in `_fit_to_dataset`.
 
@@ -81,30 +84,41 @@ class SHE(OODBaseDetector):
     # ------------------------------------------------------------------
 
     def _input_perturbation(self, inputs: TensorType) -> TensorType:
-        """Apply FGSM-style perturbation to the input batch.
+        """Apply a small perturbation over inputs to increase their softmax score, as
+        done in ODIN paper (section 3):
+        http://arxiv.org/abs/1706.02690
 
         Args:
-            inputs: Original input batch.
+            inputs (TensorType): input samples to score
 
         Returns:
-            Perturbed inputs if `self.eps > 0`; otherwise the original inputs
-            are returned unchanged.
+            TensorType: Perturbed inputs
         """
         if self.eps == 0:
             return inputs
 
-        def _loss_fn(x: TensorType):
-            feats, _ = self.feature_extractor.predict(
-                x, postproc_fns=self.postproc_fns, detach=False
-            )
-            # we target the last feature layer
-            she_conf = self._score_layer(feats[-1], self._layer_mus[-1])
-            # We maximize the confidence to push ID & OOD apart.
-            return self.op.mean(-self.op.log(she_conf))
+        if self.feature_extractor.backend == "torch":
+            inputs = inputs.to(self.feature_extractor._device)
 
-        grad = self.op.gradient(_loss_fn, inputs)
-        grad = self.op.sign(grad)
-        return inputs - self.eps * grad
+        preds = self.feature_extractor.model(inputs)
+        outputs = self.op.argmax(preds, dim=1)
+        gradients = self.op.gradient(self._temperature_loss, inputs, outputs)
+        inputs_p = inputs - self.eps * self.op.sign(gradients)
+        return inputs_p
+
+    def _temperature_loss(self, inputs: TensorType, labels: TensorType) -> TensorType:
+        """Compute the tempered cross-entropy loss.
+
+        Args:
+            inputs (TensorType): the inputs of the model.
+            labels (TensorType): the labels to fit on.
+
+        Returns:
+            TensorType: the cross-entropy loss.
+        """
+        preds = self.feature_extractor.model(inputs) / self.temperature
+        loss = self.op.CrossEntropyLoss(reduction="sum")(inputs=preds, targets=labels)
+        return loss
 
     # ------------------------------------------------------------------
     # Per-layer helpers
