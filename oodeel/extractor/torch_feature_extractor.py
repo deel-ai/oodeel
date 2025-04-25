@@ -55,7 +55,6 @@ class TorchFeatureExtractor(FeatureExtractor):
             If int, the rank of the layer in the layer list
             If str, the name of the layer.
             Defaults to -1
-
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
             when working on the feature space without finetuning the bottom of
             the model).
