@@ -20,18 +20,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import get_args
 from typing import Optional
 
 import torch
-from numpy import isin
 from torch import nn
-from torch.utils.data import DataLoader
-from tqdm import tqdm
 
-from ..datasets.torch_data_handler import TorchDataHandler
 from ..types import Callable
-from ..types import ItemType
 from ..types import List
 from ..types import TensorType
 from ..types import Tuple
@@ -52,7 +46,7 @@ class HFTorchFeatureExtractor(TorchFeatureExtractor):
         feature_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer.
-            /!\ for HFTorchFeatureExtractor, we use features from the hidden states
+            Important: for HFTorchFeatureExtractor, we use features from the hidden states
             returned by model(input, output_hidden_states=True) in addition to other
             features computed like in TorchFeatureExtractor. To select the hidden states
             as feature, idenitfy the layer by hidden_i, with i the index of the
