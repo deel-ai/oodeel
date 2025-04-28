@@ -20,14 +20,20 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Union
+
 import numpy as np
 from sklearn.model_selection import train_test_split
 
+from ..aggregator import BaseAggregator
 from ..types import DatasetType
-from ..types import List
 from ..types import TensorType
-from ..types import Union
 from .base import OODBaseDetector
+
+EPSILON = 1e-6  # Numerical stability constant
 
 
 class Gram(OODBaseDetector):
@@ -35,273 +41,291 @@ class Gram(OODBaseDetector):
     "Detecting Out-of-Distribution Examples with Gram Matrices"
     [link](https://proceedings.mlr.press/v119/sastry20a.html)
 
-    **Important Disclaimer**: Taking the statistics of min/max deviation,
-    as in the paper raises some problems.
+    **Important Disclaimer**: Taking the statistics of min/max deviation, as in the
+    paper, raises some problems. The method may yield a score of zero for some tasks
+    because the sample extreme values become more extreme with larger sample sizes.
+    To mitigate this, we replace the min/max with the q / (1-q) quantile threshold,
+    where q is a parameter that controls the discriminative ability of the method.
 
-    The method often yields a score of zero for some tasks.
-    This is expected since the min/max among the samples of a random
-    variable becomes more and more extreme with the sample
-    size. As a result, computing the min/max over the training set is likely to produce
-    min/max values that are so extreme that none of the in distribution correlations of
-    the validation set goes beyond these threshold. The worst is that a significant
-    part of ood data does not exceed the thresholds either. This can be aleviated by
-    computing the min/max over a limited number of sample. However, it is
-    counter-intuitive and, in our opinion, not desirable: adding
-    some more information should only improve a method.
-
-    Hence, we decided to replace the min/max by the q / 1-q quantile, with q a new
-    parameter of the method. Specifically, instead of the deviation as defined in
-    eq. 3 of the paper, we use the definition
-    $$
-    \delta(t_q, t_{1-q}, value) =
-    \begin{cases}
-        0 & \text{if} \; t_q \leq value \leq t_{1-q},  \;\;
-        \frac{t_q - value}{|t_q|} & \text{if } value < t_q,  \;\;
-        \frac{value - t_{1-q}}{|t_q|} & \text{if } value > t_{1-q}
-    \end{cases}
-    $$
-    With this new deviation, the more point we add, the more accurate the quantile
-    becomes. In addition, the method can be made more or less discriminative by
-    toggling the value of q.
-
-    Finally, we found that this approach improved the performance of the baseline in
-    our experiments.
+    This approach improved baseline performance in our experiments.
 
     Args:
-        orders (List[int]): power orders to consider for the correlation matrix
-        quantile (float): quantile to consider for the correlations to build the
+        orders (Union[List[int], int]): Power orders to consider for the correlation
+            matrix. If an int is provided, it is converted to a list.
+        quantile (float): Quantile to consider for the correlations to build the
             deviation threshold.
-
+        aggregator (Optional[BaseAggregator]): Aggregator to combine multi-layer scores.
+            If multiple layers are used and no aggregator is provided, the per-layer
+            scores are aggregated by taking their mean (normalized by precomputed
+            deviation scores on the validation set, as in the original paper).
+            Defaults to None.
     """
 
     def __init__(
         self,
-        orders: List[int] = [i for i in range(1, 6)],
+        orders: Union[List[int], int] = list(range(1, 6)),
         quantile: float = 0.01,
+        aggregator: Optional[BaseAggregator] = None,
     ):
         super().__init__()
         if isinstance(orders, int):
             orders = [orders]
-        self.orders = orders
-        self.postproc_fns = None
+        self.orders: List[int] = orders
         self.quantile = quantile
+        self.aggregator = aggregator
+
+        self.postproc_fns = None  # Will be set during fit
+        # Mapping class -> list (per-layer) of thresholds [lower, upper]
+        self.min_maxs: Dict[int, List[TensorType]] = {}
+        # Normalisation constants when no aggregator is used
+        self.devnorm: Optional[np.ndarray] = None
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _stat(self, feature_map: TensorType) -> TensorType:
+        """Compute Gram statistics for a single layer.
+
+        Args:
+            feature_map (TensorType): Feature map of shape `[B, ...]`.
+
+        Returns:
+            TensorType: Statistics of shape `[B, n_orders, C]`.
+        """
+        fm_shape = feature_map.shape
+        stats = []
+        for p in self.orders:
+            # Raise the feature map to the specified order.
+            fm_p = feature_map**p
+            if len(fm_shape) == 2:
+                # Dense layers: compute outer product.
+                fm_p = self.op.einsum("bi,bj->bij", fm_p, fm_p)
+            else:
+                # Convolutional feature maps: flatten spatial dimensions.
+                if self.backend == "tensorflow":
+                    fm_p = self.op.reshape(
+                        self.op.einsum("i...j->ij...", fm_p),
+                        (fm_shape[0], fm_shape[-1], -1),
+                    )
+                else:
+                    fm_p = self.op.reshape(fm_p, (fm_shape[0], fm_shape[1], -1))
+                fm_p = self.op.matmul(fm_p, self.op.permute(fm_p, (0, 2, 1)))
+            # Normalize and recover the original power.
+            fm_p = self.op.sign(fm_p) * (self.op.abs(fm_p) ** (1 / p))
+            # Use only the lower triangular part.
+            fm_p = self.op.tril(fm_p)
+            # Aggregate row-wise.
+            fm_p = self.op.sum(fm_p, dim=2)
+            stats.append(fm_p)
+        return self.op.stack(stats, dim=1)
+
+    def _deviation(self, stats: TensorType, thresholds: TensorType) -> TensorType:
+        """Compute deviation of `stats` outside `thresholds`.
+
+        Args:
+            stats (TensorType): Gram stats, shape `[B, *, C]`.
+            thresholds (TensorType): Lower & upper bounds, shape `[B, *, C, 2]`.
+
+        Returns:
+            TensorType: Deviation values, shape `[B]`.
+        """
+        below = self.op.where(stats < thresholds[..., 0], 1.0, 0.0)
+        above = self.op.where(stats > thresholds[..., 1], 1.0, 0.0)
+        dev_low = (
+            (thresholds[..., 0] - stats) / (self.op.abs(thresholds[..., 0]) + EPSILON)
+        ) * below
+        dev_high = (
+            (stats - thresholds[..., 1]) / (self.op.abs(thresholds[..., 1]) + EPSILON)
+        ) * above
+        return self.op.sum(dev_low + dev_high, dim=(1, 2))
+
+    # ------------------------------------------------------------------
+    # Per-layer helpers
+    # ------------------------------------------------------------------
+
+    def _fit_layer(
+        self,
+        layer_idx: int,
+        train_stats: TensorType,
+        val_stats: TensorType,
+        train_preds: TensorType,
+        val_preds: TensorType,
+    ) -> Optional[np.ndarray]:
+        """Fit thresholds for **one** layer and optionally return val scores.
+
+        Args:
+            layer_idx (int): Index of the processed layer.
+            train_stats / val_stats (TensorType): Gram stats for train/val subsets.
+            train_preds / val_preds (TensorType): Predicted labels.
+
+        Returns:
+            Optional[np.ndarray]: Validation deviations (if aggregator is used),
+            otherwise `None`.
+        """
+        for cls in self._classes:
+            idx = self.op.equal(train_preds, cls)
+            lower = self.op.quantile(train_stats[idx], self.quantile, dim=0)
+            upper = self.op.quantile(train_stats[idx], 1 - self.quantile, dim=0)
+            self.min_maxs[cls][layer_idx] = self.op.cat(
+                [self.op.unsqueeze(lower, -1), self.op.unsqueeze(upper, -1)], dim=-1
+            )
+
+        if self.aggregator is None:
+            return None
+
+        thr_batch = self.op.stack(
+            [self.min_maxs[int(lbl)][layer_idx] for lbl in val_preds]
+        )
+        dev = self._deviation(val_stats, thr_batch)
+        return self.op.convert_to_numpy(dev)
+
+    def _score_layer(
+        self, layer_idx: int, layer_stats: TensorType, preds: np.ndarray
+    ) -> np.ndarray:
+        """Score inputs for a **single** layer.
+
+        Args:
+            layer_idx (int): Layer index.
+            layer_stats (TensorType): Gram stats.
+            preds (np.ndarray): Predicted classes.
+
+        Returns:
+            np.ndarray: Deviation-based OOD scores.
+        """
+        thr_batch = self.op.stack([self.min_maxs[int(lbl)][layer_idx] for lbl in preds])
+        dev = self._deviation(layer_stats, thr_batch)
+        score = self.op.convert_to_numpy(dev)
+        if self.aggregator is None and self.devnorm is not None:
+            score = score / self.devnorm[layer_idx]
+        return score
+
+    # ------------------------------------------------------------------
+    # Fit / score
+    # ------------------------------------------------------------------
 
     def _fit_to_dataset(
         self,
         fit_dataset: Union[TensorType, DatasetType],
-        val_split: float = 0.2,
+        val_split: float = None,
         verbose: bool = False,
     ) -> None:
         """
-        Compute the quantiles of channelwise correlations for each layer, power of
-        gram matrices, and class. Then, compute the normalization constants for the
-        deviation. To stay faithful to the spirit of the original method, we still name
-        the quantiles min/max
+        Fit the detector on in-distribution data by computing per-layer and per-class
+        quantile thresholds for the Gram statistics. Depending on whether an aggregator
+        is provided, either fit an aggregator on a validation subset or compute
+        normalization constants per layer.
 
         Args:
-            fit_dataset (Union[TensorType, DatasetType]): input dataset (ID) to
-                construct the index with.
-            val_split (float): The percentage of fit data to use as validation data for
-                normalization. Default to 0.2.
-            verbose (bool): Whether to print information during the fitting process.
-                Default to False.
+            fit_dataset (Union[TensorType, DatasetType]): In-distribution data.
+            val_split (float): Fraction of data to use as validation for aggregator
+                fitting (as in the original paper). If None, the entire fit dataset is
+                used for both quantile threshold computation and aggregator fitting.
+                Defaults to None.
+            verbose (bool): Whether to print additional information.
         """
-        self.postproc_fns = [
-            self._stat for i in range(len(self.feature_extractor.feature_layers_id))
-        ]
+        n_layers = len(self.feature_extractor.feature_layers_id)
+        self.postproc_fns = [self._stat] * n_layers
 
-        # fit_stats shape: [n_features, n_samples, n_orders, n_channels]
-        fit_stats, info = self.feature_extractor.predict(
+        stats_all, info = self.feature_extractor.predict(
             fit_dataset,
             postproc_fns=self.postproc_fns,
             return_labels=True,
             verbose=verbose,
         )
-        labels = info["labels"]
-        self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
+        preds_all = self.op.argmax(info["logits"], dim=1)
+        self._classes = np.sort(np.unique(self.op.convert_to_numpy(preds_all))).tolist()
+        self.min_maxs = {cls: [None] * n_layers for cls in self._classes}
 
-        full_indices = np.arange(labels.shape[0])
-        train_indices, val_indices = train_test_split(full_indices, test_size=val_split)
-        train_indices = self.op.from_numpy(
-            [bool(ind in train_indices) for ind in full_indices]
+        idx_all = np.arange(preds_all.shape[0])
+        train_idx, val_idx = (
+            train_test_split(idx_all, test_size=val_split, random_state=42)
+            if val_split is not None
+            else (idx_all, idx_all)
         )
-        val_indices = self.op.from_numpy(
-            [bool(ind in val_indices) for ind in full_indices]
-        )
+        train_mask = self.op.from_numpy(np.isin(idx_all, train_idx))
+        val_mask = self.op.from_numpy(np.isin(idx_all, val_idx))
 
-        val_stats = [fit_stat[val_indices] for fit_stat in fit_stats]
-        fit_stats = [fit_stat[train_indices] for fit_stat in fit_stats]
-        labels = labels[train_indices]
-
-        self.min_maxs = dict()
-        for cls in self._classes:
-            indexes = self.op.equal(labels, cls)
-            min_maxs = []
-            for fit_stat in fit_stats:
-                fit_stat = fit_stat[indexes]
-                mins = self.op.unsqueeze(
-                    self.op.quantile(fit_stat, self.quantile, dim=0), -1
-                )
-                maxs = self.op.unsqueeze(
-                    self.op.quantile(fit_stat, 1 - self.quantile, dim=0), -1
-                )
-                min_max = self.op.cat([mins, maxs], dim=-1)
-                min_maxs.append(min_max)
-
-            self.min_maxs[cls] = min_maxs
-
-        devnorm = []
-        for cls in self._classes:
-            min_maxs = []
-            for min_max in self.min_maxs[cls]:
-                min_maxs.append(
-                    self.op.stack([min_max for i in range(val_stats[0].shape[0])])
-                )
-            devnorm.append(
-                [
-                    float(self.op.mean(dev))
-                    for dev in self._deviation(val_stats, min_maxs)
-                ]
+        val_scores_for_agg = []
+        for i in range(n_layers):
+            val_scores = self._fit_layer(
+                i,
+                stats_all[i][train_mask],
+                stats_all[i][val_mask],
+                preds_all[train_mask],
+                preds_all[val_mask],
             )
-        self.devnorm = np.mean(np.array(devnorm), axis=0)
+            if val_scores is not None:
+                val_scores_for_agg.append(val_scores)
+
+        if self.aggregator is not None:
+            if val_scores_for_agg:
+                self.aggregator.fit(val_scores_for_agg)
+        else:
+            devnorm = []
+            for i in range(n_layers):
+                per_cls = []
+                for cls in self._classes:
+                    cls_mask = self.op.equal(preds_all[val_mask], cls)
+                    if self.op.sum(cls_mask) == 0:
+                        raise ValueError(
+                            f"Class {cls} not found in validation set. Increasing the"
+                            " validation set size with `val_split` may help. Otherwise,"
+                            " consider setting `val_split=None` to use the entire"
+                            " dataset for both training and validation."
+                        )
+                    stats_cls = stats_all[i][val_mask][cls_mask]
+                    thr = self.min_maxs[cls][i]
+                    per_cls.append(float(self.op.mean(self._deviation(stats_cls, thr))))
+                devnorm.append(np.mean(per_cls))
+            self.devnorm = np.asarray(devnorm)
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
-        Computes an OOD score for input samples "inputs" based on
-        the aggregation of deviations from quantiles of in-distribution channel-wise
-        correlations evaluate for each layer, power of gram matrices, and class.
+        Compute OOD scores for input samples. For each layer, calculate the deviation
+        from stored quantile thresholds. If an aggregator is available (and there is
+        more than one layer), combine per-layer scores via the aggregator; otherwise,
+        average the normalized scores.
 
         Args:
-            inputs: input samples to score
+            inputs (TensorType): Input samples to be scored.
 
         Returns:
-            scores
+            np.ndarray: Final OOD scores.
         """
-
-        tensor_stats, _ = self.feature_extractor.predict_tensor(
+        layer_stats, logits = self.feature_extractor.predict_tensor(
             inputs, postproc_fns=self.postproc_fns
         )
-
-        _, logits = self.feature_extractor.predict_tensor(inputs)
         preds = self.op.convert_to_numpy(self.op.argmax(logits, dim=1))
 
-        # We stack the min_maxs for each class depending on the prediction for each
-        # samples
-        min_maxs = []
-        for i in range(len(tensor_stats)):
-            min_maxs.append(self.op.stack([self.min_maxs[label][i] for label in preds]))
+        per_layer = [
+            self._score_layer(i, layer_stats[i], preds) for i in range(len(layer_stats))
+        ]
 
-        tensor_dev = self._deviation(tensor_stats, min_maxs)
-        score = self.op.mean(
-            self.op.cat(
-                [
-                    self.op.unsqueeze(tensor_dev_l, dim=0) / devnorm_l
-                    for tensor_dev_l, devnorm_l in zip(tensor_dev, self.devnorm)
-                ]
-            ),
-            dim=0,
-        )
-        return self.op.convert_to_numpy(score)
+        if len(per_layer) > 1 and self.aggregator is not None:
+            return self.aggregator.aggregate(per_layer)
+        return np.mean(np.stack(per_layer, axis=1), axis=1)
 
-    def _deviation(
-        self, stats: List[TensorType], min_maxs: List[TensorType]
-    ) -> List[TensorType]:
-        """Compute the deviation wrt quantiles (min/max) for feature_maps
-
-        Args:
-            stats (TensorType): The list of gram matrices (stacked power-wise)
-                for which we want to compute the deviation.
-            min_maxs (TensorType): The quantiles (tensorised) to compute the deviation
-                against.
-
-        Returns:
-            List(TensorType): A list with one element per layer containing a tensor of
-                per-sample deviation.
-        """
-        deviation = []
-        for stat, min_max in zip(stats, min_maxs):
-            where_min = self.op.where(stat < min_max[..., 0], 1.0, 0.0)
-            where_max = self.op.where(stat > min_max[..., 1], 1.0, 0.0)
-            deviation_min = (
-                (min_max[..., 0] - stat)
-                / (self.op.abs(min_max[..., 0]) + 1e-6)
-                * where_min
-            )
-            deviation_max = (
-                (stat - min_max[..., 1])
-                / (self.op.abs(min_max[..., 1]) + 1e-6)
-                * where_max
-            )
-            deviation.append(self.op.sum(deviation_min + deviation_max, dim=(1, 2)))
-        return deviation
-
-    def _stat(self, feature_map: TensorType) -> TensorType:
-        """Compute the correlation map (stat) for a given feature map. The values
-        for each power of gram matrix are contained in the same tensor
-
-        Args:
-            feature_map (TensorType): The input feature_map
-
-        Returns:
-            TensorType: The stacked gram matrices power-wise.
-        """
-        fm_s = feature_map.shape
-        stat = []
-        for p in self.orders:
-            feature_map_p = feature_map**p
-            # construct the Gram matrix
-            if len(fm_s) == 2:
-                # build gram matrix for feature map of shape [dim_dense_layer, 1]
-                feature_map_p = self.op.einsum(
-                    "bi,bj->bij", feature_map_p, feature_map_p
-                )
-            elif len(fm_s) >= 3:
-                # flatten the feature map
-                if self.backend == "tensorflow":
-                    feature_map_p = self.op.reshape(
-                        self.op.einsum("i...j->ij...", feature_map_p),
-                        (fm_s[0], fm_s[-1], -1),
-                    )
-                else:
-                    # batch, channel, spatial
-                    feature_map_p = self.op.reshape(
-                        feature_map_p, (fm_s[0], fm_s[1], -1)
-                    )
-                # batch, channel, channel
-                feature_map_p = self.op.matmul(
-                    feature_map_p, self.op.permute(feature_map_p, (0, 2, 1))
-                )
-            # normalize the Gram matrix
-            feature_map_p = self.op.sign(feature_map_p) * (
-                self.op.abs(feature_map_p) ** (1 / p)
-            )
-            # get the lower triangular part of the matrix
-            feature_map_p = self.op.tril(feature_map_p)
-            # directly sum row-wise (to limit computational burden) -> batch, channel
-            feature_map_p = self.op.sum(feature_map_p, dim=2)
-            # stat.append(self.op.t(feature_map_p))
-            stat.append(feature_map_p)
-        # batch, n_orders, channel
-        stat = self.op.stack(stat, 1)
-        return stat
+    # ------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------
 
     @property
     def requires_to_fit_dataset(self) -> bool:
         """
-        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+        Indicates whether this OOD detector requires in-distribution data for fitting.
 
         Returns:
-            bool: True if `fit_dataset` is required else False.
+            bool: True, since fitting requires computing class-conditional statistics.
         """
         return True
 
     @property
     def requires_internal_features(self) -> bool:
         """
-        Whether an OOD detector acts on internal model features.
+        Indicates whether this OOD detector utilizes internal model features.
 
         Returns:
-            bool: True if the detector perform computations on an intermediate layer
-            else False.
+            bool: True, as it operates on intermediate feature representations.
         """
         return True
