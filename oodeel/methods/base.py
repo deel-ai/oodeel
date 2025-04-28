@@ -185,6 +185,8 @@ class OODBaseDetector(ABC):
                 "`fit_dataset` argument must be provided for this OOD detector"
             )
 
+        self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
+
         # react: compute threshold (activation percentiles)
         if self.use_react:
             if fit_dataset is None:
@@ -209,7 +211,6 @@ class OODBaseDetector(ABC):
         self.feature_extractor = self._load_feature_extractor(
             model, feature_layers_id, head_layer_id, input_layer_id
         )
-        self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
 
         if fit_dataset is not None:
             if "verbose" in inspect.signature(self._fit_to_dataset).parameters.keys():
