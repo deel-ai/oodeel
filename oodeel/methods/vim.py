@@ -53,9 +53,12 @@ class VIM(OODBaseDetector):
                 variance to consider to determine the number of principal components per
                 layer. Defaults to 0.99.
         pca_origin (str): Method to compute the subspace origin (center).
-            - "pseudo": for the final classification layer (ID -1), use W⁻¹ b as origin.
-            - "center": use the empirical mean of features.
-            Defaults to "center".
+            - "pseudo": (Only for the final layer (ID -1), other layers will use
+                empirical mean!)
+                Weights are used to compute the pseudo-center W⁻¹ b, where W is the
+                weight matrix of the final linear layer (ID -1) and b is the bias
+                vector.
+            - "center": use the empirical mean of features. Defaults to "center".
         aggregator (Optional[BaseAggregator]): Combines multi-layer VIM scores.
             If None and more than one layer is used, defaults to
             StdNormalizedAggregator.
