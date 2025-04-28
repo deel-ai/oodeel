@@ -44,13 +44,18 @@ class TorchFeatureExtractor(FeatureExtractor):
     Feature extractor based on "model" to construct a feature space
     on which OOD detection is performed. The features can be the output
     activation values of internal model layers,
-    or the output of the model (softmax/logits).
+    or the output of the model (logits).
 
     Args:
         model: model to extract the features from
         feature_layers_id: list of str or int that identify features to output.
             If int, the rank of the layer in the layer list
             If str, the name of the layer. Defaults to [].
+        head_layer_id (int, str): identifier of the head layer.
+            If int, the rank of the layer in the layer list
+            If str, the name of the layer.
+            Defaults to -1
+
         input_layer_id: input layer of the feature extractor (to avoid useless forwards
             when working on the feature space without finetuning the bottom of
             the model).
@@ -62,6 +67,8 @@ class TorchFeatureExtractor(FeatureExtractor):
             Defaults to None.
         ash_percentile: if not None, the features are scaled following
             the method of Djurisic et al., ICLR 2023.
+        return_penultimate (bool): if True, the penultimate values are returned,
+            i.e. the input to the head_layer.
 
     """
 
@@ -69,19 +76,27 @@ class TorchFeatureExtractor(FeatureExtractor):
         self,
         model: nn.Module,
         feature_layers_id: List[Union[int, str]] = [],
+        head_layer_id: Optional[Union[int, str]] = -1,
         input_layer_id: Optional[Union[int, str]] = None,
         react_threshold: Optional[float] = None,
         scale_percentile: Optional[float] = None,
         ash_percentile: Optional[float] = None,
+        return_penultimate: Optional[bool] = False,
     ):
         model = model.eval()
+
+        if return_penultimate:
+            feature_layers_id.append("penultimate")
+
         super().__init__(
             model=model,
             feature_layers_id=feature_layers_id,
+            head_layer_id=head_layer_id,
             input_layer_id=input_layer_id,
             react_threshold=react_threshold,
             scale_percentile=scale_percentile,
             ash_percentile=ash_percentile,
+            return_penultimate=return_penultimate,
         )
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in self._hook_layers_id}
@@ -90,7 +105,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     @property
     def _hook_layers_id(self):
-        return self.feature_layers_id + [-1]
+        return self.feature_layers_id + [self.head_layer_id]
 
     def _get_features_hook(self, layer_id: Union[str, int]) -> Callable:
         """
@@ -107,6 +122,26 @@ class TorchFeatureExtractor(FeatureExtractor):
         def hook(_, __, output):
             if isinstance(output, torch.Tensor):
                 self._features[layer_id] = output
+            else:
+                raise NotImplementedError
+
+        return hook
+
+    def _get_penultimate_hook(self) -> Callable:
+        """
+        Hook that stores features corresponding to a specific layer
+        in a class dictionary.
+
+        Args:
+            layer_id (Union[str, int]): layer identifier
+
+        Returns:
+            Callable: hook function
+        """
+
+        def hook(_, input):
+            if isinstance(input[0], torch.Tensor):
+                self._features["penultimate"] = input[0]
             else:
                 raise NotImplementedError
 
@@ -148,6 +183,23 @@ class TorchFeatureExtractor(FeatureExtractor):
         else:
             return layer
 
+    @staticmethod
+    def get_layer_index_by_name(model: nn.Module, layer_id: str) -> int:
+        """
+        Get the index of a layer by its name.
+
+        Args:
+            model (nn.Module): model whose layer index will be returned
+            layer_id (str): name of the layer
+
+        Returns:
+            int: index of the layer with the given name
+        """
+        layer_names = list(dict(model.named_modules()).keys())
+        if layer_id not in layer_names:
+            raise ValueError(f"Layer with name '{layer_id}' not found in the model.")
+        return layer_names.index(layer_id)
+
     def prepare_extractor(self) -> None:
         """Prepare the feature extractor by adding hooks to self.model"""
         # prepare self.model for ood hooks (add _ood_handles attribute or
@@ -156,7 +208,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
-            pen_layer = self.find_layer(self.model, -1)
+            pen_layer = self.find_layer(self.model, self.head_layer_id)
             self.model._ood_handles.append(
                 pen_layer.register_forward_pre_hook(
                     self._get_clip_hook(self.react_threshold)
@@ -165,7 +217,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # === If SCALE method, scale activations from penultimate layer ===
         if self.scale_percentile is not None:
-            pen_layer = self.find_layer(self.model, -1)
+            pen_layer = self.find_layer(self.model, self.head_layer_id)
             self.model._ood_handles.append(
                 pen_layer.register_forward_pre_hook(
                     self._get_scale_hook(self.scale_percentile)
@@ -174,7 +226,7 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # === If ASH method, scale and prune activations from penultimate layer ===
         if self.ash_percentile is not None:
-            pen_layer = self.find_layer(self.model, -1)
+            pen_layer = self.find_layer(self.model, self.head_layer_id)
             self.model._ood_handles.append(
                 pen_layer.register_forward_pre_hook(
                     self._get_ash_hook(self.ash_percentile)
@@ -183,6 +235,14 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         # Register a hook to store feature values for each considered layer + last layer
         for layer_id in self._hook_layers_id:
+            if layer_id == "penultimate":
+                # Register penultimate hook
+                layer = self.find_layer(self.model, self.head_layer_id)
+                self.model._ood_handles.append(
+                    layer.register_forward_pre_hook(self._get_penultimate_hook())
+                )
+                continue
+
             layer = self.find_layer(self.model, layer_id)
             self.model._ood_handles.append(
                 layer.register_forward_hook(self._get_features_hook(layer_id))

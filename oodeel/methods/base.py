@@ -142,6 +142,7 @@ class OODBaseDetector(ABC):
         fit_dataset: Optional[Union[ItemType, DatasetType]] = None,
         feature_layers_id: List[Union[int, str]] = [],
         postproc_fns: Optional[List[Callable]] = None,
+        head_layer_id: Optional[Union[int, str]] = -1,
         input_layer_id: Optional[Union[int, str]] = None,
         verbose: bool = False,
         **kwargs,
@@ -161,6 +162,10 @@ class OODBaseDetector(ABC):
             postproc_fns (Optional[List[Callable]]): list of postproc functions,
                 one per output layer. Defaults to None.
                 If None, identity function is used.
+            head_layer_id (int, str): identifier of the head layer.
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer.
+                Defaults to -1
             input_layer_id (List[int]): = list of str or int that identify the input
                 layer of the feature extractor.
                 If int, the rank of the layer in the layer list
@@ -188,7 +193,9 @@ class OODBaseDetector(ABC):
                     " provided to compute react activation threshold"
                 )
             else:
-                self.compute_react_threshold(model, fit_dataset, verbose=verbose)
+                self.compute_react_threshold(
+                    model, fit_dataset, verbose=verbose, head_layer_id=head_layer_id
+                )
 
         if (feature_layers_id == []) and (self.requires_internal_features):
             raise ValueError(
@@ -200,7 +207,7 @@ class OODBaseDetector(ABC):
             )
 
         self.feature_extractor = self._load_feature_extractor(
-            model, feature_layers_id, input_layer_id
+            model, feature_layers_id, head_layer_id, input_layer_id
         )
         self.postproc_fns = self._sanitize_posproc_fns(postproc_fns)
 
@@ -212,8 +219,10 @@ class OODBaseDetector(ABC):
     def _load_feature_extractor(
         self,
         model: Callable,
-        feature_layers_id: List[Union[int, str]] = None,
+        feature_layers_id: List[Union[int, str]] = [],
+        head_layer_id: Optional[Union[int, str]] = -1,
         input_layer_id: Optional[Union[int, str]] = None,
+        return_penultimate: bool = False,
     ) -> Callable:
         """
         Loads feature extractor
@@ -224,10 +233,18 @@ class OODBaseDetector(ABC):
                 features to output.
                 If int, the rank of the layer in the layer list
                 If str, the name of the layer. Defaults to [-1]
+            head_layer_id (int): identifier of the head layer.
+                -1 when the last layer is the head
+                -2 when the last layer is a softmax activation layer
+                ...
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to -1
             input_layer_id (List[int]): = list of str or int that identify the input
                 layer of the feature extractor.
                 If int, the rank of the layer in the layer list
                 If str, the name of the layer. Defaults to None.
+            return_penultimate (bool): if True, the penultimate values are returned,
+                i.e. the input to the head_layer.
 
         Returns:
             FeatureExtractor: a feature extractor instance
@@ -241,9 +258,11 @@ class OODBaseDetector(ABC):
             model,
             feature_layers_id=feature_layers_id,
             input_layer_id=input_layer_id,
+            head_layer_id=head_layer_id,
             react_threshold=self.react_threshold,
             scale_percentile=self.scale_percentile,
             ash_percentile=self.ash_percentile,
+            return_penultimate=return_penultimate,
         )
         return feature_extractor
 
@@ -324,11 +343,17 @@ class OODBaseDetector(ABC):
         return scores, info
 
     def compute_react_threshold(
-        self, model: Callable, fit_dataset: DatasetType, verbose: bool = False
+        self,
+        model: Callable,
+        fit_dataset: DatasetType,
+        verbose: bool = False,
+        head_layer_id: int = -1,
     ):
-        penult_feat_extractor = self._load_feature_extractor(model, [-2])
+        penult_feat_extractor = self._load_feature_extractor(
+            model, head_layer_id=head_layer_id, return_penultimate=True
+        )
         unclipped_features, _ = penult_feat_extractor.predict(
-            fit_dataset, verbose=verbose
+            fit_dataset, verbose=verbose, postproc_fns=self.postproc_fns
         )
         self.react_threshold = self.op.quantile(
             unclipped_features[0], self.react_quantile

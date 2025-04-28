@@ -77,14 +77,28 @@ Now that *oodeel* is installed, here are some basic examples of what you can do 
 Load in-distribution and out-of-distribution datasets.
 
 ```python
-from oodeel.datasets import OODDataset
+from oodeel.datasets import load_data_handler
 
-ds_in = OODDataset(
-  'mnist', load_kwargs={"split":"test"},
-  backend="tensorflow").prepare(batch_size) # use backend="torch" if you prefer torch.DataLoader
-ds_out = OODDataset(
-  'fashion_mnist', load_kwargs={"split":"test"},
-  backend="tensorflow").prepare(batch_size)
+data_handler = load_data_handler("torch")
+# use backend="tensorflow" if using tensorflow
+# Do not forget to adapt load_kwargs in that case
+
+# Load in-distribution dataset: CIFAR-10
+ds_in = data_handler.load_dataset(
+    "CIFAR10", load_kwargs={"root": data_path, "train": False, "download": True}
+)
+# Load out-of-distribution dataset: SVHN
+ds_out = data_handler.load_dataset(
+    "SVHN", load_kwargs={"root": data_path, "split": "test", "download": True}
+)
+
+# Prepare datasets for forward (requires appropriate preprocess_fn e.g. input normalization)
+ds_in = data_handler.prepare(
+    ds_in, batch_size, preprocess_fn, columns=["input", "label"]
+)
+ds_out = data_handler.prepare(
+    ds_out, batch_size, preprocess_fn, columns=["input", "label"]
+)
 ```
 
 ### For benchmarking with a classes subset as in-distribution and another classes subset as out-of-distribution
@@ -92,12 +106,25 @@ ds_out = OODDataset(
 Load a dataset and split it into an in-distribution dataset and ou-of-distribution dataset depending on its label values (a common practice of anomaly detection and open set recognition).
 
 ```python
-from oodeel.datasets import OODDataset
+from oodeel.datasets import load_data_handler
+
+data_handler = load_data_handler("torch") # use backend="tensorflow" if using tensorflow
+
+# Load dataset to split: CIFAR-10
+ds_test = data_handler.load_dataset(
+    "CIFAR10", load_kwargs={"root": data_path, "train": False, "download": True}
+)
 
 in_labels = [0, 1, 2, 3, 4]
-oods_in, oods_out = oods_test.split_by_class(in_labels=in_labels)
-ds_in = oods_in.prepare(batch_size=batch_size)
-ds_out = oods_out.prepare(batch_size=batch_size)
+ds_in, ds_out = data_handler.split_by_class(ds_test, in_labels)
+
+# Prepare datasets for forward (requires appropriate preprocess_fn e.g. input normalization)
+ds_in = data_handler.prepare(
+    ds_in, batch_size, preprocess_fn, columns=["input", "label"]
+)
+ds_out = data_handler.prepare(
+    ds_out, batch_size, preprocess_fn, columns=["input", "label"]
+)
 ```
 ### Run an OOD method
 
@@ -107,8 +134,9 @@ Load an OOD method and use it on an already-trained model
 from oodeel.methods import MLS
 
 mls = MLS()
-mls.fit(model)
-# info contains model predictions and labels if avail
+mls.fit(model) # Requires a pretrained model
+
+# info_X contains model predictions and labels if available
 scores_in, info_in = mls.score(ds_in)
 scores_out, info_out = mls.score(ds_out)
 ```
@@ -172,15 +200,13 @@ Currently, **oodeel** includes the following baselines:
 | DKNN | [Out-of-Distribution Detection with Deep Nearest Neighbors](http://arxiv.org/abs/2204.06507) | ICML 2022 | avail [tensorflow](docs/notebooks/tensorflow/demo_dknn_tf.ipynb) or  [torch](docs/notebooks/torch/demo_dknn_torch.ipynb) |
 | VIM | [ViM: Out-Of-Distribution with Virtual-logit Matching](http://arxiv.org/abs/2203.10807) | CVPR 2022 |avail [tensorflow](docs/notebooks/tensorflow/demo_vim_tf.ipynb) or  [torch](docs/notebooks/torch/demo_vim_torch.ipynb)  |
 | Entropy | [Likelihood Ratios for Out-of-Distribution Detection](https://proceedings.neurips.cc/paper/2019/hash/1e79596878b2320cac26dd792a6c51c9-Abstract.html) | NeurIPS 2019 |avail [tensorflow](docs/notebooks/tensorflow/demo_entropy_tf.ipynb) or  [torch](docs/notebooks/torch/demo_entropy_torch.ipynb)  |
-| GODIN | [Generalized ODIN: Detecting Out-of-Distribution Image Without Learning From Out-of-Distribution Data](https://ieeexplore.ieee.org/document/9156473/) | CVPR 2020 | planned |
 | ReAct | [ReAct: Out-of-distribution Detection With Rectified Activations](http://arxiv.org/abs/2111.12797) | NeurIPS 2021 | avail [tensorflow](docs/notebooks/tensorflow/demo_react_tf.ipynb) or  [torch](docs/notebooks/torch/demo_react_torch.ipynb) |
-| NMD | [Neural Mean Discrepancy for Efficient Out-of-Distribution Detection](https://openaccess.thecvf.com/content/CVPR2022/html/Dong_Neural_Mean_Discrepancy_for_Efficient_Out-of-Distribution_Detection_CVPR_2022_paper.html) | CVPR 2022 | planned |
 | Gram | [Detecting Out-of-Distribution Examples with Gram Matrices](https://proceedings.mlr.press/v119/sastry20a.html) | ICML 2020 | avail [tensorflow](docs/notebooks/tensorflow/demo_gram_tf.ipynb) or  [torch](docs/notebooks/torch/demo_gram_torch.ipynb) |
 | GEN | [GEN: Pushing the Limits of Softmax-Based Out-of-Distribution Detection](https://openaccess.thecvf.com/content/CVPR2023/html/Liu_GEN_Pushing_the_Limits_of_Softmax-Based_Out-of-Distribution_Detection_CVPR_2023_paper.html) | CVPR 2023 | avail [tensorflow](docs/notebooks/tensorflow/demo_gen_tf.ipynb) or [torch](docs/notebooks/torch/demo_gen_torch.ipynb) |
 | RMDS | [A Simple Fix to Mahalanobis Distance for Improving Near-OOD Detection](https://arxiv.org/abs/2106.09022) | preprint | avail [tensorflow](docs/notebooks/tensorflow/demo_rmds_tf.ipynb) or [torch](docs/notebooks/torch/demo_rmds_torch.ipynb) |
 | SHE | [Out-of-Distribution Detection based on In-Distribution Data Patterns Memorization with Modern Hopfield Energy](https://openreview.net/forum?id=KkazG4lgKL) | ICLR 2023 | avail [tensorflow](docs/notebooks/tensorflow/demo_she_tf.ipynb) or [torch](docs/notebooks/torch/demo_she_torch.ipynb) |
-| ASH | [Extremely Simple Activation Shaping for Out-of-Distribution Detection](http://arxiv.org/abs/2310.00227) | ICLR 2023 | avail [tensorflow](docs/notebooks/tensorflow/demo_ash_tf.ipynb) or [torch](docs/notebooks/torch/demo_ash_torch.ipynb) |
-| SCALE | [Scaling for Training Time and Post-hoc Out-of-distribution Detection Enhancement](https://arxiv.org/abs/2111.12797) | ICLR 2024 | avail [tensorflow](docs/notebooks/tensorflow/demo_scale_tf.ipynb) or [torch](docs/notebooks/torch/demo_scale_torch.ipynb) |
+| ASH | [Extremely Simple Activation Shaping for Out-of-Distribution Detection](https://arxiv.org/abs/2209.09858) | ICLR 2023 | avail [tensorflow](docs/notebooks/tensorflow/demo_ash_tf.ipynb) or [torch](docs/notebooks/torch/demo_ash_torch.ipynb) |
+| SCALE | [Scaling for Training Time and Post-hoc Out-of-distribution Detection Enhancement](https://arxiv.org/abs/2310.00227) | ICLR 2024 | avail [tensorflow](docs/notebooks/tensorflow/demo_scale_tf.ipynb) or [torch](docs/notebooks/torch/demo_scale_torch.ipynb) |
 
 
 
