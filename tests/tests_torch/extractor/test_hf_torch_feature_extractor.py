@@ -21,17 +21,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import pytest
-import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from transformers import MobileNetV1ForImageClassification
 
 from oodeel.extractor.hf_torch_feature_extractor import HFTorchFeatureExtractor
-from tests.tests_torch import ComplexNet
 from tests.tests_torch import generate_data_torch
-from tests.tests_torch import named_sequential_model
-from tests.tests_torch import Net
-from tests.tests_torch import sequential_model
 
 # From Pytorch CIFAR-10 example
 
