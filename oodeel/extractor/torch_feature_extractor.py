@@ -23,6 +23,7 @@
 from typing import get_args
 from typing import Optional
 
+import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -322,6 +323,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         postproc_fns: Optional[List[Callable]] = None,
         detach: bool = True,
         verbose: bool = False,
+        numpy_concat: bool = False,
         **kwargs,
     ) -> Tuple[List[torch.Tensor], dict]:
         """Get the projection of the dataset in the feature space of self.model
@@ -333,7 +335,10 @@ class TorchFeatureExtractor(FeatureExtractor):
             detach (bool): if True, return features detached from the computational
                 graph. Defaults to True.
             verbose (bool): if True, display a progress bar. Defaults to False.
-            kwargs (dict): additional arguments not considered for prediction
+            numpy_concat (bool): if True, each mini-batch is immediately moved
+                to CPU and converted to a NumPy array before concatenation.
+                That keeps GPU memory constant at one batch, at the cost of a small
+                host-device transfer overhead. Defaults to False.
 
         Returns:
             List[torch.Tensor], dict: features and extra information (logits, labels) as
@@ -359,16 +364,38 @@ class TorchFeatureExtractor(FeatureExtractor):
                 features_batch, logits_batch = self.predict_tensor(
                     tensor, postproc_fns, detach=detach
                 )
+
+                # dump everything to host NumPy if requested
+                if numpy_concat:
+                    features_batch = [f.detach().cpu().numpy() for f in features_batch]
+                    logits_batch = (
+                        logits_batch.detach().cpu().numpy()
+                        if logits_batch is not None
+                        else None
+                    )
+
                 for i, f in enumerate(features_batch):
                     features[i] = (
-                        f if features[i] is None else torch.cat([features[i], f], dim=0)
+                        f
+                        if features[i] is None
+                        else (
+                            np.concatenate([features[i], f], axis=0)
+                            if numpy_concat
+                            else torch.cat([features[i], f], dim=0)
+                        )
                     )
+
                 # concatenate logits
                 logits = (
                     logits_batch
                     if logits is None
-                    else torch.cat([logits, logits_batch], axis=0)
+                    else (
+                        np.concatenate([logits, logits_batch], axis=0)
+                        if numpy_concat
+                        else torch.cat([logits, logits_batch], dim=0)
+                    )
                 )
+
                 # concatenate labels of current batch with previous batches
                 if contains_labels:
                     lbl_batch = TorchDataHandler.get_label_from_dataset_item(elem)

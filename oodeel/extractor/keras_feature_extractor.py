@@ -23,6 +23,7 @@
 from typing import get_args
 from typing import Optional
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tqdm import tqdm
@@ -280,6 +281,7 @@ class KerasFeatureExtractor(FeatureExtractor):
         dataset: Union[ItemType, tf.data.Dataset],
         postproc_fns: Optional[List[tf.keras.Model]] = None,
         verbose: bool = False,
+        numpy_concat: bool = False,
         **kwargs,
     ) -> Tuple[List[tf.Tensor], dict]:
         """Get the projection of the dataset in the feature space of self.model
@@ -289,6 +291,10 @@ class KerasFeatureExtractor(FeatureExtractor):
             postproc_fns (Optional[tf.keras.Model]): postprocessing function to apply
                 to each feature immediately after forward. Default to None.
             verbose (bool): if True, display a progress bar. Defaults to False.
+            numpy_concat (bool): if True, each mini-batch is immediately moved
+                to CPU and converted to a NumPy array before concatenation.
+                That keeps GPU memory constant at one batch, at the cost of a small
+                host-device transfer overhead. Defaults to False.
             kwargs (dict): additional arguments not considered for prediction
 
         Returns:
@@ -313,17 +319,33 @@ class KerasFeatureExtractor(FeatureExtractor):
                 tensor = TFDataHandler.get_input_from_dataset_item(elem)
                 features_batch, logits_batch = self.predict_tensor(tensor, postproc_fns)
 
+                # move data to host as NumPy if requested
+                if numpy_concat:
+                    features_batch = [f.numpy() for f in features_batch]
+                    logits_batch = (
+                        logits_batch.numpy() if logits_batch is not None else None
+                    )
+
                 for i, f in enumerate(features_batch):
                     features[i] = (
                         f
                         if features[i] is None
-                        else tf.concat([features[i], f], axis=0)
+                        else (
+                            np.concatenate([features[i], f], axis=0)
+                            if numpy_concat
+                            else tf.concat([features[i], f], axis=0)
+                        )
                     )
+
                 # concatenate logits
                 logits = (
                     logits_batch
                     if logits is None
-                    else tf.concat([logits, logits_batch], axis=0)
+                    else (
+                        np.concatenate([logits, logits_batch], axis=0)
+                        if numpy_concat
+                        else tf.concat([logits, logits_batch], axis=0)
+                    )
                 )
                 # concatenate labels of current batch with previous batches
                 if contains_labels:
