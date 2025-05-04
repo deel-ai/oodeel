@@ -170,12 +170,12 @@ class Mahalanobis(OODBaseDetector):
     # ------------------------------------------------------------------
 
     def _fit_layer(
-        self, layer_features: TensorType, labels: TensorType, subset_size: int = 5000
+        self, layer_features: np.ndarray, labels: TensorType, subset_size: int = 5000
     ) -> Tuple[Tuple[Dict[int, TensorType], np.ndarray], Optional[np.ndarray]]:
         """Fit statistics for a single layer and, if required, return scores.
 
         Args:
-            layer_features (TensorType): In-distribution features for the layer.
+            layer_features (np.ndarray): In-distribution features for the layer.
             labels (TensorType): Class labels.
             subset_size (int, optional): Number of samples used to compute initial
                 scores for the aggregator. Defaults to 5000.
@@ -186,6 +186,9 @@ class Mahalanobis(OODBaseDetector):
                 * Optional numpy array of OOD scores for the first subset_size
                   samples (None if no aggregator).
         """
+        if isinstance(layer_features, np.ndarray):
+            layer_features = self.op.from_numpy(layer_features)
+
         mus, pinv_cov = self._compute_layer_stats(layer_features, labels)
 
         scores: Optional[np.ndarray] = None
@@ -245,7 +248,7 @@ class Mahalanobis(OODBaseDetector):
             self.postproc_fns = [self.feature_extractor._default_postproc_fn] * n_layers
 
         features, infos = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns, detach=True
+            fit_dataset, postproc_fns=self.postproc_fns, detach=True, numpy_concat=True
         )
         labels = infos["labels"]
 
