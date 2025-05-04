@@ -69,20 +69,19 @@ class DKNN(OODBaseDetector):
                     + "Please install faiss-gpu or set use_gpu to False."
                 ) from e
 
-    def _prepare_layer_features(self, features: TensorType) -> np.ndarray:
+    def _prepare_layer_features(self, features: np.ndarray) -> np.ndarray:
         """
         Convert a feature tensor to a 2D numpy array and apply L2 normalization.
 
         Args:
-            features (TensorType): Feature tensor to be processed.
+            features (np.ndarray): Feature tensor to be processed.
 
         Returns:
             np.ndarray: Processed feature array with shape (num_samples, feature_dim)
                 and L2 normalized.
         """
-        features_np = self.op.convert_to_numpy(features)
-        features_np = features_np.reshape(features_np.shape[0], -1)
-        return self._l2_normalization(features_np)
+        features = features.reshape(features.shape[0], -1)
+        return self._l2_normalization(features)
 
     def _create_index(self, dim: int) -> faiss.IndexFlatL2:
         """
@@ -102,7 +101,7 @@ class DKNN(OODBaseDetector):
             return faiss.IndexFlatL2(dim)
 
     def _fit_layer(
-        self, layer_features: TensorType
+        self, layer_features: np.ndarray
     ) -> Tuple[faiss.IndexFlatL2, Optional[np.ndarray]]:
         """
         Build a FAISS index for a single feature layer and compute initial scores for
@@ -145,6 +144,7 @@ class DKNN(OODBaseDetector):
             np.ndarray: The OOD scores calculated as the distance to the k-th nearest
                 neighbor.
         """
+        layer_features = self.op.convert_to_numpy(layer_features)
         norm_features = self._prepare_layer_features(layer_features)
         scores, _ = index.search(norm_features, self.nearest)
         return scores[:, -1]
@@ -176,7 +176,7 @@ class DKNN(OODBaseDetector):
             ] * num_feature_layers
 
         fit_projected, _ = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns
+            fit_dataset, postproc_fns=self.postproc_fns, numpy_concat=True
         )
         per_layer_scores = []
 
@@ -211,7 +211,8 @@ class DKNN(OODBaseDetector):
             Tuple[np.ndarray]: A tuple containing the aggregated OOD scores.
         """
         input_projected, _ = self.feature_extractor.predict_tensor(
-            inputs, postproc_fns=self.postproc_fns
+            inputs,
+            postproc_fns=self.postproc_fns,
         )
         scores = []
 

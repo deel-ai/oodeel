@@ -126,7 +126,7 @@ class SHE(OODBaseDetector):
 
     def _fit_layer(
         self,
-        layer_features: TensorType,
+        layer_features: np.ndarray,
         labels_np: np.ndarray,
         preds_np: np.ndarray,
         subset_size: int = 5000,
@@ -155,14 +155,15 @@ class SHE(OODBaseDetector):
         for cls in self._classes:  # type: ignore[iteration-over-optional]
             idx = np.equal(labels_np, cls) & np.equal(preds_np, cls)
             feats_cls = layer_features[idx]
-            mu = self.op.unsqueeze(self.op.mean(feats_cls, dim=0), dim=0)
+            mu = np.expand_dims(np.mean(feats_cls, axis=0), axis=0)
             mus_per_cls.append(mu)
-        mus_layer = self.op.permute(self.op.cat(mus_per_cls), (1, 0))  # [D, C]
+        mus_layer = self.op.from_numpy(np.concatenate(mus_per_cls, axis=0))  # [C, D]
+        mus_layer = self.op.permute(mus_layer, (1, 0))  # [D, C]
 
         scores_layer: Optional[np.ndarray] = None
         if self.aggregator is not None:
             n_samples = min(subset_size, layer_features.shape[0])
-            feats_subset = layer_features[:n_samples]
+            feats_subset = self.op.from_numpy(layer_features[:n_samples])
             she_subset = self._score_layer(feats_subset, mus_layer)
             scores_layer = -self.op.convert_to_numpy(she_subset)
         return mus_layer, scores_layer
@@ -201,7 +202,7 @@ class SHE(OODBaseDetector):
             self.feature_extractor.feature_layers_id
         )
         features, infos = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns
+            fit_dataset, postproc_fns=self.postproc_fns, numpy_concat=True
         )
 
         # Default aggregator if not supplied and several layers are present
@@ -209,7 +210,7 @@ class SHE(OODBaseDetector):
             self.aggregator = StdNormalizedAggregator()
 
         labels_np = self.op.convert_to_numpy(infos["labels"])
-        preds_np = self.op.convert_to_numpy(self.op.argmax(infos["logits"], dim=-1))
+        preds_np = np.argmax(infos["logits"], axis=1)
         self._classes = np.sort(np.unique(labels_np))
 
         # ------- Per-layer statistics & aggregator pre-scores ---------------
