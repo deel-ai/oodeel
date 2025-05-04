@@ -310,54 +310,48 @@ class KerasFeatureExtractor(FeatureExtractor):
             # Get labels if dataset is a tuple/list
             if isinstance(dataset, (list, tuple)):
                 labels = TFDataHandler.get_label_from_dataset_item(dataset)
-
-        else:  # if dataset is a tf.data.Dataset
-            features = [None for i in range(len(self.feature_layers_id))]
-            logits = None
+        else:
+            # Determine if dataset yields labels
             contains_labels = TFDataHandler.get_item_length(dataset) > 1
+
+            # Buffers for accumulation
+            features_per_layer = [[] for _ in self.feature_layers_id]
+            logits_list = []
+            labels_list = [] if contains_labels else None
+
+            # Iterate through dataset
             for elem in tqdm(dataset, desc="Predicting", disable=not verbose):
                 tensor = TFDataHandler.get_input_from_dataset_item(elem)
-                features_batch, logits_batch = self.predict_tensor(tensor, postproc_fns)
+                feats_batch, logits_batch = self.predict_tensor(tensor, postproc_fns)
 
-                # move data to host as NumPy if requested
+                # To host/NumPy if requested
                 if numpy_concat:
-                    features_batch = [f.numpy() for f in features_batch]
+                    feats_batch = [f.numpy() for f in feats_batch]
                     logits_batch = (
                         logits_batch.numpy() if logits_batch is not None else None
                     )
 
-                for i, f in enumerate(features_batch):
-                    features[i] = (
-                        f
-                        if features[i] is None
-                        else (
-                            np.concatenate([features[i], f], axis=0)
-                            if numpy_concat
-                            else tf.concat([features[i], f], axis=0)
-                        )
-                    )
-
-                # concatenate logits
-                logits = (
-                    logits_batch
-                    if logits is None
-                    else (
-                        np.concatenate([logits, logits_batch], axis=0)
-                        if numpy_concat
-                        else tf.concat([logits, logits_batch], axis=0)
-                    )
-                )
-                # concatenate labels of current batch with previous batches
+                # Accumulate per layer
+                for i, f in enumerate(feats_batch):
+                    features_per_layer[i].append(f)
+                if logits_batch is not None:
+                    logits_list.append(logits_batch)
                 if contains_labels:
-                    lbl_batch = TFDataHandler.get_label_from_dataset_item(elem)
+                    lbl = TFDataHandler.get_label_from_dataset_item(elem)
+                    labels_list.append(lbl)
 
-                    if labels is None:
-                        labels = lbl_batch
-                    else:
-                        labels = tf.concat([labels, lbl_batch], axis=0)
+            # Single concatenation
+            if numpy_concat:
+                features = [np.concatenate(lst, axis=0) for lst in features_per_layer]
+                logits = np.concatenate(logits_list, axis=0) if logits_list else None
+            else:
+                features = [tf.concat(lst, axis=0) for lst in features_per_layer]
+                logits = tf.concat(logits_list, axis=0) if logits_list else None
 
-        # store extra information in a dict
-        info = dict(labels=labels, logits=logits)
+            # Concatenate labels if they are available
+            labels = tf.concat(labels_list, axis=0) if labels_list is not None else None
+
+        info = {"labels": labels, "logits": logits}
         return features, info
 
     def get_weights(self, layer_id: Union[int, str]) -> List[tf.Tensor]:
