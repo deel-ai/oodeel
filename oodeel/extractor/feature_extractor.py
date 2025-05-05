@@ -174,21 +174,6 @@ class FeatureExtractor(ABC):
         """
         raise NotImplementedError()
 
-    @staticmethod
-    @abstractmethod
-    def get_layer_index_by_name(model: Callable, layer_id: str) -> int:
-        """
-        Get the index of a layer by its name.
-
-        Args:
-            model (nn.Module): model whose layer index will be returned
-            layer_id (str): name of the layer
-
-        Returns:
-            int: index of the layer with the given name
-        """
-        raise NotImplementedError()
-
     def __call__(self, inputs: TensorType) -> TensorType:
         """
         Convenience wrapper for predict_tensor().
