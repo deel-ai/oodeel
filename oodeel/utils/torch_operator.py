@@ -247,6 +247,8 @@ class TorchOperator(Operator):
     @staticmethod
     def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> torch.Tensor:
         "sum along dim"
+        if dim is None:
+            return torch.sum(tensor)
         return torch.sum(tensor, dim)
 
     @staticmethod
