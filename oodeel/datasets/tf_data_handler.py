@@ -106,7 +106,8 @@ class TFDataHandler(DataHandler):
             columns (list, optional): Column names. If None, assigned as "input_i"
                 for i-th column. Defaults to None.
             hub (str, optional): The hub to load the dataset from. Can be either
-                "tensorflow-datasets" or "huggingface". Defaults to "tensorflow-datasets".
+                "tensorflow-datasets" or "huggingface".
+                Defaults to "tensorflow-datasets".
             load_kwargs (dict, optional): Additional args for loading from
                 tensorflow_datasets. Defaults to {}.
 
