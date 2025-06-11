@@ -30,5 +30,6 @@ except ImportError:
 try:
     import torch
     from .torch_feature_extractor import TorchFeatureExtractor
+    from .hf_torch_feature_extractor import HFTorchFeatureExtractor
 except ImportError:
     pass
