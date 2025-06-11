@@ -105,6 +105,9 @@ class TFDataHandler(DataHandler):
             or a tuple/dict of np.ndarrays/tf.Tensors.
             columns (list, optional): Column names. If None, assigned as "input_i"
                 for i-th column. Defaults to None.
+            hub (str, optional): The hub to load the dataset from. Can be either
+                "tensorflow-datasets" or "huggingface".
+                Defaults to "tensorflow-datasets".
             load_kwargs (dict, optional): Additional args for loading from
                 tensorflow_datasets. Defaults to {}.
 
@@ -232,7 +235,7 @@ class TFDataHandler(DataHandler):
         Args:
             dataset_id (str): Identifier of the dataset
             load_kwargs (dict): Loading kwargs to add to the initialization
-            of the dataset.
+                of the dataset.
 
         Returns:
             tf.data.Dataset: dataset
