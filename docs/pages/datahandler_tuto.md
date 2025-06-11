@@ -12,7 +12,7 @@ from oodeel.datasets import load_data_handler
 
 data_handler = load_data_handler()
 ```
-If poth backend are installed in your environment, you have to specify the desired backend you will work with to `load_data_handler`:
+If both backends are installed in your environment, you have to specify the desired backend you will work with to `load_data_handler`:
 
 ```python
 from oodeel.datasets import load_data_handler
@@ -72,16 +72,16 @@ This time we have to change our data_loader to make it compatible with tensorflo
 
 ## 3. Loading CIFAR-10 with `huggingface`
 
-The `DataHandler` classes also support loading datasets from the `huggingface` hub. Below is an example of how to load CIFAR-10.
+The `DataHandler` classes also support loading datasets from the `huggingface` hub. Depending on the backend, `DataHandler` will either return a `tf.data.Dataset` or a `datasets.Dataset`. Below is an example of how to load CIFAR-10.
 
 ### In **pytorch**:
 
 ```python
-from oodeel.datasets.torch_data_handler import TorchDataHandler
+from oodeel.datasets import load_data_handler
 from torchvision import transforms
 
 # Initialize the TorchDataHandler
-data_handler = TorchDataHandler()
+data_handler = load_data_handler("torch")
 
 # Load CIFAR-10 dataset
 ds_train = data_handler.load_dataset(
@@ -114,6 +114,13 @@ def preprocess_cifar10(examples):
 
 # Exact same code as for pytorch here !
 ```
+
+And the way we load `data_handler`:
+```python
+data_handler = load_data_handler("tensorflow") # instead of torch.
+```
+If only one of the two backends are installed, you do not even need to specify the backend ; `load_data_handler` will figure it out.
+
 !!! Warning
     The conversion from `datasets.Dataset` to `tf.data.dataset` makes the first forward pass over the dataset quite slow. When using datasets from HugginFace in tensorflow, make sure to optimize your code so that you keep your `tf.data.dataset` in memory when it is used for several experiments.
 

@@ -206,10 +206,10 @@ class DataHandler(ABC):
         Args:
             dataset_id (str): Identifier of the dataset
             load_kwargs (dict): Loading kwargs to add to the initialization
-            of the dataset.
+                of the dataset.
 
         Returns:
-            tf.data.Dataset: dataset
+            DatasetType: dataset
         """
         raise NotImplementedError()
 
