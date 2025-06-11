@@ -200,13 +200,13 @@ class DataHandler(ABC):
     def load_from_huggingface(
         dataset_id: str,
         load_kwargs: dict = {},
-    ) -> DatasetType:
+    ):
         """Load a Dataset from the Hugging Face datasets catalog
 
         Args:
             dataset_id (str): Identifier of the dataset
             load_kwargs (dict): Loading kwargs to add to the initialization
-            of the dataset.
+                of the dataset.
 
         Returns:
             tf.data.Dataset: dataset
