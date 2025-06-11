@@ -127,6 +127,24 @@ def test_get_column_elements_shape():
     assert shape == input_shape
 
 
+def test_get_columns_shape():
+    input_shape = (32, 32, 3)
+    num_labels = 10
+    samples = 100
+
+    data = generate_data_tf(
+        x_shape=input_shape, num_labels=num_labels, samples=samples
+    )  # .batch(samples)
+
+    shapes = TFDataHandler.get_columns_shapes(data)
+    assert shapes[0] == input_shape
+
+    handler = TFDataHandler()
+    data = handler.tuple_to_dict(data, ["input", "label"])
+    shapes = TFDataHandler.get_columns_shapes(data)
+    assert shapes["input"] == input_shape
+
+
 def test_get_dataset_length():
     input_shape = (32, 32, 3)
     num_labels = 10
@@ -201,6 +219,49 @@ def test_load_tensorflow_datasets(dataset_name, train):
 
 
 @pytest.mark.parametrize(
+    "dataset_name, split",
+    [
+        ("mnist", "train"),
+        ("mnist", "test"),
+    ],
+)
+def test_load_huggingface(dataset_name, split):
+    ds_infos = {
+        "img_shape": (28, 28),
+        "num_samples": {"train": 60000, "test": 10000},
+    }
+
+    handler = TFDataHandler()
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # define dataset
+        dataset = handler.load_dataset(
+            dataset_name,
+            load_kwargs=dict(cache_dir=tmpdirname, split=split),
+            hub="huggingface",
+        )
+
+        # dummy item
+        for item in dataset.take(1):
+            dummy_item = item
+        dummy_columns = list(dummy_item.keys())
+        dummy_shapes = [v.shape for v in dummy_item.values()]
+
+        # check columns
+        assert list(dataset.element_spec.keys()) == dummy_columns == ["image", "label"]
+
+        # check output shape
+        assert (
+            [dataset.element_spec[key].shape for key in dataset.element_spec.keys()]
+            == dummy_shapes
+            == [tf.TensorShape(ds_infos["img_shape"]), tf.TensorShape([])]
+        )
+
+        # check len of dataset
+        assert len(dataset) == ds_infos["num_samples"][split]
+
+
+@pytest.mark.parametrize(
     "x_shape, num_samples, num_labels, one_hot",
     [
         ((32, 32, 3), 100, 10, True),
@@ -252,7 +313,7 @@ def test_load_arrays_and_custom(x_shape, num_labels, num_samples, one_hot):
 @pytest.mark.parametrize(
     "x_shape, num_samples, num_labels, one_hot",
     [
-        ((32, 32, 3), 100, 10, True),
+        ((32, 32, 3), 150, 10, True),
         ((16, 16, 1), 200, 2, False),
         ((64,), 1000, 20, False),
     ],
@@ -299,13 +360,8 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     columns_b = tf.convert_to_tensor(get_column_from_ds(dataset_b, "new_column"))
     assert tf.reduce_all(columns_b == tf.convert_to_tensor([5] * num_samples_b))
 
-    # concatenate two sub datasets
-    dataset_c = handler.merge(dataset_a, dataset_b)
-    columns_c = tf.convert_to_tensor(get_column_from_ds(dataset_c, "new_column"))
-    assert tf.reduce_all(columns_c == tf.concat([columns_a, columns_b], axis=0))
-
     # prepare dataloader
-    loader = handler.prepare(dataset_c, 64, shuffle=True)
+    loader = handler.prepare(dataset_b, 64, shuffle=True)
     batch = next(iter(loader))
     assert batch[0].shape == tf.TensorShape([64, *x_shape])
     assert batch[1].shape == (

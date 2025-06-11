@@ -197,6 +197,24 @@ class DataHandler(ABC):
 
     @staticmethod
     @abstractmethod
+    def load_from_huggingface(
+        dataset_id: str,
+        load_kwargs: dict = {},
+    ):
+        """Load a Dataset from the Hugging Face datasets catalog
+
+        Args:
+            dataset_id (str): Identifier of the dataset
+            load_kwargs (dict): Loading kwargs to add to the initialization
+                of the dataset.
+
+        Returns:
+            tf.data.Dataset: dataset
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abstractmethod
     def map_ds(dataset: DatasetType, map_fn: Callable) -> DatasetType:
         """Map a function to a Dataset
 
@@ -273,6 +291,18 @@ class DataHandler(ABC):
 
         Returns:
             tuple: the shape of an element from column_name
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    def get_columns_shapes(dataset: DatasetType) -> dict:
+        """Get the shapes of the elements of all columns of a dataset
+
+        Args:
+            dataset (Dataset): a Dataset
+
+        Returns:
+            dict: dictionary of column names and their corresponding shape
         """
         raise NotImplementedError()
 
