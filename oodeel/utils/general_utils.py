@@ -40,6 +40,10 @@ def is_from(model_or_tensor: Any, framework: str) -> bool:
         class_list = str(class_id).split("'")[1].split(".")
         for keyword in class_list:
             keywords_list.append(keyword)
+
+    if framework == "huggingface":
+        framework = "transformers"
+
     return framework in keywords_list
 
 
@@ -64,6 +68,18 @@ def import_backend_specific_stuff(model: Callable):
         data_handler = TFDataHandler()
         op = TFOperator()
         FeatureExtractorClass = KerasFeatureExtractor
+
+    # For huggingface models, is_from(model, "torch") will also return True so
+    # it has to be checked before torch
+    elif is_from(model, "huggingface"):
+        from ..extractor.hf_torch_feature_extractor import HFTorchFeatureExtractor
+        from ..datasets.torch_data_handler import TorchDataHandler
+        from ..utils import TorchOperator
+
+        backend = "torch"
+        data_handler = TorchDataHandler()
+        op = TorchOperator(model)
+        FeatureExtractorClass = HFTorchFeatureExtractor
 
     elif is_from(model, "torch"):
         from ..extractor.torch_feature_extractor import TorchFeatureExtractor
