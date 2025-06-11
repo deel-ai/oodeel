@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from transformers import MobileNetV1ForImageClassification
+
 from oodeel.utils import is_from
 
 
@@ -37,6 +39,12 @@ def test_is_from():
         nn.Linear(32 * 32 * 16, 10),
     )
     assert is_from(torch_model, "torch")
+    assert not is_from(torch_model, "huggingface")
 
     torch_tensor = torch.randn((3, 32, 32))
     assert is_from(torch_tensor, "torch")
+
+    model = MobileNetV1ForImageClassification.from_pretrained(
+        "google/mobilenet_v1_1.0_224"
+    )
+    assert is_from(model, "huggingface")
