@@ -52,7 +52,6 @@ class OODBaseDetector(ABC):
         scale_percentile (float): Percentile value for scaling.
         ash_percentile (float): Percentile value for ASH.
         react_threshold (float): Threshold value for ReAct.
-        postproc_fns (List[Callable]): List of post-processing functions.
 
     Methods:
         __init__: Initializes the OODBaseDetector with specified parameters.
