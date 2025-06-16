@@ -69,86 +69,7 @@ class DKNN(OODBaseDetector):
                     + "Please install faiss-gpu or set use_gpu to False."
                 ) from e
 
-    def _prepare_layer_features(self, features: np.ndarray) -> np.ndarray:
-        """
-        Convert a feature tensor to a 2D numpy array and apply L2 normalization.
-
-        Args:
-            features (np.ndarray): Feature tensor to be processed.
-
-        Returns:
-            np.ndarray: Processed feature array with shape (num_samples, feature_dim)
-                and L2 normalized.
-        """
-        features = features.reshape(features.shape[0], -1)
-        return self._l2_normalization(features)
-
-    def _create_index(self, dim: int) -> faiss.IndexFlatL2:
-        """
-        Create a FAISS index for features of a given dimensionality.
-
-        Args:
-            dim (int): Dimensionality of the feature vectors.
-
-        Returns:
-            faiss.IndexFlatL2: A FAISS index instance, using GPU acceleration if
-                enabled.
-        """
-        if self.use_gpu:
-            cpu_index = faiss.IndexFlatL2(dim)
-            return faiss.index_cpu_to_gpu(self.res, 0, cpu_index)
-        else:
-            return faiss.IndexFlatL2(dim)
-
-    def _fit_layer(
-        self, layer_features: np.ndarray
-    ) -> Tuple[faiss.IndexFlatL2, Optional[np.ndarray]]:
-        """
-        Build a FAISS index for a single feature layer and compute initial scores for
-        aggregator fitting.
-
-        Args:
-            layer_features (TensorType): Feature tensor corresponding to a specific
-                layer.
-
-        Returns:
-            Tuple[faiss.IndexFlatL2, Optional[np.ndarray]]:
-                - The constructed FAISS index for the layer.
-                - Scores computed on a subset of features (first 1000 samples) if an
-                    aggregator is used; otherwise, None.
-        """
-        norm_features = self._prepare_layer_features(layer_features)
-        index = self._create_index(norm_features.shape[1])
-        index.add(norm_features)
-
-        scores = None
-        if self.aggregator is not None:
-            # Use only a subset of samples for computing initial scores, ensuring at
-            # least 2 neighbors (distance to self is 0)
-            scores_subset, _ = index.search(norm_features[:1000], max(self.nearest, 2))
-            scores = scores_subset[:, -1]
-        return index, scores
-
-    def _score_layer(
-        self, index: faiss.IndexFlatL2, layer_features: TensorType
-    ) -> np.ndarray:
-        """
-        Compute the OOD scores for a single feature layer using the provided FAISS
-        index.
-
-        Args:
-            index (faiss.IndexFlatL2): Precomputed FAISS index for the feature layer.
-            layer_features (TensorType): Feature tensor for the layer to be scored.
-
-        Returns:
-            np.ndarray: The OOD scores calculated as the distance to the k-th nearest
-                neighbor.
-        """
-        layer_features = self.op.convert_to_numpy(layer_features)
-        norm_features = self._prepare_layer_features(layer_features)
-        scores, _ = index.search(norm_features, self.nearest)
-        return scores[:, -1]
-
+    # === Public API (fit, score) ===
     def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
         """
         Fit the detector on an in-distribution dataset by building FAISS indices for
@@ -229,6 +150,90 @@ class DKNN(OODBaseDetector):
             )
         return aggregated_scores
 
+    # === Per-layer logic ===
+    def _fit_layer(
+        self, layer_features: np.ndarray
+    ) -> Tuple[faiss.IndexFlatL2, Optional[np.ndarray]]:
+        """
+        Build a FAISS index for a single feature layer and compute initial scores for
+        aggregator fitting.
+
+        Args:
+            layer_features (TensorType): Feature tensor corresponding to a specific
+                layer.
+
+        Returns:
+            Tuple[faiss.IndexFlatL2, Optional[np.ndarray]]:
+                - The constructed FAISS index for the layer.
+                - Scores computed on a subset of features (first 1000 samples) if an
+                    aggregator is used; otherwise, None.
+        """
+        norm_features = self._prepare_layer_features(layer_features)
+        index = self._create_index(norm_features.shape[1])
+        index.add(norm_features)
+
+        scores = None
+        if self.aggregator is not None:
+            # Compute KNN scores on a subset of samples (first 1000) to fit the
+            # aggregator. We use k = max(self.nearest, 2) to avoid trivial zero
+            # distances caused by querying each point against itself when k=1.
+            # Using k >= 2 ensures the score reflects distance to a true neighbor.
+            scores_subset, _ = index.search(norm_features[:1000], max(self.nearest, 2))
+            scores = scores_subset[:, -1]
+        return index, scores
+
+    def _score_layer(
+        self, index: faiss.IndexFlatL2, layer_features: TensorType
+    ) -> np.ndarray:
+        """
+        Compute the OOD scores for a single feature layer using the provided FAISS
+        index.
+
+        Args:
+            index (faiss.IndexFlatL2): Precomputed FAISS index for the feature layer.
+            layer_features (TensorType): Feature tensor for the layer to be scored.
+
+        Returns:
+            np.ndarray: The OOD scores calculated as the distance to the k-th nearest
+                neighbor.
+        """
+        layer_features = self.op.convert_to_numpy(layer_features)
+        norm_features = self._prepare_layer_features(layer_features)
+        scores, _ = index.search(norm_features, self.nearest)
+        return scores[:, -1]
+
+    # === Internal utilities ===
+    def _prepare_layer_features(self, features: np.ndarray) -> np.ndarray:
+        """
+        Convert a feature tensor to a 2D numpy array and apply L2 normalization.
+
+        Args:
+            features (np.ndarray): Feature tensor to be processed.
+
+        Returns:
+            np.ndarray: Processed feature array with shape (num_samples, feature_dim)
+                and L2 normalized.
+        """
+        features = features.reshape(features.shape[0], -1)
+        return self._l2_normalization(features)
+
+    def _create_index(self, dim: int) -> faiss.IndexFlatL2:
+        """
+        Create a FAISS index for features of a given dimensionality.
+
+        Args:
+            dim (int): Dimensionality of the feature vectors.
+
+        Returns:
+            faiss.IndexFlatL2: A FAISS index instance, using GPU acceleration if
+                enabled.
+        """
+        if self.use_gpu:
+            cpu_index = faiss.IndexFlatL2(dim)
+            return faiss.index_cpu_to_gpu(self.res, 0, cpu_index)
+        else:
+            return faiss.IndexFlatL2(dim)
+
     def _l2_normalization(self, feat: np.ndarray) -> np.ndarray:
         """
         Apply L2 normalization to an array of feature vectors along the last dimension.
@@ -241,6 +246,7 @@ class DKNN(OODBaseDetector):
         """
         return feat / (np.linalg.norm(feat, ord=2, axis=-1, keepdims=True) + 1e-10)
 
+    # === Properties ===
     @property
     def requires_to_fit_dataset(self) -> bool:
         """

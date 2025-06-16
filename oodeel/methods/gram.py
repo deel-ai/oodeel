@@ -77,146 +77,7 @@ class Gram(OODBaseDetector):
         # Mapping class -> list (per-layer) of thresholds [lower, upper]
         self.min_maxs: Dict[int, List[TensorType]] = {}
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
-    def _stat(self, feature_map: TensorType) -> TensorType:
-        """Compute Gram statistics for a single layer.
-
-        Args:
-            feature_map (TensorType): Feature map of shape `[B, ...]`.
-
-        Returns:
-            TensorType: Statistics of shape `[B, n_orders, C]`.
-        """
-        fm_shape = feature_map.shape
-        stats = []
-        for p in self.orders:
-            # Raise the feature map to the specified order.
-            fm_p = feature_map**p
-            if len(fm_shape) == 2:
-                # Dense layers: compute outer product.
-                fm_p = self.op.einsum("bi,bj->bij", fm_p, fm_p)
-            else:
-                # Convolutional feature maps: flatten spatial dimensions.
-                if self.backend == "tensorflow":
-                    fm_p = self.op.reshape(
-                        self.op.einsum("i...j->ij...", fm_p),
-                        (fm_shape[0], fm_shape[-1], -1),
-                    )
-                else:
-                    fm_p = self.op.reshape(fm_p, (fm_shape[0], fm_shape[1], -1))
-                fm_p = self.op.matmul(fm_p, self.op.permute(fm_p, (0, 2, 1)))
-            # Normalize and recover the original power.
-            fm_p = self.op.sign(fm_p) * (self.op.abs(fm_p) ** (1 / p))
-            # Use only the lower triangular part.
-            fm_p = self.op.tril(fm_p)
-            # Aggregate row-wise.
-            fm_p = self.op.sum(fm_p, dim=2)
-            stats.append(fm_p)
-        return self.op.stack(stats, dim=1)
-
-    def _deviation(self, stats: TensorType, thresholds: TensorType) -> TensorType:
-        """Compute deviation of `stats` outside `thresholds`.
-
-        Args:
-            stats (TensorType): Gram stats, shape `[B, *, C]`.
-            thresholds (TensorType): Lower & upper bounds, shape `[B, *, C, 2]`.
-
-        Returns:
-            TensorType: Deviation values, shape `[B]`.
-        """
-        below = self.op.where(stats < thresholds[..., 0], 1.0, 0.0)
-        above = self.op.where(stats > thresholds[..., 1], 1.0, 0.0)
-        dev_low = (
-            (thresholds[..., 0] - stats) / (self.op.abs(thresholds[..., 0]) + EPSILON)
-        ) * below
-        dev_high = (
-            (stats - thresholds[..., 1]) / (self.op.abs(thresholds[..., 1]) + EPSILON)
-        ) * above
-        return self.op.sum(dev_low + dev_high, dim=(1, 2))
-
-    # ------------------------------------------------------------------
-    # Per-layer helpers
-    # ------------------------------------------------------------------
-
-    def _fit_layer(
-        self,
-        layer_idx: int,
-        train_stats: np.ndarray,
-        val_stats: np.ndarray,
-        train_preds: np.ndarray,
-        val_preds: np.ndarray,
-    ) -> Optional[np.ndarray]:
-        """Fit thresholds for **one** layer and optionally return val scores.
-        To avoid OOM, we compute the val scores in batches with an arbitrary batch size
-        of 128.
-
-        Args:
-            layer_idx (int): Index of the processed layer.
-            train_stats / val_stats (np.ndarray): Gram stats for train/val subsets.
-            train_preds / val_preds (np.ndarray): Predicted labels.
-
-        Returns:
-            Optional[np.ndarray]: Validation deviations (if aggregator is used),
-            otherwise `None`.
-        """
-        for cls in self._classes:
-            cls_mask = train_preds == cls
-            stats_cls_np = train_stats[cls_mask]
-            stats_cls_t = self.op.from_numpy(stats_cls_np)  # Move to gpu
-            lower = self.op.quantile(stats_cls_t, self.quantile, dim=0)
-            upper = self.op.quantile(stats_cls_t, 1 - self.quantile, dim=0)
-            self.min_maxs[cls][layer_idx] = self.op.cat(
-                [self.op.unsqueeze(lower, -1), self.op.unsqueeze(upper, -1)],
-                dim=-1,
-            )
-
-        if self.aggregator is None:
-            return None
-
-        # compute val stats deviation (using batchs to avoid OutOfMemory)
-        batch_size = 128
-        N = val_stats.shape[0]
-        val_dev = []
-        for start in range(0, N, batch_size):
-            end = start + batch_size
-            batch_idx = np.arange(start, min(end, N))
-            # 1) move only this batch of stats
-            stats_t = self.op.from_numpy(val_stats[batch_idx])
-            # 2) build only this batch’s thresholds
-            #    [B, orders, C, 2]
-            thr_list = [self.min_maxs[int(val_preds[i])][layer_idx] for i in batch_idx]
-            thr_t = self.op.stack(thr_list, dim=0)
-            # 3) deviation
-            dev_t = self._deviation(stats_t, thr_t)
-            val_dev.append(self.op.convert_to_numpy(dev_t))
-
-        return np.concatenate(val_dev, axis=0)
-
-    def _score_layer(
-        self, layer_idx: int, layer_stats: TensorType, preds: np.ndarray
-    ) -> np.ndarray:
-        """Score inputs for a **single** layer.
-
-        Args:
-            layer_idx (int): Layer index.
-            layer_stats (TensorType): Gram stats.
-            preds (np.ndarray): Predicted classes.
-
-        Returns:
-            np.ndarray: Deviation-based OOD scores.
-        """
-        thr_batch = self.op.stack([self.min_maxs[int(lbl)][layer_idx] for lbl in preds])
-        dev = self._deviation(layer_stats, thr_batch)
-        score = self.op.convert_to_numpy(dev)
-        return score
-
-    # ------------------------------------------------------------------
-    # Fit / score
-    # ------------------------------------------------------------------
-
+    # === Public API (fit, score) ===
     def _fit_to_dataset(
         self,
         fit_dataset: Union[TensorType, DatasetType],
@@ -311,10 +172,137 @@ class Gram(OODBaseDetector):
             return self.aggregator.aggregate(per_layer)
         return np.mean(np.stack(per_layer, axis=1), axis=1)
 
-    # ------------------------------------------------------------------
-    # Properties
-    # ------------------------------------------------------------------
+    # === Per-layer logic ===
+    def _fit_layer(
+        self,
+        layer_idx: int,
+        train_stats: np.ndarray,
+        val_stats: np.ndarray,
+        train_preds: np.ndarray,
+        val_preds: np.ndarray,
+    ) -> Optional[np.ndarray]:
+        """Fit thresholds for **one** layer and optionally return val scores.
+        To avoid OOM, we compute the val scores in batches with an arbitrary batch size
+        of 128.
 
+        Args:
+            layer_idx (int): Index of the processed layer.
+            train_stats / val_stats (np.ndarray): Gram stats for train/val subsets.
+            train_preds / val_preds (np.ndarray): Predicted labels.
+
+        Returns:
+            Optional[np.ndarray]: Validation deviations (if aggregator is used),
+            otherwise `None`.
+        """
+        for cls in self._classes:
+            cls_mask = train_preds == cls
+            stats_cls_np = train_stats[cls_mask]
+            stats_cls_t = self.op.from_numpy(stats_cls_np)  # Move to gpu
+            lower = self.op.quantile(stats_cls_t, self.quantile, dim=0)
+            upper = self.op.quantile(stats_cls_t, 1 - self.quantile, dim=0)
+            self.min_maxs[cls][layer_idx] = self.op.cat(
+                [self.op.unsqueeze(lower, -1), self.op.unsqueeze(upper, -1)],
+                dim=-1,
+            )
+
+        if self.aggregator is None:
+            return None
+
+        # compute val stats deviation (using batchs to avoid OutOfMemory)
+        batch_size = 128
+        N = val_stats.shape[0]
+        val_dev = []
+        for start in range(0, N, batch_size):
+            end = start + batch_size
+            batch_idx = np.arange(start, min(end, N))
+            # 1) move only this batch of stats
+            stats_t = self.op.from_numpy(val_stats[batch_idx])
+            # 2) build only this batch’s thresholds
+            #    [B, orders, C, 2]
+            thr_list = [self.min_maxs[int(val_preds[i])][layer_idx] for i in batch_idx]
+            thr_t = self.op.stack(thr_list, dim=0)
+            # 3) deviation
+            dev_t = self._deviation(stats_t, thr_t)
+            val_dev.append(self.op.convert_to_numpy(dev_t))
+
+        return np.concatenate(val_dev, axis=0)
+
+    def _score_layer(
+        self, layer_idx: int, layer_stats: TensorType, preds: np.ndarray
+    ) -> np.ndarray:
+        """Score inputs for a **single** layer.
+
+        Args:
+            layer_idx (int): Layer index.
+            layer_stats (TensorType): Gram stats.
+            preds (np.ndarray): Predicted classes.
+
+        Returns:
+            np.ndarray: Deviation-based OOD scores.
+        """
+        thr_batch = self.op.stack([self.min_maxs[int(lbl)][layer_idx] for lbl in preds])
+        dev = self._deviation(layer_stats, thr_batch)
+        score = self.op.convert_to_numpy(dev)
+        return score
+
+    # === Internal utilities ===
+    def _stat(self, feature_map: TensorType) -> TensorType:
+        """Compute Gram statistics for a single layer.
+
+        Args:
+            feature_map (TensorType): Feature map of shape `[B, ...]`.
+
+        Returns:
+            TensorType: Statistics of shape `[B, n_orders, C]`.
+        """
+        fm_shape = feature_map.shape
+        stats = []
+        for p in self.orders:
+            # Raise the feature map to the specified order.
+            fm_p = feature_map**p
+            if len(fm_shape) == 2:
+                # Dense layers: compute outer product.
+                fm_p = self.op.einsum("bi,bj->bij", fm_p, fm_p)
+            else:
+                # Convolutional feature maps: flatten spatial dimensions.
+                if self.backend == "tensorflow":
+                    fm_p = self.op.reshape(
+                        self.op.einsum("i...j->ij...", fm_p),
+                        (fm_shape[0], fm_shape[-1], -1),
+                    )
+                else:
+                    fm_p = self.op.reshape(fm_p, (fm_shape[0], fm_shape[1], -1))
+                fm_p = self.op.matmul(fm_p, self.op.permute(fm_p, (0, 2, 1)))
+            # Normalize and recover the original power.
+            fm_p = self.op.sign(fm_p) * (self.op.abs(fm_p) ** (1 / p))
+            # Use only the lower triangular part.
+            fm_p = self.op.tril(fm_p)
+            # Aggregate row-wise.
+            fm_p = self.op.sum(fm_p, dim=2)
+            stats.append(fm_p)
+        return self.op.stack(stats, dim=1)
+
+    def _deviation(self, stats: TensorType, thresholds: TensorType) -> TensorType:
+        """Compute deviation of `stats` outside `thresholds`.
+
+        Args:
+            stats (TensorType): Gram stats, shape `[B, *, C]`.
+            thresholds (TensorType): Lower & upper bounds, shape `[B, *, C, 2]`.
+
+        Returns:
+            TensorType: Deviation values, shape `[B]`.
+        """
+        below = self.op.where(stats < thresholds[..., 0], 1.0, 0.0)
+        above = self.op.where(stats > thresholds[..., 1], 1.0, 0.0)
+        dev_low = (
+            (thresholds[..., 0] - stats) / (self.op.abs(thresholds[..., 0]) + EPSILON)
+        ) * below
+        dev_high = (
+            (stats - thresholds[..., 1]) / (self.op.abs(thresholds[..., 1]) + EPSILON)
+        ) * above
+        return self.op.sum(dev_low + dev_high, dim=(1, 2))
+
+    # === Properties ===
     @property
     def requires_to_fit_dataset(self) -> bool:
         """

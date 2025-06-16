@@ -82,6 +82,7 @@ class VIM(OODBaseDetector):
         self.princ_dims_list: List[int] = []
         self.alphas: List[float] = []
 
+    # === Public API (fit, score) ===
     def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
         """
         Fit PCA subspaces and compute scaling factors per feature layer.
@@ -187,25 +188,6 @@ class VIM(OODBaseDetector):
                 per_layer_scores.append(ood_layer)
             self.aggregator.fit(per_layer_scores)
 
-    def _compute_residual_score_tensor(
-        self, features: TensorType, layer_idx: int
-    ) -> np.ndarray:
-        """
-        Compute the residual norm of features orthogonal to the principal subspace.
-
-        Args:
-            features: Flattened feature matrix [N, D].
-            layer_idx: Index of the feature layer.
-        Returns:
-            Numpy array of residual norms (shape [N]).
-        """
-        center = self.centers[layer_idx]
-        proj = self.residual_projections[layer_idx]
-        # Project onto residual subspace and compute vector norms
-        coords = self.op.matmul(features - center, proj)
-        norms = self.op.norm(coords, dim=-1)
-        return self.op.convert_to_numpy(norms)
-
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
         """
         Compute the final VIM OOD score for input samples.
@@ -240,6 +222,27 @@ class VIM(OODBaseDetector):
             return self.aggregator.aggregate(scores)  # type: ignore
         return scores[0]
 
+    # === Internal utilities ===
+    def _compute_residual_score_tensor(
+        self, features: TensorType, layer_idx: int
+    ) -> np.ndarray:
+        """
+        Compute the residual norm of features orthogonal to the principal subspace.
+
+        Args:
+            features: Flattened feature matrix [N, D].
+            layer_idx: Index of the feature layer.
+        Returns:
+            Numpy array of residual norms (shape [N]).
+        """
+        center = self.centers[layer_idx]
+        proj = self.residual_projections[layer_idx]
+        # Project onto residual subspace and compute vector norms
+        coords = self.op.matmul(features - center, proj)
+        norms = self.op.norm(coords, dim=-1)
+        return self.op.convert_to_numpy(norms)
+
+    # === Visualization ===
     def plot_spectrum(self) -> None:
         """
         Visualize residual explained variance per layer vs. principal dimensions being
@@ -284,6 +287,7 @@ class VIM(OODBaseDetector):
         plt.tight_layout()
         plt.show()
 
+    # === Properties ===
     @property
     def requires_to_fit_dataset(self) -> bool:
         """
