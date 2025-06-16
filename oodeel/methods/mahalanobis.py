@@ -66,7 +66,7 @@ class Mahalanobis(OODBaseDetector):
     # ------------------------------------------------------------------
 
     def _compute_layer_stats(
-        self, layer_features: TensorType, labels: TensorType
+        self, layer_features: TensorType, labels: np.ndarray
     ) -> Tuple[Dict[int, TensorType], np.ndarray]:
         """
         Compute class-conditional statistics for a given feature layer.
@@ -79,21 +79,21 @@ class Mahalanobis(OODBaseDetector):
         Args:
             layer_features (TensorType): Feature tensor for a specific layer extracted
                 from in-distribution data.
-            labels (TensorType): Corresponding labels for the in-distribution data.
+            labels (np.ndarray): Corresponding labels for the in-distribution data.
 
         Returns:
-            Tuple[Dict, np.ndarray]:
+            Tuple[Dict, TensorType]:
                 - A dictionary mapping each class label to its mean feature vector.
                 - The pseudo-inverse of the weighted average covariance matrix.
         """
-        labels_np = self.op.convert_to_numpy(labels)
-        classes = np.sort(np.unique(labels_np))
+        classes = np.sort(np.unique(labels))
+        labels = self.op.from_numpy(labels)  # convert to tensor
 
         feats = self.op.flatten(layer_features)
         n_total = feats.shape[0]
 
         mus: Dict[int, TensorType] = {}
-        mean_cov: Optional[np.ndarray] = None
+        mean_cov: TensorType = None
 
         for cls in classes:
             idx = self.op.equal(labels, cls)
@@ -114,14 +114,14 @@ class Mahalanobis(OODBaseDetector):
         return mus, pinv_cov
 
     def _gaussian_log_probs(
-        self, out_features: TensorType, mus: Dict[int, TensorType], pinv_cov: np.ndarray
+        self, out_features: TensorType, mus: Dict[int, TensorType], pinv_cov: TensorType
     ) -> TensorType:
         """Compute unnormalised Gaussian log-probabilities for all classes.
 
         Args:
             out_features (TensorType): Features of shape [B, D].
             mus (Dict[int, TensorType]): Class mean vectors.
-            pinv_cov (np.ndarray): Pseudo-inverse covariance matrix.
+            pinv_cov (TensorType): Pseudo-inverse covariance matrix.
 
         Returns:
             TensorType: Log-probabilities with shape [B, n_classes].
@@ -170,13 +170,13 @@ class Mahalanobis(OODBaseDetector):
     # ------------------------------------------------------------------
 
     def _fit_layer(
-        self, layer_features: TensorType, labels: TensorType, subset_size: int = 5000
+        self, layer_features: np.ndarray, labels: np.ndarray, subset_size: int = 5000
     ) -> Tuple[Tuple[Dict[int, TensorType], np.ndarray], Optional[np.ndarray]]:
         """Fit statistics for a single layer and, if required, return scores.
 
         Args:
-            layer_features (TensorType): In-distribution features for the layer.
-            labels (TensorType): Class labels.
+            layer_features (np.ndarray): In-distribution features for the layer.
+            labels (np.ndarray): Class labels.
             subset_size (int, optional): Number of samples used to compute initial
                 scores for the aggregator. Defaults to 5000.
 
@@ -186,6 +186,9 @@ class Mahalanobis(OODBaseDetector):
                 * Optional numpy array of OOD scores for the first subset_size
                   samples (None if no aggregator).
         """
+        if isinstance(layer_features, np.ndarray):
+            layer_features = self.op.from_numpy(layer_features)  # convert to tensor
+
         mus, pinv_cov = self._compute_layer_stats(layer_features, labels)
 
         scores: Optional[np.ndarray] = None
@@ -198,7 +201,7 @@ class Mahalanobis(OODBaseDetector):
         return (mus, pinv_cov), scores
 
     def _score_layer(
-        self, out_features: TensorType, mus: Dict[int, TensorType], pinv_cov: np.ndarray
+        self, out_features: TensorType, mus: Dict[int, TensorType], pinv_cov: TensorType
     ) -> np.ndarray:
         """
         Compute Mahalanobis distance-based confidence scores for a single feature layer.
@@ -210,7 +213,7 @@ class Mahalanobis(OODBaseDetector):
         Args:
             out_features (TensorType): Feature tensor for test samples.
             mus (Dict): Dictionary mapping each class label to its mean feature vector.
-            pinv_cov (np.ndarray): Pseudo-inverse of the covariance matrix.
+            pinv_cov (TensorType): Pseudo-inverse of the covariance matrix.
 
         Returns:
             TensorType: Confidence scores for each sample for every class,
@@ -245,7 +248,7 @@ class Mahalanobis(OODBaseDetector):
             self.postproc_fns = [self.feature_extractor._default_postproc_fn] * n_layers
 
         features, infos = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns, detach=True
+            fit_dataset, postproc_fns=self.postproc_fns, detach=True, numpy_concat=True
         )
         labels = infos["labels"]
 

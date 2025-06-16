@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.lines import Line2D
+import sklearn
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
@@ -43,6 +44,11 @@ PROJ_DICT = {
     },
     "PCA": {"name": "PCA", "class": PCA, "default_kwargs": dict()},
 }
+
+# check sklearn version: if > 1.5, use max_iter instead of n_iter
+if sklearn.__version__ >= "1.5":
+    n_iter = PROJ_DICT["TSNE"]["default_kwargs"].pop("n_iter")
+    PROJ_DICT["TSNE"]["default_kwargs"]["max_iter"] = n_iter
 
 
 def plot_2D_features(
@@ -167,8 +173,8 @@ def _plot_features(
 
     # === extract id features ===
     # features
-    in_features, _ = feature_extractor.predict(in_dataset)
-    in_features = op.convert_to_numpy(op.flatten(in_features[0]))[:max_samples]
+    in_features, _ = feature_extractor.predict(in_dataset, numpy_concat=True)
+    in_features = in_features[0].reshape(in_features[0].shape[0], -1)[:max_samples]
 
     # labels
     in_labels = []
@@ -180,8 +186,10 @@ def _plot_features(
     # === extract ood features ===
     if out_dataset is not None:
         # features
-        out_features, _ = feature_extractor.predict(out_dataset)
-        out_features = op.convert_to_numpy(op.flatten(out_features[0]))[:max_samples]
+        out_features, _ = feature_extractor.predict(out_dataset, numpy_concat=True)
+        out_features = out_features[0].reshape(out_features[0].shape[0], -1)[
+            :max_samples
+        ]
 
         # labels
         out_labels_str = np.array(["unknown"] * len(out_features))

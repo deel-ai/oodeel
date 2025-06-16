@@ -23,6 +23,7 @@
 from typing import get_args
 from typing import Optional
 
+import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -295,7 +296,9 @@ class TorchFeatureExtractor(FeatureExtractor):
         """
         if x.device != self._device:
             x = x.to(self._device)
-        _ = self.model(x)
+
+        with torch.set_grad_enabled(not detach):
+            _ = self.model(x)
 
         if detach:
             features = [
@@ -322,6 +325,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         postproc_fns: Optional[List[Callable]] = None,
         detach: bool = True,
         verbose: bool = False,
+        numpy_concat: bool = False,
         **kwargs,
     ) -> Tuple[List[torch.Tensor], dict]:
         """Get the projection of the dataset in the feature space of self.model
@@ -331,9 +335,12 @@ class TorchFeatureExtractor(FeatureExtractor):
             postproc_fns (Optional[List[Callable]]): postprocessing function to apply to
                 each feature immediately after forward. Default to None.
             detach (bool): if True, return features detached from the computational
-                graph. Defaults to True.
+                graph. No gradient will be computed. Defaults to True.
             verbose (bool): if True, display a progress bar. Defaults to False.
-            kwargs (dict): additional arguments not considered for prediction
+            numpy_concat (bool): if True, each mini-batch is immediately moved
+                to CPU and converted to a NumPy array before concatenation.
+                That keeps GPU memory constant at one batch, at the cost of a small
+                host-device transfer overhead. Defaults to False.
 
         Returns:
             List[torch.Tensor], dict: features and extra information (logits, labels) as
@@ -350,36 +357,56 @@ class TorchFeatureExtractor(FeatureExtractor):
                 labels = TorchDataHandler.get_label_from_dataset_item(dataset)
 
         else:
-            features = [None for i in range(len(self.feature_layers_id))]
-            logits = None
-            batch = next(iter(dataset))
-            contains_labels = isinstance(batch, (list, tuple)) and len(batch) > 1
+            # Check if batches include labels
+            first_batch = next(iter(dataset))
+            contains_labels = (
+                isinstance(first_batch, (list, tuple)) and len(first_batch) > 1
+            )
+
+            # Prepare buffers
+            features_per_layer = [[] for _ in self.feature_layers_id]
+            logits_list = []
+            labels_list = [] if contains_labels else None
+
+            # Process batches
             for elem in tqdm(dataset, desc="Predicting", disable=not verbose):
                 tensor = TorchDataHandler.get_input_from_dataset_item(elem)
-                features_batch, logits_batch = self.predict_tensor(
+                feats_batch, logits_batch = self.predict_tensor(
                     tensor, postproc_fns, detach=detach
                 )
-                for i, f in enumerate(features_batch):
-                    features[i] = (
-                        f if features[i] is None else torch.cat([features[i], f], dim=0)
+
+                # Move to host and convert if requested
+                if numpy_concat:
+                    feats_batch = [f.detach().cpu().numpy() for f in feats_batch]
+                    logits_batch = (
+                        logits_batch.detach().cpu().numpy()
+                        if logits_batch is not None
+                        else None
                     )
-                # concatenate logits
-                logits = (
-                    logits_batch
-                    if logits is None
-                    else torch.cat([logits, logits_batch], axis=0)
-                )
-                # concatenate labels of current batch with previous batches
+
+                # Accumulate
+                for i, f in enumerate(feats_batch):
+                    features_per_layer[i].append(f)
+                if logits_batch is not None:
+                    logits_list.append(logits_batch)
                 if contains_labels:
-                    lbl_batch = TorchDataHandler.get_label_from_dataset_item(elem)
+                    lbl = TorchDataHandler.get_label_from_dataset_item(elem)
+                    labels_list.append(lbl)
 
-                    if labels is None:
-                        labels = lbl_batch
-                    else:
-                        labels = torch.cat([labels, lbl_batch], dim=0)
+            # Concatenate
+            labels = torch.cat(labels_list, dim=0) if labels_list is not None else None
 
-        # store extra information in a dict
-        info = dict(labels=labels, logits=logits)
+            if numpy_concat:
+                features = [np.concatenate(lst, axis=0) for lst in features_per_layer]
+                logits = np.concatenate(logits_list, axis=0) if logits_list else None
+                labels = labels.cpu().numpy() if labels is not None else None
+
+            else:
+                features = [torch.cat(lst, dim=0) for lst in features_per_layer]
+                logits = torch.cat(logits_list, dim=0) if logits_list else None
+
+        # Package extra info
+        info = {"labels": labels, "logits": logits}
         return features, info
 
     def get_weights(self, layer_id: Union[str, int]) -> List[torch.Tensor]:

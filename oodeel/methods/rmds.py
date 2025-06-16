@@ -166,14 +166,20 @@ class RMDS(Mahalanobis):
 
     def _fit_layer(
         self,
-        layer_features: TensorType,
-        labels: TensorType,
+        layer_features: np.ndarray,
+        labels: np.ndarray,
         subset_size: int = 5000,
     ) -> Tuple[
         Tuple[Dict[int, TensorType], TensorType, TensorType, TensorType],
         Optional[np.ndarray],
     ]:
         """Fit *one layer* and optionally return validation-subset scores.
+
+        Args:
+            layer_features (np.ndarray): In-distribution features for the layer.
+            labels (np.ndarray): Class labels.
+            subset_size (int, optional): Number of samples used to compute initial
+                scores for the aggregator. Defaults to 5000.
 
         Returns
             layer_stats : (mus, pinv_cov, mu_bg, pinv_cov_bg)
@@ -184,6 +190,9 @@ class RMDS(Mahalanobis):
             val_scores : np.ndarray | None
                 Per-sample RMDS scores for an aggregator, or `None`.
         """
+        if isinstance(layer_features, np.ndarray):
+            layer_features = self.op.from_numpy(layer_features)
+
         mus, pinv_cov = super()._compute_layer_stats(layer_features, labels)
         mu_bg, pinv_cov_bg = self._background_stats(layer_features)
 
@@ -257,7 +266,7 @@ class RMDS(Mahalanobis):
 
         # Extract features and labels
         features, infos = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns, detach=True
+            fit_dataset, postproc_fns=self.postproc_fns, detach=True, numpy_concat=True
         )
         labels = infos["labels"]
 

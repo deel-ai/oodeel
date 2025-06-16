@@ -354,11 +354,12 @@ class OODBaseDetector(ABC):
             model, head_layer_id=head_layer_id, return_penultimate=True
         )
         unclipped_features, _ = penult_feat_extractor.predict(
-            fit_dataset, verbose=verbose, postproc_fns=self.postproc_fns
+            fit_dataset,
+            verbose=verbose,
+            postproc_fns=self.postproc_fns,
+            numpy_concat=True,
         )
-        self.react_threshold = self.op.quantile(
-            unclipped_features[0], self.react_quantile
-        )
+        self.react_threshold = np.quantile(unclipped_features[0], self.react_quantile)
 
     def __call__(self, inputs: Union[ItemType, DatasetType]) -> np.ndarray:
         """

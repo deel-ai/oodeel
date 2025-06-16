@@ -104,9 +104,9 @@ class VIM(OODBaseDetector):
 
         # Extract features and logits for all layers
         all_features, info = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns
+            fit_dataset, postproc_fns=self.postproc_fns, numpy_concat=True
         )
-        logits_train = self.op.convert_to_numpy(info["logits"])
+        logits_train = info["logits"]
 
         # Precompute max-logit energy baseline
         train_maxlogit = np.max(logits_train, axis=-1)
@@ -114,7 +114,7 @@ class VIM(OODBaseDetector):
         # Fit PCA for each layer
         for idx, layer_id in enumerate(self.feature_extractor.feature_layers_id):
             # Flatten features: shape [N, D]
-            feat = self.op.flatten(all_features[idx])
+            feat = self.op.flatten(self.op.from_numpy(all_features[idx]))
             N, D = feat.shape
 
             # 1) Determine the subspace origin (center)
@@ -181,7 +181,7 @@ class VIM(OODBaseDetector):
             per_layer_scores = []
             for idx in range(num_layers):
                 norms = self._compute_residual_score_tensor(
-                    self.op.flatten(all_features[idx]), idx
+                    self.op.flatten(self.op.from_numpy(all_features[idx])), idx
                 )
                 ood_layer = self.alphas[idx] * norms - train_maxlogit
                 per_layer_scores.append(ood_layer)
