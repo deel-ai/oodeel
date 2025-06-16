@@ -209,7 +209,7 @@ class SHE(OODBaseDetector):
         if self.aggregator is None and len(features) > 1:
             self.aggregator = StdNormalizedAggregator()
 
-        labels_np = self.op.convert_to_numpy(infos["labels"])
+        labels_np = infos["labels"]
         preds_np = np.argmax(infos["logits"], axis=1)
         self._classes = np.sort(np.unique(labels_np))
 

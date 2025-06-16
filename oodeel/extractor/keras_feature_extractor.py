@@ -340,16 +340,16 @@ class KerasFeatureExtractor(FeatureExtractor):
                     lbl = TFDataHandler.get_label_from_dataset_item(elem)
                     labels_list.append(lbl)
 
-            # Single concatenation
+            # Concatenate
+            labels = tf.concat(labels_list, axis=0) if labels_list is not None else None
+
             if numpy_concat:
                 features = [np.concatenate(lst, axis=0) for lst in features_per_layer]
                 logits = np.concatenate(logits_list, axis=0) if logits_list else None
+                labels = labels.numpy() if labels is not None else None
             else:
                 features = [tf.concat(lst, axis=0) for lst in features_per_layer]
                 logits = tf.concat(logits_list, axis=0) if logits_list else None
-
-            # Concatenate labels if they are available
-            labels = tf.concat(labels_list, axis=0) if labels_list is not None else None
 
         info = {"labels": labels, "logits": logits}
         return features, info

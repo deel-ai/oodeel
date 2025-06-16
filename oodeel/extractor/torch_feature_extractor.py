@@ -393,17 +393,17 @@ class TorchFeatureExtractor(FeatureExtractor):
                     lbl = TorchDataHandler.get_label_from_dataset_item(elem)
                     labels_list.append(lbl)
 
-            # Concatenate once
+            # Concatenate
+            labels = torch.cat(labels_list, dim=0) if labels_list is not None else None
+
             if numpy_concat:
                 features = [np.concatenate(lst, axis=0) for lst in features_per_layer]
                 logits = np.concatenate(logits_list, axis=0) if logits_list else None
+                labels = labels.cpu().numpy() if labels is not None else None
 
             else:
                 features = [torch.cat(lst, dim=0) for lst in features_per_layer]
                 logits = torch.cat(logits_list, dim=0) if logits_list else None
-
-            # Concatenate labels if available
-            labels = torch.cat(labels_list, dim=0) if labels_list is not None else None
 
         # Package extra info
         info = {"labels": labels, "logits": logits}

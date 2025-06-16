@@ -167,7 +167,7 @@ class RMDS(Mahalanobis):
     def _fit_layer(
         self,
         layer_features: np.ndarray,
-        labels: TensorType,
+        labels: np.ndarray,
         subset_size: int = 5000,
     ) -> Tuple[
         Tuple[Dict[int, TensorType], TensorType, TensorType, TensorType],
@@ -177,7 +177,7 @@ class RMDS(Mahalanobis):
 
         Args:
             layer_features (np.ndarray): In-distribution features for the layer.
-            labels (TensorType): Class labels.
+            labels (np.ndarray): Class labels.
             subset_size (int, optional): Number of samples used to compute initial
                 scores for the aggregator. Defaults to 5000.
 
