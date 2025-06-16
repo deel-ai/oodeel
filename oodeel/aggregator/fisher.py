@@ -34,6 +34,12 @@ class FisherAggregator(BaseAggregator):
     Aggregator that combines out-of-distribution (OOD) scores from multiple feature
     layers using Fisher's method with Brown's correction.
 
+    Sources:
+    [1] Haroush, M., Frostig, T., Heller, R., & Soudry, D. (2021). "A statistical
+        framework for efficient out of distribution detection in deep neural networks."
+    [2] Dadalto, E., Alberge, F., Duhamel, P., & Piantanida, P. (2024). "Combine and
+        Conquer: A Meta-Analysis on Data Shift and Out-of-Distribution Detection."
+
     The aggregator operates in two phases:
 
     1. **Fitting:**
@@ -69,6 +75,7 @@ class FisherAggregator(BaseAggregator):
         self.c = None  # Correction factor derived from sigma2 and mu
         self.kprime = None  # Effective degrees of freedom after Brown's correction
 
+    # === Public API ===
     def fit(self, per_layer_scores: List[np.ndarray]) -> None:
         """
         Fit the aggregator using in-distribution (ID) scores.
@@ -88,7 +95,7 @@ class FisherAggregator(BaseAggregator):
         # Stack scores so that the resulting shape is (num_samples, num_layers)
         id_scores = np.stack(per_layer_scores, axis=-1)
         # Compute empirical CDF based on the ID scores
-        self.id_scores, self.y_ecdf = empirical_cdf(id_scores)
+        self.id_scores, self.y_ecdf = self._empirical_cdf(id_scores)
         # Compute Fisher's combined statistic for the ID scores
         self.id_fisher_scores = self._compute_fisher_scores(id_scores)
         # Derive Brown's correction parameters from the Fisher scores
@@ -96,39 +103,6 @@ class FisherAggregator(BaseAggregator):
         self.sigma2 = np.var(self.id_fisher_scores)
         self.c = self.sigma2 / (2 * self.mu)
         self.kprime = 2 * self.mu**2 / self.sigma2
-
-    def _compute_p_values(self, scores: np.ndarray) -> np.ndarray:
-        """
-        Compute p-values for test scores based on the empirical CDF from the training
-        data.
-
-        Args:
-            scores (np.ndarray): A numpy array of stacked test scores with shape
-                (num_samples, num_layers).
-
-        Returns:
-            np.ndarray: A numpy array of p-values with the same shape as the input.
-        """
-        return p_value_fn(scores, self.id_scores, self.y_ecdf)
-
-    def _compute_fisher_scores(self, scores: np.ndarray) -> np.ndarray:
-        """
-        Compute Fisher's combined test statistic for the given scores.
-
-        This method first converts the scores into p-values (using the empirical CDF)
-        and then computes the Fisher statistic for each sample by summing the logarithms
-        of the p-values.
-
-        Args:
-            scores (np.ndarray): The stacked scores (ID or test) with shape
-                (num_samples, num_layers).
-
-        Returns:
-            np.ndarray: A 1D array of Fisher combined test statistics, one for each
-                sample.
-        """
-        p_values = self._compute_p_values(scores)
-        return fisher_tau_method(p_values)
 
     def aggregate(self, per_layer_scores: List[np.ndarray]) -> np.ndarray:
         """
@@ -155,93 +129,131 @@ class FisherAggregator(BaseAggregator):
         # Convert p-values to aggregated score (lower p-values => higher OOD likelihood)
         return 1 - p_values
 
+    # === Private methods: computation ===
+    def _compute_fisher_scores(self, scores: np.ndarray) -> np.ndarray:
+        """
+        Compute Fisher's combined test statistic for the given scores.
 
-def empirical_cdf(X: np.ndarray, w: np.ndarray = None) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Compute the empirical cumulative distribution function (ECDF) for a given sample.
+        This method first converts the scores into p-values (using the empirical CDF)
+        and then computes the Fisher statistic for each sample by summing the logarithms
+        of the p-values.
 
-    The function first negates the input data (assuming that lower scores indicate
-    higher in-distribution confidence), augments the sample with lower and upper bounds,
-    sorts the values, and then computes the ECDF.
+        Args:
+            scores (np.ndarray): The stacked scores (ID or test) with shape
+                (num_samples, num_layers).
 
-    Args:
-        X (np.ndarray): An array of shape (N, m), where N is the number of samples and m
-            is the number of feature layers.
-        w (np.ndarray, optional): Optional weights to adjust the ECDF values. Defaults
-            to None.
+        Returns:
+            np.ndarray: A 1D array of Fisher combined test statistics, one for each
+                sample.
+        """
+        p_values = self._compute_p_values(scores)
+        return self._fisher_tau_method(p_values)
 
-    Returns:
-        Tuple[np.ndarray, np.ndarray]:
-            - An array of sorted (and augmented) sample values.
-            - An array of ECDF values corresponding to the sample.
-    """
-    # Negate scores so that higher values correspond to higher in-dist confidence.
-    X = -X
-    if X.ndim == 1:
-        X = X.reshape(-1, 1)
-    mult_factor_min = np.where(X.min(0) > 0, np.array(1 / len(X)), np.array(len(X)))
-    mult_factor_max = np.where(X.max(0) > 0, np.array(len(X)), np.array(1 / len(X)))
-    lower_bound = X.min(0) * mult_factor_min
-    upper_bound = X.max(0) * mult_factor_max
-    X_aug = np.concatenate(
-        (lower_bound.reshape(1, -1), X, upper_bound.reshape(1, -1)), axis=0
-    )
-    X_sorted = np.sort(X_aug, axis=0)
-    y_ecdf = np.concatenate(
-        [np.arange(1, X_sorted.shape[0] + 1).reshape(-1, 1) / X_sorted.shape[0]]
-        * X_sorted.shape[1],
-        axis=1,
-    )
-    if w is not None:
-        y_ecdf = y_ecdf * w.reshape(1, -1)
-    return X_sorted, y_ecdf
+    def _p_value_fn(
+        self, test_statistic: np.ndarray, X: np.ndarray, y_ecdf: np.ndarray
+    ) -> np.ndarray:
+        """
+        Compute p-values for the given test statistics using the empirical CDF.
 
+        For each feature layer, this function linearly interpolates the test statistic
+        values within the sorted training sample values (augmented with bounds) and
+        returns the ECDF values.
 
-def p_value_fn(
-    test_statistic: np.ndarray, X: np.ndarray, y_ecdf: np.ndarray
-) -> np.ndarray:
-    """
-    Compute p-values for the given test statistics using the empirical CDF.
+        Args:
+            test_statistic (np.ndarray): Array of test statistics with shape (n, m)
+                where n is the number of test samples and m is the number of layers.
+            X (np.ndarray): Sorted training sample values (with bounds) obtained from
+                `_empirical_cdf`, shape (N, m).
+            y_ecdf (np.ndarray): Corresponding ECDF values for each layer, shape (N, m).
 
-    For each feature layer, this function linearly interpolates the test statistic
-    values within the sorted training sample values (augmented with bounds) and returns
-    the ECDF values.
+        Returns:
+            np.ndarray: Interpolated p-values for the test samples with shape (n, m).
+        """
+        test_statistic = -test_statistic  # Ensure consistency with the ECDF computation
+        interpolated = []
+        for i in range(test_statistic.shape[1]):
+            layer_test_stat = test_statistic[:, i]
+            layer_X = X[:, i]
+            layer_ecdf = y_ecdf[:, i]
+            interp_values = np.interp(layer_test_stat, layer_X, layer_ecdf).reshape(
+                -1, 1
+            )
+            interpolated.append(interp_values)
+        return np.concatenate(interpolated, axis=1)
 
-    Args:
-        test_statistic (np.ndarray): Array of test statistics with shape (n, m) where n
-            is the number of test samples and m is the number of layers.
-        X (np.ndarray): Sorted training sample values (with bounds) obtained from
-            `empirical_cdf`, shape (N, m).
-        y_ecdf (np.ndarray): Corresponding ECDF values for each layer, shape (N, m).
+    def _compute_p_values(self, scores: np.ndarray) -> np.ndarray:
+        """
+        Compute p-values for test scores based on the empirical CDF from the training
+        data.
 
-    Returns:
-        np.ndarray: Interpolated p-values for the test samples with shape (n, m).
-    """
-    test_statistic = -test_statistic  # Ensure consistency with the ECDF computation
-    interpolated = []
-    for i in range(test_statistic.shape[1]):
-        layer_test_stat = test_statistic[:, i]
-        layer_X = X[:, i]
-        layer_ecdf = y_ecdf[:, i]
-        interp_values = np.interp(layer_test_stat, layer_X, layer_ecdf).reshape(-1, 1)
-        interpolated.append(interp_values)
-    return np.concatenate(interpolated, axis=1)
+        Args:
+            scores (np.ndarray): A numpy array of stacked test scores with shape
+                (num_samples, num_layers).
 
+        Returns:
+            np.ndarray: A numpy array of p-values with the same shape as the input.
+        """
+        return self._p_value_fn(scores, self.id_scores, self.y_ecdf)
 
-def fisher_tau_method(p_values: np.ndarray) -> np.ndarray:
-    """
-    Combine p-values using Fisher's method.
+    # === Private methods: ECDF and p-value ===
 
-    For each sample, the Fisher statistic is computed as:
-        tau = -2 * sum(log(p_i))
-    where the sum is taken over the p-values from all feature layers.
+    def _empirical_cdf(
+        self, X: np.ndarray, w: np.ndarray = None
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Compute the empirical cumulative distribution function (ECDF) for a given
+        sample.
 
-    Args:
-        p_values (np.ndarray): Array of p-values with shape (n, m).
+        The function first negates the input data (assuming that lower scores indicate
+        higher in-distribution confidence), augments the sample with lower and upper
+        bounds, sorts the values, and then computes the ECDF.
 
-    Returns:
-        np.ndarray: A 1D array of Fisher combined statistics, one per test sample
-            (shape: (n,)).
-    """
-    tau = -2 * np.sum(np.log(p_values), axis=1)
-    return tau
+        Args:
+            X (np.ndarray): An array of shape (N, m), where N is the number of samples
+                and m is the number of feature layers.
+            w (np.ndarray, optional): Optional weights to adjust the ECDF values.
+                Defaults to None.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+                - An array of sorted (and augmented) sample values.
+                - An array of ECDF values corresponding to the sample.
+        """
+        # Negate scores so that higher values correspond to higher in-dist confidence.
+        X = -X
+        if X.ndim == 1:
+            X = X.reshape(-1, 1)
+        mult_factor_min = np.where(X.min(0) > 0, np.array(1 / len(X)), np.array(len(X)))
+        mult_factor_max = np.where(X.max(0) > 0, np.array(len(X)), np.array(1 / len(X)))
+        lower_bound = X.min(0) * mult_factor_min
+        upper_bound = X.max(0) * mult_factor_max
+        X_aug = np.concatenate(
+            (lower_bound.reshape(1, -1), X, upper_bound.reshape(1, -1)), axis=0
+        )
+        X_sorted = np.sort(X_aug, axis=0)
+        y_ecdf = np.concatenate(
+            [np.arange(1, X_sorted.shape[0] + 1).reshape(-1, 1) / X_sorted.shape[0]]
+            * X_sorted.shape[1],
+            axis=1,
+        )
+        if w is not None:
+            y_ecdf = y_ecdf * w.reshape(1, -1)
+        return X_sorted, y_ecdf
+
+    def _fisher_tau_method(self, p_values: np.ndarray) -> np.ndarray:
+        """
+        Combine p-values using Fisher's method.
+
+        For each sample, the Fisher statistic is computed as:
+            tau = -2 * sum(log(p_i))
+        where the sum is taken over the p-values from all feature layers.
+
+        Args:
+            p_values (np.ndarray): Array of p-values with shape (n, m).
+
+        Returns:
+            np.ndarray: A 1D array of Fisher combined statistics, one per test sample
+                (shape: (n,)).
+        """
+        tau = -2 * np.sum(np.log(p_values), axis=1)
+        return tau
