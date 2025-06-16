@@ -22,6 +22,7 @@
 # SOFTWARE.
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 import matplotlib.pyplot as plt
@@ -87,14 +88,9 @@ class VIM(OODBaseDetector):
         """
         Fit PCA subspaces and compute scaling factors per feature layer.
 
-        Steps per layer:
-          1. Extract features, flatten to shape [N, D].
-          2. Determine center: pseudo-center for final layer if requested or empirical
-            mean.
-          3. Compute empirical covariance and its eigen-decomposition.
-          4. Select number of principal components (int or ratio).
-          5. Store residual projector (eigenvectors for discarded dimensions).
-          6. Compute alpha so that average residual norm matches average max-logit.
+        Args:
+            fit_dataset: Dataset to fit the VIM model on. Can be a TensorType
+                (e.g., numpy array) or a DatasetType (e.g., PyTorch dataset).
         """
         # Ensure post-processing functions extract features from each layer
         num_layers = len(self.feature_extractor.feature_layers_id)
@@ -103,8 +99,8 @@ class VIM(OODBaseDetector):
                 self.feature_extractor._default_postproc_fn for _ in range(num_layers)
             ]
 
-        # Extract features and logits for all layers
-        all_features, info = self.feature_extractor.predict(
+        # Ensure post-processing functions extract features from each layer
+        features, info = self.feature_extractor.predict(
             fit_dataset, postproc_fns=self.postproc_fns, numpy_concat=True
         )
         logits_train = info["logits"]
@@ -113,79 +109,23 @@ class VIM(OODBaseDetector):
         train_maxlogit = np.max(logits_train, axis=-1)
 
         # Fit PCA for each layer
+        per_layer_scores = []
         for idx, layer_id in enumerate(self.feature_extractor.feature_layers_id):
-            # Flatten features: shape [N, D]
-            feat = self.op.flatten(self.op.from_numpy(all_features[idx]))
-            N, D = feat.shape
-
-            # 1) Determine the subspace origin (center)
-            if layer_id == -1 and self.pca_origin == "pseudo":
-                # Use model's final linear layer weights to compute pseudo-center W^-1 b
-                W, b = self.feature_extractor.get_weights(-1)
-                W_mat = (
-                    self.op.t(self.op.from_numpy(W))
-                    if self.backend == "tensorflow"
-                    else self.op.from_numpy(W)
-                )
-                b_vec = self.op.from_numpy(b.reshape(-1, 1))
-                center = -self.op.reshape(
-                    self.op.matmul(self.op.pinv(W_mat), b_vec), (-1,)
-                )
-            else:
-                # Empirical mean for all other layers
-                center = self.op.mean(feat, dim=0)
-
-            # 2) Compute empirical covariance and eigen-decomposition
-            centered = feat - center
-            cov = self.op.matmul(self.op.t(centered), centered) / N
-            eig_vals, eig_vecs = self.op.eigh(cov)
-            eig_vals_np = self.op.convert_to_numpy(eig_vals)
-
-            # 3) Select number of principal components
-            if isinstance(self._princ_dims, int):
-                assert (
-                    0 < self._princ_dims < D
-                ), f"princ_dims ({self._princ_dims}) must be in 1..{D-1}"
-                princ_dim = self._princ_dims
-            else:
-                # Float: ratio of variance to retain
-                assert (
-                    0 < self._princ_dims <= 1
-                ), f"princ_dims ratio ({self._princ_dims}) must be in (0,1]"
-                # take princ_dim as the number of components that explain
-                # self._princ_dims of the variance
-                explained_variance = np.cumsum(np.flip(eig_vals_np)) / np.sum(
-                    eig_vals_np
-                )
-                princ_dim = np.where(explained_variance > self._princ_dims)[0][0]
-            # residual dimension = discarded components
-            res_dim = D - princ_dim
-
-            # Store PCA parameters
+            params, scores = self._fit_layer(layer_id, features[idx], train_maxlogit)
+            center, proj, eig_vals, princ_dim, alpha = params
             self.centers.append(center)
-            # residual projector: eigenvectors of smallest res_dim values
-            self.residual_projections.append(eig_vecs[:, :res_dim])
-            self.eig_vals_list.append(eig_vals_np)
+            self.residual_projections.append(proj)
+            self.eig_vals_list.append(eig_vals)
             self.princ_dims_list.append(princ_dim)
-
-            # 4) Compute scaling factor alpha for this layer
-            residual_norms = self._compute_residual_score_tensor(feat, idx)
-            alpha = float(np.mean(train_maxlogit) / np.mean(residual_norms))
             self.alphas.append(alpha)
+            per_layer_scores.append(scores)
 
-        # 5) Aggregator setup for multi-layer combination
+        # Aggregator setup for multi-layer combination
         if self.aggregator is None and num_layers > 1:
             self.aggregator = StdNormalizedAggregator()
 
+        # Gather per-layer OOD scores on training data to fit aggregator
         if self.aggregator is not None and num_layers > 1:
-            # Gather per-layer OOD scores on training data to fit aggregator
-            per_layer_scores = []
-            for idx in range(num_layers):
-                norms = self._compute_residual_score_tensor(
-                    self.op.flatten(self.op.from_numpy(all_features[idx])), idx
-                )
-                ood_layer = self.alphas[idx] * norms - train_maxlogit
-                per_layer_scores.append(ood_layer)
             self.aggregator.fit(per_layer_scores)
 
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
@@ -209,18 +149,91 @@ class VIM(OODBaseDetector):
         # Energy score: log-sum-exp of classifier logits
         energy = logsumexp(self.op.convert_to_numpy(logits), axis=-1)
 
-        # Compute layer-wise scores
         scores: List[np.ndarray] = []
         for idx, f in enumerate(feats):
             flat = self.op.flatten(f)
-            resid = self._compute_residual_score_tensor(flat, idx)
-            score_layer = self.alphas[idx] * resid - energy
-            scores.append(score_layer)
+            scores.append(self._score_layer(flat, energy, idx))
 
         # Aggregate if needed
         if len(scores) > 1 and self.aggregator is not None:
             return self.aggregator.aggregate(scores)  # type: ignore
         return scores[0]
+
+    # === Per-layer logic ===
+    def _fit_layer(
+        self,
+        layer_id: Union[int, str],
+        layer_features: np.ndarray,
+        train_maxlogit: np.ndarray,
+    ) -> Tuple[Tuple[TensorType, TensorType, np.ndarray, int, float], np.ndarray]:
+        """Fit PCA and compute the alpha scaling for one feature layer.
+
+        Args:
+            layer_id: Identifier of the feature layer.
+            layer_features: Extracted features with shape ``[N, D]``.
+            train_maxlogit: Max logit per training sample used to compute alpha.
+
+        Returns:
+            Tuple containing the PCA parameters ``(center, projection, eig_vals,
+            princ_dim, alpha)`` and the VIM scores of the training samples for
+            this layer.
+        """
+
+        feat = self.op.flatten(self.op.from_numpy(layer_features))
+        N, D = feat.shape
+
+        if layer_id == -1 and self.pca_origin == "pseudo":
+            W, b = self.feature_extractor.get_weights(-1)
+            W_mat = (
+                self.op.t(self.op.from_numpy(W))
+                if self.backend == "tensorflow"
+                else self.op.from_numpy(W)
+            )
+            b_vec = self.op.from_numpy(b.reshape(-1, 1))
+            center = -self.op.reshape(self.op.matmul(self.op.pinv(W_mat), b_vec), (-1,))
+        else:
+            center = self.op.mean(feat, dim=0)
+
+        centered = feat - center
+        cov = self.op.matmul(self.op.t(centered), centered) / N
+        eig_vals, eig_vecs = self.op.eigh(cov)
+        eig_vals_np = self.op.convert_to_numpy(eig_vals)
+
+        if isinstance(self._princ_dims, int):
+            assert (
+                0 < self._princ_dims < D
+            ), f"princ_dims ({self._princ_dims}) must be in 1..{D-1}"
+            princ_dim = self._princ_dims
+        else:
+            assert (
+                0 < self._princ_dims <= 1
+            ), f"princ_dims ratio ({self._princ_dims}) must be in (0,1]"
+            explained_variance = np.cumsum(np.flip(eig_vals_np)) / np.sum(eig_vals_np)
+            princ_dim = np.where(explained_variance > self._princ_dims)[0][0]
+
+        proj = eig_vecs[:, : D - princ_dim]
+
+        residual_norms = self._compute_residual_norms(feat, center, proj)
+        alpha = float(np.mean(train_maxlogit) / np.mean(residual_norms))
+        scores = alpha * residual_norms - train_maxlogit
+
+        return (center, proj, eig_vals_np, princ_dim, alpha), scores
+
+    def _score_layer(
+        self, flat_features: TensorType, energy: np.ndarray, layer_idx: int
+    ) -> np.ndarray:
+        """Compute the VIM score associated with one feature layer.
+
+        Args:
+            flat_features: Flattened features from the layer with shape ``[N, D]``.
+            energy: Energy scores of the corresponding samples.
+            layer_idx: Index of the feature layer to score.
+
+        Returns:
+            Array of VIM scores for the given layer.
+        """
+        resid = self._compute_residual_score_tensor(flat_features, layer_idx)
+        return self.alphas[layer_idx] * resid - energy
 
     # === Internal utilities ===
     def _compute_residual_score_tensor(
@@ -237,7 +250,21 @@ class VIM(OODBaseDetector):
         """
         center = self.centers[layer_idx]
         proj = self.residual_projections[layer_idx]
-        # Project onto residual subspace and compute vector norms
+        return self._compute_residual_norms(features, center, proj)
+
+    def _compute_residual_norms(
+        self, features: TensorType, center: TensorType, proj: TensorType
+    ) -> np.ndarray:
+        """Compute residual norms for the provided features.
+
+        Args:
+            features: Flattened feature matrix ``[N, D]``.
+            center: Center of the PCA subspace for the layer.
+            proj: Projection matrix onto the residual subspace.
+
+        Returns:
+            Numpy array of residual norms of shape ``[N]``.
+        """
         coords = self.op.matmul(features - center, proj)
         norms = self.op.norm(coords, dim=-1)
         return self.op.convert_to_numpy(norms)
