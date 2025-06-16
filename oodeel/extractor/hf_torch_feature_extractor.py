@@ -49,7 +49,7 @@ class HFTorchFeatureExtractor(TorchFeatureExtractor):
             Important: for HFTorchFeatureExtractor, we use features from the
             hidden states returned by model(input, output_hidden_states=True) in
             addition to other features computed like in TorchFeatureExtractor.
-            To select the hidden states as feature, idenitfy the layer by hidden_i,
+            To select the hidden states as feature, identify the layer by hidden_i,
             with i the index of the hidden state.
             Defaults to [].
         head_layer_id (int, str): identifier of the head layer.
