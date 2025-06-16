@@ -172,7 +172,7 @@ class HFTorchFeatureExtractor(TorchFeatureExtractor):
                     else self._features[feature_layer_id]
                 )
 
-            logits = outputs.logits.detach() if detach else outputs.logits
+        logits = outputs.logits.detach() if detach else outputs.logits
 
         if postproc_fns is not None:
             features = [
