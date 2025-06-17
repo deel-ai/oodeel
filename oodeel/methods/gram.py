@@ -29,7 +29,6 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 from ..aggregator import BaseAggregator
-from ..aggregator import StdNormalizedAggregator
 from ..types import DatasetType
 from ..types import TensorType
 from .base import OODBaseDetector
@@ -77,44 +76,63 @@ class Gram(OODBaseDetector):
         # Mapping class -> list (per-layer) of thresholds [lower, upper]
         self.min_maxs: Dict[int, List[TensorType]] = {}
 
-    # === Public API (fit, score) ===
+    # === Public API (override of _fit_to_dataset) ===
     def _fit_to_dataset(
         self,
-        fit_dataset: Union[TensorType, DatasetType],
-        val_split: float = None,
+        fit_dataset: DatasetType,
         verbose: bool = False,
+        **kwargs,
     ) -> None:
-        """
-        Fit the detector on in-distribution data by computing per-layer and per-class
-        quantile thresholds for the Gram statistics. Depending on whether an aggregator
-        is provided, either fit an aggregator on a validation subset or compute
-        normalization constants per layer.
+        """Fit thresholds on Gram statistics from a dataset.
+
+        This method sets :attr:`postproc_fns` to compute Gram matrices for all
+        selected feature layers and then delegates the actual fitting to the
+        generic implementation in :class:`OODBaseDetector`.
 
         Args:
-            fit_dataset (Union[TensorType, DatasetType]): In-distribution data.
-            val_split (float): Fraction of data to use as validation for aggregator
-                fitting (as in the original paper). If None, the entire fit dataset is
-                used for both quantile threshold computation and aggregator fitting.
-                Defaults to None.
-            verbose (bool): Whether to print additional information.
+            fit_dataset: Dataset containing in-distribution samples.
+            verbose: Whether to display a progress bar during feature extraction.
+            **kwargs: Additional keyword arguments forwarded to :func:`_fit_layer`.
+
+        Returns:
+            None
         """
         n_layers = len(self.feature_extractor.feature_layers_id)
-        self.postproc_fns = [self._stat] * n_layers
+        if self.postproc_fns is None:
+            self.postproc_fns = [self._stat] * n_layers
 
-        if self.aggregator is None and n_layers > 1:
-            self.aggregator = StdNormalizedAggregator()
+        super()._fit_to_dataset(fit_dataset, verbose=verbose, **kwargs)
 
-        stats_all, info = self.feature_extractor.predict(
-            fit_dataset,
-            postproc_fns=self.postproc_fns,
-            return_labels=True,
-            verbose=verbose,
-            numpy_concat=True,
-        )
+    # === Per-layer logic ===
+    def _fit_layer(
+        self,
+        layer_id: int,
+        layer_stats: np.ndarray,
+        info: dict,
+        val_split: float = None,
+        **kwargs,
+    ) -> Optional[np.ndarray]:
+        """Fit thresholds for one layer and optionally return validation scores.
+
+        Args:
+            layer_id: Index of the processed layer.
+            layer_stats: Gram statistics for this layer.
+            info: Dictionary containing the logits of the training data.
+            val_split: Ratio of samples used for aggregator fitting.
+
+        Returns:
+            Optional[np.ndarray]: Validation deviations if an aggregator is used.
+        """
+
         preds_all = np.argmax(info["logits"], axis=1)
-        self._classes = np.sort(np.unique(preds_all)).tolist()
-        self.min_maxs = {cls: [None] * n_layers for cls in self._classes}
 
+        # initialize min_maxs if not already done.
+        if not self.min_maxs:
+            n_layers = len(self.feature_extractor.feature_layers_id)
+            self._classes = np.sort(np.unique(preds_all)).tolist()
+            self.min_maxs = {cls: [None] * n_layers for cls in self._classes}
+
+        # split the dataset into training and validation sets (as in original paper).
         idx_all = np.arange(preds_all.shape[0])
         train_idx, val_idx = (
             train_test_split(idx_all, test_size=val_split, random_state=42)
@@ -122,128 +140,60 @@ class Gram(OODBaseDetector):
             else (idx_all, idx_all)
         )
 
-        val_scores_for_agg = []
-        for layer_idx in range(n_layers):
-            # Extract the layer statistics and predictions for train and val sets.
-            layer_np = stats_all[layer_idx]
-            train_stats = layer_np[train_idx]
-            val_stats = layer_np[val_idx]
-            train_preds = preds_all[train_idx]
-            val_preds = preds_all[val_idx]
+        train_stats = layer_stats[train_idx]
+        val_stats = layer_stats[val_idx]
+        train_preds = preds_all[train_idx]
+        val_preds = preds_all[val_idx]
 
-            val_scores = self._fit_layer(
-                layer_idx,
-                train_stats,
-                val_stats,
-                train_preds,
-                val_preds,
-            )
-
-            if val_scores is not None:
-                val_scores_for_agg.append(val_scores)
-
-        if self.aggregator is not None:
-            if val_scores_for_agg:
-                self.aggregator.fit(val_scores_for_agg)
-
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
-        """
-        Compute OOD scores for input samples. For each layer, calculate the deviation
-        from stored quantile thresholds. If an aggregator is available (and there is
-        more than one layer), combine per-layer scores via the aggregator; otherwise,
-        average the normalized scores.
-
-        Args:
-            inputs (TensorType): Input samples to be scored.
-
-        Returns:
-            np.ndarray: Final OOD scores.
-        """
-        layer_stats, logits = self.feature_extractor.predict_tensor(
-            inputs, postproc_fns=self.postproc_fns
-        )
-        preds = self.op.convert_to_numpy(self.op.argmax(logits, dim=1))
-
-        per_layer = [
-            self._score_layer(i, layer_stats[i], preds) for i in range(len(layer_stats))
-        ]
-
-        if len(per_layer) > 1 and self.aggregator is not None:
-            return self.aggregator.aggregate(per_layer)
-        return np.mean(np.stack(per_layer, axis=1), axis=1)
-
-    # === Per-layer logic ===
-    def _fit_layer(
-        self,
-        layer_idx: int,
-        train_stats: np.ndarray,
-        val_stats: np.ndarray,
-        train_preds: np.ndarray,
-        val_preds: np.ndarray,
-    ) -> Optional[np.ndarray]:
-        """Fit thresholds for **one** layer and optionally return val scores.
-        To avoid OOM, we compute the val scores in batches with an arbitrary batch size
-        of 128.
-
-        Args:
-            layer_idx (int): Index of the processed layer.
-            train_stats / val_stats (np.ndarray): Gram stats for train/val subsets.
-            train_preds / val_preds (np.ndarray): Predicted labels.
-
-        Returns:
-            Optional[np.ndarray]: Validation deviations (if aggregator is used),
-            otherwise `None`.
-        """
+        # compute min/max thresholds for each class
         for cls in self._classes:
             cls_mask = train_preds == cls
             stats_cls_np = train_stats[cls_mask]
-            stats_cls_t = self.op.from_numpy(stats_cls_np)  # Move to gpu
+            stats_cls_t = self.op.from_numpy(stats_cls_np)
             lower = self.op.quantile(stats_cls_t, self.quantile, dim=0)
             upper = self.op.quantile(stats_cls_t, 1 - self.quantile, dim=0)
-            self.min_maxs[cls][layer_idx] = self.op.cat(
+            self.min_maxs[cls][layer_id] = self.op.cat(
                 [self.op.unsqueeze(lower, -1), self.op.unsqueeze(upper, -1)],
                 dim=-1,
             )
 
-        if self.aggregator is None:
+        if getattr(self, "aggregator", None) is None:
             return None
 
-        # compute val stats deviation (using batchs to avoid OutOfMemory)
         batch_size = 128
         N = val_stats.shape[0]
         val_dev = []
         for start in range(0, N, batch_size):
             end = start + batch_size
             batch_idx = np.arange(start, min(end, N))
-            # 1) move only this batch of stats
             stats_t = self.op.from_numpy(val_stats[batch_idx])
-            # 2) build only this batch’s thresholds
-            #    [B, orders, C, 2]
-            thr_list = [self.min_maxs[int(val_preds[i])][layer_idx] for i in batch_idx]
+            thr_list = [self.min_maxs[int(val_preds[i])][layer_id] for i in batch_idx]
             thr_t = self.op.stack(thr_list, dim=0)
-            # 3) deviation
             dev_t = self._deviation(stats_t, thr_t)
             val_dev.append(self.op.convert_to_numpy(dev_t))
 
         return np.concatenate(val_dev, axis=0)
 
     def _score_layer(
-        self, layer_idx: int, layer_stats: TensorType, preds: np.ndarray
+        self,
+        layer_id: int,
+        layer_stats: TensorType,
+        info: dict,
+        **kwargs,
     ) -> np.ndarray:
-        """Score inputs for a **single** layer.
+        """Score inputs for a single layer.
 
         Args:
-            layer_idx (int): Layer index.
+            layer_id (int): Layer index.
             layer_stats (TensorType): Gram stats.
-            preds (np.ndarray): Predicted classes.
-
+            info (dict): Dictionary containing auxiliary data, such as logits.
         Returns:
             np.ndarray: Deviation-based OOD scores.
         """
-        thr_batch = self.op.stack([self.min_maxs[int(lbl)][layer_idx] for lbl in preds])
+        preds = np.argmax(self.op.convert_to_numpy(info["logits"]), axis=1)
+        thr_batch = self.op.stack([self.min_maxs[int(lbl)][layer_id] for lbl in preds])
         dev = self._deviation(layer_stats, thr_batch)
-        score = self.op.convert_to_numpy(dev)
-        return score
+        return self.op.convert_to_numpy(dev)
 
     # === Internal utilities ===
     def _stat(self, feature_map: TensorType) -> TensorType:

@@ -22,7 +22,6 @@
 # SOFTWARE.
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Union
 
 import matplotlib.pyplot as plt
@@ -30,8 +29,6 @@ import numpy as np
 from scipy.special import logsumexp
 
 from ..aggregator import BaseAggregator
-from ..aggregator import StdNormalizedAggregator
-from ..types import DatasetType
 from ..types import TensorType
 from .base import OODBaseDetector
 
@@ -83,101 +80,33 @@ class VIM(OODBaseDetector):
         self.princ_dims_list: List[int] = []
         self.alphas: List[float] = []
 
-    # === Public API (fit, score) ===
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
-        """
-        Fit PCA subspaces and compute scaling factors per feature layer.
-
-        Args:
-            fit_dataset: Dataset to fit the VIM model on. Can be a TensorType
-                (e.g., numpy array) or a DatasetType (e.g., PyTorch dataset).
-        """
-        # Ensure post-processing functions extract features from each layer
-        num_layers = len(self.feature_extractor.feature_layers_id)
-        if self.postproc_fns is None:
-            self.postproc_fns = [
-                self.feature_extractor._default_postproc_fn for _ in range(num_layers)
-            ]
-
-        # Ensure post-processing functions extract features from each layer
-        features, info = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns, numpy_concat=True
-        )
-        logits_train = info["logits"]
-
-        # Precompute max-logit energy baseline
-        train_maxlogit = np.max(logits_train, axis=-1)
-
-        # Fit PCA for each layer
-        per_layer_scores = []
-        for idx, layer_id in enumerate(self.feature_extractor.feature_layers_id):
-            params, scores = self._fit_layer(layer_id, features[idx], train_maxlogit)
-            center, proj, eig_vals, princ_dim, alpha = params
-            self.centers.append(center)
-            self.residual_projections.append(proj)
-            self.eig_vals_list.append(eig_vals)
-            self.princ_dims_list.append(princ_dim)
-            self.alphas.append(alpha)
-            per_layer_scores.append(scores)
-
-        # Aggregator setup for multi-layer combination
-        if self.aggregator is None and num_layers > 1:
-            self.aggregator = StdNormalizedAggregator()
-
-        # Gather per-layer OOD scores on training data to fit aggregator
-        if self.aggregator is not None and num_layers > 1:
-            self.aggregator.fit(per_layer_scores)
-
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
-        """
-        Compute the final VIM OOD score for input samples.
-
-        Steps:
-          1. Extract per-layer features and logits.
-          2. Compute energy: log-sum-exp over logits.
-          3. Compute residual norms per layer and combine:
-             score_layer = alpha * residual_norm - energy.
-          4. If multiple layers, aggregate via self.aggregator.
-
-        Returns:
-            Array of OOD scores (higher means more likely OOD).
-        """
-        # Extract features for each layer and the logits
-        feats, logits = self.feature_extractor.predict_tensor(
-            inputs, postproc_fns=self.postproc_fns
-        )
-        # Energy score: log-sum-exp of classifier logits
-        energy = logsumexp(self.op.convert_to_numpy(logits), axis=-1)
-
-        scores: List[np.ndarray] = []
-        for idx, f in enumerate(feats):
-            flat = self.op.flatten(f)
-            scores.append(self._score_layer(flat, energy, idx))
-
-        # Aggregate if needed
-        if len(scores) > 1 and self.aggregator is not None:
-            return self.aggregator.aggregate(scores)  # type: ignore
-        return scores[0]
-
     # === Per-layer logic ===
     def _fit_layer(
         self,
-        layer_id: Union[int, str],
+        layer_id: int,
         layer_features: np.ndarray,
-        train_maxlogit: np.ndarray,
-    ) -> Tuple[Tuple[TensorType, TensorType, np.ndarray, int, float], np.ndarray]:
-        """Fit PCA and compute the alpha scaling for one feature layer.
+        info: dict,
+        **kwargs,
+    ) -> Optional[np.ndarray]:
+        """Compute PCA statistics for a single feature layer.
+
+        The PCA subspace is estimated from the layer activations of the
+        in-distribution training data. The ratio between the norm of the
+        residual component and the maximum logit defines the :math:`\alpha`
+        scaling used at inference.
 
         Args:
-            layer_id: Identifier of the feature layer.
-            layer_features: Extracted features with shape ``[N, D]``.
-            train_maxlogit: Max logit per training sample used to compute alpha.
+            layer_id: Index of the feature layer.
+            layer_features: Features for this layer with shape `[N, D]`.
+            info: Dictionary containing at least the training logits.
 
         Returns:
-            Tuple containing the PCA parameters ``(center, projection, eig_vals,
-            princ_dim, alpha)`` and the VIM scores of the training samples for
-            this layer.
+            Optional[np.ndarray]: VIM scores of the training samples for this
+            layer (used to fit an optional aggregator).
         """
+
+        logits_train = info["logits"]
+        train_maxlogit = np.max(logits_train, axis=-1)
 
         feat = self.op.flatten(self.op.from_numpy(layer_features))
         N, D = feat.shape
@@ -217,23 +146,35 @@ class VIM(OODBaseDetector):
         alpha = float(np.mean(train_maxlogit) / np.mean(residual_norms))
         scores = alpha * residual_norms - train_maxlogit
 
-        return (center, proj, eig_vals_np, princ_dim, alpha), scores
+        self.centers.append(center)
+        self.residual_projections.append(proj)
+        self.eig_vals_list.append(eig_vals_np)
+        self.princ_dims_list.append(princ_dim)
+        self.alphas.append(alpha)
+
+        return scores
 
     def _score_layer(
-        self, flat_features: TensorType, energy: np.ndarray, layer_idx: int
+        self,
+        layer_id: int,
+        layer_features: TensorType,
+        info: dict,
+        **kwargs,
     ) -> np.ndarray:
         """Compute the VIM score associated with one feature layer.
 
         Args:
-            flat_features: Flattened features from the layer with shape ``[N, D]``.
-            energy: Energy scores of the corresponding samples.
-            layer_idx: Index of the feature layer to score.
+            layer_id: Index of the processed layer.
+            layer_features: Features from the current layer.
+            info: Dictionary containing the logits of the batch.
 
         Returns:
-            Array of VIM scores for the given layer.
+            np.ndarray: VIM scores for the layer.
         """
-        resid = self._compute_residual_score_tensor(flat_features, layer_idx)
-        return self.alphas[layer_idx] * resid - energy
+        energy = logsumexp(self.op.convert_to_numpy(info["logits"]), axis=-1)
+        flat = self.op.flatten(layer_features)
+        resid = self._compute_residual_score_tensor(flat, layer_id)
+        return self.alphas[layer_id] * resid - energy
 
     # === Internal utilities ===
     def _compute_residual_score_tensor(
@@ -258,12 +199,12 @@ class VIM(OODBaseDetector):
         """Compute residual norms for the provided features.
 
         Args:
-            features: Flattened feature matrix ``[N, D]``.
+            features: Flattened feature matrix `[N, D]`.
             center: Center of the PCA subspace for the layer.
             proj: Projection matrix onto the residual subspace.
 
         Returns:
-            Numpy array of residual norms of shape ``[N]``.
+            Numpy array of residual norms of shape `[N]`.
         """
         coords = self.op.matmul(features - center, proj)
         norms = self.op.norm(coords, dim=-1)

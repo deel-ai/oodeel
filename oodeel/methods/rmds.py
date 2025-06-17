@@ -20,17 +20,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
 
 import numpy as np
 
 from ..aggregator import BaseAggregator
-from ..aggregator import StdNormalizedAggregator
-from ..types import DatasetType
 from ..types import TensorType
 from .mahalanobis import Mahalanobis
 
@@ -65,163 +61,104 @@ class RMDS(Mahalanobis):
         # Will be filled by `_fit_to_dataset`.
         self._layer_background_stats: List[Tuple[TensorType, np.ndarray]] = []
 
-    # === Public API (fit, score) ===
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
-        """
-        Fit the RMDS detector using in-distribution data by computing
-        both class-conditional statistics (per layer) and background statistics for each
-        layer.
-
-        For each feature layer, this method computes:
-          - Class means and a weighted average covariance matrix (with its
-            pseudo-inverse), stored in self._layer_stats.
-          - The background mean and covariance matrix (with its pseudo-inverse),
-            stored in self._layer_background_stats.
-
-        If multiple layers are available and an aggregator is used, per-layer scores
-        on a subset of samples are computed for fitting the aggregator.
-
-        Args:
-            fit_dataset (Union[TensorType, DatasetType]): In-distribution dataset used
-                for fitting the detector.
-
-        """
-        n_layers = len(self.feature_extractor.feature_layers_id)
-
-        # Set default postprocessing functions if not provided.
-        if self.postproc_fns is None:
-            self.postproc_fns = [self.feature_extractor._default_postproc_fn] * n_layers
-
-        # Extract features and labels
-        features, infos = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns, detach=True, numpy_concat=True
-        )
-        labels = infos["labels"]
-
-        self._layer_stats.clear()
-        self._layer_background_stats.clear()
-        per_layer_scores: List[np.ndarray] = []
-
-        # Compute class-conditional statistics per layer.
-        for i in range(n_layers):
-            stats, scores = self._fit_layer(features[i], labels)
-            mus, pinv_cov, mu_bg, pinv_cov_bg = stats
-            self._layer_stats.append((mus, pinv_cov))
-            self._layer_background_stats.append((mu_bg, pinv_cov_bg))
-            if scores is not None:
-                per_layer_scores.append(scores)
-
-        if self.aggregator is None and n_layers > 1:
-            self.aggregator = StdNormalizedAggregator()
-
-        if self.aggregator is not None and per_layer_scores:
-            self.aggregator.fit(per_layer_scores)
-
+    # === Public API (override of _score_tensor) ===
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
-        """
-        Compute OOD scores for input samples based on the RMDS distance.
+        """Compute RMDS scores for a batch of samples.
 
-        The process is as follows:
-          1. Optionally apply gradient-based input perturbation.
-          2. For each feature layer, extract features and compute:
-             - The class-conditional Mahalanobis scores.
-             - The background Mahalanobis scores.
-          3. For each layer, subtract the background score from the class-conditional
-             score, and select the maximum score among classes.
-          4. When using multiple layers, aggregate the corrected per-layer scores via
-             the provided aggregator.
+        Inputs may be perturbed following the ODIN procedure before feature
+        extraction. For each configured layer, :func:`_score_layer` computes the
+        residual Mahalanobis score. If more than one layer is used, the scores
+        are aggregated using `self.aggregator` when available, otherwise the
+        average of the per-layer scores is returned.
 
         Args:
-            inputs (TensorType): Input samples to be scored.
+            inputs: Samples to score.
 
         Returns:
-            Tuple[np.ndarray]: The final OOD scores (negative confidence values) for
-                each sample.
+            `np.ndarray` of RMDS scores for the batch.
         """
         x = self._input_perturbation(inputs) if self.eps > 0 else inputs
-        features, _ = self.feature_extractor.predict_tensor(
+
+        feats, logits = self.feature_extractor.predict_tensor(
             x, postproc_fns=self.postproc_fns
         )
 
-        per_layer_scores = []
-        for i in range(len(self._layer_stats)):
-            out_f = self.op.flatten(features[i])
-            mus, pinv_cov = self._layer_stats[i]
-            mu_bg, pinv_cov_bg = self._layer_background_stats[i]
-            per_layer_scores.append(
-                self._score_layer(out_f, mus, pinv_cov, mu_bg, pinv_cov_bg)
-            )
+        info = {"logits": logits}
 
-        if len(per_layer_scores) > 1 and self.aggregator is not None:
+        per_layer_scores = [
+            self._score_layer(i, self.op.flatten(feats[i]), info)
+            for i in range(len(self._layer_stats))
+        ]
+
+        if getattr(self, "aggregator", None) is not None and len(per_layer_scores) > 1:
             return self.aggregator.aggregate(per_layer_scores)
+        if len(per_layer_scores) > 1:
+            return np.mean(np.stack(per_layer_scores, axis=1), axis=1)
         return per_layer_scores[0]
 
     # === Per-layer logic ===
     def _fit_layer(
         self,
+        layer_id: int,
         layer_features: np.ndarray,
-        labels: np.ndarray,
+        info: dict,
         subset_size: int = 5000,
-    ) -> Tuple[
-        Tuple[Dict[int, TensorType], TensorType, TensorType, TensorType],
-        Optional[np.ndarray],
-    ]:
-        """Fit *one layer* and optionally return validation-subset scores.
+        **kwargs,
+    ) -> Optional[np.ndarray]:
+        """Compute statistics for a single layer and optionally return scores.
 
         Args:
-            layer_features (np.ndarray): In-distribution features for the layer.
-            labels (np.ndarray): Class labels.
-            subset_size (int, optional): Number of samples used to compute initial
-                scores for the aggregator. Defaults to 5000.
+            layer_id: Index of the processed layer.
+            layer_features: In-distribution features for this layer.
+            info: Dictionary containing the training labels.
+            subset_size: Number of samples used to compute provisional scores
+                for the aggregator.
 
-        Returns
-            layer_stats : (mus, pinv_cov, mu_bg, pinv_cov_bg)
-                - `mus` - per-class means
-                - `pinv_cov` - shared pseudo-inverse covariance
-                - `mu_bg` - background mean
-                - `pinv_cov_bg` - background pseudo-inverse covariance
-            val_scores : np.ndarray | None
-                Per-sample RMDS scores for an aggregator, or `None`.
+        Returns:
+            Optional[np.ndarray]: RMDS scores on `subset_size` samples if an
+            aggregator is used.
         """
+        labels = info["labels"]
+
         if isinstance(layer_features, np.ndarray):
             layer_features = self.op.from_numpy(layer_features)
 
         mus, pinv_cov = super()._compute_layer_stats(layer_features, labels)
         mu_bg, pinv_cov_bg = self._background_stats(layer_features)
 
+        self._layer_stats.append((mus, pinv_cov))
+        self._layer_background_stats.append((mu_bg, pinv_cov_bg))
+
         scores: Optional[np.ndarray] = None
-        if self.aggregator is not None:
+        if getattr(self, "aggregator", None) is not None:
             n_samples = min(subset_size, layer_features.shape[0])
             feats_subset = self.op.flatten(layer_features[:n_samples])
             g_scores = self._gaussian_log_probs(feats_subset, mus, pinv_cov)
             bg_score = self._background_log_prob(feats_subset, mu_bg, pinv_cov_bg)
             corrected = self.op.max(g_scores - bg_score, dim=1)
             scores = -self.op.convert_to_numpy(corrected)
-        return (mus, pinv_cov, mu_bg, pinv_cov_bg), scores
+
+        return scores
 
     def _score_layer(
         self,
+        layer_id: int,
         out_features: TensorType,
-        mus: Dict[int, TensorType],
-        pinv_cov: TensorType,
-        mu_bg: TensorType,
-        pinv_cov_bg: TensorType,
+        info: dict,
+        **kwargs,
     ) -> np.ndarray:
         """Compute the residual Mahalanobis OOD score for a single layer.
 
         Args:
-            out_features (TensorType): Flattened feature matrix for the current
-                batch (shape `[B, D]`).
-            mus (Dict[int, TensorType]): Mapping class to mean for the layer.
-            pinv_cov (TensorType): Shared pseudo-inverse covariance matrix.
-            mu_bg (TensorType): Background mean vector.
-            pinv_cov_bg (TensorType): Background pseudo-inverse covariance.
+            layer_id: Index of the processed layer.
+            out_features: Flattened feature matrix `[B, D]` for the batch.
+            info: Unused dictionary of auxiliary data.
 
         Returns:
-            np.ndarray: 1-D array (length `B`) of **negative** residual log-likelihoods.
-                Higher values indicate a higher likelihood of the sample being
-                out-of-distribution.
+            np.ndarray: 1-D array of **negative** residual log-likelihoods.
         """
+        mus, pinv_cov = self._layer_stats[layer_id]
+        mu_bg, pinv_cov_bg = self._layer_background_stats[layer_id]
         g_scores = self._gaussian_log_probs(out_features, mus, pinv_cov)
         bg_score = self._background_log_prob(out_features, mu_bg, pinv_cov_bg)
         corrected = self.op.max(g_scores - bg_score, dim=1)

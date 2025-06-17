@@ -22,15 +22,11 @@
 # SOFTWARE.
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 import numpy as np
 
 from ..aggregator import BaseAggregator
-from ..aggregator import StdNormalizedAggregator
-from ..types import DatasetType
 from ..types import TensorType
-from ..types import Union
 from .base import OODBaseDetector
 
 
@@ -79,84 +75,21 @@ class SHE(OODBaseDetector):
         self._classes: Optional[np.ndarray] = None
         self._layer_mus: List[TensorType] = []  # Shape per layer: [D, n_classes]
 
-    # === Public API (fit, score) ===
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
-        """Compute class means for every selected layer.
-
-        Args:
-            fit_dataset: In-distribution dataset used to estimate the class-
-                conditional activation means and, if applicable, to fit the
-                score aggregator.
-        """
-        # ------- Extract in-distribution features ----------------------------
-        self.postproc_fns = [self.feature_extractor._default_postproc_fn] * len(
-            self.feature_extractor.feature_layers_id
-        )
-        features, infos = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns, numpy_concat=True
-        )
-
-        # Default aggregator if not supplied and several layers are present
-        if self.aggregator is None and len(features) > 1:
-            self.aggregator = StdNormalizedAggregator()
-
-        labels_np = infos["labels"]
-        preds_np = np.argmax(infos["logits"], axis=1)
-        self._classes = np.sort(np.unique(labels_np))
-
-        # ------- Per-layer statistics & aggregator pre-scores ---------------
-        self._layer_mus.clear()
-        per_layer_scores: list[np.ndarray] = []
-
-        for lf in features:
-            mus_layer, scores_layer = self._fit_layer(lf, labels_np, preds_np)
-            self._layer_mus.append(mus_layer)
-            if scores_layer is not None:
-                per_layer_scores.append(scores_layer)
-
-        if self.aggregator is not None and per_layer_scores:
-            self.aggregator.fit(per_layer_scores)
-
-    def _score_tensor(self, inputs: TensorType):
-        """Return **negative** OOD scores for a batch of inputs.
-
-        The negative sign ensures that *higher* values correspond to *more* OOD-
-        like samples, which is consistent with other detectors in the library.
-
-        Args:
-            inputs: Batch of input samples.
-
-        Returns:
-            NumPy array of shape `(B,)` containing aggregated OOD scores.
-        """
-        x = self._input_perturbation(inputs)
-        features, _ = self.feature_extractor.predict_tensor(
-            x, postproc_fns=self.postproc_fns
-        )
-
-        per_layer_scores = [
-            -self.op.convert_to_numpy(self._score_layer(f, m))
-            for f, m in zip(features, self._layer_mus)
-        ]
-
-        if len(per_layer_scores) > 1:
-            return self.aggregator.aggregate(per_layer_scores)
-        return per_layer_scores[0]
-
     # === Per-layer logic ===
     def _fit_layer(
         self,
+        layer_id: int,
         layer_features: np.ndarray,
-        labels_np: np.ndarray,
-        preds_np: np.ndarray,
+        info: dict,
         subset_size: int = 5000,
-    ) -> Tuple[TensorType, Optional[np.ndarray]]:
+        **kwargs,
+    ) -> Optional[np.ndarray]:
         """Compute mean vectors for a single layer and initial SHE scores.
 
         Args:
-            layer_features: Tensor of shape ``(N, D)`` containing the flattened
+            layer_features: Tensor of shape `(N, D)` containing the flattened
                 activations of in-distribution samples for one layer.
-            labels_np: Ground-truth class labels as a ``np.ndarray``.
+            labels_np: Ground-truth class labels as a `np.ndarray`.
             preds_np: Model predictions for the in-distribution samples.  Means
                 are only computed from samples that are *both* predicted and
                 labelled as the target class (following the original paper).
@@ -171,39 +104,47 @@ class SHE(OODBaseDetector):
             either *None* or a NumPy array of length *subset_size* containing
             the **negative** SHE scores on the first *subset_size* samples.
         """
+        labels_np = info["labels"]
+        preds_np = np.argmax(info["logits"], axis=1)
+
+        if self._classes is None:
+            self._classes = np.sort(np.unique(labels_np))
+
         mus_per_cls = []
-        for cls in self._classes:  # type: ignore[iteration-over-optional]
+        for cls in self._classes:
             idx = np.equal(labels_np, cls) & np.equal(preds_np, cls)
             feats_cls = layer_features[idx]
             mu = np.expand_dims(np.mean(feats_cls, axis=0), axis=0)
             mus_per_cls.append(mu)
-        mus_layer = self.op.from_numpy(np.concatenate(mus_per_cls, axis=0))  # [C, D]
-        mus_layer = self.op.permute(mus_layer, (1, 0))  # [D, C]
+        mus_layer = self.op.from_numpy(np.concatenate(mus_per_cls, axis=0))
+        mus_layer = self.op.permute(mus_layer, (1, 0))
+
+        self._layer_mus.append(mus_layer)
 
         scores_layer: Optional[np.ndarray] = None
-        if self.aggregator is not None:
+        if getattr(self, "aggregator", None) is not None:
             n_samples = min(subset_size, layer_features.shape[0])
             feats_subset = self.op.from_numpy(layer_features[:n_samples])
-            she_subset = self._score_layer(feats_subset, mus_layer)
-            scores_layer = -self.op.convert_to_numpy(she_subset)
-        return mus_layer, scores_layer
+            she_subset = self._score_layer(
+                layer_id, feats_subset, {"logits": info["logits"]}
+            )
+            scores_layer = she_subset
 
-    def _score_layer(self, features: TensorType, mus_layer: TensorType) -> TensorType:
-        """Compute *unnormalised* SHE confidence for a single layer.
+        return scores_layer
 
-        Args:
-            features: Flattened activations of shape `(B, D)` for the input
-                batch.
-            mus_layer: Tensor `[D, n_classes]` returned by `_fit_layer`.
+    def _score_layer(
+        self,
+        layer_id: int,
+        features: TensorType,
+        info: dict,
+        **kwargs,
+    ) -> np.ndarray:
+        """Compute *unnormalised* SHE confidence for a single layer."""
 
-        Returns:
-            Framework tensor of shape `(B,)` containing the **max** dot
-            product over classes - higher values indicate stronger in-
-            distribution evidence.
-        """
+        mus_layer = self._layer_mus[layer_id]
         she = self.op.matmul(self.op.squeeze(features), mus_layer) / features.shape[1]
         she = self.op.max(she, dim=1)
-        return she
+        return -self.op.convert_to_numpy(she)
 
     # === Internal utilities ===
     def _input_perturbation(self, inputs: TensorType) -> TensorType:

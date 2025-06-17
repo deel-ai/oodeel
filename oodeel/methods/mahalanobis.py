@@ -24,13 +24,10 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
 
 import numpy as np
 
 from ..aggregator import BaseAggregator
-from ..aggregator import StdNormalizedAggregator
-from ..types import DatasetType
 from ..types import TensorType
 from .base import OODBaseDetector
 
@@ -61,139 +58,101 @@ class Mahalanobis(OODBaseDetector):
         self._layer_stats: List[Tuple[Dict, np.ndarray]] = []
         self._classes: Optional[np.ndarray] = None
 
-    # === Public API (fit, score) ===
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
-        """
-        Fit the Mahalanobis detector using in-distribution data by computing
-        class-conditional statistics for each feature layer.
+    # === Public API (override of _score_tensor) ===
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+        """Compute Mahalanobis-based OOD scores for a batch of samples.
 
-        For each layer, the method calculates the class means and the weighted average
-        covariance matrix, whose pseudo-inverse will be used for computing the
-        Mahalanobis distances at test time. Additionally, if an aggregator is provided,
-        it computes scores on the first 1000 samples for each layer and fits the
-        aggregator to these scores (e.g. to compute standard deviations).
-
-        Args:
-            fit_dataset (Union[TensorType, DatasetType]): In-distribution data for
-                fitting the detector.
-        """
-        n_layers = len(self.feature_extractor.feature_layers_id)
-
-        if self.postproc_fns is None:
-            self.postproc_fns = [self.feature_extractor._default_postproc_fn] * n_layers
-
-        features, infos = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns, detach=True, numpy_concat=True
-        )
-        labels = infos["labels"]
-
-        self._layer_stats.clear()
-        per_layer_scores = []
-
-        for i in range(n_layers):
-            stats, scores = self._fit_layer(features[i], labels)
-            self._layer_stats.append(stats)
-            if scores is not None:
-                per_layer_scores.append(scores)
-
-        if self.aggregator is None and n_layers > 1:
-            self.aggregator = StdNormalizedAggregator()
-
-        if self.aggregator is not None and per_layer_scores:
-            self.aggregator.fit(per_layer_scores)
-
-    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
-        """
-        Compute out-of-distribution scores for input samples based on the Mahalanobis
-        distance.
-
-        The procedure is as follows:
-          1. (Optional) Apply input perturbation (if eps > 0) using the first feature
-            layer.
-          2. Extract features from the (possibly perturbed) inputs for each feature
-            layer.
-          3. For each layer, compute Mahalanobis-based scores by evaluating the log
-            probability densities.
-          4. For each layer, select the highest score across classes.
-          5. If multiple layers are used, aggregate the per-layer scores via the
-            provided aggregator.
+        The inputs may first be perturbed using the FGSM-style procedure
+        introduced in the original paper. Features are then extracted for all
+        configured layers and :func:`_score_layer` is called for each of them.
+        If multiple layers are used, the per-layer scores are combined using an
+        `aggregator` when available, otherwise the mean score across layers is
+        returned.
 
         Args:
-            inputs (TensorType): Input samples to be scored.
+            inputs: Batch of samples to score.
 
         Returns:
-            Tuple[np.ndarray]: A tuple containing the final OOD scores for each input
-                sample. The scores are returned as the negative of the computed
-                confidence.
+            `np.ndarray` containing one score per input sample.
         """
         x = self._input_perturbation(inputs) if self.eps > 0 else inputs
 
-        features, _ = self.feature_extractor.predict_tensor(
+        feats, logits = self.feature_extractor.predict_tensor(
             x, postproc_fns=self.postproc_fns
         )
-        n_layers = len(self._layer_stats)
 
-        scores = []
-        for i in range(n_layers):
-            out_f = self.op.flatten(features[i])
-            mus, pinv_cov = self._layer_stats[i]
-            scores.append(self._score_layer(out_f, mus, pinv_cov))
+        info = {"logits": logits}
 
-        if n_layers > 1:
-            return self.aggregator.aggregate(scores)  # type: ignore[arg-type]
-        return scores[0]
+        per_layer_scores = [
+            self._score_layer(i, self.op.flatten(feats[i]), info)
+            for i in range(len(self._layer_stats))
+        ]
+
+        if getattr(self, "aggregator", None) is not None and len(per_layer_scores) > 1:
+            return self.aggregator.aggregate(per_layer_scores)  # type: ignore[arg-type]
+        if len(per_layer_scores) > 1:
+            return np.mean(np.stack(per_layer_scores, axis=1), axis=1)
+        return per_layer_scores[0]
 
     # === Per-layer logic ===
     def _fit_layer(
-        self, layer_features: np.ndarray, labels: np.ndarray, subset_size: int = 5000
-    ) -> Tuple[Tuple[Dict[int, TensorType], np.ndarray], Optional[np.ndarray]]:
-        """Fit statistics for a single layer and, if required, return scores.
+        self,
+        layer_id: int,
+        layer_features: np.ndarray,
+        info: dict,
+        subset_size: int = 5000,
+        **kwargs,
+    ) -> Optional[np.ndarray]:
+        """Compute class statistics for one feature layer.
 
         Args:
-            layer_features (np.ndarray): In-distribution features for the layer.
-            labels (np.ndarray): Class labels.
-            subset_size (int, optional): Number of samples used to compute initial
-                scores for the aggregator. Defaults to 5000.
+            layer_id: Index of the processed layer.
+            layer_features: In-distribution features for this layer.
+            info: Dictionary containing the training labels.
+            subset_size: Number of samples used to compute preliminary scores
+                for the aggregator.
 
         Returns:
-            Tuple[Tuple[Dict[int, TensorType], np.ndarray], Optional[np.ndarray]]:
-                * (mus, pinv_cov) statistics for the layer.
-                * Optional numpy array of OOD scores for the first subset_size
-                  samples (None if no aggregator).
+            Optional[np.ndarray]: Scores on `subset_size` samples if an
+            aggregator is used.
         """
+        labels = info["labels"]
+
         if isinstance(layer_features, np.ndarray):
-            layer_features = self.op.from_numpy(layer_features)  # convert to tensor
+            layer_features = self.op.from_numpy(layer_features)
 
         mus, pinv_cov = self._compute_layer_stats(layer_features, labels)
 
+        self._layer_stats.append((mus, pinv_cov))
+
         scores: Optional[np.ndarray] = None
-        if self.aggregator is not None:
+        if getattr(self, "aggregator", None) is not None:
             n_samples = min(subset_size, layer_features.shape[0])
             feats_subset = self.op.flatten(layer_features[:n_samples])
             g_scores = self._gaussian_log_probs(feats_subset, mus, pinv_cov)
             max_scores = self.op.max(g_scores, dim=1)
             scores = -self.op.convert_to_numpy(max_scores)
-        return (mus, pinv_cov), scores
+
+        return scores
 
     def _score_layer(
-        self, out_features: TensorType, mus: Dict[int, TensorType], pinv_cov: TensorType
+        self,
+        layer_id: int,
+        out_features: TensorType,
+        info: dict,
+        **kwargs,
     ) -> np.ndarray:
-        """
-        Compute Mahalanobis distance-based confidence scores for a single feature layer.
-
-        For each test sample, this method computes the log probability density (up to a
-        constant) under the Gaussian distribution corresponding to each class, using the
-        Mahalanobis distance.
+        """Compute Mahalanobis confidence for one feature layer.
 
         Args:
-            out_features (TensorType): Feature tensor for test samples.
-            mus (Dict): Dictionary mapping each class label to its mean feature vector.
-            pinv_cov (TensorType): Pseudo-inverse of the covariance matrix.
+            layer_id: Index of the processed layer.
+            out_features: Feature tensor for the current batch.
+            info: Unused dictionary of auxiliary data.
 
         Returns:
-            TensorType: Confidence scores for each sample for every class,
-                        with shape [num_samples, num_classes].
+            np.ndarray: Negative Mahalanobis confidence scores.
         """
+        mus, pinv_cov = self._layer_stats[layer_id]
         g_scores = self._gaussian_log_probs(out_features, mus, pinv_cov)
         max_score = self.op.max(g_scores, dim=1)
         return -self.op.convert_to_numpy(max_score)

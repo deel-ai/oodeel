@@ -24,12 +24,8 @@ import faiss
 import numpy as np
 
 from ..aggregator import BaseAggregator
-from ..aggregator import StdNormalizedAggregator
-from ..types import DatasetType
 from ..types import Optional
 from ..types import TensorType
-from ..types import Tuple
-from ..types import Union
 from .base import OODBaseDetector
 
 
@@ -59,6 +55,7 @@ class DKNN(OODBaseDetector):
         self.nearest = nearest
         self.use_gpu = use_gpu
         self.aggregator = aggregator
+        self.indexes: list[faiss.IndexFlatL2] = []
 
         if self.use_gpu:
             try:
@@ -69,134 +66,64 @@ class DKNN(OODBaseDetector):
                     + "Please install faiss-gpu or set use_gpu to False."
                 ) from e
 
-    # === Public API (fit, score) ===
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
-        """
-        Fit the detector on an in-distribution dataset by building FAISS indices for
-        each feature layer.
-
-        The method performs the following steps:
-          1. Extract features from the input dataset using the feature extractor.
-          2. For each feature layer:
-             a. Prepare the feature data.
-             b. Create and populate a FAISS index.
-             c. Optionally compute scores for aggregator fitting.
-          3. If an aggregator is used (or needed when multiple layers exist), fit it
-            using the computed scores.
-
-        Args:
-            fit_dataset (Union[TensorType, DatasetType]): In-distribution data used for
-                constructing the indices.
-        """
-        self.indexes = []
-        num_feature_layers = len(self.feature_extractor.feature_layers_id)
-
-        if self.postproc_fns is None:
-            self.postproc_fns = [
-                self.feature_extractor._default_postproc_fn
-            ] * num_feature_layers
-
-        fit_projected, _ = self.feature_extractor.predict(
-            fit_dataset, postproc_fns=self.postproc_fns, numpy_concat=True
-        )
-        per_layer_scores = []
-
-        # If there is more than one feature layer, ensure an aggregator is defined.
-        if self.aggregator is None and num_feature_layers > 1:
-            self.aggregator = StdNormalizedAggregator()
-
-        for i in range(num_feature_layers):
-            index, layer_scores = self._fit_layer(fit_projected[i])
-            self.indexes.append(index)
-            if self.aggregator is not None:
-                per_layer_scores.append(layer_scores)
-
-        if self.aggregator is not None:
-            self.aggregator.fit(per_layer_scores)
-
-    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
-        """
-        Compute the OOD scores for the given inputs by aggregating scores from each
-        feature layer.
-
-        The scoring process includes:
-          1. Extracting features for each layer from the input samples.
-          2. Computing the distance to the k-th nearest neighbor using the precomputed
-            FAISS index.
-          3. Aggregating per-layer scores using the specified aggregator.
-
-        Args:
-            inputs (TensorType): Input samples to be scored.
-
-        Returns:
-            Tuple[np.ndarray]: A tuple containing the aggregated OOD scores.
-        """
-        input_projected, _ = self.feature_extractor.predict_tensor(
-            inputs,
-            postproc_fns=self.postproc_fns,
-        )
-        scores = []
-
-        for i, index in enumerate(self.indexes):
-            scores.append(self._score_layer(index, input_projected[i]))
-
-        if self.aggregator is not None:
-            aggregated_scores = self.aggregator.aggregate(scores)
-        elif len(scores) == 1:
-            aggregated_scores = scores[0]
-        else:
-            raise ValueError(
-                "DKNN requires an aggregator to be defined when using multiple layers."
-            )
-        return aggregated_scores
-
     # === Per-layer logic ===
     def _fit_layer(
-        self, layer_features: np.ndarray
-    ) -> Tuple[faiss.IndexFlatL2, Optional[np.ndarray]]:
-        """
-        Build a FAISS index for a single feature layer and compute initial scores for
-        aggregator fitting.
+        self,
+        layer_id: int,
+        layer_features: np.ndarray,
+        info: dict,
+        **kwargs,
+    ) -> Optional[np.ndarray]:
+        """Fit one FAISS index and optionally return aggregator scores.
+
+        The extracted features are L2-normalized and stored into a FAISS index
+        dedicated to the current layer. When an `aggregator` is used, distances
+        to the :math:`k`-th nearest neighbour are computed on a small subset of
+        samples and returned for later normalization.
 
         Args:
-            layer_features (TensorType): Feature tensor corresponding to a specific
-                layer.
+            layer_id: Index of the processed layer.
+            layer_features: Feature tensor corresponding to that layer.
+            info: Dictionary of auxiliary data (unused).
 
         Returns:
-            Tuple[faiss.IndexFlatL2, Optional[np.ndarray]]:
-                - The constructed FAISS index for the layer.
-                - Scores computed on a subset of features (first 1000 samples) if an
-                    aggregator is used; otherwise, None.
+            Optional[np.ndarray]: Distances to the :math:`k`-th neighbour for the
+                subset, or `None` if no aggregator is involved.
         """
         norm_features = self._prepare_layer_features(layer_features)
         index = self._create_index(norm_features.shape[1])
         index.add(norm_features)
 
+        self.indexes.append(index)
+
         scores = None
-        if self.aggregator is not None:
+        if getattr(self, "aggregator", None) is not None:
             # Compute KNN scores on a subset of samples (first 1000) to fit the
             # aggregator. We use k = max(self.nearest, 2) to avoid trivial zero
             # distances caused by querying each point against itself when k=1.
             # Using k >= 2 ensures the score reflects distance to a true neighbor.
             scores_subset, _ = index.search(norm_features[:1000], max(self.nearest, 2))
             scores = scores_subset[:, -1]
-        return index, scores
+        return scores
 
     def _score_layer(
-        self, index: faiss.IndexFlatL2, layer_features: TensorType
+        self,
+        layer_id: int,
+        layer_features: TensorType,
+        info: dict,
+        **kwargs,
     ) -> np.ndarray:
-        """
-        Compute the OOD scores for a single feature layer using the provided FAISS
-        index.
+        """Compute KNN scores for a single feature layer.
 
         Args:
-            index (faiss.IndexFlatL2): Precomputed FAISS index for the feature layer.
-            layer_features (TensorType): Feature tensor for the layer to be scored.
+            layer_id: Index of the processed layer.
+            layer_features: Feature tensor associated with this layer.
+            info: Dictionary of auxiliary data (unused).
 
         Returns:
-            np.ndarray: The OOD scores calculated as the distance to the k-th nearest
-                neighbor.
+            np.ndarray: Distance to the :math:`k`-th nearest neighbour.
         """
+        index = self.indexes[layer_id]
         layer_features = self.op.convert_to_numpy(layer_features)
         norm_features = self._prepare_layer_features(layer_features)
         scores, _ = index.search(norm_features, self.nearest)

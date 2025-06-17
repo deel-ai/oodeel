@@ -22,12 +22,13 @@
 # SOFTWARE.
 import inspect
 from abc import ABC
-from abc import abstractmethod
+from typing import Dict
 from typing import get_args
 
 import numpy as np
 from tqdm import tqdm
 
+from ..aggregator import StdNormalizedAggregator
 from ..extractor.feature_extractor import FeatureExtractor
 from ..types import Callable
 from ..types import DatasetType
@@ -53,23 +54,23 @@ class OODBaseDetector(ABC):
         ash_percentile (float): Percentile value for ASH.
         react_threshold (float): Threshold value for ReAct.
 
-    Methods:
-        __init__: Initializes the OODBaseDetector with specified parameters.
-        _score_tensor: Abstract method to compute OOD score for input samples.
-        _sanitize_posproc_fns: Sanitizes post-processing functions used at each layer
-        output.
-        fit: Prepares the detector for scoring by constructing the feature extractor
-        and calibrating on ID data.
-        _load_feature_extractor: Loads the feature extractor based on the model and
-        specified layers.
-        _fit_to_dataset: Abstract method to fit the OOD detector to a dataset.
-        score: Computes an OOD score for input samples.
-        compute_react_threshold: Computes the ReAct threshold using the fit dataset.
-        __call__: Convenience wrapper for the score method.
-        requires_to_fit_dataset: Property indicating if the detector needs a fit
-        dataset.
-        requires_internal_features: Property indicating if the detector acts on
-        internal model features.
+    Public Methods:
+        - fit(): Prepare the detector by setting up feature extraction and calibrating.
+        - score(): Compute OOD scores on input data (batched or single item).
+        - __call__(): Shorthand for score().
+
+    Internal Methods (for subclassing or advanced usage):
+        - _fit_to_dataset(): Extract features and delegate layer-wise fitting.
+        - _fit_layer(): [abstract] Fit statistics for one layer.
+        - _score_tensor(): Compute scores for a single batch of input data.
+        - _score_layer(): [abstract] Score a single feature layer.
+        - _load_feature_extractor(): Initialize feature extraction pipeline.
+        - _sanitize_posproc_fns(): Normalize post-processing function list.
+        - _compute_react_threshold(): Calibrate ReAct clipping threshold.
+
+    Abstract Properties:
+        - requires_to_fit_dataset: Whether fit_dataset is mandatory for calibration.
+        - requires_internal_features: Whether the detector uses internal features.
     """
 
     def __init__(
@@ -97,44 +98,7 @@ class OODBaseDetector(ABC):
         if use_ash and use_react:
             raise ValueError("Cannot use both ReAct and ASH at the same time")
 
-    @abstractmethod
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
-        """Computes an OOD score for input samples "inputs".
-
-        Method to override with child classes.
-
-        Args:
-            inputs (TensorType): tensor to score
-        Returns:
-            Tuple[TensorType]: OOD scores, predicted logits
-        """
-        raise NotImplementedError()
-
-    def _sanitize_posproc_fns(
-        self,
-        postproc_fns: Union[List[Callable], None],
-    ) -> List[Callable]:
-        """Sanitize postproc fns used at each layer output of the feature extractor.
-
-        Args:
-            postproc_fns (Optional[List[Callable]], optional): List of postproc
-                functions, one per output layer. Defaults to None.
-
-        Returns:
-            List[Callable]: Sanitized postproc_fns list
-        """
-        if postproc_fns is not None:
-            assert len(postproc_fns) == len(
-                self.feature_extractor.feature_layers_id
-            ), "len of postproc_fns and output_layers_id must match"
-
-            def identity(x):
-                return x
-
-            postproc_fns = [identity if fn is None else fn for fn in postproc_fns]
-
-        return postproc_fns
-
+    # === Public API ===
     def fit(
         self,
         model: Callable,
@@ -194,7 +158,7 @@ class OODBaseDetector(ABC):
                     " provided to compute react activation threshold"
                 )
             else:
-                self.compute_react_threshold(
+                self._compute_react_threshold(
                     model, fit_dataset, verbose=verbose, head_layer_id=head_layer_id
                 )
 
@@ -215,67 +179,6 @@ class OODBaseDetector(ABC):
             if "verbose" in inspect.signature(self._fit_to_dataset).parameters.keys():
                 kwargs.update({"verbose": verbose})
             self._fit_to_dataset(fit_dataset, **kwargs)
-
-    def _load_feature_extractor(
-        self,
-        model: Callable,
-        feature_layers_id: List[Union[int, str]] = [],
-        head_layer_id: Optional[Union[int, str]] = -1,
-        input_layer_id: Optional[Union[int, str]] = None,
-        return_penultimate: bool = False,
-    ) -> Callable:
-        """
-        Loads feature extractor
-
-        Args:
-            model: a model (Keras or PyTorch) to load.
-            feature_layers_id (List[int]): list of str or int that identify
-                features to output.
-                If int, the rank of the layer in the layer list
-                If str, the name of the layer. Defaults to [-1]
-            head_layer_id (int): identifier of the head layer.
-                -1 when the last layer is the head
-                -2 when the last layer is a softmax activation layer
-                ...
-                If int, the rank of the layer in the layer list
-                If str, the name of the layer. Defaults to -1
-            input_layer_id (List[int]): = list of str or int that identify the input
-                layer of the feature extractor.
-                If int, the rank of the layer in the layer list
-                If str, the name of the layer. Defaults to None.
-            return_penultimate (bool): if True, the penultimate values are returned,
-                i.e. the input to the head_layer.
-
-        Returns:
-            FeatureExtractor: a feature extractor instance
-        """
-        if not self.use_ash:
-            self.ash_percentile = None
-        if not self.use_scale:
-            self.scale_percentile = None
-
-        feature_extractor = self.FeatureExtractorClass(
-            model,
-            feature_layers_id=feature_layers_id,
-            input_layer_id=input_layer_id,
-            head_layer_id=head_layer_id,
-            react_threshold=self.react_threshold,
-            scale_percentile=self.scale_percentile,
-            ash_percentile=self.ash_percentile,
-            return_penultimate=return_penultimate,
-        )
-        return feature_extractor
-
-    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
-        """
-        Fits the OOD detector to fit_dataset.
-
-        To be overrided in child classes (if needed)
-
-        Args:
-            fit_dataset: dataset to fit the OOD detector on
-        """
-        raise NotImplementedError()
 
     def score(
         self,
@@ -342,7 +245,239 @@ class OODBaseDetector(ABC):
         info = dict(labels=labels, logits=logits)
         return scores, info
 
-    def compute_react_threshold(
+    def __call__(self, inputs: Union[ItemType, DatasetType]) -> np.ndarray:
+        """
+        Convenience wrapper for score
+
+        Args:
+            inputs (Union[ItemType, DatasetType]): dataset or tensors to score.
+            threshold (float): threshold to use for distinguishing between OOD and ID
+
+        Returns:
+            np.ndarray: array of 0 for ID samples and 1 for OOD samples
+        """
+        return self.score(inputs)
+
+    # === Internal: Feature Extractor ===
+    def _load_feature_extractor(
+        self,
+        model: Callable,
+        feature_layers_id: List[Union[int, str]] = [],
+        head_layer_id: Optional[Union[int, str]] = -1,
+        input_layer_id: Optional[Union[int, str]] = None,
+        return_penultimate: bool = False,
+    ) -> Callable:
+        """
+        Loads feature extractor
+
+        Args:
+            model: a model (Keras or PyTorch) to load.
+            feature_layers_id (List[int]): list of str or int that identify
+                features to output.
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to [-1]
+            head_layer_id (int): identifier of the head layer.
+                -1 when the last layer is the head
+                -2 when the last layer is a softmax activation layer
+                ...
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to -1
+            input_layer_id (List[int]): = list of str or int that identify the input
+                layer of the feature extractor.
+                If int, the rank of the layer in the layer list
+                If str, the name of the layer. Defaults to None.
+            return_penultimate (bool): if True, the penultimate values are returned,
+                i.e. the input to the head_layer.
+
+        Returns:
+            FeatureExtractor: a feature extractor instance
+        """
+        if not self.use_ash:
+            self.ash_percentile = None
+        if not self.use_scale:
+            self.scale_percentile = None
+
+        feature_extractor = self.FeatureExtractorClass(
+            model,
+            feature_layers_id=feature_layers_id,
+            input_layer_id=input_layer_id,
+            head_layer_id=head_layer_id,
+            react_threshold=self.react_threshold,
+            scale_percentile=self.scale_percentile,
+            ash_percentile=self.ash_percentile,
+            return_penultimate=return_penultimate,
+        )
+        return feature_extractor
+
+    def _sanitize_posproc_fns(
+        self,
+        postproc_fns: Union[List[Callable], None],
+    ) -> List[Callable]:
+        """Sanitize postproc fns used at each layer output of the feature extractor.
+
+        Args:
+            postproc_fns (Optional[List[Callable]], optional): List of postproc
+                functions, one per output layer. Defaults to None.
+
+        Returns:
+            List[Callable]: Sanitized postproc_fns list
+        """
+        if postproc_fns is not None:
+            assert len(postproc_fns) == len(
+                self.feature_extractor.feature_layers_id
+            ), "len of postproc_fns and output_layers_id must match"
+
+            def identity(x):
+                return x
+
+            postproc_fns = [identity if fn is None else fn for fn in postproc_fns]
+
+        return postproc_fns
+
+    # === Internal: Fitting logic ===
+    def _fit_to_dataset(
+        self,
+        fit_dataset: DatasetType,
+        verbose: bool = False,
+        **kwargs,
+    ) -> None:
+        """Generic fitting routine for feature-based detectors.
+
+        This method extracts features for all requested layers and delegates
+        the per-layer statistics computation to :func:`_fit_layer` implemented
+        in child classes. If an `aggregator` attribute is present and more than
+        one layer is used, the returned per-layer scores are employed to fit the
+        aggregator.
+
+        Args:
+            fit_dataset: Dataset containing in-distribution samples.
+            verbose: Display a progress bar during feature extraction.
+            **kwargs: Additional keyword arguments forwarded to
+                :func:`_fit_layer`.
+        """
+
+        n_layers = len(self.feature_extractor.feature_layers_id)
+
+        # default post-processing functions
+        if self.postproc_fns is None:
+            self.postproc_fns = [self.feature_extractor._default_postproc_fn] * n_layers
+
+        # extract features from the dataset
+        feats, info = self.feature_extractor.predict(
+            fit_dataset,
+            postproc_fns=self.postproc_fns,
+            verbose=verbose,
+            return_labels=True,
+            numpy_concat=True,
+        )
+
+        # intialize the aggregator if not already set and multiple layers are used
+        aggregator = getattr(self, "aggregator", None)
+        if aggregator is None and n_layers > 1:
+            aggregator = StdNormalizedAggregator()
+            setattr(self, "aggregator", aggregator)
+
+        # fit statistics for each layer
+        per_layer_scores = []
+        for idx in range(n_layers):
+            scores = self._fit_layer(idx, feats[idx], info, **kwargs)
+            if scores is not None:
+                per_layer_scores.append(scores)
+
+        # fit the aggregator if it exists and per-layer scores are available
+        if aggregator is not None and per_layer_scores:
+            aggregator.fit(per_layer_scores)
+
+    def _fit_layer(
+        self,
+        layer_id: int,
+        layer_features: np.ndarray,
+        info: Dict[str, TensorType],
+        **kwargs,
+    ) -> Optional[np.ndarray]:
+        """Fit statistics for a single feature layer.
+
+        Child classes implementing feature-based detectors must override this
+        method. The returned array (if not `None`) is assumed to contain
+        per-sample scores used for fitting an aggregator.
+
+        Args:
+            layer_id: Index of the processed feature layer.
+            layer_features: Features extracted for that layer.
+            info: Dictionary returned by :func:`FeatureExtractor.predict` that at
+                least contains the entry `"logits"` and `"labels"`.
+            **kwargs: Additional arguments specific to the detector.
+
+        Returns:
+            Optional[np.ndarray]: Scores to fit a potential aggregator or
+            `None` if not required.
+        """
+
+        raise NotImplementedError("_fit_layer must be implemented in subclasses")
+
+    # === Internal: Scoring logic ===
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+        """Generic OOD score computation for feature-based detectors.
+
+        The method extracts features from all selected layers for the provided
+        `inputs` and delegates the computation of per-layer scores to
+        :func:`_score_layer` implemented in child classes. If an `aggregator`
+        attribute exists and more than one layer is used, the per-layer scores
+        are combined accordingly.
+
+        Args:
+            inputs: Batch of samples to score.
+
+        Returns:
+            np.ndarray: Array of OOD scores, one per input sample.
+        """
+        # extract features from the input batch
+        feats, logits = self.feature_extractor.predict_tensor(
+            inputs, postproc_fns=self.postproc_fns
+        )
+
+        n_layers = len(feats)
+        info: Dict[str, TensorType] = {"logits": logits}
+
+        # compute per-layer scores
+        per_layer_scores = [
+            self._score_layer(idx, feats[idx], info) for idx in range(n_layers)
+        ]
+
+        # if multiple layers are used, aggregate the scores
+        aggregator = getattr(self, "aggregator", None)
+        if aggregator is not None and len(per_layer_scores) > 1:
+            return aggregator.aggregate(per_layer_scores)
+        # if an aggregator is not used, get the mean of per-layer scores
+        if len(per_layer_scores) > 1:
+            return np.mean(np.stack(per_layer_scores, axis=1), axis=1)
+        # if only one layer is used, return its scores
+        return per_layer_scores[0]
+
+    def _score_layer(
+        self,
+        layer_id: int,
+        layer_features: TensorType,
+        info: Dict[str, TensorType],
+        **kwargs,
+    ) -> np.ndarray:
+        """Compute the OOD score for a single feature layer.
+
+        Args:
+            layer_id: Index of the processed layer.
+            layer_features: Features extracted from the current layer.
+            info: Dictionary containing at least the logits associated with the
+                input batch.
+            **kwargs: Additional arguments specific to the detector.
+
+        Returns:
+            np.ndarray: Per-sample OOD scores for this layer.
+        """
+
+        raise NotImplementedError("_score_layer must be implemented in subclasses")
+
+    # === Internal calibration methods ===
+    def _compute_react_threshold(
         self,
         model: Callable,
         fit_dataset: DatasetType,
@@ -360,19 +495,7 @@ class OODBaseDetector(ABC):
         )
         self.react_threshold = np.quantile(unclipped_features[0], self.react_quantile)
 
-    def __call__(self, inputs: Union[ItemType, DatasetType]) -> np.ndarray:
-        """
-        Convenience wrapper for score
-
-        Args:
-            inputs (Union[ItemType, DatasetType]): dataset or tensors to score.
-            threshold (float): threshold to use for distinguishing between OOD and ID
-
-        Returns:
-            np.ndarray: array of 0 for ID samples and 1 for OOD samples
-        """
-        return self.score(inputs)
-
+    # === Properties ===
     @property
     def requires_to_fit_dataset(self) -> bool:
         """
