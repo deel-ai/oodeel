@@ -24,8 +24,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.lines import Line2D
 import sklearn
+from matplotlib.lines import Line2D
+from packaging.version import parse
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
@@ -46,7 +47,7 @@ PROJ_DICT = {
 }
 
 # check sklearn version: if > 1.5, use max_iter instead of n_iter
-if sklearn.__version__ >= "1.5":
+if parse(sklearn.__version__) >= parse("1.5"):
     n_iter = PROJ_DICT["TSNE"]["default_kwargs"].pop("n_iter")
     PROJ_DICT["TSNE"]["default_kwargs"]["max_iter"] = n_iter
 
