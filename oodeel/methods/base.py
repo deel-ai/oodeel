@@ -28,6 +28,7 @@ from typing import get_args
 import numpy as np
 from tqdm import tqdm
 
+from ..aggregator import BaseAggregator
 from ..aggregator import StdNormalizedAggregator
 from ..extractor.feature_extractor import FeatureExtractor
 from ..types import Callable
@@ -52,7 +53,9 @@ class OODBaseDetector(ABC):
         react_quantile (float): Quantile value for ReAct threshold.
         scale_percentile (float): Percentile value for scaling.
         ash_percentile (float): Percentile value for ASH.
-        react_threshold (float): Threshold value for ReAct.
+        eps  (float): Perturbation noise for input perturbation.
+        temperature (float): Temperature parameter for input pertubation.
+        react_threshold (Optional[float]): Threshold for ReAct clipping.
 
     Public Methods:
         - fit(): Prepare the detector by setting up feature extraction and calibrating.
@@ -60,13 +63,12 @@ class OODBaseDetector(ABC):
         - __call__(): Shorthand for score().
 
     Internal Methods (for subclassing or advanced usage):
-        - _fit_to_dataset(): Extract features and delegate layer-wise fitting.
-        - _fit_layer(): [abstract] Fit statistics for one layer.
+        - _fit_to_dataset(): Optional calibration routine on a dataset.
         - _score_tensor(): Compute scores for a single batch of input data.
-        - _score_layer(): [abstract] Score a single feature layer.
         - _load_feature_extractor(): Initialize feature extraction pipeline.
         - _sanitize_posproc_fns(): Normalize post-processing function list.
         - _compute_react_threshold(): Calibrate ReAct clipping threshold.
+        - _input_perturbation(): Apply perturbation to input data.
 
     Abstract Properties:
         - requires_to_fit_dataset: Whether fit_dataset is mandatory for calibration.
@@ -81,6 +83,8 @@ class OODBaseDetector(ABC):
         react_quantile: Optional[float] = None,
         scale_percentile: Optional[float] = None,
         ash_percentile: Optional[float] = None,
+        eps: float = 0.0,
+        temperature: float = 1000.0,
     ):
         self.feature_extractor: FeatureExtractor = None
         self.use_react = use_react
@@ -89,6 +93,8 @@ class OODBaseDetector(ABC):
         self.react_quantile = react_quantile
         self.scale_percentile = scale_percentile
         self.ash_percentile = ash_percentile
+        self.eps = eps
+        self.temperature = temperature
         self.react_threshold = None
 
         if use_scale and use_react:
@@ -334,6 +340,44 @@ class OODBaseDetector(ABC):
 
         return postproc_fns
 
+    # === Internal: ODIN input perturbation ===
+    def _input_perturbation(
+        self, inputs: TensorType, eps: float, temperature: float = 1000
+    ) -> TensorType:
+        """Apply the ODIN gradient-based perturbation to the inputs.
+
+        Args:
+            inputs: Batch of samples to perturb.
+            eps: Magnitude of the perturbation. If zero, `inputs` are
+                returned unchanged.
+            temperature: Temperature used for the softmax in the loss.
+
+        Returns:
+            Perturbed input tensor of the same shape as `inputs`.
+        """
+
+        if eps == 0:
+            return inputs
+
+        if self.feature_extractor.backend == "torch":
+            inputs = inputs.to(self.feature_extractor._device)
+
+        preds = self.feature_extractor.model(inputs)
+        labels = self.op.argmax(preds, dim=1)
+        gradients = self.op.gradient(
+            self._temperature_loss, inputs, labels, temperature
+        )
+        return inputs - eps * self.op.sign(gradients)
+
+    def _temperature_loss(
+        self, inputs: TensorType, labels: TensorType, temperature: float
+    ) -> TensorType:
+        """Cross-entropy loss used for ODIN input perturbation."""
+
+        preds = self.feature_extractor.model(inputs) / temperature
+        loss = self.op.CrossEntropyLoss(reduction="sum")(inputs=preds, targets=labels)
+        return loss
+
     # === Internal: Fitting logic ===
     def _fit_to_dataset(
         self,
@@ -341,140 +385,19 @@ class OODBaseDetector(ABC):
         verbose: bool = False,
         **kwargs,
     ) -> None:
-        """Generic fitting routine for feature-based detectors.
+        """Optional fitting routine for detectors using a calibration dataset."""
 
-        This method extracts features for all requested layers and delegates
-        the per-layer statistics computation to :func:`_fit_layer` implemented
-        in child classes. If an `aggregator` attribute is present and more than
-        one layer is used, the returned per-layer scores are employed to fit the
-        aggregator.
-
-        Args:
-            fit_dataset: Dataset containing in-distribution samples.
-            verbose: Display a progress bar during feature extraction.
-            **kwargs: Additional keyword arguments forwarded to
-                :func:`_fit_layer`.
-        """
-
-        n_layers = len(self.feature_extractor.feature_layers_id)
-
-        # default post-processing functions
-        if self.postproc_fns is None:
-            self.postproc_fns = [self.feature_extractor._default_postproc_fn] * n_layers
-
-        # extract features from the dataset
-        feats, info = self.feature_extractor.predict(
-            fit_dataset,
-            postproc_fns=self.postproc_fns,
-            verbose=verbose,
-            return_labels=True,
-            numpy_concat=True,
-        )
-
-        # intialize the aggregator if not already set and multiple layers are used
-        aggregator = getattr(self, "aggregator", None)
-        if aggregator is None and n_layers > 1:
-            aggregator = StdNormalizedAggregator()
-            setattr(self, "aggregator", aggregator)
-
-        # fit statistics for each layer
-        per_layer_scores = []
-        for idx in range(n_layers):
-            scores = self._fit_layer(idx, feats[idx], info, **kwargs)
-            if scores is not None:
-                per_layer_scores.append(scores)
-
-        # fit the aggregator if it exists and per-layer scores are available
-        if aggregator is not None and per_layer_scores:
-            aggregator.fit(per_layer_scores)
-
-    def _fit_layer(
-        self,
-        layer_id: int,
-        layer_features: np.ndarray,
-        info: Dict[str, TensorType],
-        **kwargs,
-    ) -> Optional[np.ndarray]:
-        """Fit statistics for a single feature layer.
-
-        Child classes implementing feature-based detectors must override this
-        method. The returned array (if not `None`) is assumed to contain
-        per-sample scores used for fitting an aggregator.
-
-        Args:
-            layer_id: Index of the processed feature layer.
-            layer_features: Features extracted for that layer.
-            info: Dictionary returned by :func:`FeatureExtractor.predict` that at
-                least contains the entry `"logits"` and `"labels"`.
-            **kwargs: Additional arguments specific to the detector.
-
-        Returns:
-            Optional[np.ndarray]: Scores to fit a potential aggregator or
-            `None` if not required.
-        """
-
-        raise NotImplementedError("_fit_layer must be implemented in subclasses")
+        return None
 
     # === Internal: Scoring logic ===
     def _score_tensor(self, inputs: TensorType) -> np.ndarray:
-        """Generic OOD score computation for feature-based detectors.
+        """Compute an OOD score for a batch of inputs.
 
-        The method extracts features from all selected layers for the provided
-        `inputs` and delegates the computation of per-layer scores to
-        :func:`_score_layer` implemented in child classes. If an `aggregator`
-        attribute exists and more than one layer is used, the per-layer scores
-        are combined accordingly.
-
-        Args:
-            inputs: Batch of samples to score.
-
-        Returns:
-            np.ndarray: Array of OOD scores, one per input sample.
-        """
-        # extract features from the input batch
-        feats, logits = self.feature_extractor.predict_tensor(
-            inputs, postproc_fns=self.postproc_fns
-        )
-
-        n_layers = len(feats)
-        info: Dict[str, TensorType] = {"logits": logits}
-
-        # compute per-layer scores
-        per_layer_scores = [
-            self._score_layer(idx, feats[idx], info) for idx in range(n_layers)
-        ]
-
-        # if multiple layers are used, aggregate the scores
-        aggregator = getattr(self, "aggregator", None)
-        if aggregator is not None and len(per_layer_scores) > 1:
-            return aggregator.aggregate(per_layer_scores)
-        # if an aggregator is not used, get the mean of per-layer scores
-        if len(per_layer_scores) > 1:
-            return np.mean(np.stack(per_layer_scores, axis=1), axis=1)
-        # if only one layer is used, return its scores
-        return per_layer_scores[0]
-
-    def _score_layer(
-        self,
-        layer_id: int,
-        layer_features: TensorType,
-        info: Dict[str, TensorType],
-        **kwargs,
-    ) -> np.ndarray:
-        """Compute the OOD score for a single feature layer.
-
-        Args:
-            layer_id: Index of the processed layer.
-            layer_features: Features extracted from the current layer.
-            info: Dictionary containing at least the logits associated with the
-                input batch.
-            **kwargs: Additional arguments specific to the detector.
-
-        Returns:
-            np.ndarray: Per-sample OOD scores for this layer.
+        Child classes must implement this method. It should return one score per
+        sample of `inputs`.
         """
 
-        raise NotImplementedError("_score_layer must be implemented in subclasses")
+        raise NotImplementedError("_score_tensor must be implemented in subclasses")
 
     # === Internal calibration methods ===
     def _compute_react_threshold(
@@ -522,3 +445,107 @@ class OODBaseDetector(ABC):
             "Property `requires_internal_dataset` is not implemented. It should return"
             + " a True or False boolean."
         )
+
+
+class FeatureBasedDetector(OODBaseDetector):
+    """Base class for detectors operating on internal feature representations."""
+
+    def __init__(self, aggregator: BaseAggregator = None, *args, **kwargs):
+        """Initialize the feature-based OOD detector.
+
+        Args:
+            aggregator (BaseAggregator, optional): Aggregator to normalize scores
+                across multiple feature layers. Defaults to None.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+        """
+        super().__init__(*args, **kwargs)
+        self.aggregator = aggregator
+        self.postproc_fns = None
+
+    # === Internal: Fitting logic ===
+    def _fit_to_dataset(
+        self,
+        fit_dataset: DatasetType,
+        verbose: bool = False,
+        **kwargs,
+    ) -> None:
+        """Extract features from `fit_dataset` and compute layer statistics.
+
+        Child classes must implement :func:`_fit_layer` to compute the
+        statistics required by the detector on each feature layer. If an
+        `aggregator` attribute is present and more than one layer is used, the
+        returned scores are fed to it for normalization.
+        """
+
+        n_layers = len(self.feature_extractor.feature_layers_id)
+
+        if self.postproc_fns is None:
+            self.postproc_fns = [self.feature_extractor._default_postproc_fn] * n_layers
+
+        feats, info = self.feature_extractor.predict(
+            fit_dataset,
+            postproc_fns=self.postproc_fns,
+            verbose=verbose,
+            return_labels=True,
+            numpy_concat=True,
+        )
+
+        aggregator = getattr(self, "aggregator", None)
+        if aggregator is None and n_layers > 1:
+            aggregator = StdNormalizedAggregator()
+            setattr(self, "aggregator", aggregator)
+
+        per_layer_scores = []
+        for idx in range(n_layers):
+            scores = self._fit_layer(idx, feats[idx], info, **kwargs)
+            if scores is not None:
+                per_layer_scores.append(scores)
+
+        if aggregator is not None and per_layer_scores:
+            aggregator.fit(per_layer_scores)
+
+    def _fit_layer(
+        self,
+        layer_id: int,
+        layer_features: np.ndarray,
+        info: Dict[str, TensorType],
+        **kwargs,
+    ) -> Optional[np.ndarray]:
+        """Compute statistics for a single feature layer."""
+
+        raise NotImplementedError
+
+    # === Internal: Scoring logic ===
+    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
+        """Compute the OOD score for a batch using internal features."""
+
+        if getattr(self, "eps", 0) > 0:
+            inputs = self._input_perturbation(inputs, self.eps)
+
+        feats, logits = self.feature_extractor.predict_tensor(
+            inputs, postproc_fns=self.postproc_fns
+        )
+
+        info: Dict[str, TensorType] = {"logits": logits}
+        per_layer_scores = [
+            self._score_layer(idx, feats[idx], info) for idx in range(len(feats))
+        ]
+
+        aggregator = getattr(self, "aggregator", None)
+        if aggregator is not None and len(per_layer_scores) > 1:
+            return aggregator.aggregate(per_layer_scores)
+        if len(per_layer_scores) > 1:
+            return np.mean(np.stack(per_layer_scores, axis=1), axis=1)
+        return per_layer_scores[0]
+
+    def _score_layer(
+        self,
+        layer_id: int,
+        layer_features: TensorType,
+        info: Dict[str, TensorType],
+        **kwargs,
+    ) -> np.ndarray:
+        """Score samples for a single feature layer."""
+
+        raise NotImplementedError

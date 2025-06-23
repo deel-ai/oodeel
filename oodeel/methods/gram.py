@@ -31,12 +31,12 @@ from sklearn.model_selection import train_test_split
 from ..aggregator import BaseAggregator
 from ..types import DatasetType
 from ..types import TensorType
-from .base import OODBaseDetector
+from .base import FeatureBasedDetector
 
 EPSILON = 1e-6  # Numerical stability constant
 
 
-class Gram(OODBaseDetector):
+class Gram(FeatureBasedDetector):
     r"""
     "Detecting Out-of-Distribution Examples with Gram Matrices"
     [link](https://proceedings.mlr.press/v119/sastry20a.html)
@@ -64,13 +64,13 @@ class Gram(OODBaseDetector):
         orders: Union[List[int], int] = list(range(1, 6)),
         quantile: float = 0.01,
         aggregator: Optional[BaseAggregator] = None,
+        **kwargs,
     ):
-        super().__init__()
+        super().__init__(aggregator=aggregator, **kwargs)
         if isinstance(orders, int):
             orders = [orders]
         self.orders: List[int] = orders
         self.quantile = quantile
-        self.aggregator = aggregator
 
         self.postproc_fns = None  # Will be set during fit
         # Mapping class -> list (per-layer) of thresholds [lower, upper]

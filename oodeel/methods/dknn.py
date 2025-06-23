@@ -26,10 +26,10 @@ import numpy as np
 from ..aggregator import BaseAggregator
 from ..types import Optional
 from ..types import TensorType
-from .base import OODBaseDetector
+from .base import FeatureBasedDetector
 
 
-class DKNN(OODBaseDetector):
+class DKNN(FeatureBasedDetector):
     """
     "Out-of-Distribution Detection with Deep Nearest Neighbors"
     https://arxiv.org/abs/2204.06507
@@ -51,10 +51,9 @@ class DKNN(OODBaseDetector):
         aggregator: BaseAggregator = None,
         **kwargs,
     ):
-        super().__init__(**kwargs)
+        super().__init__(aggregator=aggregator, **kwargs)
         self.nearest = nearest
         self.use_gpu = use_gpu
-        self.aggregator = aggregator
         self.indexes: list[faiss.IndexFlatL2] = []
 
         if self.use_gpu:

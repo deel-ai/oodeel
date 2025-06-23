@@ -56,6 +56,7 @@ class GEN(OODBaseDetector):
         react_quantile: float = 0.8,
         scale_percentile: float = 0.85,
         ash_percentile: float = 0.90,
+        **kwargs,
     ):
         super().__init__(
             use_react=use_react,
@@ -64,6 +65,7 @@ class GEN(OODBaseDetector):
             react_quantile=react_quantile,
             scale_percentile=scale_percentile,
             ash_percentile=ash_percentile,
+            **kwargs,
         )
         self.gamma = gamma
         self.k = k
@@ -79,6 +81,9 @@ class GEN(OODBaseDetector):
         Returns:
             Tuple[np.ndarray]: scores, logits
         """
+        # optional: apply input perturbation
+        if self.eps > 0:
+            inputs = self._input_perturbation(inputs, self.eps, self.temperature)
 
         _, logits = self.feature_extractor.predict_tensor(inputs)
         probs = self.op.softmax(logits)

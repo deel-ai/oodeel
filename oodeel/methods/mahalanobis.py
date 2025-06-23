@@ -29,10 +29,10 @@ import numpy as np
 
 from ..aggregator import BaseAggregator
 from ..types import TensorType
-from .base import OODBaseDetector
+from .base import FeatureBasedDetector
 
 
-class Mahalanobis(OODBaseDetector):
+class Mahalanobis(FeatureBasedDetector):
     """
     "A Simple Unified Framework for Detecting Out-of-Distribution Samples and
     Adversarial Attacks"
@@ -45,54 +45,26 @@ class Mahalanobis(OODBaseDetector):
     computed for each layer are aggregated using a provided aggregator.
 
     Args:
-        eps (float): Magnitude for gradient-based input perturbation. Defaults to 0.002.
+        eps (float): Magnitude for gradient-based input perturbation. Defaults to
+            0.0014.
+        temperature (float, optional): Temperature parameter. Defaults to 1000.
         aggregator (Optional[BaseAggregator]): Aggregator to combine scores from
             multiple feature layers. If `None` and more than one layer is
             used, a `StdNormalizedAggregator` is instantiated automatically.
     """
 
-    def __init__(self, eps: float = 0.002, aggregator: Optional[BaseAggregator] = None):
-        super().__init__()
-        self.eps = eps
-        self.aggregator = aggregator
+    def __init__(
+        self,
+        eps: float = 0.0014,
+        temperature: float = 1000,
+        aggregator: Optional[BaseAggregator] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            eps=eps, temperature=temperature, aggregator=aggregator, **kwargs
+        )
         self._layer_stats: List[Tuple[Dict, np.ndarray]] = []
         self._classes: Optional[np.ndarray] = None
-
-    # === Public API (override of _score_tensor) ===
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
-        """Compute Mahalanobis-based OOD scores for a batch of samples.
-
-        The inputs may first be perturbed using the FGSM-style procedure
-        introduced in the original paper. Features are then extracted for all
-        configured layers and :func:`_score_layer` is called for each of them.
-        If multiple layers are used, the per-layer scores are combined using an
-        `aggregator` when available, otherwise the mean score across layers is
-        returned.
-
-        Args:
-            inputs: Batch of samples to score.
-
-        Returns:
-            `np.ndarray` containing one score per input sample.
-        """
-        x = self._input_perturbation(inputs) if self.eps > 0 else inputs
-
-        feats, logits = self.feature_extractor.predict_tensor(
-            x, postproc_fns=self.postproc_fns
-        )
-
-        info = {"logits": logits}
-
-        per_layer_scores = [
-            self._score_layer(i, self.op.flatten(feats[i]), info)
-            for i in range(len(self._layer_stats))
-        ]
-
-        if getattr(self, "aggregator", None) is not None and len(per_layer_scores) > 1:
-            return self.aggregator.aggregate(per_layer_scores)  # type: ignore[arg-type]
-        if len(per_layer_scores) > 1:
-            return np.mean(np.stack(per_layer_scores, axis=1), axis=1)
-        return per_layer_scores[0]
 
     # === Per-layer logic ===
     def _fit_layer(
@@ -228,35 +200,6 @@ class Mahalanobis(OODBaseDetector):
             )
             scores.append(self.op.reshape(log_prob, (-1, 1)))
         return self.op.cat(scores, dim=1)
-
-    def _input_perturbation(self, inputs: TensorType) -> TensorType:
-        """Apply a small gradient-based perturbation (FGSM style) to the inputs to
-        enhance the separation between in- and out-distribution samples.
-
-        This method uses the first feature layer for computing the perturbation.
-        See the original paper (section 2.2) for more details:
-        https://arxiv.org/abs/1807.03888
-
-        Args:
-            inputs (TensorType): Input samples.
-
-        Returns:
-            TensorType: Perturbed input samples.
-        """
-
-        def _loss_fn(x: TensorType) -> TensorType:
-            feats, _ = self.feature_extractor.predict(
-                x, postproc_fns=self.postproc_fns, detach=False
-            )
-            out_f = self.op.flatten(feats[-1])
-            mus, pinv_cov = self._layer_stats[-1]
-            g_scores = self._gaussian_log_probs(out_f, mus, pinv_cov)
-            max_score = self.op.max(g_scores, dim=1)
-            return self.op.mean(-max_score)
-
-        grad = self.op.gradient(_loss_fn, inputs)
-        grad = self.op.sign(grad)
-        return inputs - self.eps * grad
 
     # ===
     @property

@@ -55,46 +55,13 @@ class RMDS(Mahalanobis):
         eps: float = 0.0014,
         temperature: float = 1000,
         aggregator: Optional[BaseAggregator] = None,
+        **kwargs,
     ):
-        super().__init__(eps=eps, aggregator=aggregator)
-        self.temperature = temperature
-        # Will be filled by `_fit_to_dataset`.
-        self._layer_background_stats: List[Tuple[TensorType, np.ndarray]] = []
-
-    # === Public API (override of _score_tensor) ===
-    def _score_tensor(self, inputs: TensorType) -> np.ndarray:
-        """Compute RMDS scores for a batch of samples.
-
-        Inputs may be perturbed following the ODIN procedure before feature
-        extraction. For each configured layer, :func:`_score_layer` computes the
-        residual Mahalanobis score. If more than one layer is used, the scores
-        are aggregated using `self.aggregator` when available, otherwise the
-        average of the per-layer scores is returned.
-
-        Args:
-            inputs: Samples to score.
-
-        Returns:
-            `np.ndarray` of RMDS scores for the batch.
-        """
-        x = self._input_perturbation(inputs) if self.eps > 0 else inputs
-
-        feats, logits = self.feature_extractor.predict_tensor(
-            x, postproc_fns=self.postproc_fns
+        super().__init__(
+            eps=eps, temperature=temperature, aggregator=aggregator, **kwargs
         )
-
-        info = {"logits": logits}
-
-        per_layer_scores = [
-            self._score_layer(i, self.op.flatten(feats[i]), info)
-            for i in range(len(self._layer_stats))
-        ]
-
-        if getattr(self, "aggregator", None) is not None and len(per_layer_scores) > 1:
-            return self.aggregator.aggregate(per_layer_scores)
-        if len(per_layer_scores) > 1:
-            return np.mean(np.stack(per_layer_scores, axis=1), axis=1)
-        return per_layer_scores[0]
+        # Will be filled by `_fit_layer`.
+        self._layer_background_stats: List[Tuple[TensorType, np.ndarray]] = []
 
     # === Per-layer logic ===
     def _fit_layer(
@@ -165,42 +132,6 @@ class RMDS(Mahalanobis):
         return -self.op.convert_to_numpy(corrected)
 
     # === Internal utilities ===
-    def _input_perturbation(self, inputs: TensorType) -> TensorType:
-        """Apply a small perturbation over inputs to increase their softmax score, as
-        done in ODIN paper (section 3):
-        http://arxiv.org/abs/1706.02690
-
-        Args:
-            inputs (TensorType): input samples to score
-
-        Returns:
-            TensorType: Perturbed inputs
-        """
-        if self.eps == 0:
-            return inputs
-
-        if self.feature_extractor.backend == "torch":
-            inputs = inputs.to(self.feature_extractor._device)
-
-        preds = self.feature_extractor.model(inputs)
-        outputs = self.op.argmax(preds, dim=1)
-        gradients = self.op.gradient(self._temperature_loss, inputs, outputs)
-        inputs_p = inputs - self.eps * self.op.sign(gradients)
-        return inputs_p
-
-    def _temperature_loss(self, inputs: TensorType, labels: TensorType) -> TensorType:
-        """Compute the tempered cross-entropy loss.
-
-        Args:
-            inputs (TensorType): the inputs of the model.
-            labels (TensorType): the labels to fit on.
-
-        Returns:
-            TensorType: the cross-entropy loss.
-        """
-        preds = self.feature_extractor.model(inputs) / self.temperature
-        loss = self.op.CrossEntropyLoss(reduction="sum")(inputs=preds, targets=labels)
-        return loss
 
     def _background_stats(
         self, layer_features: TensorType

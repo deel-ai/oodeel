@@ -58,6 +58,7 @@ class MLS(OODBaseDetector):
         react_quantile: float = 0.8,
         scale_percentile: float = 0.85,
         ash_percentile: float = 0.90,
+        **kwargs,
     ):
         super().__init__(
             use_react=use_react,
@@ -80,6 +81,9 @@ class MLS(OODBaseDetector):
         Returns:
             Tuple[np.ndarray]: scores, logits
         """
+        # optional: apply input perturbation
+        if self.eps > 0:
+            inputs = self._input_perturbation(inputs, self.eps, self.temperature)
 
         _, logits = self.feature_extractor.predict_tensor(inputs)
         if self.output_activation == "softmax":

@@ -30,10 +30,10 @@ from scipy.special import logsumexp
 
 from ..aggregator import BaseAggregator
 from ..types import TensorType
-from .base import OODBaseDetector
+from .base import FeatureBasedDetector
 
 
-class VIM(OODBaseDetector):
+class VIM(FeatureBasedDetector):
     """
     Virtual Matching Logit (VIM) out-of-distribution detector.
 
@@ -67,12 +67,12 @@ class VIM(OODBaseDetector):
         princ_dims: Union[int, float] = 0.99,
         pca_origin: str = "center",
         aggregator: Optional[BaseAggregator] = None,
+        **kwargs,
     ):
-        super().__init__()
+        super().__init__(aggregator=aggregator, **kwargs)
         # Store PCA settings and optional aggregator
         self._princ_dims = princ_dims
         self.pca_origin = pca_origin
-        self.aggregator = aggregator
         # Containers for per-layer PCA parameters
         self.centers: List[TensorType] = []
         self.residual_projections: List[TensorType] = []

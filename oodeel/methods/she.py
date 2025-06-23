@@ -27,10 +27,10 @@ import numpy as np
 
 from ..aggregator import BaseAggregator
 from ..types import TensorType
-from .base import OODBaseDetector
+from .base import FeatureBasedDetector
 
 
-class SHE(OODBaseDetector):
+class SHE(FeatureBasedDetector):
     """
     "Out-of-Distribution Detection based on In-Distribution Data Patterns Memorization
     with Modern Hopfield Energy"
@@ -64,11 +64,13 @@ class SHE(OODBaseDetector):
         eps: float = 0.0014,
         temperature: float = 1000,
         aggregator: Optional[BaseAggregator] = None,
+        **kwargs,
     ) -> None:
-        super().__init__()
+        super().__init__(
+            eps=eps, temperature=temperature, aggregator=aggregator, **kwargs
+        )
         self.eps = eps
         self.temperature = temperature
-        self.aggregator = aggregator
         self.postproc_fns = None  # Will be set in `_fit_to_dataset`.
 
         # Fitted attributes
@@ -147,42 +149,6 @@ class SHE(OODBaseDetector):
         return -self.op.convert_to_numpy(she)
 
     # === Internal utilities ===
-    def _input_perturbation(self, inputs: TensorType) -> TensorType:
-        """Apply a small perturbation over inputs to increase their softmax score, as
-        done in ODIN paper (section 3):
-        http://arxiv.org/abs/1706.02690
-
-        Args:
-            inputs (TensorType): input samples to score
-
-        Returns:
-            TensorType: Perturbed inputs
-        """
-        if self.eps == 0:
-            return inputs
-
-        if self.feature_extractor.backend == "torch":
-            inputs = inputs.to(self.feature_extractor._device)
-
-        preds = self.feature_extractor.model(inputs)
-        outputs = self.op.argmax(preds, dim=1)
-        gradients = self.op.gradient(self._temperature_loss, inputs, outputs)
-        inputs_p = inputs - self.eps * self.op.sign(gradients)
-        return inputs_p
-
-    def _temperature_loss(self, inputs: TensorType, labels: TensorType) -> TensorType:
-        """Compute the tempered cross-entropy loss.
-
-        Args:
-            inputs (TensorType): the inputs of the model.
-            labels (TensorType): the labels to fit on.
-
-        Returns:
-            TensorType: the cross-entropy loss.
-        """
-        preds = self.feature_extractor.model(inputs) / self.temperature
-        loss = self.op.CrossEntropyLoss(reduction="sum")(inputs=preds, targets=labels)
-        return loss
 
     # === Properties ===
     @property
