@@ -23,29 +23,38 @@
 import faiss
 import numpy as np
 
-from ..types import DatasetType
+from ..aggregator import BaseAggregator
+from ..types import Optional
 from ..types import TensorType
-from ..types import Tuple
-from ..types import Union
-from .base import OODBaseDetector
+from .base import FeatureBasedDetector
 
 
-class DKNN(OODBaseDetector):
+class DKNN(FeatureBasedDetector):
     """
     "Out-of-Distribution Detection with Deep Nearest Neighbors"
     https://arxiv.org/abs/2204.06507
 
     Args:
         nearest: number of nearest neighbors to consider.
-            Defaults to 1.
-        use_gpu (bool): Flag to enable GPU acceleration for FAISS. Defaults to False.
+            Defaults to 50.
+        use_gpu (bool): Whether to enable GPU acceleration for FAISS. Defaults to False.
+        aggregator (Optional[BaseAggregator]): Aggregator to combine scores from
+            multiple feature layers. If not provided and multiple layers are used, a
+            StdNormalizedAggregator will be employed.
+        **kwargs: Additional keyword arguments for the base class.
     """
 
-    def __init__(self, nearest: int = 50, use_gpu: bool = False):
-        super().__init__()
-        self.index = None
+    def __init__(
+        self,
+        nearest: int = 50,
+        use_gpu: bool = False,
+        aggregator: BaseAggregator = None,
+        **kwargs,
+    ):
+        super().__init__(aggregator=aggregator, **kwargs)
         self.nearest = nearest
         self.use_gpu = use_gpu
+        self.indexes: list[faiss.IndexFlatL2] = []
 
         if self.use_gpu:
             try:
@@ -56,57 +65,114 @@ class DKNN(OODBaseDetector):
                     + "Please install faiss-gpu or set use_gpu to False."
                 ) from e
 
-    def _fit_to_dataset(self, fit_dataset: Union[TensorType, DatasetType]) -> None:
-        """
-        Constructs the index from ID data "fit_dataset", which will be used for
-        nearest neighbor search. Can operate on CPU or GPU based on the `use_gpu` flag.
+    # === Per-layer logic ===
+    def _fit_layer(
+        self,
+        layer_id: int,
+        layer_features: np.ndarray,
+        info: dict,
+        **kwargs,
+    ) -> Optional[np.ndarray]:
+        """Fit one FAISS index and optionally return aggregator scores.
+
+        The extracted features are L2-normalized and stored into a FAISS index
+        dedicated to the current layer. When an `aggregator` is used, distances
+        to the :math:`k`-th nearest neighbour are computed on a small subset of
+        samples and returned for later normalization.
 
         Args:
-            fit_dataset: input dataset (ID) to construct the index with.
-        """
-        fit_projected, _ = self.feature_extractor.predict(fit_dataset)
-        fit_projected = self.op.convert_to_numpy(fit_projected[0])
-        fit_projected = fit_projected.reshape(fit_projected.shape[0], -1)
-        norm_fit_projected = self._l2_normalization(fit_projected)
-
-        if self.use_gpu:
-            cpu_index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
-            self.index = faiss.index_cpu_to_gpu(self.res, 0, cpu_index)
-        else:
-            self.index = faiss.IndexFlatL2(norm_fit_projected.shape[1])
-
-        self.index.add(norm_fit_projected)
-
-    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
-        """
-        Computes an OOD score for input samples "inputs" based on
-        the distance to nearest neighbors in the feature space of self.model
-
-        Args:
-            inputs: input samples to score
+            layer_id: Index of the processed layer.
+            layer_features: Feature tensor corresponding to that layer.
+            info: Dictionary of auxiliary data (unused).
 
         Returns:
-            Tuple[np.ndarray]: scores, logits
+            Optional[np.ndarray]: Distances to the :math:`k`-th neighbour for the
+                subset, or `None` if no aggregator is involved.
         """
+        norm_features = self._prepare_layer_features(layer_features)
+        index = self._create_index(norm_features.shape[1])
+        index.add(norm_features)
 
-        input_projected, _ = self.feature_extractor.predict_tensor(inputs)
-        input_projected = self.op.convert_to_numpy(input_projected[0])
-        input_projected = input_projected.reshape(input_projected.shape[0], -1)
-        norm_input_projected = self._l2_normalization(input_projected)
-        scores, _ = self.index.search(norm_input_projected, self.nearest)
+        self.indexes.append(index)
+
+        scores = None
+        if getattr(self, "aggregator", None) is not None:
+            # Compute KNN scores on a subset of samples (first 1000) to fit the
+            # aggregator. We use k = max(self.nearest, 2) to avoid trivial zero
+            # distances caused by querying each point against itself when k=1.
+            # Using k >= 2 ensures the score reflects distance to a true neighbor.
+            scores_subset, _ = index.search(norm_features[:1000], max(self.nearest, 2))
+            scores = scores_subset[:, -1]
+        return scores
+
+    def _score_layer(
+        self,
+        layer_id: int,
+        layer_features: TensorType,
+        info: dict,
+        **kwargs,
+    ) -> np.ndarray:
+        """Compute KNN scores for a single feature layer.
+
+        Args:
+            layer_id: Index of the processed layer.
+            layer_features: Feature tensor associated with this layer.
+            info: Dictionary of auxiliary data (unused).
+
+        Returns:
+            np.ndarray: Distance to the :math:`k`-th nearest neighbour.
+        """
+        index = self.indexes[layer_id]
+        layer_features = self.op.convert_to_numpy(layer_features)
+        norm_features = self._prepare_layer_features(layer_features)
+        scores, _ = index.search(norm_features, self.nearest)
         return scores[:, -1]
 
-    def _l2_normalization(self, feat: np.ndarray) -> np.ndarray:
-        """L2 normalization of a tensor along the last dimension.
+    # === Internal utilities ===
+    def _prepare_layer_features(self, features: np.ndarray) -> np.ndarray:
+        """
+        Convert a feature tensor to a 2D numpy array and apply L2 normalization.
 
         Args:
-            feat (np.ndarray): the tensor to normalize
+            features (np.ndarray): Feature tensor to be processed.
 
         Returns:
-            np.ndarray: the normalized tensor
+            np.ndarray: Processed feature array with shape (num_samples, feature_dim)
+                and L2 normalized.
+        """
+        features = features.reshape(features.shape[0], -1)
+        return self._l2_normalization(features)
+
+    def _create_index(self, dim: int) -> faiss.IndexFlatL2:
+        """
+        Create a FAISS index for features of a given dimensionality.
+
+        Args:
+            dim (int): Dimensionality of the feature vectors.
+
+        Returns:
+            faiss.IndexFlatL2: A FAISS index instance, using GPU acceleration if
+                enabled.
+        """
+        if self.use_gpu:
+            cpu_index = faiss.IndexFlatL2(dim)
+            return faiss.index_cpu_to_gpu(self.res, 0, cpu_index)
+        else:
+            return faiss.IndexFlatL2(dim)
+
+    def _l2_normalization(self, feat: np.ndarray) -> np.ndarray:
+        """
+        Apply L2 normalization to an array of feature vectors along the last dimension.
+
+        Args:
+            feat (np.ndarray): Input array of features.
+
+        Returns:
+            np.ndarray: L2-normalized feature array.
         """
         return feat / (np.linalg.norm(feat, ord=2, axis=-1, keepdims=True) + 1e-10)
 
+    # === Properties ===
     @property
     def requires_to_fit_dataset(self) -> bool:
         """

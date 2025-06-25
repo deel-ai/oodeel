@@ -57,6 +57,7 @@ class Entropy(OODBaseDetector):
         react_quantile: float = 0.8,
         scale_percentile: float = 0.85,
         ash_percentile: float = 0.90,
+        **kwargs,
     ):
         super().__init__(
             use_react=use_react,
@@ -65,6 +66,7 @@ class Entropy(OODBaseDetector):
             react_quantile=react_quantile,
             scale_percentile=scale_percentile,
             ash_percentile=ash_percentile,
+            **kwargs,
         )
 
     def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
@@ -78,6 +80,9 @@ class Entropy(OODBaseDetector):
         Returns:
             Tuple[np.ndarray]: scores, logits
         """
+        # optional: apply input perturbation
+        if self.eps > 0:
+            inputs = self._input_perturbation(inputs, self.eps, self.temperature)
 
         # compute logits (softmax(logits,axis=1) is the actual softmax
         # output minimized using binary cross entropy)

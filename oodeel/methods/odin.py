@@ -35,7 +35,7 @@ class ODIN(OODBaseDetector):
 
     Args:
         temperature (float, optional): Temperature parameter. Defaults to 1000.
-        noise (float, optional): Perturbation noise. Defaults to 0.014.
+        eps (float, optional): Perturbation noise. Defaults to 0.014.
         use_react (bool): if true, apply ReAct method by clipping penultimate
             activations under a threshold value.
         react_quantile (Optional[float]): q value in the range [0, 1] used to compute
@@ -46,24 +46,26 @@ class ODIN(OODBaseDetector):
     def __init__(
         self,
         temperature: float = 1000,
-        noise: float = 0.014,
+        eps: float = 0.014,
         use_react: bool = False,
         use_scale: bool = False,
         use_ash: bool = False,
         react_quantile: float = 0.8,
         scale_percentile: float = 0.85,
         ash_percentile: float = 0.90,
+        **kwargs,
     ):
-        self.temperature = temperature
         super().__init__(
+            eps=eps,
+            temperature=temperature,
             use_react=use_react,
             use_scale=use_scale,
             use_ash=use_ash,
             react_quantile=react_quantile,
             scale_percentile=scale_percentile,
             ash_percentile=ash_percentile,
+            **kwargs,
         )
-        self.noise = noise
 
     def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
         """
@@ -76,46 +78,15 @@ class ODIN(OODBaseDetector):
         Returns:
             Tuple[np.ndarray]: scores, logits
         """
-        if self.feature_extractor.backend == "torch":
-            inputs = inputs.to(self.feature_extractor._device)
-        x = self.input_perturbation(inputs)
+        if self.eps > 0:
+            x = self._input_perturbation(inputs, self.eps, self.temperature)
+
         _, logits = self.feature_extractor.predict_tensor(x)
         logits_s = logits / self.temperature
         probits = self.op.softmax(logits_s)
         probits = self.op.convert_to_numpy(probits)
         scores = -np.max(probits, axis=1)
         return scores
-
-    def input_perturbation(self, inputs: TensorType) -> TensorType:
-        """Apply a small perturbation over inputs to increase their softmax score.
-        See ODIN paper for more information (section 3):
-        http://arxiv.org/abs/1706.02690
-
-        Args:
-            inputs (TensorType): input samples to score
-
-        Returns:
-            TensorType: Perturbed inputs
-        """
-        preds = self.feature_extractor.model(inputs)
-        outputs = self.op.argmax(preds, dim=1)
-        gradients = self.op.gradient(self._temperature_loss, inputs, outputs)
-        inputs_p = inputs - self.noise * self.op.sign(gradients)
-        return inputs_p
-
-    def _temperature_loss(self, inputs: TensorType, labels: TensorType) -> TensorType:
-        """Compute the tempered cross-entropy loss.
-
-        Args:
-            inputs (TensorType): the inputs of the model.
-            labels (TensorType): the labels to fit on.
-
-        Returns:
-            TensorType: the cross-entropy loss.
-        """
-        preds = self.feature_extractor.model(inputs) / self.temperature
-        loss = self.op.CrossEntropyLoss(reduction="sum")(inputs=preds, targets=labels)
-        return loss
 
     def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
         """
