@@ -513,7 +513,7 @@ class TorchDataHandler(DataHandler):
         shuffle: bool = False,
         dict_based_fns: bool = True,
         return_tuple: bool = True,
-        num_workers: int = 8,
+        num_workers: int = 0,
     ) -> DataLoader:
         """Prepare a DataLoader for training
 
