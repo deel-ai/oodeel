@@ -128,9 +128,11 @@ class TorchOperator(Operator):
     @staticmethod
     def convert_to_numpy(tensor: TensorType) -> np.ndarray:
         """Convert tensor into a np.ndarray"""
-        if tensor.device != "cpu":
-            tensor = tensor.to("cpu")
-        return tensor.detach().numpy()
+        if not isinstance(tensor, np.ndarray):
+            if tensor.device != "cpu":
+                tensor = tensor.to("cpu")
+            return tensor.detach().numpy()
+        return tensor
 
     @staticmethod
     def gradient(func: Callable, inputs: torch.Tensor, *args, **kwargs) -> torch.Tensor:

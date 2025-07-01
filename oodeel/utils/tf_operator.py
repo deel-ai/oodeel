@@ -115,7 +115,9 @@ class TFOperator(Operator):
     @staticmethod
     def convert_to_numpy(tensor: TensorType) -> np.ndarray:
         """Convert tensor into a np.ndarray"""
-        return tensor.numpy()
+        if not isinstance(tensor, np.ndarray):
+            return tensor.numpy()
+        return tensor
 
     @staticmethod
     def gradient(func: Callable, inputs: tf.Tensor, *args, **kwargs) -> tf.Tensor:
