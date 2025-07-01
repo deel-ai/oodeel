@@ -72,21 +72,14 @@ class Mahalanobis(FeatureBasedDetector):
         layer_id: int,
         layer_features: np.ndarray,
         info: dict,
-        subset_size: int = 5000,
         **kwargs,
-    ) -> Optional[np.ndarray]:
+    ) -> None:
         """Compute class statistics for one feature layer.
 
         Args:
             layer_id: Index of the processed layer.
             layer_features: In-distribution features for this layer.
             info: Dictionary containing the training labels.
-            subset_size: Number of samples used to compute preliminary scores
-                for the aggregator.
-
-        Returns:
-            Optional[np.ndarray]: Scores on `subset_size` samples if an
-            aggregator is used.
         """
         labels = info["labels"]
 
@@ -97,35 +90,28 @@ class Mahalanobis(FeatureBasedDetector):
 
         self._layer_stats.append((mus, pinv_cov))
 
-        scores: Optional[np.ndarray] = None
-        if getattr(self, "aggregator", None) is not None:
-            n_samples = min(subset_size, layer_features.shape[0])
-            feats_subset = self.op.flatten(layer_features[:n_samples])
-            g_scores = self._gaussian_log_probs(feats_subset, mus, pinv_cov)
-            max_scores = self.op.max(g_scores, dim=1)
-            scores = -self.op.convert_to_numpy(max_scores)
-
-        return scores
-
     def _score_layer(
         self,
         layer_id: int,
-        out_features: TensorType,
+        layer_features: TensorType,
         info: dict,
+        fit: bool = False,
         **kwargs,
     ) -> np.ndarray:
         """Compute Mahalanobis confidence for one feature layer.
 
         Args:
             layer_id: Index of the processed layer.
-            out_features: Feature tensor for the current batch.
+            layer_features: Feature tensor for the current batch.
             info: Unused dictionary of auxiliary data.
+            fit: Whether scoring is performed during fitting. Unused here.
 
         Returns:
             np.ndarray: Negative Mahalanobis confidence scores.
         """
         mus, pinv_cov = self._layer_stats[layer_id]
-        g_scores = self._gaussian_log_probs(out_features, mus, pinv_cov)
+        feats = self.op.flatten(layer_features)
+        g_scores = self._gaussian_log_probs(feats, mus, pinv_cov)
         max_score = self.op.max(g_scores, dim=1)
         return -self.op.convert_to_numpy(max_score)
 

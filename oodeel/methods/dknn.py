@@ -24,7 +24,6 @@ import faiss
 import numpy as np
 
 from ..aggregator import BaseAggregator
-from ..types import Optional
 from ..types import TensorType
 from .base import FeatureBasedDetector
 
@@ -72,22 +71,17 @@ class DKNN(FeatureBasedDetector):
         layer_features: np.ndarray,
         info: dict,
         **kwargs,
-    ) -> Optional[np.ndarray]:
-        """Fit one FAISS index and optionally return aggregator scores.
+    ) -> None:
+        """Fit one FAISS index for a single layer.
 
         The extracted features are L2-normalized and stored into a FAISS index
-        dedicated to the current layer. When an `aggregator` is used, distances
-        to the :math:`k`-th nearest neighbour are computed on a small subset of
-        samples and returned for later normalization.
+        dedicated to the current layer. Aggregator scores, if needed, are
+        computed separately via :func:`_score_layer` with `fit=True`.
 
         Args:
             layer_id: Index of the processed layer.
             layer_features: Feature tensor corresponding to that layer.
             info: Dictionary of auxiliary data (unused).
-
-        Returns:
-            Optional[np.ndarray]: Distances to the :math:`k`-th neighbour for the
-                subset, or `None` if no aggregator is involved.
         """
         norm_features = self._prepare_layer_features(layer_features)
         index = self._create_index(norm_features.shape[1])
@@ -95,21 +89,12 @@ class DKNN(FeatureBasedDetector):
 
         self.indexes.append(index)
 
-        scores = None
-        if getattr(self, "aggregator", None) is not None:
-            # Compute KNN scores on a subset of samples (first 1000) to fit the
-            # aggregator. We use k = max(self.nearest, 2) to avoid trivial zero
-            # distances caused by querying each point against itself when k=1.
-            # Using k >= 2 ensures the score reflects distance to a true neighbor.
-            scores_subset, _ = index.search(norm_features[:1000], max(self.nearest, 2))
-            scores = scores_subset[:, -1]
-        return scores
-
     def _score_layer(
         self,
         layer_id: int,
         layer_features: TensorType,
         info: dict,
+        fit: bool = False,
         **kwargs,
     ) -> np.ndarray:
         """Compute KNN scores for a single feature layer.
@@ -118,6 +103,10 @@ class DKNN(FeatureBasedDetector):
             layer_id: Index of the processed layer.
             layer_features: Feature tensor associated with this layer.
             info: Dictionary of auxiliary data (unused).
+            fit: If `True`, scoring is performed as part of the fitting routine (for
+                the aggregator) and uses `max(nearest, 2)` neighbours. This avoids the
+                trivial zero distance obtained when `nearest` equals one. In inference
+                mode (`fit=False`), `nearest` neighbours are used.
 
         Returns:
             np.ndarray: Distance to the :math:`k`-th nearest neighbour.
@@ -125,7 +114,8 @@ class DKNN(FeatureBasedDetector):
         index = self.indexes[layer_id]
         layer_features = self.op.convert_to_numpy(layer_features)
         norm_features = self._prepare_layer_features(layer_features)
-        scores, _ = index.search(norm_features, self.nearest)
+        k = max(self.nearest, 2) if fit else self.nearest
+        scores, _ = index.search(norm_features, k)
         return scores[:, -1]
 
     # === Internal utilities ===

@@ -87,7 +87,7 @@ class VIM(FeatureBasedDetector):
         layer_features: np.ndarray,
         info: dict,
         **kwargs,
-    ) -> Optional[np.ndarray]:
+    ) -> None:
         """Compute PCA statistics for a single feature layer.
 
         The PCA subspace is estimated from the layer activations of the
@@ -99,10 +99,6 @@ class VIM(FeatureBasedDetector):
             layer_id: Index of the feature layer.
             layer_features: Features for this layer with shape `[N, D]`.
             info: Dictionary containing at least the training logits.
-
-        Returns:
-            Optional[np.ndarray]: VIM scores of the training samples for this
-            layer (used to fit an optional aggregator).
         """
 
         logits_train = info["logits"]
@@ -144,7 +140,6 @@ class VIM(FeatureBasedDetector):
 
         residual_norms = self._compute_residual_norms(feat, center, proj)
         alpha = float(np.mean(train_maxlogit) / np.mean(residual_norms))
-        scores = alpha * residual_norms - train_maxlogit
 
         self.centers.append(center)
         self.residual_projections.append(proj)
@@ -152,13 +147,12 @@ class VIM(FeatureBasedDetector):
         self.princ_dims_list.append(princ_dim)
         self.alphas.append(alpha)
 
-        return scores
-
     def _score_layer(
         self,
         layer_id: int,
         layer_features: TensorType,
         info: dict,
+        fit: bool = False,
         **kwargs,
     ) -> np.ndarray:
         """Compute the VIM score associated with one feature layer.
@@ -167,6 +161,7 @@ class VIM(FeatureBasedDetector):
             layer_id: Index of the processed layer.
             layer_features: Features from the current layer.
             info: Dictionary containing the logits of the batch.
+            fit: Whether scoring is performed during fitting. Unused here.
 
         Returns:
             np.ndarray: VIM scores for the layer.

@@ -111,17 +111,14 @@ class Gram(FeatureBasedDetector):
         info: dict,
         val_split: float = None,
         **kwargs,
-    ) -> Optional[np.ndarray]:
-        """Fit thresholds for one layer and optionally return validation scores.
+    ) -> None:
+        """Fit thresholds for one layer and store validation data.
 
         Args:
             layer_id: Index of the processed layer.
             layer_stats: Gram statistics for this layer.
             info: Dictionary containing the logits of the training data.
             val_split: Ratio of samples used for aggregator fitting.
-
-        Returns:
-            Optional[np.ndarray]: Validation deviations if an aggregator is used.
         """
 
         preds_all = np.argmax(info["logits"], axis=1)
@@ -157,28 +154,23 @@ class Gram(FeatureBasedDetector):
                 dim=-1,
             )
 
-        if getattr(self, "aggregator", None) is None:
-            return None
-
-        batch_size = 128
-        N = val_stats.shape[0]
-        val_dev = []
-        for start in range(0, N, batch_size):
-            end = start + batch_size
-            batch_idx = np.arange(start, min(end, N))
-            stats_t = self.op.from_numpy(val_stats[batch_idx])
-            thr_list = [self.min_maxs[int(val_preds[i])][layer_id] for i in batch_idx]
-            thr_t = self.op.stack(thr_list, dim=0)
-            dev_t = self._deviation(stats_t, thr_t)
-            val_dev.append(self.op.convert_to_numpy(dev_t))
-
-        return np.concatenate(val_dev, axis=0)
+        if getattr(self, "aggregator", None) is not None:
+            # Store validation data for the aggregator.
+            if not hasattr(self, "_val_stats"):
+                self._val_stats = []
+                self._val_preds = []
+            while len(self._val_stats) <= layer_id:
+                self._val_stats.append(None)
+                self._val_preds.append(None)
+            self._val_stats[layer_id] = val_stats
+            self._val_preds[layer_id] = val_preds
 
     def _score_layer(
         self,
         layer_id: int,
         layer_stats: TensorType,
         info: dict,
+        fit: bool = False,
         **kwargs,
     ) -> np.ndarray:
         """Score inputs for a single layer.
@@ -187,10 +179,18 @@ class Gram(FeatureBasedDetector):
             layer_id (int): Layer index.
             layer_stats (TensorType): Gram stats.
             info (dict): Dictionary containing auxiliary data, such as logits.
+            fit (bool): Whether scoring is performed during fitting. If `True`
+                the validation subset stored by :func:`_fit_layer` is used.
+
         Returns:
             np.ndarray: Deviation-based OOD scores.
         """
-        preds = np.argmax(self.op.convert_to_numpy(info["logits"]), axis=1)
+        if fit and hasattr(self, "_val_stats"):
+            layer_stats = self.op.from_numpy(self._val_stats[layer_id])
+            preds = self._val_preds[layer_id]
+        else:
+            preds = np.argmax(self.op.convert_to_numpy(info["logits"]), axis=1)
+
         thr_batch = self.op.stack([self.min_maxs[int(lbl)][layer_id] for lbl in preds])
         dev = self._deviation(layer_stats, thr_batch)
         return self.op.convert_to_numpy(dev)

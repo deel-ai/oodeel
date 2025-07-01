@@ -168,7 +168,7 @@ class OODBaseDetector(ABC):
                     model, fit_dataset, verbose=verbose, head_layer_id=head_layer_id
                 )
 
-        if (feature_layers_id == []) and (self.requires_internal_features):
+        if (feature_layers_id == []) and isinstance(self, FeatureBasedDetector):
             raise ValueError(
                 "Explicitly specify feature_layers_id=[layer0, layer1,...], "
                 + "where layer0, layer1,... are the names of the desired output "
@@ -470,7 +470,8 @@ class FeatureBasedDetector(OODBaseDetector):
         verbose: bool = False,
         **kwargs,
     ) -> None:
-        """Extract features from `fit_dataset` and compute layer statistics.
+        """Extract features from `fit_dataset` and compute layer statistitics which will
+        be used for scoring in _score_layer.
 
         Child classes must implement :func:`_fit_layer` to compute the
         statistics required by the detector on each feature layer. If an
@@ -498,8 +499,25 @@ class FeatureBasedDetector(OODBaseDetector):
 
         per_layer_scores = []
         for idx in range(n_layers):
-            scores = self._fit_layer(idx, feats[idx], info, **kwargs)
-            if scores is not None:
+            self._fit_layer(idx, feats[idx], info, **kwargs)
+
+            # If the aggregator is not None, compute per-layer scores
+            if aggregator is not None:
+                # batch the scoring to avoid memory issues
+                batch_size = kwargs.get("batch_size", 128)
+                n_samples = feats[idx].shape[0]
+                scores = []
+                for start in range(0, n_samples, batch_size):
+                    end = min(start + batch_size, n_samples)
+                    batch_feats = feats[idx][start:end]
+                    batch_info = {k: v[start:end] for k, v in info.items()}
+                    batch_feats = self.op.from_numpy(batch_feats)
+                    scores.append(
+                        self._score_layer(
+                            idx, batch_feats, batch_info, fit=True, **kwargs
+                        )
+                    )
+                scores = np.concatenate(scores, axis=0)
                 per_layer_scores.append(scores)
 
         if aggregator is not None and per_layer_scores:
@@ -511,7 +529,7 @@ class FeatureBasedDetector(OODBaseDetector):
         layer_features: np.ndarray,
         info: Dict[str, TensorType],
         **kwargs,
-    ) -> Optional[np.ndarray]:
+    ) -> None:
         """Compute statistics for a single feature layer."""
 
         raise NotImplementedError
@@ -544,6 +562,7 @@ class FeatureBasedDetector(OODBaseDetector):
         layer_id: int,
         layer_features: TensorType,
         info: Dict[str, TensorType],
+        fit: bool = False,
         **kwargs,
     ) -> np.ndarray:
         """Score samples for a single feature layer."""

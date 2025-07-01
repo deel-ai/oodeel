@@ -69,21 +69,14 @@ class RMDS(Mahalanobis):
         layer_id: int,
         layer_features: np.ndarray,
         info: dict,
-        subset_size: int = 5000,
         **kwargs,
-    ) -> Optional[np.ndarray]:
-        """Compute statistics for a single layer and optionally return scores.
+    ) -> None:
+        """Compute statistics for a single layer and store parameters.
 
         Args:
-            layer_id: Index of the processed layer.
+            layer_id: Index of the processed layer. Unused here.
             layer_features: In-distribution features for this layer.
             info: Dictionary containing the training labels.
-            subset_size: Number of samples used to compute provisional scores
-                for the aggregator.
-
-        Returns:
-            Optional[np.ndarray]: RMDS scores on `subset_size` samples if an
-            aggregator is used.
         """
         labels = info["labels"]
 
@@ -96,43 +89,34 @@ class RMDS(Mahalanobis):
         self._layer_stats.append((mus, pinv_cov))
         self._layer_background_stats.append((mu_bg, pinv_cov_bg))
 
-        scores: Optional[np.ndarray] = None
-        if getattr(self, "aggregator", None) is not None:
-            n_samples = min(subset_size, layer_features.shape[0])
-            feats_subset = self.op.flatten(layer_features[:n_samples])
-            g_scores = self._gaussian_log_probs(feats_subset, mus, pinv_cov)
-            bg_score = self._background_log_prob(feats_subset, mu_bg, pinv_cov_bg)
-            corrected = self.op.max(g_scores - bg_score, dim=1)
-            scores = -self.op.convert_to_numpy(corrected)
-
-        return scores
-
     def _score_layer(
         self,
         layer_id: int,
-        out_features: TensorType,
+        layer_features: TensorType,
         info: dict,
+        fit: bool = False,
         **kwargs,
     ) -> np.ndarray:
         """Compute the residual Mahalanobis OOD score for a single layer.
 
         Args:
             layer_id: Index of the processed layer.
-            out_features: Flattened feature matrix `[B, D]` for the batch.
+            layer_features: Flattened feature matrix `[B, D]` for the batch.
             info: Unused dictionary of auxiliary data.
+            fit: Whether scoring is performed during fitting. Unused here.
 
         Returns:
             np.ndarray: 1-D array of **negative** residual log-likelihoods.
         """
         mus, pinv_cov = self._layer_stats[layer_id]
         mu_bg, pinv_cov_bg = self._layer_background_stats[layer_id]
-        g_scores = self._gaussian_log_probs(out_features, mus, pinv_cov)
-        bg_score = self._background_log_prob(out_features, mu_bg, pinv_cov_bg)
+        feats = self.op.flatten(layer_features)
+        g_scores = self._gaussian_log_probs(feats, mus, pinv_cov)
+        bg_score = self._background_log_prob(feats, mu_bg, pinv_cov_bg)
         corrected = self.op.max(g_scores - bg_score, dim=1)
         return -self.op.convert_to_numpy(corrected)
 
     # === Internal utilities ===
-
     def _background_stats(
         self, layer_features: TensorType
     ) -> Tuple[TensorType, TensorType]:

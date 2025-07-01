@@ -83,28 +83,15 @@ class SHE(FeatureBasedDetector):
         layer_id: int,
         layer_features: np.ndarray,
         info: dict,
-        subset_size: int = 5000,
         **kwargs,
-    ) -> Optional[np.ndarray]:
-        """Compute mean vectors for a single layer and initial SHE scores.
+    ) -> None:
+        """Compute mean vectors for a single layer.
 
         Args:
+            layer_id: Index of the processed layer.
             layer_features: Tensor of shape `(N, D)` containing the flattened
                 activations of in-distribution samples for one layer.
-            labels_np: Ground-truth class labels as a `np.ndarray`.
-            preds_np: Model predictions for the in-distribution samples.  Means
-                are only computed from samples that are *both* predicted and
-                labelled as the target class (following the original paper).
-            subset_size: Number of samples on which to compute provisional OOD
-                scores for the aggregator fit.  Ignored if *self.aggregator* is
-                *None*.
-
-        Returns:
-            A tuple `(mus_layer, scores_layer)` where
-            `mus_layer` is a tensor of shape `[D, n_classes]` storing the
-            per-class mean vectors for the current layer and `scores_layer` is
-            either *None* or a NumPy array of length *subset_size* containing
-            the **negative** SHE scores on the first *subset_size* samples.
+            info: Dictionary containing the training labels.
         """
         labels_np = info["labels"]
         preds_np = np.argmax(info["logits"], axis=1)
@@ -123,32 +110,31 @@ class SHE(FeatureBasedDetector):
 
         self._layer_mus.append(mus_layer)
 
-        scores_layer: Optional[np.ndarray] = None
-        if getattr(self, "aggregator", None) is not None:
-            n_samples = min(subset_size, layer_features.shape[0])
-            feats_subset = self.op.from_numpy(layer_features[:n_samples])
-            she_subset = self._score_layer(
-                layer_id, feats_subset, {"logits": info["logits"]}
-            )
-            scores_layer = she_subset
-
-        return scores_layer
-
     def _score_layer(
         self,
         layer_id: int,
-        features: TensorType,
+        layer_features: TensorType,
         info: dict,
+        fit: bool = False,
         **kwargs,
     ) -> np.ndarray:
-        """Compute *unnormalised* SHE confidence for a single layer."""
+        """Compute *unnormalised* SHE confidence for a single layer.
 
+        Args:
+            layer_id (int): Index of the processed layer.
+            layer_features (TensorType): Feature tensor of shape `[B, D]` for the
+                current batch.
+            info (dict): Unused dictionary of auxiliary data.
+            fit: Whether scoring is performed during fitting. Unused here.
+
+        """
         mus_layer = self._layer_mus[layer_id]
-        she = self.op.matmul(self.op.squeeze(features), mus_layer) / features.shape[1]
+        she = (
+            self.op.matmul(self.op.squeeze(layer_features), mus_layer)
+            / layer_features.shape[1]
+        )
         she = self.op.max(she, dim=1)
         return -self.op.convert_to_numpy(she)
-
-    # === Internal utilities ===
 
     # === Properties ===
     @property
