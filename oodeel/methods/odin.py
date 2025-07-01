@@ -22,7 +22,6 @@
 # SOFTWARE.
 import numpy as np
 
-from ..types import DatasetType
 from ..types import TensorType
 from ..types import Tuple
 from .base import OODBaseDetector
@@ -87,15 +86,6 @@ class ODIN(OODBaseDetector):
         probits = self.op.convert_to_numpy(probits)
         scores = -np.max(probits, axis=1)
         return scores
-
-    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
-        """
-        Fits the OOD detector to fit_dataset.
-
-        Args:
-            fit_dataset: dataset to fit the OOD detector on
-        """
-        pass
 
     @property
     def requires_to_fit_dataset(self) -> bool:
