@@ -54,6 +54,7 @@ def plot_ood_scores(
         label="ID data",
         stat="density",
         log_scale=log_scale,
+        bins=100,
         kde=True,
     )
     ax2 = sns.histplot(
@@ -62,6 +63,7 @@ def plot_ood_scores(
         label="OOD data",
         stat="density",
         log_scale=log_scale,
+        bins=100,
         kde=True,
     )
     ymax = max(ax1.get_ylim()[1], ax2.get_ylim()[1])

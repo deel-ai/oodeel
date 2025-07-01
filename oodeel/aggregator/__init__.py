@@ -20,40 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import pytest
-
-from oodeel.aggregator import FisherAggregator
-from oodeel.aggregator import MeanNormalizedAggregator
-from oodeel.aggregator import StdNormalizedAggregator
-from oodeel.methods import DKNN
-from tests.tests_tensorflow import eval_detector_on_blobs
-
-
-@pytest.mark.parametrize(
-    "auroc_thr,fpr95_thr,agg",
-    [
-        (0.95, 0.05, "fisher"),
-        (0.95, 0.05, "mean"),
-        (0.95, 0.05, "std"),
-        (0.95, 0.05, "none"),
-    ],
-)
-def test_dknn(auroc_thr, fpr95_thr, agg):
-    """
-    Test DKNN on toy blobs OOD dataset-wise task
-
-    We check that the area under ROC is above a certain threshold, and that the FPR95TPR
-    is below an other threshold.
-    """
-    aggregator = {
-        "fisher": FisherAggregator,
-        "mean": MeanNormalizedAggregator,
-        "std": StdNormalizedAggregator,
-        "none": lambda: None,
-    }[agg]()
-    dknn = DKNN(aggregator=aggregator)
-    eval_detector_on_blobs(
-        detector=dknn,
-        auroc_thr=auroc_thr,
-        fpr95_thr=fpr95_thr,
-    )
+from .base import BaseAggregator
+from .fisher import FisherAggregator
+from .mean import MeanNormalizedAggregator
+from .std import StdNormalizedAggregator

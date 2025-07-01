@@ -20,180 +20,190 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+
 import numpy as np
 
-from ..types import DatasetType
+from ..aggregator import BaseAggregator
 from ..types import TensorType
-from ..types import Tuple
-from oodeel.methods.base import OODBaseDetector
+from .base import FeatureBasedDetector
 
 
-class Mahalanobis(OODBaseDetector):
+class Mahalanobis(FeatureBasedDetector):
     """
     "A Simple Unified Framework for Detecting Out-of-Distribution Samples and
     Adversarial Attacks"
     https://arxiv.org/abs/1807.03888
 
+    This detector computes the Mahalanobis distance between the feature representations
+    of input samples and class-conditional Gaussian distributions estimated from
+    in-distribution data. It supports multiple feature layers by computing statistics
+    (class means and a covariance matrix) for each layer. During inference, scores
+    computed for each layer are aggregated using a provided aggregator.
+
     Args:
-        eps (float): magnitude for gradient based input perturbation.
-            Defaults to 0.02.
+        eps (float): Magnitude for gradient-based input perturbation. Defaults to
+            0.0014.
+        temperature (float, optional): Temperature parameter. Defaults to 1000.
+        aggregator (Optional[BaseAggregator]): Aggregator to combine scores from
+            multiple feature layers. If `None` and more than one layer is
+            used, a `StdNormalizedAggregator` is instantiated automatically.
     """
 
     def __init__(
         self,
-        eps: float = 0.002,
+        eps: float = 0.0014,
+        temperature: float = 1000,
+        aggregator: Optional[BaseAggregator] = None,
+        **kwargs,
     ):
-        super(Mahalanobis, self).__init__()
-        self.eps = eps
+        super().__init__(
+            eps=eps, temperature=temperature, aggregator=aggregator, **kwargs
+        )
+        self._layer_stats: List[Tuple[Dict, np.ndarray]] = []
+        self._classes: Optional[np.ndarray] = None
 
-    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
-        """
-        Constructs the mean covariance matrix from ID data "fit_dataset", whose
-        pseudo-inverse will be used for mahalanobis distance computation.
+    # === Per-layer logic ===
+    def _fit_layer(
+        self,
+        layer_id: int,
+        layer_features: np.ndarray,
+        info: dict,
+        **kwargs,
+    ) -> None:
+        """Compute class statistics for one feature layer.
 
         Args:
-            fit_dataset (Union[TensorType, DatasetType]): input dataset (ID)
+            layer_id: Index of the processed layer.
+            layer_features: In-distribution features for this layer.
+            info: Dictionary containing the training labels.
         """
-        # extract features and labels
-        features, infos = self.feature_extractor.predict(fit_dataset, detach=True)
-        labels = infos["labels"]
+        labels = info["labels"]
 
-        # unique sorted classes
-        self._classes = np.sort(np.unique(self.op.convert_to_numpy(labels)))
+        if isinstance(layer_features, np.ndarray):
+            layer_features = self.op.from_numpy(layer_features)
 
-        # compute mus and covs
-        mus = dict()
-        mean_cov = None
-        for cls in self._classes:
-            indexes = self.op.equal(labels, cls)
-            _features_cls = self.op.flatten(features[0][indexes])
-            mus[cls] = self.op.mean(_features_cls, dim=0)
-            _zero_f_cls = _features_cls - mus[cls]
-            cov_cls = (
-                self.op.matmul(self.op.t(_zero_f_cls), _zero_f_cls)
-                / _zero_f_cls.shape[0]
+        mus, pinv_cov = self._compute_layer_stats(layer_features, labels)
+
+        self._layer_stats.append((mus, pinv_cov))
+
+    def _score_layer(
+        self,
+        layer_id: int,
+        layer_features: TensorType,
+        info: dict,
+        fit: bool = False,
+        **kwargs,
+    ) -> np.ndarray:
+        """Compute Mahalanobis confidence for one feature layer.
+
+        Args:
+            layer_id: Index of the processed layer.
+            layer_features: Feature tensor for the current batch.
+            info: Unused dictionary of auxiliary data.
+            fit: Whether scoring is performed during fitting. Unused here.
+
+        Returns:
+            np.ndarray: Negative Mahalanobis confidence scores.
+        """
+        mus, pinv_cov = self._layer_stats[layer_id]
+        feats = self.op.flatten(layer_features)
+        g_scores = self._gaussian_log_probs(feats, mus, pinv_cov)
+        max_score = self.op.max(g_scores, dim=1)
+        return -self.op.convert_to_numpy(max_score)
+
+    # === Internal utilities ===
+    def _compute_layer_stats(
+        self, layer_features: TensorType, labels: np.ndarray
+    ) -> Tuple[Dict[int, TensorType], np.ndarray]:
+        """
+        Compute class-conditional statistics for a given feature layer.
+
+        For each class present in the labels, this method computes the mean feature
+        vector. It also computes a weighted average covariance matrix (across all
+        classes) and its pseudo-inverse, which will later be used for computing
+        Mahalanobis distances.
+
+        Args:
+            layer_features (TensorType): Feature tensor for a specific layer extracted
+                from in-distribution data.
+            labels (np.ndarray): Corresponding labels for the in-distribution data.
+
+        Returns:
+            Tuple[Dict, TensorType]:
+                - A dictionary mapping each class label to its mean feature vector.
+                - The pseudo-inverse of the weighted average covariance matrix.
+        """
+        classes = np.sort(np.unique(labels))
+        labels = self.op.from_numpy(labels)  # convert to tensor
+
+        feats = self.op.flatten(layer_features)
+        n_total = feats.shape[0]
+
+        mus: Dict[int, TensorType] = {}
+        mean_cov: TensorType = None
+
+        for cls in classes:
+            idx = self.op.equal(labels, cls)
+            feats_cls = self.op.flatten(layer_features[idx])
+            mu = self.op.mean(feats_cls, dim=0)
+            mus[cls] = mu
+
+            zero_f = feats_cls - mu
+            cov_cls = self.op.matmul(self.op.t(zero_f), zero_f) / zero_f.shape[0]
+            weight = feats_cls.shape[0] / n_total
+            mean_cov = (
+                cov_cls * weight if mean_cov is None else mean_cov + cov_cls * weight
             )
-            if mean_cov is None:
-                mean_cov = (len(_features_cls) / len(features[0])) * cov_cls
-            else:
-                mean_cov += (len(_features_cls) / len(features[0])) * cov_cls
 
-        # pseudo-inverse of the mean covariance matrix
-        self._pinv_cov = self.op.pinv(mean_cov)
-        self._mus = mus
+        pinv_cov = self.op.pinv(mean_cov)  # type: ignore[arg-type]
+        if self._classes is None:
+            self._classes = classes
+        return mus, pinv_cov
 
-    def _score_tensor(self, inputs: TensorType) -> Tuple[np.ndarray]:
-        """
-        Computes an OOD score for input samples "inputs" based on the mahalanobis
-        distance with respect to the closest class-conditional Gaussian distribution.
+    def _gaussian_log_probs(
+        self, out_features: TensorType, mus: Dict[int, TensorType], pinv_cov: TensorType
+    ) -> TensorType:
+        """Compute unnormalised Gaussian log-probabilities for all classes.
 
         Args:
-            inputs (TensorType): input samples
+            out_features (TensorType): Features of shape [B, D].
+            mus (Dict[int, TensorType]): Class mean vectors.
+            pinv_cov (TensorType): Pseudo-inverse covariance matrix.
 
         Returns:
-            Tuple[np.ndarray]: scores, logits
+            TensorType: Log-probabilities with shape [B, n_classes].
         """
-        # input preprocessing (perturbation)
-        if self.eps > 0:
-            inputs_p = self._input_perturbation(inputs)
-        else:
-            inputs_p = inputs
-
-        # mahalanobis score on perturbed inputs
-        features_p, _ = self.feature_extractor.predict_tensor(inputs_p)
-        features_p = self.op.flatten(features_p[0])
-        gaussian_score_p = self._mahalanobis_score(features_p)
-
-        # take the highest score for each sample
-        gaussian_score_p = self.op.max(gaussian_score_p, dim=1)
-        return -self.op.convert_to_numpy(gaussian_score_p)
-
-    def _input_perturbation(self, inputs: TensorType) -> TensorType:
-        """
-        Apply small perturbation on inputs to make the in- and out- distribution
-        samples more separable.
-        See original paper for more information (section 2.2)
-        https://arxiv.org/abs/1807.03888
-
-        Args:
-            inputs (TensorType): input samples
-
-        Returns:
-            TensorType: Perturbed inputs
-        """
-
-        def __loss_fn(inputs: TensorType) -> TensorType:
-            """
-            Loss function for the input perturbation.
-
-            Args:
-                inputs (TensorType): input samples
-
-            Returns:
-                TensorType: loss value
-            """
-            # extract features
-            out_features, _ = self.feature_extractor.predict(inputs, detach=False)
-            out_features = self.op.flatten(out_features[0])
-            # get mahalanobis score for the class maximizing it
-            gaussian_score = self._mahalanobis_score(out_features)
-            log_probs_f = self.op.max(gaussian_score, dim=1)
-            return self.op.mean(-log_probs_f)
-
-        # compute gradient
-        gradient = self.op.gradient(__loss_fn, inputs)
-        gradient = self.op.sign(gradient)
-
-        inputs_p = inputs - self.eps * gradient
-        return inputs_p
-
-    def _mahalanobis_score(self, out_features: TensorType) -> TensorType:
-        """
-        Mahalanobis distance-based confidence score. For each test sample, it computes
-        the log of the probability densities of some observations (assuming a
-        normal distribution) using the mahalanobis distance with respect to every
-        class-conditional distributions.
-
-        Args:
-            out_features (TensorType): test samples features
-
-        Returns:
-            TensorType: confidence scores (conditionally to each class)
-        """
-        gaussian_scores = list()
-        # compute scores conditionally to each class
-        for cls in self._classes:
-            # center features wrt class-cond dist.
-            mu = self._mus[cls]
+        scores = []
+        for cls in self._classes:  # type: ignore[assignment]
+            mu = mus[cls]
             zero_f = out_features - mu
-            # gaussian log prob density (mahalanobis)
-            log_probs_f = -0.5 * self.op.diag(
-                self.op.matmul(
-                    self.op.matmul(zero_f, self._pinv_cov), self.op.t(zero_f)
-                )
+            log_prob = -0.5 * self.op.diag(
+                self.op.matmul(self.op.matmul(zero_f, pinv_cov), self.op.t(zero_f))
             )
-            gaussian_scores.append(self.op.reshape(log_probs_f, (-1, 1)))
-        # concatenate scores
-        gaussian_score = self.op.cat(gaussian_scores, 1)
-        return gaussian_score
+            scores.append(self.op.reshape(log_prob, (-1, 1)))
+        return self.op.cat(scores, dim=1)
 
+    # ===
     @property
     def requires_to_fit_dataset(self) -> bool:
         """
-        Whether an OOD detector needs a `fit_dataset` argument in the fit function.
+        Indicates whether this OOD detector requires in-distribution data for fitting.
 
         Returns:
-            bool: True if `fit_dataset` is required else False.
+            bool: True, since fitting requires computing class-conditional statistics.
         """
         return True
 
     @property
     def requires_internal_features(self) -> bool:
         """
-        Whether an OOD detector acts on internal model features.
+        Indicates whether this OOD detector utilizes internal model features.
 
         Returns:
-            bool: True if the detector perform computations on an intermediate layer
-            else False.
+            bool: True, as it operates on intermediate feature representations.
         """
         return True

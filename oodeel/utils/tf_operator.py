@@ -115,7 +115,9 @@ class TFOperator(Operator):
     @staticmethod
     def convert_to_numpy(tensor: TensorType) -> np.ndarray:
         """Convert tensor into a np.ndarray"""
-        return tensor.numpy()
+        if not isinstance(tensor, np.ndarray):
+            return tensor.numpy()
+        return tensor
 
     @staticmethod
     def gradient(func: Callable, inputs: tf.Tensor, *args, **kwargs) -> tf.Tensor:
@@ -224,6 +226,8 @@ class TFOperator(Operator):
     @staticmethod
     def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> tf.Tensor:
         "sum along dim"
+        if tensor.dtype == tf.bool:
+            tensor = tf.cast(tensor, tf.float32)
         return tf.reduce_sum(tensor, axis=dim)
 
     @staticmethod
