@@ -22,7 +22,6 @@
 # SOFTWARE.
 import numpy as np
 
-from ..types import DatasetType
 from ..types import TensorType
 from ..types import Tuple
 from .base import OODBaseDetector
@@ -58,6 +57,7 @@ class MLS(OODBaseDetector):
         react_quantile: float = 0.8,
         scale_percentile: float = 0.85,
         ash_percentile: float = 0.90,
+        **kwargs,
     ):
         super().__init__(
             use_react=use_react,
@@ -80,6 +80,9 @@ class MLS(OODBaseDetector):
         Returns:
             Tuple[np.ndarray]: scores, logits
         """
+        # optional: apply input perturbation
+        if self.eps > 0:
+            inputs = self._input_perturbation(inputs, self.eps, self.temperature)
 
         _, logits = self.feature_extractor.predict_tensor(inputs)
         if self.output_activation == "softmax":
@@ -87,15 +90,6 @@ class MLS(OODBaseDetector):
         logits = self.op.convert_to_numpy(logits)
         scores = -np.max(logits, axis=1)
         return scores
-
-    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
-        """
-        Fits the OOD detector to fit_dataset.
-
-        Args:
-            fit_dataset: dataset to fit the OOD detector on
-        """
-        pass
 
     @property
     def requires_to_fit_dataset(self) -> bool:

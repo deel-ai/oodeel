@@ -128,9 +128,11 @@ class TorchOperator(Operator):
     @staticmethod
     def convert_to_numpy(tensor: TensorType) -> np.ndarray:
         """Convert tensor into a np.ndarray"""
-        if tensor.device != "cpu":
-            tensor = tensor.to("cpu")
-        return tensor.detach().numpy()
+        if not isinstance(tensor, np.ndarray):
+            if tensor.device != "cpu":
+                tensor = tensor.to("cpu")
+            return tensor.detach().numpy()
+        return tensor
 
     @staticmethod
     def gradient(func: Callable, inputs: torch.Tensor, *args, **kwargs) -> torch.Tensor:
@@ -247,6 +249,8 @@ class TorchOperator(Operator):
     @staticmethod
     def sum(tensor: TensorType, dim: Union[tuple, list, int] = None) -> torch.Tensor:
         "sum along dim"
+        if dim is None:
+            return torch.sum(tensor)
         return torch.sum(tensor, dim)
 
     @staticmethod

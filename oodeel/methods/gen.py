@@ -22,7 +22,6 @@
 # SOFTWARE.
 import numpy as np
 
-from ..types import DatasetType
 from ..types import TensorType
 from ..types import Tuple
 from .base import OODBaseDetector
@@ -56,6 +55,7 @@ class GEN(OODBaseDetector):
         react_quantile: float = 0.8,
         scale_percentile: float = 0.85,
         ash_percentile: float = 0.90,
+        **kwargs,
     ):
         super().__init__(
             use_react=use_react,
@@ -64,6 +64,7 @@ class GEN(OODBaseDetector):
             react_quantile=react_quantile,
             scale_percentile=scale_percentile,
             ash_percentile=ash_percentile,
+            **kwargs,
         )
         self.gamma = gamma
         self.k = k
@@ -79,6 +80,9 @@ class GEN(OODBaseDetector):
         Returns:
             Tuple[np.ndarray]: scores, logits
         """
+        # optional: apply input perturbation
+        if self.eps > 0:
+            inputs = self._input_perturbation(inputs, self.eps, self.temperature)
 
         _, logits = self.feature_extractor.predict_tensor(inputs)
         probs = self.op.softmax(logits)
@@ -86,15 +90,6 @@ class GEN(OODBaseDetector):
         probs = np.sort(probs)[:, -self.k :]  # Keep the k largest probabilities
         scores = np.sum(probs**self.gamma * (1 - probs) ** (self.gamma), axis=-1)
         return scores
-
-    def _fit_to_dataset(self, fit_dataset: DatasetType) -> None:
-        """
-        Fits the OOD detector to fit_dataset.
-
-        Args:
-            fit_dataset: dataset to fit the OOD detector on
-        """
-        pass
 
     @property
     def requires_to_fit_dataset(self) -> bool:

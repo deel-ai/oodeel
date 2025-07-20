@@ -45,6 +45,7 @@ def test_she_shape():
     score, _ = she.score(data)
     assert score.shape == (100,)
 
+    she = SHE()  # Reset the SHE instance
     she.fit(model, data, feature_layers_id=[-2])
     score, _ = she.score(data)
     assert score.shape == (100,)

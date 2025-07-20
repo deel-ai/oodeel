@@ -94,7 +94,10 @@ def eval_detector_on_blobs(
 
     # fit ood detector
     if detector.requires_to_fit_dataset or detector.use_react:
-        detector.fit(model, feature_layers_id=[-2], fit_dataset=ds_fit)
+        if hasattr(detector, "aggregator") and detector.aggregator is not None:
+            detector.fit(model, feature_layers_id=[-2, -1], fit_dataset=ds_fit)
+        else:
+            detector.fit(model, feature_layers_id=[-2], fit_dataset=ds_fit)
     else:
         detector.fit(model)
 
