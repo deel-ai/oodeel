@@ -31,8 +31,8 @@ with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 requirements = [
-    "faiss_cpu",
-    "numpy",
+    "faiss_gpu",
+    "numpy<=1.26.4",
     "scikit_learn",
     "scipy",
     "setuptools",
