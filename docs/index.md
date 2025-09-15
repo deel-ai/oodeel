@@ -65,9 +65,9 @@ oodeel requires either `tensorflow` or `pytorch` to be already installed (it wil
 
 |Python version|Pytorch version|Tensorflow version|
 |---|---|---|
-|`3.8`| `1.11`| `2.5`|
-|`3.9`|`1.13` | `2.8`|
-|`3.10`| `2.00` | `2.11`|
+|`3.9`| `2.0`| `2.11`|
+|`3.10`|`2.4` | `2.13`|
+|`3.11`| `2.6` | `2.15`|
 
 # Quick Start
 
