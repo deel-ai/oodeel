@@ -363,11 +363,13 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     # prepare dataloader
     loader = handler.prepare(dataset_b, 64, shuffle=True)
     batch = next(iter(loader))
-    assert batch[0].shape == tf.TensorShape([64, *x_shape])
+    assert batch[0].shape == tf.TensorShape([min(64, num_samples_b), *x_shape])
     assert batch[1].shape == (
-        tf.TensorShape([64, num_labels]) if one_hot else tf.TensorShape([64])
+        tf.TensorShape([min(64, num_samples_b), num_labels])
+        if one_hot
+        else tf.TensorShape([min(64, num_samples_b)])
     )
-    assert batch[2].shape == tf.TensorShape([64])
+    assert batch[2].shape == tf.TensorShape([min(64, num_samples_b)])
 
 
 def test_instanciate_from_tfds():
