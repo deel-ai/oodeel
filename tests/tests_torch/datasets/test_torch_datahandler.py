@@ -352,11 +352,13 @@ def test_data_handler_full_pipeline(x_shape, num_samples, num_labels, one_hot):
     # prepare dataloader
     loader = handler.prepare(dataset_b, 64, shuffle=True)
     batch = next(iter(loader))
-    assert batch[0].shape == torch.Size([64, *x_shape])
+    assert batch[0].shape == torch.Size([min(64, num_samples_b), *x_shape])
     assert batch[1].shape == (
-        torch.Size([64, num_labels]) if one_hot else torch.Size([64])
+        torch.Size([min(64, num_samples_b), num_labels])
+        if one_hot
+        else torch.Size([min(64, num_samples_b)])
     )
-    assert batch[2].shape == torch.Size([64])
+    assert batch[2].shape == torch.Size([min(64, num_samples_b)])
 
 
 @pytest.mark.parametrize(
