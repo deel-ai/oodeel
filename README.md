@@ -38,6 +38,19 @@ mls.fit(model) # A tensorflow or torch model
 scores, info = mls.score(ds) # ds is a tf.data.Dataset or a torch.DataLoader
 ```
 
+# SECTION SPECIFIC TO CONFERENCE SUBMISSION
+
+This is an annonymized version of OODEEL. To use it and build the documentation, which is a part of the library, use:
+
+```
+pip install oodeel[dev]
+```
+Then to deploy the documentation server locally, use:
+
+```
+mkdocs serve
+```
+
 # Table of contents
 
 - [Installation](#installation)
@@ -54,11 +67,6 @@ scores, info = mls.score(ds) # ds is a tf.data.Dataset or a torch.DataLoader
 
 # Installation
 
-Installation can be done using:
-
-```bash
-pip install oodeel
-```
 
 oodeel requires either `tensorflow` or `pytorch` to be already installed (it will not install them automatically not to mess-up with existing installations). It is regularly tested with:
 
@@ -67,6 +75,7 @@ oodeel requires either `tensorflow` or `pytorch` to be already installed (it wil
 |`3.8`| `1.11`| `2.5`|
 |`3.9`|`1.13` | `2.8`|
 |`3.10`| `2.00` | `2.11`|
+
 
 # Quick Start
 
@@ -233,42 +242,8 @@ Other great tools in the field of OOD:
 - [PyOD](https://github.com/yzhao062/pyod): A Comprehensive and Scalable Python Library for Outlier Detection (Anomaly Detection)
 - [Anomalib](https://github.com/openvinotoolkit/anomalib): An anomaly detection library comprising state-of-the-art algorithms and features such as experiment management, hyper-parameter optimization, and edge inference.
 
-More from the DEEL project:
 
-- [Xplique](https://github.com/deel-ai/xplique) a Python library exclusively dedicated to explaining neural networks.
-- [deel-lip](https://github.com/deel-ai/deel-lip) a Python library for training k-Lipschitz neural networks on TF.
-- [Influenciae](https://github.com/deel-ai/influenciae) Python toolkit dedicated to computing influence values for the discovery of potentially problematic samples in a dataset.
-- [deel-torchlip](https://github.com/deel-ai/deel-torchlip) a Python library for training k-Lipschitz neural networks on PyTorch.
-- [DEEL White paper](https://arxiv.org/abs/2103.10529) a summary of the DEEL team on the challenges of certifiable AI and the role of data quality, representativity and explainability for this purpose.
 
-# Acknowledgments
-
-<div align="right">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/deel_dark.png"  width="25%" align="right">
-    <source media="(prefers-color-scheme: light)" srcset="docs/assets/deel_light.png"  width="25%" align="right">
-    <img src="docs/assets/deel_dark.png" alt="DEEL Logo" width="25%" align="right">
-  </picture>
-</div>
-This project received funding from the French ”Investing for the Future – PIA3” program within the Artificial and Natural Intelligence Toulouse Institute (ANITI). The authors gratefully acknowledge the support of the <a href="https://www.deel.ai/"> DEEL </a>, a research project jointly conducted in France and Quebec.
-
-# Creators
-
-The library was created by Paul Novello to streamline DEEL research on post-hoc deep OOD methods and foster their adoption by DEEL industrial partners. He was soon joined by Yann Pequignot, Yannick Prudent, Corentin Friedrich and Matthieu Le Goff.
-
-# Citation
-
-If you use OODEEL for your research project, please consider citing:
-```
-@misc{oodeel,
-  author = {Novello, Paul and Prudent, Yannick and Friedrich, Corentin and Pequignot, Yann and Le Goff, Matthieu},
-  title = {OODEEL, a simple, compact, and hackable post-hoc deep OOD detection for already trained tensorflow or pytorch image classifiers.},
-  year = {2023},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/deel-ai/oodeel}},
-}
-```
 # License
 
 The package is released under [MIT license](LICENSE).
