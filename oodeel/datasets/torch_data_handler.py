@@ -26,7 +26,6 @@ from typing import get_args
 import numpy as np
 import torch
 import torch.nn.functional as F
-import torchvision
 from datasets import load_dataset as hf_load_dataset
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
@@ -421,6 +420,13 @@ class TorchDataHandler(DataHandler):
         Returns:
             DictDataset: dataset
         """
+        try:
+            import torchvision
+        except ImportError:
+            raise ImportError(
+                "torchvision is not installed. Please install it to use "
+                'hub="torchvision" in load_dataset.'
+            )
         assert (
             dataset_id in torchvision.datasets.__all__
         ), "Dataset not available on torchvision datasets catalog"
