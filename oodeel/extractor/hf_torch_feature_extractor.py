@@ -152,7 +152,10 @@ class HFTorchFeatureExtractor(TorchFeatureExtractor):
         """
         if x.device != self._device:
             x = x.to(self._device)
+
+        self._active = True  # Activate hooks
         outputs = self.model(x, output_hidden_states=True, return_dict=True)
+        self._active = False  # Deactivate hooks
 
         features = []
         for feature_layer_id in self.feature_layers_id:
