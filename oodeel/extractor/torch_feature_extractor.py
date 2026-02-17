@@ -88,6 +88,8 @@ class TorchFeatureExtractor(FeatureExtractor):
         if return_penultimate:
             feature_layers_id.append("penultimate")
 
+        self._handles = []
+
         super().__init__(
             model=model,
             feature_layers_id=feature_layers_id,
@@ -101,6 +103,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         self._device = next(model.parameters()).device
         self._features = {layer: torch.empty(0) for layer in self._hook_layers_id}
         self._last_logits = None
+        self._active = False
         self.backend = "torch"
 
     @property
@@ -120,6 +123,8 @@ class TorchFeatureExtractor(FeatureExtractor):
         """
 
         def hook(_, __, output):
+            if not self._active:
+                return
             if isinstance(output, torch.Tensor):
                 self._features[layer_id] = output
             else:
@@ -140,6 +145,8 @@ class TorchFeatureExtractor(FeatureExtractor):
         """
 
         def hook(_, input):
+            if not self._active:
+                return
             if isinstance(input[0], torch.Tensor):
                 self._features["penultimate"] = input[0]
             else:
@@ -185,14 +192,10 @@ class TorchFeatureExtractor(FeatureExtractor):
 
     def prepare_extractor(self) -> None:
         """Prepare the feature extractor by adding hooks to self.model"""
-        # prepare self.model for ood hooks (add _ood_handles attribute or
-        # remove ood forward hooks attached to the model)
-        self._prepare_ood_handles()
-
         # === If react method, clip activations from penultimate layer ===
         if self.react_threshold is not None:
             pen_layer = self.find_layer(self.model, self.head_layer_id)
-            self.model._ood_handles.append(
+            self._handles.append(
                 pen_layer.register_forward_pre_hook(
                     self._get_clip_hook(self.react_threshold)
                 )
@@ -201,7 +204,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         # === If SCALE method, scale activations from penultimate layer ===
         if self.scale_percentile is not None:
             pen_layer = self.find_layer(self.model, self.head_layer_id)
-            self.model._ood_handles.append(
+            self._handles.append(
                 pen_layer.register_forward_pre_hook(
                     self._get_scale_hook(self.scale_percentile)
                 )
@@ -210,7 +213,7 @@ class TorchFeatureExtractor(FeatureExtractor):
         # === If ASH method, scale and prune activations from penultimate layer ===
         if self.ash_percentile is not None:
             pen_layer = self.find_layer(self.model, self.head_layer_id)
-            self.model._ood_handles.append(
+            self._handles.append(
                 pen_layer.register_forward_pre_hook(
                     self._get_ash_hook(self.ash_percentile)
                 )
@@ -221,13 +224,13 @@ class TorchFeatureExtractor(FeatureExtractor):
             if layer_id == "penultimate":
                 # Register penultimate hook
                 layer = self.find_layer(self.model, self.head_layer_id)
-                self.model._ood_handles.append(
+                self._handles.append(
                     layer.register_forward_pre_hook(self._get_penultimate_hook())
                 )
                 continue
 
             layer = self.find_layer(self.model, layer_id)
-            self.model._ood_handles.append(
+            self._handles.append(
                 layer.register_forward_hook(self._get_features_hook(layer_id))
             )
 
@@ -279,8 +282,10 @@ class TorchFeatureExtractor(FeatureExtractor):
         if x.device != self._device:
             x = x.to(self._device)
 
+        self._active = True
         with torch.set_grad_enabled(not detach):
             _ = self.model(x)
+        self._active = False
 
         if detach:
             features = [
@@ -415,6 +420,8 @@ class TorchFeatureExtractor(FeatureExtractor):
         """
 
         def hook(_, input):
+            if not self._active:
+                return
             input = input[0]
             input = torch.clip(input, max=threshold)
             return input
@@ -433,6 +440,8 @@ class TorchFeatureExtractor(FeatureExtractor):
         """
 
         def hook(_, input):
+            if not self._active:
+                return
             input = input[0]
             output_percentile = torch.quantile(input, percentile, dim=1)
             mask = input > output_percentile[:, None]
@@ -456,6 +465,8 @@ class TorchFeatureExtractor(FeatureExtractor):
         """
 
         def hook(_, input):
+            if not self._active:
+                return
             input = input[0]
             output_percentile = torch.quantile(input, percentile, dim=1)
             mask = input > output_percentile[:, None]
@@ -467,19 +478,11 @@ class TorchFeatureExtractor(FeatureExtractor):
 
         return hook
 
-    def _prepare_ood_handles(self) -> None:
-        """
-        Prepare the model by either setting a new attribute to self.model
-        as a list which will contain all the ood specific hooks, or by cleaning
-        the existing ood specific hooks if the attribute already exists.
-        """
-
-        if not hasattr(self.model, "_ood_handles"):
-            setattr(self.model, "_ood_handles", [])
-        else:
-            for handle in self.model._ood_handles:
-                handle.remove()
-            self.model._ood_handles = []
+    def clean_hooks(self) -> None:
+        """Remove hooks registered by this extractor instance from the model."""
+        for handle in self._handles:
+            handle.remove()
+        self._handles = []
 
     def _default_postproc_fn(self, feat: TensorType) -> TensorType:
         """Default postprocessing function to apply to each feature immediately
