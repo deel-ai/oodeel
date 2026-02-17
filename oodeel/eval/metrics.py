@@ -24,6 +24,7 @@ import re
 
 import numpy as np
 import sklearn
+from scipy.interpolate import interp1d
 
 from ..types import Optional
 from ..types import Tuple
@@ -111,13 +112,10 @@ def bench_metrics(
                 ).groups()
                 thr = int(thr)
                 count_1, count_2 = locals()[count_1_str], locals()[count_2_str]
-                for i, c2 in enumerate(count_2):
-                    if (count_2_str in ["fpr", "tpr"] and c2 < thr / 100) or (
-                        count_2_str in ["tnr", "fnr"] and c2 > thr / 100
-                    ):
-                        ind = i
-                        break
-                metrics_dict[metric] = count_1[ind]
+                interp = interp1d(
+                    count_2, count_1, bounds_error=False, fill_value="extrapolate"
+                )
+                metrics_dict[metric] = interp(thr / 100)
 
         elif metric.__name__ in sklearn.metrics.__all__:
             if metric.__name__[:3] == "roc":
