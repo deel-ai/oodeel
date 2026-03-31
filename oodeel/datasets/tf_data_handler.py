@@ -23,8 +23,6 @@
 from typing import get_args
 
 import tensorflow as tf
-import tensorflow_datasets as tfds
-from datasets import load_dataset as hf_load_dataset
 
 from ..types import Callable
 from ..types import ItemType
@@ -240,6 +238,14 @@ class TFDataHandler(DataHandler):
         Returns:
             tf.data.Dataset: dataset
         """
+        try:
+            from datasets import load_dataset as hf_load_dataset
+        except ImportError:
+            raise ImportError(
+                "datasets is not installed. Please install it to use "
+                'hub="huggingface" in load_dataset.'
+            )
+
         dataset = hf_load_dataset(dataset_id, **load_kwargs)
         dataset = dataset.to_tf_dataset()
         return dataset
@@ -259,6 +265,14 @@ class TFDataHandler(DataHandler):
         Returns:
             tf.data.Dataset
         """
+        try:
+            import tensorflow_datasets as tfds
+        except ImportError:
+            raise ImportError(
+                "tensorflow_datasets is not installed. Please install it to use "
+                'hub="tensorflow-datasets" in load_dataset.'
+            )
+
         assert (
             dataset_id in tfds.list_builders()
         ), "Dataset not available on tensorflow datasets catalog"

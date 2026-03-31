@@ -40,16 +40,16 @@ requirements = [
     "seaborn",
     "plotly",
     "tqdm",
-    "datasets",
 ]
 
 tensorflow_requirements = [
     "tensorflow==2.11.0",
     "tensorflow_datasets",
     "tensorflow_probability==0.19.0",
+    "datasets",
 ]
 
-torch_requirements = ["timm", "torch==1.13.1", "torchvision==0.14.1"]
+torch_requirements = ["timm", "torch==1.13.1", "torchvision==0.14.1", "datasets"]
 
 dev_requirements = [
     "mypy",
