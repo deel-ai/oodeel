@@ -24,7 +24,8 @@ import numpy as np
 import pytest
 from pytest import approx
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_auc_score
 
 from oodeel.eval.metrics import bench_metrics
 from oodeel.eval.metrics import ftpn
@@ -88,14 +89,14 @@ def test_bench_metrics(in_value, out_value):
         threshold=0.5,
         step=1,
     )
-    # expected results (hand calculated)
+    # expected results (hand calculated, interpolated values for a@xb metrics)
     assert metrics_dict["auroc"] == approx(1 - (0.4 * 0.8) / 2)
     assert metrics_dict["roc_auc_score"] == approx(1 - (0.4 * 0.8) / 2)
     assert metrics_dict["accuracy_score"] == approx(8 / 10)
     assert metrics_dict["detect_acc"] == approx(8 / 10)
-    assert metrics_dict["tpr50fpr"] == 0.6
-    assert metrics_dict["fpr15tnr"] == 0.8
-    assert metrics_dict["tnr90fpr"] == 0.2
+    assert metrics_dict["tpr50fpr"] == approx(0.625)
+    assert metrics_dict["fpr15tnr"] == approx(0.85)
+    assert metrics_dict["tnr90fpr"] == approx(0.1)
 
     # Assert scores as (scores_in, scores_out) return the same results
     scores_in = scores[labels == in_value]
