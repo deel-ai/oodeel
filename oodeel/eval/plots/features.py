@@ -52,43 +52,87 @@ if parse(sklearn.__version__) >= parse("1.5"):
     PROJ_DICT["TSNE"]["default_kwargs"]["max_iter"] = n_iter
 
 
+def _extract_features_and_labels(feature_extractor, dataset, op, max_samples=None):
+    """Extract features and labels from a dataset using a feature extractor.
+
+    Args:
+        feature_extractor: The feature extractor to use.
+        dataset: The dataset to extract features from.
+        op: Backend operator for numpy conversion.
+        max_samples (int, optional): Max samples to extract. Defaults to None.
+
+    Returns:
+        tuple: (features, labels) as numpy arrays.
+    """
+    features, _ = feature_extractor.predict(dataset, numpy_concat=True)
+    features = features[0].reshape(features[0].shape[0], -1)
+
+    labels = np.concatenate([op.convert_to_numpy(y) for _, y in dataset])
+
+    if max_samples is not None:
+        features, labels = features[:max_samples], labels[:max_samples]
+
+    return features, labels
+
+
+def _build_legend_handle(marker, label, color, markersize=7):
+    """Create a legend handle with consistent styling."""
+    return Line2D(
+        [],
+        [],
+        marker=marker,
+        color="white",
+        linestyle="None",
+        label=label,
+        markerfacecolor=color,
+        markersize=markersize,
+    )
+
+
 def plot_2D_features(
     model: Callable,
     in_dataset: DatasetType,
     output_layer_id: Union[int, str],
     out_dataset: DatasetType = None,
     proj_method: str = "TSNE",
-    max_samples: int = 4000,
+    max_samples_in: int = None,
+    max_samples_out: int = None,
+    ood_marker_size: int = 20,
+    id_marker_size: int = 20,
+    ood_on_top: bool = True,
     title: str = None,
     **proj_kwargs,
 ):
-    """Visualize ID and OOD features of a model on a 2D plan using dimensionality
-    reduction methods and matplotlib scatter function. Different projection methods are
-    available: TSNE, PCA.
+    """Visualize ID and OOD features on a 2D plan using dimensionality reduction.
+
+    Note: For PCA, projection is fitted on ID data only. For TSNE, all data is used
+    (algorithm limitation).
 
     Args:
         model (Callable): Torch or Keras model.
-        in_dataset (DatasetType): In-distribution dataset (torch dataloader or tf
-            dataset) that will be projected on the model feature space.
+        in_dataset (DatasetType): In-distribution dataset.
         output_layer_id (Union[int, str]): Identifier for the layer to inspect.
-        out_dataset (DatasetType, optional): Out-of-distribution dataset (torch
-            dataloader or tf dataset) that will be projected on the model feature space
-            if not equal to None. Defaults to None.
-        proj_method (str, optional): Projection method for 2d dimensionality reduction.
-            Defaults to "TSNE", alternative: "PCA".
-        max_samples (int, optional): Max samples to display on the scatter plot.
-            Defaults to 4000.
-        title (str, optional): Custom figure title. Defaults to None.
+        out_dataset (DatasetType, optional): Out-of-distribution dataset.
+        proj_method (str, optional): "TSNE" or "PCA". Defaults to "TSNE".
+        max_samples_in (int, optional): Max ID samples. Defaults to None (all).
+        max_samples_out (int, optional): Max OOD samples. Defaults to None (all).
+        ood_marker_size (int, optional): OOD marker size. Defaults to 40.
+        id_marker_size (int, optional): ID marker size. Defaults to 20.
+        ood_on_top (bool, optional): Render OOD on top. Defaults to True.
+        title (str, optional): Custom figure title.
     """
-
     _plot_features(
-        model=model,
-        in_dataset=in_dataset,
-        output_layer_id=output_layer_id,
-        out_dataset=out_dataset,
-        proj_method=proj_method,
-        max_samples=max_samples,
-        title=title,
+        model,
+        in_dataset,
+        output_layer_id,
+        out_dataset,
+        proj_method,
+        max_samples_in,
+        max_samples_out,
+        ood_marker_size,
+        id_marker_size,
+        ood_on_top,
+        title,
         n_components=2,
         **proj_kwargs,
     )
@@ -100,36 +144,44 @@ def plot_3D_features(
     output_layer_id: Union[int, str],
     out_dataset: DatasetType = None,
     proj_method: str = "TSNE",
-    max_samples: int = 4000,
+    max_samples_in: int = None,
+    max_samples_out: int = None,
+    ood_marker_size: int = 30,
+    id_marker_size: int = 15,
+    ood_on_top: bool = True,
     title: str = None,
     **proj_kwargs,
 ):
-    """Visualize ID and OOD features of a model on a 3D space using dimensionality
-    reduction methods and matplotlib scatter function. Different projection methods are
-    available: TSNE, PCA.
+    """Visualize ID and OOD features in 3D space using dimensionality reduction.
+
+    Note: For PCA, projection is fitted on ID data only. For TSNE, all data is used
+    (algorithm limitation).
 
     Args:
         model (Callable): Torch or Keras model.
-        in_dataset (DatasetType): In-distribution dataset (torch dataloader or tf
-            dataset) that will be projected on the model feature space.
+        in_dataset (DatasetType): In-distribution dataset.
         output_layer_id (Union[int, str]): Identifier for the layer to inspect.
-        out_dataset (DatasetType, optional): Out-of-distribution dataset (torch
-            dataloader or tf dataset) that will be projected on the model feature space
-            if not equal to None. Defaults to None.
-        proj_method (str, optional): Projection method for 2d dimensionality reduction.
-            Defaults to "TSNE", alternative: "PCA".
-        max_samples (int, optional): Max samples to display on the scatter plot.
-            Defaults to 4000.
-        title (str, optional): Custom figure title. Defaults to None.
+        out_dataset (DatasetType, optional): Out-of-distribution dataset.
+        proj_method (str, optional): "TSNE" or "PCA". Defaults to "TSNE".
+        max_samples_in (int, optional): Max ID samples. Defaults to None (all).
+        max_samples_out (int, optional): Max OOD samples. Defaults to None (all).
+        ood_marker_size (int, optional): OOD marker size. Defaults to 30.
+        id_marker_size (int, optional): ID marker size. Defaults to 15.
+        ood_on_top (bool, optional): Render OOD on top. Defaults to True.
+        title (str, optional): Custom figure title.
     """
     _plot_features(
-        model=model,
-        in_dataset=in_dataset,
-        output_layer_id=output_layer_id,
-        out_dataset=out_dataset,
-        proj_method=proj_method,
-        max_samples=max_samples,
-        title=title,
+        model,
+        in_dataset,
+        output_layer_id,
+        out_dataset,
+        proj_method,
+        max_samples_in,
+        max_samples_out,
+        ood_marker_size,
+        id_marker_size,
+        ood_on_top,
+        title,
         n_components=3,
         **proj_kwargs,
     )
@@ -141,205 +193,210 @@ def _plot_features(
     output_layer_id: Union[int, str],
     out_dataset: DatasetType = None,
     proj_method: str = "TSNE",
-    max_samples: int = 4000,
+    max_samples_in: int = None,
+    max_samples_out: int = None,
+    ood_marker_size: int = 20,
+    id_marker_size: int = 20,
+    ood_on_top: bool = True,
     title: str = None,
     n_components: int = 2,
     **proj_kwargs,
 ):
-    """Visualize ID and OOD features of a model on a 2D or 3D space using dimensionality
-    reduction methods and matplotlib scatter function. Different projection methods are
-    available: TSNE, PCA.
+    """Internal function to plot features in 2D or 3D."""
+    assert n_components in [2, 3], "n_components must be 2 or 3"
 
-    Args:
-        model (Callable): Torch or Keras model.
-        in_dataset (DatasetType): In-distribution dataset (torch dataloader or tf
-            dataset) that will be projected on the model feature space.
-        output_layer_id (Union[int, str]): Identifier for the layer to inspect.
-        out_dataset (DatasetType, optional): Out-of-distribution dataset (torch
-            dataloader or tf dataset) that will be projected on the model feature space
-            if not equal to None. Defaults to None.
-        proj_method (str, optional): Projection method for 2d dimensionality reduction.
-            Defaults to "TSNE", alternative: "PCA".
-        max_samples (int, optional): Max samples to display on the scatter plot.
-            Defaults to 4000.
-        title (str, optional): Custom figure title. If None a default one is provided.
-            Defaults to None.
-    """
-    assert n_components in [2, 3], "The number of components should be 2 or 3"
-    max_samples = max_samples if out_dataset is None else max_samples // 2
-
-    # feature extractor
+    # === Extract features ===
     _, _, op, FeatureExtractorClass = import_backend_specific_stuff(model)
     feature_extractor = FeatureExtractorClass(model, [output_layer_id])
 
-    # === extract id features ===
-    # features
-    in_features, _ = feature_extractor.predict(in_dataset, numpy_concat=True)
-    in_features = in_features[0].reshape(in_features[0].shape[0], -1)[:max_samples]
+    in_features, in_labels = _extract_features_and_labels(
+        feature_extractor, in_dataset, op, max_samples_in
+    )
 
-    # labels
-    in_labels = []
-    for _, batch_y in in_dataset:
-        in_labels.append(op.convert_to_numpy(batch_y))
-    in_labels = np.concatenate(in_labels)[:max_samples]
-    in_labels_str = list(map(lambda x: f"class {x}", in_labels))
-
-    # === extract ood features ===
-    if out_dataset is not None:
-        # features
-        out_features, _ = feature_extractor.predict(out_dataset, numpy_concat=True)
-        out_features = out_features[0].reshape(out_features[0].shape[0], -1)[
-            :max_samples
-        ]
-
-        # labels
-        out_labels_str = np.array(["unknown"] * len(out_features))
-
-        # concatenate id and ood items
-        features = np.concatenate([out_features, in_features])
-        labels_str = np.concatenate([out_labels_str, in_labels_str])
-        data_type = np.array(
-            ["OOD"] * len(out_labels_str) + ["ID"] * len(in_labels_str)
+    has_ood = out_dataset is not None
+    if has_ood:
+        out_features, _ = _extract_features_and_labels(
+            feature_extractor, out_dataset, op, max_samples_out
         )
     else:
-        features = in_features
-        labels_str = in_labels_str
-        data_type = np.array(["ID"] * len(in_labels))
+        out_features = None
 
-    # === project on 2d/3d space using tsne or pca ===
+    # === Project features ===
     proj_class = PROJ_DICT[proj_method]["class"]
-    p_kwargs = PROJ_DICT[proj_method]["default_kwargs"]
-    p_kwargs.update(proj_kwargs)
-    projector = proj_class(
-        n_components=n_components,
-        **p_kwargs,
-    )
-    features_proj = projector.fit_transform(features)
+    p_kwargs = {**PROJ_DICT[proj_method]["default_kwargs"], **proj_kwargs}
+    projector = proj_class(n_components=n_components, **p_kwargs)
 
-    # === plot 2d/3d features ===
-    features_dim = features.shape[1]
+    # PCA: fit on ID only; TSNE: must fit on all data (no transform method)
+    if proj_method == "PCA":
+        in_proj = projector.fit_transform(in_features)
+        out_proj = projector.transform(out_features) if has_ood else None
+    else:
+        if has_ood:
+            all_proj = projector.fit_transform(
+                np.concatenate([in_features, out_features])
+            )
+            in_proj, out_proj = (
+                all_proj[: len(in_features)],
+                all_proj[len(in_features) :],
+            )
+        else:
+            in_proj = projector.fit_transform(in_features)
+            out_proj = None
+
+    # === Setup plot ===
     method_str = PROJ_DICT[proj_method]["name"]
-    title = (
-        title
-        or f"{method_str} {n_components}D projection\n"
-        + f"[layer {output_layer_id}, dim: {features_dim}]"
+    title = title or (
+        f"{method_str} {n_components}D projection\n"
+        f"[layer {output_layer_id}, dim: {in_features.shape[1]}]"
     )
 
-    ax = plt.axes(plt.gca())
-    if n_components == 3:
-        if ax.name != "3d":
-            ax.remove()
-            ax = plt.axes(projection="3d")
+    ax = plt.gca()
+    if n_components == 3 and ax.name != "3d":
+        ax.remove()
+        ax = plt.axes(projection="3d")
         ax.set_facecolor("white")
 
-    # 2D projection
-    if n_components == 2:
-        # id data
-        x, y = features_proj.T
-        df = pd.DataFrame(
-            {
-                "dim 1": x,
-                "dim 2": y,
-                "Class": labels_str,
-                "Data type": data_type,
-            }
-        )
-        s = sns.scatterplot(
-            data=df,
-            x="dim 1",
-            y="dim 2",
-            hue="Class",
-            hue_order=np.unique(df["Class"]),
-            size="Data type",
-            sizes=[40, 20],
-            style="Data type",
-            size_order=["ID", "OOD"],
-            style_order=["ID", "OOD"],
-            ax=ax,
-        )
-        s.legend(fontsize=8, bbox_to_anchor=(1.1, 1), borderaxespad=0)
+    id_zorder, ood_zorder = (1, 2) if ood_on_top else (2, 1)
 
-    # 3D projection
-    elif n_components == 3:
-        cmap = plt.get_cmap(
-            "tab10", int(np.max(in_labels)) - int(np.min(in_labels)) + 1
+    # === Plot ===
+    if n_components == 2:
+        _plot_2d(
+            ax,
+            in_proj,
+            in_labels,
+            out_proj,
+            id_marker_size,
+            ood_marker_size,
+            id_zorder,
+            ood_zorder,
         )
-        # id
-        x_in, y_in, z_in = features_proj[len(out_features) :].T
-        s = ax.scatter(
-            x_in,
-            y_in,
-            z_in,
-            c=in_labels,
-            marker="D",
-            label="ID data",
-            s=30,
-            alpha=1.0,
-            cmap=cmap,
-            vmin=np.min(in_labels) - 0.5,
-            vmax=np.max(in_labels) + 0.5,
+    else:
+        _plot_3d(
+            ax,
+            in_proj,
+            in_labels,
+            out_proj,
+            id_marker_size,
+            ood_marker_size,
+            id_zorder,
+            ood_zorder,
+        )
+
+    plt.title(title, weight="bold", fontsize=11)
+
+
+def _plot_2d(
+    ax, in_proj, in_labels, out_proj, id_size, ood_size, id_zorder, ood_zorder
+):
+    """Plot 2D scatter with ID and optional OOD data."""
+    has_ood = out_proj is not None
+    in_labels_str = [f"class {x}" for x in in_labels]
+    unique_classes = sorted(set(in_labels_str))
+
+    # Plot ID
+    df_in = pd.DataFrame(
+        {"dim 1": in_proj[:, 0], "dim 2": in_proj[:, 1], "Class": in_labels_str}
+    )
+    sns.scatterplot(
+        data=df_in,
+        x="dim 1",
+        y="dim 2",
+        hue="Class",
+        hue_order=unique_classes,
+        s=id_size,
+        marker="D",
+        ax=ax,
+        zorder=id_zorder,
+        legend=False,
+    )
+
+    # Plot OOD
+    if has_ood:
+        ax.scatter(
+            out_proj[:, 0],
+            out_proj[:, 1],
+            c="darkslategray",
             edgecolors="white",
             linewidths=0.3,
+            s=ood_size,
+            marker="o",
+            zorder=ood_zorder,
         )
-        # ood
-        x_out, y_out, z_out = features_proj[: len(out_features)].T
+
+    # Build legend
+    palette = sns.color_palette()
+    handles = (
+        [_build_legend_handle(None, "Class", "none")]
+        + [
+            _build_legend_handle("s", cls, palette[i % len(palette)])
+            for i, cls in enumerate(unique_classes)
+        ]
+        + [
+            _build_legend_handle(None, "", "none"),
+            _build_legend_handle(None, "Data type", "none"),
+            _build_legend_handle("D", "ID", "gray"),
+        ]
+    )
+    if has_ood:
+        handles.append(_build_legend_handle("o", "OOD", "darkslategray"))
+
+    ax.legend(handles=handles, fontsize=8, bbox_to_anchor=(1.1, 1), borderaxespad=0)
+    ax.set_xlabel("Dimension 1")
+    ax.set_ylabel("Dimension 2")
+
+
+def _plot_3d(
+    ax, in_proj, in_labels, out_proj, id_size, ood_size, id_zorder, ood_zorder
+):
+    """Plot 3D scatter with ID and optional OOD data."""
+    has_ood = out_proj is not None
+    cmap = plt.get_cmap("tab10", int(np.max(in_labels)) - int(np.min(in_labels)) + 1)
+
+    # Plot ID
+    ax.scatter(
+        *in_proj.T,
+        c=in_labels,
+        marker="D",
+        s=id_size,
+        cmap=cmap,
+        vmin=np.min(in_labels) - 0.5,
+        vmax=np.max(in_labels) + 0.5,
+        edgecolors="white",
+        linewidths=0.3,
+        zorder=id_zorder,
+    )
+
+    # Plot OOD
+    if has_ood:
         ax.scatter(
-            x_out,
-            y_out,
-            z_out,
+            *out_proj.T,
             c="darkslategray",
             marker="o",
-            label="OOD data",
-            s=15,
-            alpha=1.0,
+            s=ood_size,
             edgecolors="white",
             linewidths=0.3,
-        )
-        legend_elements = [
-            Line2D(
-                [],
-                [],
-                marker="D",
-                color="white",
-                linestyle="None",
-                label=f"class {v}",
-                markerfacecolor=cmap(v),
-                markersize=7,
-                linewidth=0.3,
-            )
-            for v in np.unique(in_labels)
-        ] + [
-            Line2D(
-                [],
-                [],
-                marker="o",
-                color="white",
-                linestyle="None",
-                label="unknown",
-                markerfacecolor="darkslategray",
-                markersize=7,
-                linewidth=0.3,
-            )
-        ]
-        ax.legend(
-            title="classes",
-            handles=legend_elements,
-            loc="upper right",
-            fontsize=8,
-            bbox_to_anchor=(1.35, 1),
-            borderaxespad=0,
+            zorder=ood_zorder,
         )
 
-    plt.title(title, weight="bold").set_fontsize(11)
-    if n_components == 2:
-        ax.set_xlabel("Dimension 1")
-        ax.set_ylabel("Dimension 2")
-    if n_components == 3:
-        ax.set_xlabel("Dim 1")
-        ax.set_ylabel("Dim 2")
-        X = np.concatenate([x_in, x_out])
-        Y = np.concatenate([y_in, y_out])
-        Z = np.concatenate([z_in, z_out])
-        ax.set_xlim([X.min(), X.max()])
-        ax.set_ylim([Y.min(), Y.max()])
-        ax.set_zlim([Z.min(), Z.max()])
+    # Build legend
+    handles = [
+        _build_legend_handle("D", f"class {v}", cmap(v)) for v in np.unique(in_labels)
+    ]
+    handles.append(_build_legend_handle("o", "unknown", "darkslategray"))
+
+    ax.legend(
+        title="classes",
+        handles=handles,
+        loc="upper right",
+        fontsize=8,
+        bbox_to_anchor=(1.35, 1),
+        borderaxespad=0,
+    )
+    ax.set_xlabel("Dim 1")
+    ax.set_ylabel("Dim 2")
+
+    # Set axis limits
+    all_data = np.vstack([in_proj, out_proj]) if has_ood else in_proj
+    ax.set_xlim([all_data[:, 0].min(), all_data[:, 0].max()])
+    ax.set_ylim([all_data[:, 1].min(), all_data[:, 1].max()])
+    ax.set_zlim([all_data[:, 2].min(), all_data[:, 2].max()])
