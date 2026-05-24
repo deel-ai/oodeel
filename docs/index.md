@@ -224,6 +224,7 @@ Feel free to propose your ideas or come and contribute with us on the oodeel too
 Other great tools in the field of OOD:
 
 - [OpenOOD](https://github.com/Jingkang50/OpenOOD): Benchmarking Generalized Out-of-Distribution Detection
+- [`scio`](https://github.com/ThalesGroup/scio): Confidence scores for Neural Networks, made easy!
 - [Pytorch-OOD](https://github.com/kkirchheim/pytorch-ood): Out-of-Distribution (OOD) Detection with Deep Neural Networks based on PyTorch.
 - [ADBench](https://github.com/Minqi824/ADBench): Official Implement of "ADBench: Anomaly Detection Benchmark".
 - [PyOD](https://github.com/yzhao062/pyod): A Comprehensive and Scalable Python Library for Outlier Detection (Anomaly Detection)
