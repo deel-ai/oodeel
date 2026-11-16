@@ -23,6 +23,7 @@
 from .dknn import DKNN
 from .energy import Energy
 from .entropy import Entropy
+from .forte import Forte
 from .gen import GEN
 from .gram import Gram
 from .mahalanobis import Mahalanobis
@@ -36,6 +37,7 @@ __all__ = [
     "DKNN",
     "Energy",
     "Entropy",
+    "Forte",
     "GEN",
     "SHE",
     "Gram",

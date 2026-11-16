@@ -207,6 +207,7 @@ Currently, **oodeel** includes the following baselines:
 | SHE | [Out-of-Distribution Detection based on In-Distribution Data Patterns Memorization with Modern Hopfield Energy](https://openreview.net/forum?id=KkazG4lgKL) | ICLR 2023 | avail [tensorflow](docs/notebooks/tensorflow/demo_she_tf.ipynb) or [torch](docs/notebooks/torch/demo_she_torch.ipynb) |
 | ASH | [Extremely Simple Activation Shaping for Out-of-Distribution Detection](https://arxiv.org/abs/2209.09858) | ICLR 2023 | avail [tensorflow](docs/notebooks/tensorflow/demo_ash_tf.ipynb) or [torch](docs/notebooks/torch/demo_ash_torch.ipynb) |
 | SCALE | [Scaling for Training Time and Post-hoc Out-of-distribution Detection Enhancement](https://arxiv.org/abs/2310.00227) | ICLR 2024 | avail [tensorflow](docs/notebooks/tensorflow/demo_scale_tf.ipynb) or [torch](docs/notebooks/torch/demo_scale_torch.ipynb) |
+| Forte | [Forte: Finding Outliers with Representation Typicality Estimation](https://openreview.net/forum?id=7XNgVPxCiA) | ICLR 2025 | avail [tensorflow](docs/notebooks/tensorflow/demo_forte_tf.ipynb) or [torch](docs/notebooks/torch/demo_forte_torch.ipynb) |
 
 
 

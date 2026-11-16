@@ -21,6 +21,7 @@ nav:
       - SHE: notebooks/tensorflow/demo_she_tf.ipynb
       - SCALE: notebooks/tensorflow/demo_scale_tf.ipynb
       - ASH: notebooks/tensorflow/demo_ash_tf.ipynb
+      - Forte: notebooks/tensorflow/demo_forte_tf.ipynb
     - OOD Baselines (Torch):
       - MLS/MSP: notebooks/torch/demo_mls_msp_torch.ipynb
       - ODIN: notebooks/torch/demo_odin_torch.ipynb
@@ -36,6 +37,7 @@ nav:
       - SHE: notebooks/torch/demo_she_torch.ipynb
       - SCALE: notebooks/torch/demo_scale_torch.ipynb
       - ASH: notebooks/torch/demo_ash_torch.ipynb
+      - Forte: notebooks/torch/demo_forte_torch.ipynb
     - Advanced Topics:
       - Seamlessly handling torch and tf datasets with DataHandler: pages/datahandler_tuto.md
       - Seamlessly handling torch and tf Tensors with Operator: pages/operator_tuto.md
